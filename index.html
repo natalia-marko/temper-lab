@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Temper Lab — Opportunities</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./desk.css" />
+  </head>
+  <body>
+    <div class="desk">
+      <aside>
+        <a class="brand" href="./">
+          <span>t</span>
+          temper<span>lab</span>
+        </a>
+        <p class="aside-note">Read-only weekly snapshot. Rankings are research lists, not advice.</p>
+        <div class="aside-foot">
+          <span class="dot"></span>
+          Shared snapshot
+          <small id="aside-week">Loading…</small>
+        </div>
+      </aside>
+      <main>
+        <header class="top">
+          <label class="search">
+            <span>Find</span>
+            <input id="query" type="search" placeholder="Find a company or ticker" autocomplete="off" />
+          </label>
+          <span class="badge">Read-only snapshot</span>
+        </header>
+        <section class="heading">
+          <div>
+            <div class="eyebrow">FIND &amp; CONSIDER</div>
+            <h1>Opportunities</h1>
+            <p id="heading-copy">Three questions on the liquid lake.</p>
+          </div>
+          <span id="week-chip" class="week"></span>
+        </section>
+        <section class="surface">
+          <div class="toolbar">
+            <label>
+              Screening model
+              <select id="screen"></select>
+            </label>
+            <p id="caption" class="caption"></p>
+            <div class="count"><strong id="ranked-n">0</strong> ranked<span id="of-n"></span></div>
+            <div class="scope" role="group" aria-label="Company eligibility">
+              <button type="button" id="this-screen" class="on">This screen</button>
+              <button type="button" id="all-liquid">All liquid</button>
+            </div>
+          </div>
+          <div class="tabs" id="tabs" aria-label="Columns to inspect">
+            <span>Columns</span>
+          </div>
+          <p id="column-note" class="column-note" hidden></p>
+          <div class="order" id="order"></div>
+          <div class="table-wrap">
+            <table>
+              <thead id="head"></thead>
+              <tbody id="body"></tbody>
+            </table>
+          </div>
+          <div class="foot">
+            <span id="range"></span>
+            <div class="pager">
+              <button type="button" id="prev" aria-label="Previous page">‹</button>
+              <button type="button" id="next" aria-label="Next page">›</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./desk.js"></script>
+  </body>
+</html>
