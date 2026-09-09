@@ -379,19 +379,31 @@ function bind() {
   });
 }
 
+let controlsBound = false;
+
 async function start() {
-  const response = await fetch("./desk.json", { cache: "no-store" });
-  if (!response.ok) {
-    $("body").innerHTML = `<tr><td class="empty">The snapshot is unavailable.</td></tr>`;
-    return;
+  try {
+    const response = await fetch("./desk.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
+    state.desk = await response.json();
+    const week = `week of ${day(state.desk.as_of)}`;
+    $("heading-copy").textContent = state.desk.heading;
+    $("week-chip").textContent = `${state.desk.universe_count.toLocaleString()} liquid names · ${week}`;
+    $("aside-week").textContent = week;
+    if (!controlsBound) {
+      bind();
+      controlsBound = true;
+    }
+    render();
+  } catch (error) {
+    console.error("Temper Lab could not load the screener:", error);
+    $("body").innerHTML = `<tr><td class="empty" colspan="${$("head").querySelectorAll("th").length || 1}" role="alert">The screener could not load. <button type="button" id="retry-load">Try again</button></td></tr>`;
+    $("retry-load").addEventListener("click", () => {
+      $("retry-load").disabled = true;
+      $("retry-load").textContent = "Loading…";
+      start();
+    });
   }
-  state.desk = await response.json();
-  const week = `week of ${day(state.desk.as_of)}`;
-  $("heading-copy").textContent = state.desk.heading;
-  $("week-chip").textContent = `${state.desk.universe_count.toLocaleString()} liquid names · ${week}`;
-  $("aside-week").textContent = week;
-  bind();
-  render();
 }
 
 start();

@@ -35,3 +35,15 @@ From the Temper Lab factory, after a weekly freeze:
 python tools/export_public_desk.py
 # then copy share/ into this repository and push
 ```
+
+When changing `desk.js` or `desk.css`, update its `?v=` value in `index.html` to
+the first 12 characters of the file's SHA-256 hash. GitHub Pages caches assets
+separately; versioned URLs prevent new HTML from loading a cached, incompatible
+script. The source tests enforce these versions.
+
+Full startup and filter regression checks (from the factory repository):
+
+```bash
+npm install --prefix /tmp/temper-dom-check --no-audit --no-fund jsdom@27.0.1
+NODE_PATH=/tmp/temper-dom-check/node_modules node --test tests/public_desk.test.cjs tests/public_desk_startup.test.cjs
+```
