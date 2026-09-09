@@ -386,10 +386,12 @@ async function start() {
     const response = await fetch("./desk.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
-    const week = `week of ${day(state.desk.as_of)}`;
+    const asOf = `Data as of ${day(state.desk.as_of)}`;
     $("heading-copy").textContent = state.desk.heading;
-    $("week-chip").textContent = `${state.desk.universe_count.toLocaleString()} liquid names · ${week}`;
-    $("aside-week").textContent = week;
+    $("week-chip").textContent = asOf;
+    $("week-chip").title = "Prices and rankings use this date. Fundamental figures use their latest available filings.";
+    $("snapshot-built").textContent = `${state.desk.universe_count.toLocaleString()} liquid names${state.desk.recorded_at ? ` · Snapshot built ${day(state.desk.recorded_at)}` : ""}`;
+    $("aside-week").textContent = asOf;
     if (!controlsBound) {
       bind();
       controlsBound = true;

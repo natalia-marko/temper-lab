@@ -14,6 +14,24 @@ The exporter fills legacy missing labels from the latest saved Nasdaq listing
 snapshot on or before the ranking date, preserving existing frozen labels.
 Missing classifications stay visible as “industry unavailable”.
 
+## Data dates and refresh schedule
+
+The header shows **Data as of** from the weekly freeze's `as_of`, separately from
+**Snapshot built** from its `recorded_at`. A rebuild or publication does not
+advance the underlying ranking date. Fundamentals retain their own filing periods.
+
+The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
+in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
+It builds the weekly freeze but does not export or publish this website. After
+a successful run, export the snapshot and publish the changed `share/desk.json`.
+For this weekly screener, one successful refresh and publication each week is
+the intended routine; a midweek rebuild still uses the latest completed week.
+
+The separate `com.temperlab.refresh` job checks every 15 minutes for a due
+Tuesday–Saturday 06:30 Copenhagen refresh. That job covers the ten-stock trial,
+not this full-universe website. These are Mac jobs, so they need the logged-in
+machine and connectivity; GitHub Pages only serves the published snapshot.
+
 ## Address
 
 https://temper-lab.com
