@@ -50,6 +50,7 @@ const state = {
   screen: "strength",
   view: "overview",
   query: "",
+  industry: "",
   thisScreen: true,
   sortKey: "score",
   sortDir: "desc",
@@ -103,18 +104,24 @@ function factor(symbol, key) {
   return state.desk.companies[symbol]?.factors?.[key];
 }
 
-function rows() {
-  const setup = state.desk.setups[state.screen];
+function industryKey(company) {
+  return company?.industry?.trim() || "__unclassified";
+}
+
+function scopeRows() {
   const ranked = rankedMap(state.screen);
   const needle = state.query.trim().toLowerCase();
-  const symbols = Object.keys(state.desk.companies);
-  return symbols
-    .filter((symbol) => {
-      const company = state.desk.companies[symbol];
-      const hay = `${symbol} ${company?.name ?? ""}`.toLowerCase();
-      if (needle) return hay.includes(needle);
-      return !state.thisScreen || ranked.has(symbol);
-    })
+  return Object.keys(state.desk.companies).filter((symbol) => {
+    const company = state.desk.companies[symbol];
+    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""}`.toLowerCase();
+    return (!state.thisScreen || ranked.has(symbol)) && (!needle || hay.includes(needle));
+  });
+}
+
+function rows() {
+  const ranked = rankedMap(state.screen);
+  return scopeRows()
+    .filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry)
     .sort((a, b) => {
       const dir = state.sortDir === "asc" ? 1 : -1;
       let va;
@@ -184,12 +191,19 @@ function renderHead() {
 
 function companyCell(symbol) {
   const company = state.desk.companies[symbol];
+  const industry = company?.industry?.trim() || "Industry unavailable";
   const trust = company?.trust;
   const chip =
     trust && trust.status && trust.status !== "complete"
-      ? `<span class="trust ${trust.status}" title="${(trust.reasons || []).join("; ")}">${trust.status}</span>`
+      ? `<span class="trust ${escapeHtml(trust.status)}" title="${escapeHtml((trust.reasons || []).join("; "))}">${escapeHtml(trust.status)}</span>`
       : "";
-  return `<td><span class="ticker">${symbol}${chip}</span><span class="name">${company?.name ?? symbol}</span></td>`;
+  return `<td><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span><span class="industry" title="Industry: ${escapeHtml(industry)}">${escapeHtml(industry)}</span></td>`;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
 }
 
 function renderBody(pageRows) {
@@ -253,6 +267,11 @@ function render() {
     note.textContent = `Inspecting ${viewLabel.toLowerCase()} numbers. Rank and score are still ${screenLabel(state.screen)}.`;
   }
   const all = rows();
+  renderIndustries();
+  $("clear-filters").hidden = !state.industry && !state.query;
+  $("filter-note").textContent = state.industry
+    ? "Industry filters narrow the list. Rank and score stay relative to the original screening universe."
+    : "Rank and score are from the original screening universe; changing columns only changes the numbers shown.";
   const pages = Math.max(1, Math.ceil(all.length / state.pageSize));
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
@@ -267,7 +286,35 @@ function render() {
   renderBody(shown);
 }
 
+function renderIndustries() {
+  const counts = new Map();
+  for (const symbol of scopeRows()) {
+    const industry = industryKey(state.desk.companies[symbol]);
+    counts.set(industry, (counts.get(industry) || 0) + 1);
+  }
+  const industries = [...new Set(Object.values(state.desk.companies).map(industryKey))]
+    .sort((a, b) => a === "__unclassified" ? 1 : b === "__unclassified" ? -1 : a.localeCompare(b));
+  $("industry").innerHTML = '<option value="">All industries</option>' + industries.map((industry) => {
+    const label = industry === "__unclassified" ? "Industry unavailable" : industry;
+    const count = counts.get(industry) || 0;
+    return `<option value="${escapeHtml(industry)}"${count ? "" : " disabled"}>${escapeHtml(label)} (${count})</option>`;
+  }).join("");
+  $("industry").value = state.industry;
+}
+
 function bind() {
+  $("industry").addEventListener("change", (event) => {
+    state.industry = event.target.value;
+    state.page = 0;
+    render();
+  });
+  $("clear-filters").addEventListener("click", () => {
+    state.industry = "";
+    state.query = "";
+    $("query").value = "";
+    state.page = 0;
+    render();
+  });
   const select = $("screen");
   select.innerHTML = SCREENS.map(
     ([key, label]) => `<option value="${key}">${label}</option>`,
