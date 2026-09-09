@@ -6,7 +6,7 @@ This is a static snapshot of the research desk. It does not run the Python facto
 
 ## Address
 
-https://natalia-marko.github.io/temper-lab/
+https://temper-lab.com
 
 ## Custom domain later
 
