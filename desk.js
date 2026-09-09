@@ -176,7 +176,7 @@ function sortHeader(key, label) {
 function renderHead() {
   const metrics =
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
-  let html = `<tr><th class="rank">Rank</th>${sortHeader("company", "Company")}`;
+  let html = `<tr><th class="rank">Rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="industry">Industry</label><select id="industry" aria-label="Filter by industry" title="Filter this column; original ranks and scores stay fixed."></select></th>`;
   if (state.view === "overview") {
     if (state.screen === "growth") html += `<th>Gates</th>`;
     for (const [key, label] of metrics) html += sortHeader(key, label);
@@ -187,17 +187,22 @@ function renderHead() {
   }
   html += `</tr>`;
   $("head").innerHTML = html;
+  renderIndustries();
 }
 
 function companyCell(symbol) {
   const company = state.desk.companies[symbol];
-  const industry = company?.industry?.trim() || "Industry unavailable";
   const trust = company?.trust;
   const chip =
     trust && trust.status && trust.status !== "complete"
       ? `<span class="trust ${escapeHtml(trust.status)}" title="${escapeHtml((trust.reasons || []).join("; "))}">${escapeHtml(trust.status)}</span>`
       : "";
-  return `<td><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span><span class="industry" title="Industry: ${escapeHtml(industry)}">${escapeHtml(industry)}</span></td>`;
+  return `<td><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></td>`;
+}
+
+function industryCell(symbol) {
+  const industry = state.desk.companies[symbol]?.industry?.trim() || "Industry unavailable";
+  return `<td class="industry-column"><span class="industry" title="${escapeHtml(industry)}">${escapeHtml(industry)}</span></td>`;
 }
 
 function escapeHtml(value) {
@@ -211,13 +216,14 @@ function renderBody(pageRows) {
   const metrics =
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
   if (!pageRows.length) {
-    $("body").innerHTML = `<tr><td class="empty" colspan="12">No companies match these filters.</td></tr>`;
+    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 + (state.screen === "growth" ? 1 : 0) : 1);
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Choose All industries in the Industry column or clear your search.</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
     .map((symbol) => {
       const idea = ranked.get(symbol);
-      let cells = `<td class="rank">${idea?.rank ?? "—"}</td>${companyCell(symbol)}`;
+      let cells = `<td class="rank">${idea?.rank ?? "—"}</td>${companyCell(symbol)}${industryCell(symbol)}`;
       if (state.view === "overview") {
         if (state.screen === "growth") {
           cells += `<td><span class="chips">${growthChips(symbol)
@@ -267,16 +273,11 @@ function render() {
     note.textContent = `Inspecting ${viewLabel.toLowerCase()} numbers. Rank and score are still ${screenLabel(state.screen)}.`;
   }
   const all = rows();
-  renderIndustries();
-  $("clear-filters").hidden = !state.industry && !state.query;
-  $("filter-note").textContent = state.industry
-    ? "Industry filters narrow the list. Rank and score stay relative to the original screening universe."
-    : "Rank and score are from the original screening universe; changing columns only changes the numbers shown.";
   const pages = Math.max(1, Math.ceil(all.length / state.pageSize));
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
-  $("order").textContent = `Sorted by ${state.sortKey === "score" ? "Score" : state.sortKey} · ${state.sortDir === "desc" ? "High to low" : "Low to high"}`;
+  $("order").textContent = `Sorted by ${state.sortKey === "score" ? "Score" : state.sortKey} · ${state.sortDir === "desc" ? "High to low" : "Low to high"}${state.industry ? " · Industry filtered; original ranks" : ""}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
@@ -300,20 +301,17 @@ function renderIndustries() {
     return `<option value="${escapeHtml(industry)}"${count ? "" : " disabled"}>${escapeHtml(label)} (${count})</option>`;
   }).join("");
   $("industry").value = state.industry;
+  $("industry").classList.toggle("active", Boolean(state.industry));
 }
 
 function bind() {
-  $("industry").addEventListener("change", (event) => {
+  // The column heading is rebuilt on sorting, paging and screen changes.
+  $("head").addEventListener("change", (event) => {
+    if (event.target.id !== "industry") return;
     state.industry = event.target.value;
     state.page = 0;
     render();
-  });
-  $("clear-filters").addEventListener("click", () => {
-    state.industry = "";
-    state.query = "";
-    $("query").value = "";
-    state.page = 0;
-    render();
+    $("industry").focus();
   });
   const select = $("screen");
   select.innerHTML = SCREENS.map(

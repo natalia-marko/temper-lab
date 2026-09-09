@@ -4,11 +4,11 @@ Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
 
 This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
 
-Industry labels appear beneath company names. Filter by industry or search by
-company, ticker or industry. These filters respect the selected screening scope;
-rank and score remain those of the original screening universe. Industry option
-counts reflect the current scope and search. Clear filters resets industry and
-search together.
+Industry has its own column beside Company in every screener view. Use the
+dropdown in its heading to filter, or choose All industries to reset it. Search
+also accepts company, ticker or industry. Both respect the selected screening
+scope; rank and score remain those of the original screening universe. Industry
+option counts reflect the current scope and search.
 
 The exporter fills legacy missing labels from the latest saved Nasdaq listing
 snapshot on or before the ranking date, preserving existing frozen labels.
