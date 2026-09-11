@@ -51,6 +51,8 @@ const state = {
   view: "overview",
   query: "",
   industry: "",
+  evidenceStatus: "default",
+  requiredMetrics: false,
   thisScreen: true,
   sortKey: "score",
   sortDir: "desc",
@@ -122,6 +124,8 @@ function rows() {
   const ranked = rankedMap(state.screen);
   return scopeRows()
     .filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry)
+    .filter(passesEvidence)
+    .filter((symbol) => !state.requiredMetrics || hasRequiredMetrics(symbol))
     .sort((a, b) => {
       const dir = state.sortDir === "asc" ? 1 : -1;
       let va;
@@ -151,13 +155,84 @@ function rows() {
     });
 }
 
+function currentMetrics() {
+  return state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
+}
+
+function trustStatus(symbol) {
+  const status = state.desk.companies[symbol]?.trust?.status;
+  return ["complete", "review", "broken"].includes(status) ? status : "unknown";
+}
+
+function trustLabel(status) {
+  return { complete: "No flagged issue", review: "Needs review", broken: "Broken statement", unknown: "Unknown" }[status];
+}
+
+function priceOnlyView() {
+  return state.view === "price" || (state.view === "overview" && state.screen === "strength");
+}
+
+function passesEvidence(symbol) {
+  const status = trustStatus(symbol);
+  if (state.evidenceStatus === "all") return true;
+  if (state.evidenceStatus === "default") return priceOnlyView() || status !== "broken";
+  return status === state.evidenceStatus;
+}
+
+function hasRequiredMetrics(symbol) {
+  return currentMetrics().every(([key]) => Number.isFinite(factor(symbol, key)));
+}
+
+function evidenceScope() {
+  return scopeRows().filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry);
+}
+
+function renderEvidenceControls() {
+  const base = evidenceScope();
+  const accepted = base.filter(passesEvidence);
+  const available = accepted.filter(hasRequiredMetrics).length;
+  const cash = accepted.filter((symbol) => Number.isFinite(factor(symbol, "cash_conversion"))).length;
+  const defaultNote = state.evidenceStatus === "default"
+    ? priceOnlyView() ? "Price view includes all statement statuses." : "Fundamental view excludes broken statements by default."
+    : "Evidence status is explicitly filtered.";
+  $("coverage-note").textContent = `${defaultNote} Evidence status removes ${base.length - accepted.length} of ${base.length} names. Required metrics: ${currentMetrics().map(([, label]) => label).join(", ")}. Available for ${available} of ${accepted.length} remaining names; ${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. Cash conversion available for ${cash} of ${accepted.length}. Availability means a finite value, not verified comparability.`;
+  $("evidence-status").value = state.evidenceStatus;
+  $("required-metrics").checked = state.requiredMetrics;
+}
+
+function showEvidence(symbol) {
+  const company = state.desk.companies[symbol];
+  if (!company) return;
+  $("evidence-title").textContent = `${symbol} · ${company.name || symbol}`;
+  const dates = [
+    ["Price date", company.price_date],
+    ["Revenue fiscal period end", company.revenue_period_end],
+    ["Revenue filing date", company.revenue_filed],
+    ["Quality filing date", company.quality_filed],
+  ];
+  const reasons = company.trust?.reasons || [];
+  $("evidence-content").innerHTML = `<p><strong>${trustLabel(trustStatus(symbol))}</strong>. This statement status does not certify coverage, freshness, or valuation.</p>
+    ${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : "<p>No specific issue recorded.</p>"}
+    <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
+    <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
+    <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : "Unavailable"}</dd>`).join("")}</dl>
+    <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
+      const row = rankedMap(key).get(symbol);
+      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}` : "Outside the published list; a missing input, failed gate, or shortlist cutoff may apply. Individual exclusion reasons are not exported."}</li>`;
+    }).join("")}</ul>`;
+  $("company-evidence").showModal();
+}
+
 function growthChips(symbol) {
+  // Labels come from desk.json's setups.growth.gates, which is generated
+  // straight from the screen's real gate definitions in
+  // research_engine/features/build_lake_ideas.py (GROWTH_GATE_LABELS), not
+  // hardcoded here. A company only appears in the Growth list at all once it
+  // has passed every one of those gates, so every visible row shows them all
+  // as met - there is no "some gates, not others" state to render.
+  const labels = state.desk.setups?.growth?.gates || [];
   if (rankedMap("growth").has(symbol)) {
-    return [
-      ["YoY ≥ 20%", true],
-      ["Profit", true],
-      ["$50M+", true],
-    ];
+    return labels.map((label) => [label, true]);
   }
   return [["Not on Growth", false]];
 }
@@ -170,7 +245,8 @@ function alsoOn(symbol) {
 
 function sortHeader(key, label) {
   const sorted = state.sortKey === key ? " sorted" : "";
-  return `<th class="${sorted}"><button type="button" data-sort="${key}">${label}</button></th>`;
+  const direction = state.sortDir === "asc" ? "ascending" : "descending";
+  return `<th scope="col" class="${sorted}"${sorted ? ` aria-sort="${direction}"` : ""}><button type="button" data-sort="${key}">${label}${sorted ? ` <span aria-hidden="true">${state.sortDir === "asc" ? "↑" : "↓"}</span>` : ""}</button></th>`;
 }
 
 function renderHead() {
@@ -192,12 +268,12 @@ function renderHead() {
 
 function companyCell(symbol) {
   const company = state.desk.companies[symbol];
-  const trust = company?.trust;
+  const status = trustStatus(symbol);
   const chip =
-    trust && trust.status && trust.status !== "complete"
-      ? `<span class="trust ${escapeHtml(trust.status)}" title="${escapeHtml((trust.reasons || []).join("; "))}">${escapeHtml(trust.status)}</span>`
+    status !== "complete"
+      ? `<span class="trust ${status}">${trustLabel(status)}</span>`
       : "";
-  return `<td><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></td>`;
+  return `<td><button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></td>`;
 }
 
 function industryCell(symbol) {
@@ -217,7 +293,7 @@ function renderBody(pageRows) {
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
   if (!pageRows.length) {
     const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 + (state.screen === "growth" ? 1 : 0) : 1);
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Choose All industries in the Industry column or clear your search.</td></tr>`;
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, industry and evidence filters.</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
@@ -256,6 +332,9 @@ function screenLabel(key) {
 
 function render() {
   const setup = state.desk.setups[state.screen];
+  $("method-copy").textContent = setup.method || "Method not recorded in this snapshot.";
+  $("method-version").textContent = `Method version: ${setup.version || "not recorded"}`;
+  renderEvidenceControls();
   $("caption").textContent = state.desk.captions[state.screen];
   $("ranked-n").textContent = setup.results.length.toLocaleString();
   $("of-n").textContent = `of ${state.desk.universe_count.toLocaleString()} companies`;
@@ -277,7 +356,8 @@ function render() {
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
-  $("order").textContent = `Sorted by ${state.sortKey === "score" ? "Score" : state.sortKey} · ${state.sortDir === "desc" ? "High to low" : "Low to high"}${state.industry ? " · Industry filtered; original ranks" : ""}`;
+  const sortLabel = { score: "Score", company: "Company", price: "Price", market_cap: "Market cap" }[state.sortKey] || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
+  $("order").textContent = `Sorted by ${sortLabel} · ${state.sortKey === "company" ? (state.sortDir === "asc" ? "A to Z" : "Z to A") : (state.sortDir === "desc" ? "High to low" : "Low to high")} · Original ranks and scores stay fixed under all filters`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
@@ -305,6 +385,29 @@ function renderIndustries() {
 }
 
 function bind() {
+  $("body").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-company]");
+    if (button) showEvidence(button.dataset.company);
+  });
+  $("evidence-status").addEventListener("change", (event) => {
+    state.evidenceStatus = event.target.value;
+    state.page = 0;
+    render();
+  });
+  $("required-metrics").addEventListener("change", (event) => {
+    state.requiredMetrics = event.target.checked;
+    state.page = 0;
+    render();
+  });
+  $("reset-filters").addEventListener("click", () => {
+    state.query = "";
+    state.industry = "";
+    state.evidenceStatus = "default";
+    state.requiredMetrics = false;
+    state.page = 0;
+    $("query").value = "";
+    render();
+  });
   // The column heading is rebuilt on sorting, paging and screen changes.
   $("head").addEventListener("change", (event) => {
     if (event.target.id !== "industry") return;
@@ -376,6 +479,7 @@ function bind() {
     }
     state.page = 0;
     render();
+    $("head").querySelector(`button[data-sort="${key}"]`).focus();
   });
 }
 
@@ -386,6 +490,16 @@ async function start() {
     const response = await fetch("./desk.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
+    try {
+      const releaseResponse = await fetch("./release.json", { cache: "no-store" });
+      if (releaseResponse.ok) {
+        const release = await releaseResponse.json();
+        const historical = release.historical_validation?.status || "unknown";
+        $("release-status").textContent = `Current release: ${release.status || "unknown"} · Historical validation: ${historical}`;
+      }
+    } catch (releaseError) {
+      console.warn("Temper Lab release status is unavailable:", releaseError);
+    }
     const asOf = `Data as of ${day(state.desk.as_of)}`;
     $("heading-copy").textContent = state.desk.heading;
     $("week-chip").textContent = asOf;

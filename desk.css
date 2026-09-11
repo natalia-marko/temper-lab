@@ -135,6 +135,25 @@ th.sorted { color: var(--green); }
 }
 .pager button:disabled { opacity: 0.4; }
 .empty { padding: 40px 22px; color: var(--muted); }
+.method-info { margin: 0 22px 12px; color: var(--muted); font-size: 12px; }
+summary { cursor: pointer; color: var(--green); font-weight: 600; }
+.evidence-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 12px 22px 0; }
+.evidence-filters label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.evidence-filters select, .evidence-filters button, .close-evidence {
+  background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+}
+.company-button { display: block; padding: 0; border: 0; background: none; text-align: left; }
+.company-button .ticker { text-decoration: underline; text-underline-offset: 3px; }
+.trust.unknown { background: #eee; color: #555; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+dialog { width: min(640px, calc(100% - 24px)); max-height: 85vh; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); }
+dialog::backdrop { background: #172d2466; }
+.close-evidence { float: right; }
+dialog h2 { margin-right: 60px; font-size: 21px; }
+dialog p { color: var(--muted); }
+dialog dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+dialog dt { color: var(--muted); }
+dialog dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 860px) {
   aside { position: static; width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   main { margin-left: 0; }
@@ -142,4 +161,15 @@ th.sorted { color: var(--green); }
   .snapshot-status { justify-items: start; text-align: left; }
   .toolbar { align-items: stretch; }
   .count { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .top { padding: 10px 14px; flex-wrap: wrap; }
+  .search { min-width: 0; }
+  .search input { min-width: 0; width: 100%; }
+  .heading { padding: 20px 14px 8px; }
+  .surface { margin: 12px 10px 24px; }
+  .toolbar select { min-width: 0; max-width: 100%; }
+  .toolbar { padding: 16px 12px 12px; }
+  .tabs { gap: 18px; }
+  .tabs button { white-space: nowrap; }
 }

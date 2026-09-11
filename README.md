@@ -22,8 +22,10 @@ advance the underlying ranking date. Fundamentals retain their own filing period
 
 The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
-It builds the weekly freeze but does not export or publish this website. After
-a successful run, export the snapshot and publish the changed `share/desk.json`.
+It stages and publishes the current screener only after its own checks pass.
+Historical comparison runs afterward as a separate validation phase. A failed
+comparison leaves the current screener published and records a failed
+validation status in `release.json`.
 For this weekly screener, one successful refresh and publication each week is
 the intended routine; a midweek rebuild still uses the latest completed week.
 
@@ -47,11 +49,13 @@ Do not point the domain at a Cloudflare quick tunnel. This Pages site is the dur
 
 ## Update the snapshot
 
-From the Temper Lab factory, after a weekly freeze:
+From the Temper Lab factory, after a weekly freeze, use the staged release
+command so the prior public snapshot remains available if a current check
+fails:
 
 ```bash
-python tools/export_public_desk.py
-# then copy share/ into this repository and push
+python tools/release_weekly.py
+# then copy share/ into this repository and push with the public-site workflow
 ```
 
 When changing `desk.js` or `desk.css`, update its `?v=` value in `index.html` to

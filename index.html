@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Opportunities</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=5983a2408fa1" />
+    <link rel="stylesheet" href="./desk.css?v=bbef16ece0af" />
   </head>
   <body>
     <div class="desk">
@@ -39,6 +39,7 @@
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status"></span>
             <small id="snapshot-built"></small>
+            <small id="release-status"></small>
             <small>Weekly refresh: Sat 08:00 · Copenhagen<br>New results are published manually after refresh.</small>
           </div>
         </section>
@@ -55,10 +56,31 @@
               <button type="button" id="all-liquid">All liquid</button>
             </div>
           </div>
+          <details class="method-info">
+            <summary>How this screen works</summary>
+            <p id="method-copy"></p>
+            <p id="method-version"></p>
+            <p>Scores are rankings within the screen's scoring universe, not probabilities. Filtering keeps original ranks and scores. Operating yield is TTM operating income divided by equity market capitalization; it is not an enterprise-value yield and does not adjust for debt or cash.</p>
+          </details>
           <div class="tabs" id="tabs" aria-label="Columns to inspect">
             <span>Columns</span>
           </div>
           <p id="column-note" class="column-note" hidden></p>
+          <div class="evidence-filters">
+            <label>Evidence status
+              <select id="evidence-status">
+                <option value="default">View default</option>
+                <option value="all">All statuses, including broken</option>
+                <option value="complete">No flagged issue</option>
+                <option value="review">Needs review</option>
+                <option value="broken">Broken statement</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </label>
+            <label><input id="required-metrics" type="checkbox"> Required metrics available</label>
+            <button id="reset-filters" type="button">Reset filters</button>
+          </div>
+          <p id="coverage-note" class="column-note" role="status"></p>
           <div class="order" id="order"></div>
           <div class="table-wrap">
             <table>
@@ -75,17 +97,21 @@
             </div>
             <p class="trust-legend">
               <span class="trust review">Review</span>
-              a number on this row is not a safe comparable (thin book equity,
-              mixed filing dates, or stale revenue). Hover the chip for the
-              reason.
+              a number needs inspection (for example thin book equity,
+              mixed filing dates, or stale revenue). Select a company for its evidence.
               <span class="trust broken">Broken</span>
               the income statement does not add up.
-              No badge means the row is complete enough to read.
+              No badge means no flagged issue, not complete metric coverage or independent verification.
             </p>
           </div>
         </section>
       </main>
     </div>
-    <script src="./desk.js?v=0fa8e2c6fa6b"></script>
+    <dialog id="company-evidence" aria-labelledby="evidence-title">
+      <form method="dialog"><button class="close-evidence" aria-label="Close company evidence">Close</button></form>
+      <h2 id="evidence-title"></h2>
+      <div id="evidence-content"></div>
+    </dialog>
+    <script src="./desk.js?v=9b861303920d"></script>
   </body>
 </html>
