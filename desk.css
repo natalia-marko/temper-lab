@@ -121,6 +121,8 @@ th.sorted { color: var(--green); }
 .trust { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .trust.review { background: #f4ead3; color: #7a5a1e; }
 .trust.broken { background: #f4dcd6; color: #8a2f24; }
+.flag { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.flag.loss { background: #e8eef1; color: #44606f; }
 .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 22px; font-size: 12px; color: #5e7066; }
 .trust-legend {
   flex-basis: 100%;

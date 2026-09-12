@@ -211,7 +211,14 @@ function showEvidence(symbol) {
     ["Quality filing date", company.quality_filed],
   ];
   const reasons = company.trust?.reasons || [];
-  $("evidence-content").innerHTML = `<p><strong>${trustLabel(trustStatus(symbol))}</strong>. This statement status does not certify coverage, freshness, or valuation.</p>
+  const profitable = state.desk.companies[symbol]?.profitable;
+  const earns =
+    profitable === false
+      ? " Trailing twelve-month net income is negative; that is a fact about the business, not a problem with the evidence."
+      : profitable === true
+        ? " Trailing twelve-month net income is positive."
+        : "";
+  $("evidence-content").innerHTML = `<p><strong>${trustLabel(trustStatus(symbol))}</strong>. This statement status does not certify coverage, freshness, or valuation.${earns}</p>
     ${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : "<p>No specific issue recorded.</p>"}
     <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
     <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
@@ -266,13 +273,23 @@ function renderHead() {
   renderIndustries();
 }
 
+// Whether the company earns money is a fact about the business, not a doubt
+// about its accounts, so it gets its own chip rather than a trust status.
+// Absent in snapshots published before 2026-09-11, where it reads undefined
+// and no chip is drawn.
+function lossmakingChip(symbol) {
+  return state.desk.companies[symbol]?.profitable === false
+    ? `<span class="flag loss" title="Negative trailing twelve-month net income">Lossmaking</span>`
+    : "";
+}
+
 function companyCell(symbol) {
   const company = state.desk.companies[symbol];
   const status = trustStatus(symbol);
   const chip =
-    status !== "complete"
+    (status !== "complete"
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
-      : "";
+      : "") + lossmakingChip(symbol);
   return `<td><button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></td>`;
 }
 
