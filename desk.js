@@ -230,18 +230,27 @@ function showEvidence(symbol) {
   $("company-evidence").showModal();
 }
 
-function growthChips(symbol) {
-  // Labels come from desk.json's setups.growth.gates, which is generated
-  // straight from the screen's real gate definitions in
-  // research_engine/features/build_lake_ideas.py (GROWTH_GATE_LABELS), not
-  // hardcoded here. A company only appears in the Growth list at all once it
-  // has passed every one of those gates, so every visible row shows them all
-  // as met - there is no "some gates, not others" state to render.
-  const labels = state.desk.setups?.growth?.gates || [];
-  if (rankedMap("growth").has(symbol)) {
-    return labels.map((label) => [label, true]);
+function renderScreenGates() {
+  // A screen's entry gates are a fact about the screen, so they are stated
+  // once here rather than repeated on every row. They used to be a per-row
+  // column, which showed the same three chips 242 times on Growth and told
+  // the reader nothing: a company is only in the list once it has passed
+  // every gate, so the value never varied. Rank already shows non-membership
+  // as an em dash when the scope is widened to all companies.
+  //
+  // Labels still come from desk.json's setups.<screen>.gates, generated from
+  // the real gate definitions in build_lake_ideas.py, never hardcoded here -
+  // hardcoded English drifted from the actual gates once before.
+  const labels = state.desk.setups?.[state.screen]?.gates || [];
+  const element = $("screen-gates");
+  if (!labels.length) {
+    element.innerHTML = "";
+    element.textContent = "No entry gates: every eligible company is scored.";
+    return;
   }
-  return [["Not on Growth", false]];
+  element.innerHTML =
+    `<span class="gates-label">Entry gates</span>` +
+    labels.map((label) => `<span class="chip">${escapeHtml(label)}</span>`).join("");
 }
 
 function alsoOn(symbol) {
@@ -261,7 +270,6 @@ function renderHead() {
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
   let html = `<tr><th class="rank">Rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="industry">Industry</label><select id="industry" aria-label="Filter by industry" title="Filter this column; original ranks and scores stay fixed."></select></th>`;
   if (state.view === "overview") {
-    if (state.screen === "growth") html += `<th>Gates</th>`;
     for (const [key, label] of metrics) html += sortHeader(key, label);
     html += `${sortHeader("score", "Score")}<th>Also on</th>${sortHeader("price", "Price")}${sortHeader("market_cap", "Market cap")}`;
   } else {
@@ -318,11 +326,6 @@ function renderBody(pageRows) {
       const idea = ranked.get(symbol);
       let cells = `<td class="rank">${idea?.rank ?? "—"}</td>${companyCell(symbol)}${industryCell(symbol)}`;
       if (state.view === "overview") {
-        if (state.screen === "growth") {
-          cells += `<td><span class="chips">${growthChips(symbol)
-            .map(([label, ok]) => `<span class="chip${ok ? "" : " out"}">${label}</span>`)
-            .join("")}</span></td>`;
-        }
         for (const [key, , kind] of metrics) {
           cells += `<td class="metric">${fmt(factor(symbol, key), kind)}</td>`;
         }
@@ -353,6 +356,7 @@ function render() {
   $("method-version").textContent = `Method version: ${setup.version || "not recorded"}`;
   renderEvidenceControls();
   $("caption").textContent = state.desk.captions[state.screen];
+  renderScreenGates();
   $("ranked-n").textContent = setup.results.length.toLocaleString();
   $("of-n").textContent = `of ${state.desk.universe_count.toLocaleString()} companies`;
   $("this-screen").classList.toggle("on", state.thisScreen);

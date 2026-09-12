@@ -123,6 +123,8 @@ th.sorted { color: var(--green); }
 .trust.broken { background: #f4dcd6; color: #8a2f24; }
 .flag { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .flag.loss { background: #e8eef1; color: #44606f; }
+.screen-gates { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.screen-gates .gates-label { font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: #7a8a80; }
 .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 22px; font-size: 12px; color: #5e7066; }
 .trust-legend {
   flex-basis: 100%;
