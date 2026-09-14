@@ -188,12 +188,121 @@ function industryKey(company) {
   return company?.industry?.trim() || "__unclassified";
 }
 
+// Display abbreviations of the Nasdaq industry string. The filter value stays
+// the official label; these names are not a new classification.
+const INDUSTRY_FAMILY = {
+  Biotechnology: "Bio",
+  "Computer Software": "Software",
+  RETAIL: "Retail",
+  Retail: "Retail",
+  Finance: "Finance",
+  Services: "Services",
+  "Electric Utilities": "Utilities",
+};
+const INDUSTRY_SHORT = {
+  "Biological Products (No Diagnostic Substances)": "biologics",
+  "Commercial Physical & Biological Resarch": "research",
+  "Electromedical & Electrotherapeutic Apparatus": "electromedical",
+  "In Vitro & In Vivo Diagnostic Substances": "diagnostics",
+  "Laboratory Analytical Instruments": "lab instruments",
+  "Pharmaceutical Preparations": "pharma",
+  "Prepackaged Software": "prepackaged",
+  "Programming Data Processing": "data processing",
+  "Computer Software & Peripheral Equipment": "software & peripherals",
+  "Building Materials": "building materials",
+  "Consumer Services": "consumer",
+  "O.E.M.": "OEM",
+  "Central": "central",
+  "Radio And Television Broadcasting And Communications Equipment": "Broadcast & comms equipment",
+  "Mining & Quarrying of Nonmetallic Minerals (No Fuels)": "Nonmetallic minerals",
+  "Water Sewer Pipeline Comm & Power Line Construction": "Pipeline & power-line construction",
+  "General Bldg Contractors - Nonresidential Bldgs": "Nonresidential contractors",
+  "Cable & Other Pay Television Services": "Cable TV",
+  "Real Estate Investment Trusts": "REITs",
+  "Investment Bankers/Brokers/Service": "Brokers",
+  "Accident &Health Insurance": "Accident & health insurance",
+  "Services-Misc. Amusement & Recreation": "Amusement & recreation",
+  "Retail-Auto Dealers and Gas Stations": "Auto dealers & gas",
+  "Retail-Drug Stores and Proprietary Stores": "Drug stores",
+  "Professional and commerical equipment": "Professional equipment",
+  "Misc Health and Biotechnology Services": "Health & biotech services",
+  "Miscellaneous manufacturing industries": "Misc manufacturing",
+  "Medicinal Chemicals and Botanical Products": "Medicinal chemicals",
+  "Industrial Machinery/Components": "Industrial machinery",
+  "Department/Specialty Retail Stores": "Specialty retail",
+  "Property-Casualty Insurers": "P&C insurers",
+  "Medical/Dental Instruments": "Medical instruments",
+  "Medical/Nursing Services": "Nursing services",
+  "Hospital/Nursing Management": "Hospitals",
+  "Beverages (Production/Distribution)": "Beverages",
+  "Air Freight/Delivery Services": "Air freight",
+  "Trucking Freight/Courier Services": "Trucking",
+  "Integrated Freight & Logistics": "Freight & logistics",
+  "Catalog/Specialty Distribution": "Catalog distribution",
+  "Clothing/Shoe/Accessory Stores": "Clothing stores",
+  "Consumer Electronics/Appliances": "Consumer electronics",
+  "Consumer Electronics/Video Chains": "Electronics stores",
+  "Office Equipment/Supplies/Services": "Office equipment",
+  "Recreational Games/Products/Toys": "Toys & games",
+  "Military/Government/Technical": "Defense & government",
+  "Oil and Gas Field Machinery": "Oilfield machinery",
+  "Oilfield Services/Equipment": "Oilfield services",
+  "Oil/Gas Transmission": "Oil & gas transmission",
+  "Integrated oil Companies": "Integrated oil",
+  "Natural Gas Distribution": "Gas distribution",
+  "Computer Communications Equipment": "Network equipment",
+  "Computer peripheral equipment": "Computer peripherals",
+  "Telecommunications Equipment": "Telecom equipment",
+  "Construction/Ag Equipment/Trucks": "Construction equipment",
+  "Auto & Home Supply Stores": "Auto & home supply",
+  "Package Goods/Cosmetics": "Cosmetics",
+  "Meat/Poultry/Fish": "Meat & poultry",
+  "Farming/Seeds/Milling": "Farming",
+  "Diversified Commercial Services": "Commercial services",
+  "Other Specialty Stores": "Specialty stores",
+  "Other Pharmaceuticals": "Other pharma",
+  "Misc Corporate Leasing Services": "Corporate leasing",
+  "Rental/Leasing Companies": "Rental & leasing",
+  "Finance/Investors Services": "Investor services",
+  "Savings Institutions": "Savings banks",
+  "Auto Parts:O.E.M.": "Auto parts: OEM",
+};
+
+function tidyIndustry(name) {
+  return String(name)
+    .replaceAll("&Health", "& Health")
+    .replaceAll(":O.E.M.", ": OEM")
+    .replaceAll("RETAIL:", "Retail:")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function compactIndustry(name) {
+  const raw = (name || "").trim();
+  if (!raw || raw === "__unclassified") return "Industry unavailable";
+  if (INDUSTRY_SHORT[raw]) return INDUSTRY_SHORT[raw];
+  const tidied = tidyIndustry(raw);
+  if (INDUSTRY_SHORT[tidied]) return INDUSTRY_SHORT[tidied];
+  const colon = tidied.indexOf(":");
+  if (colon > 0) {
+    const family = tidied.slice(0, colon).trim();
+    let rest = tidied.slice(colon + 1).trim();
+    rest = INDUSTRY_SHORT[rest] || rest;
+    const shortFamily = INDUSTRY_FAMILY[family] || family;
+    if (rest.toLowerCase().startsWith(`${shortFamily.toLowerCase()} `)) {
+      rest = rest.slice(shortFamily.length + 1);
+    }
+    return `${shortFamily}: ${rest}`;
+  }
+  return tidied;
+}
+
 function scopeRows() {
   const ranked = rankedMap(state.screen);
   const needle = state.query.trim().toLowerCase();
   return Object.keys(state.desk.companies).filter((symbol) => {
     const company = state.desk.companies[symbol];
-    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""}`.toLowerCase();
+    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)}`.toLowerCase();
     return (!state.thisScreen || ranked.has(symbol)) && (!needle || hay.includes(needle));
   });
 }
@@ -487,8 +596,10 @@ function companyCell(symbol) {
 }
 
 function industryCell(symbol) {
-  const industry = state.desk.companies[symbol]?.industry?.trim() || "Industry unavailable";
-  return `<td class="industry-column"><span class="industry" title="${escapeHtml(industry)}">${escapeHtml(industry)}</span></td>`;
+  const industry = state.desk.companies[symbol]?.industry?.trim() || "";
+  const label = compactIndustry(industry);
+  const title = industry || "Industry unavailable";
+  return `<td class="industry-column"><span class="industry" title="${escapeHtml(title)}">${escapeHtml(label)}</span></td>`;
 }
 
 function escapeHtml(value) {
@@ -621,9 +732,10 @@ function renderIndustries() {
   const industries = [...new Set(Object.values(state.desk.companies).map(industryKey))]
     .sort((a, b) => a === "__unclassified" ? 1 : b === "__unclassified" ? -1 : a.localeCompare(b));
   $("industry").innerHTML = '<option value="">All industries</option>' + industries.map((industry) => {
-    const label = industry === "__unclassified" ? "Industry unavailable" : industry;
+    const label = compactIndustry(industry);
     const count = counts.get(industry) || 0;
-    return `<option value="${escapeHtml(industry)}"${count ? "" : " disabled"}>${escapeHtml(label)} (${count})</option>`;
+    const title = industry === "__unclassified" ? label : industry;
+    return `<option value="${escapeHtml(industry)}" title="${escapeHtml(title)}"${count ? "" : " disabled"}>${escapeHtml(label)} (${count})</option>`;
   }).join("");
   $("industry").value = state.industry;
   $("industry").classList.toggle("active", Boolean(state.industry));
