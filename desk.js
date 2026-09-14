@@ -45,6 +45,15 @@ const COLUMNS = {
     ["net_margin", "Net margin", "percent"],
   ],
 };
+// Two named steers, deliberately not a scoring engine. Both are minority
+// signals on the week they were set: liabilities above 75% of assets flags 26
+// of 242 Growth names, cash conversion under 0.7 flags 29. They point at a
+// number worth asking a question about. Neither is a verdict, neither feeds a
+// rank, and neither is an industry-adjusted judgement - the site audit is
+// explicit that a single leverage cutoff does not travel across industries,
+// which is why the note says so rather than pretending otherwise.
+const LEVERAGE_STEER = 0.75;
+const CASH_CONVERSION_STEER = 0.7;
 const state = {
   desk: null,
   screen: "strength",
@@ -104,6 +113,62 @@ function rankedMap(key) {
 }
 function factor(symbol, key) {
   return state.desk.companies[symbol]?.factors?.[key];
+}
+
+// Week-over-week movement. The snapshot carries a comparison against the
+// previous WEEK's freeze, not the previous run - a week that is re-run must not
+// be compared with itself. It is null when no earlier week is published, and
+// `comparable` is false when the method changed between the two weeks: names
+// entering and leaving still mean something then, rank deltas do not.
+function trajectoryFor(screen) {
+  return state.desk.trajectory?.screens?.[screen] || null;
+}
+function movementLabel(screen, symbol) {
+  const track = trajectoryFor(screen);
+  if (!track) return "";
+  const gone = track.exited.find((item) => item.symbol === symbol);
+  if (gone) return `dropped this week, was rank ${gone.previous_rank}`;
+  const row = track.rows[symbol];
+  if (!row) return "";
+  if (row.change === "entered") return "new on this list this week";
+  if (!track.comparable || row.rank_change == null) return "";
+  if (row.rank_change === 0) return "rank unchanged";
+  return `${row.rank_change > 0 ? "up" : "down"} ${Math.abs(row.rank_change)} from rank ${row.previous_rank}`;
+}
+function movementChip(symbol) {
+  const track = trajectoryFor(state.screen);
+  const row = track?.rows?.[symbol];
+  if (!row) return "";
+  const since = day(state.desk.trajectory.previous_as_of);
+  if (row.change === "entered") {
+    return `<span class="move new" title="Not on this list on ${since}">New</span>`;
+  }
+  // Unchanged and not-comparable both draw nothing; the note below the table
+  // says which of the two an absent marker means.
+  if (!track.comparable || !row.rank_change) return "";
+  const up = row.rank_change > 0;
+  return `<span class="move ${up ? "up" : "down"}" title="Was rank ${row.previous_rank} on ${since}">${up ? "▲" : "▼"}${Math.abs(row.rank_change)}</span>`;
+}
+function renderTrajectory() {
+  const element = $("trajectory-note");
+  const track = trajectoryFor(state.screen);
+  if (!track) {
+    element.textContent = state.desk.trajectory
+      ? "This screen has no comparison in the previous published week."
+      : "No earlier week is published yet, so nothing is compared.";
+    return;
+  }
+  const since = day(state.desk.trajectory.previous_as_of);
+  const rows = Object.values(track.rows);
+  const entered = rows.filter((row) => row.change === "entered").length;
+  const moved = rows.filter((row) => row.rank_change).length;
+  const dropped = track.exited.map((row) => `${row.symbol} (was ${row.previous_rank})`).join(", ");
+  element.textContent =
+    `Since ${since}: ${entered} new, ${track.exited.length} dropped, ` +
+    (track.comparable
+      ? `${moved} changed rank. No marker means the rank did not move.`
+      : "and the method changed between the two weeks, so their ranks are not compared.") +
+    (dropped ? ` Dropped: ${dropped}.` : "");
 }
 
 function industryKey(company) {
@@ -179,8 +244,31 @@ function passesEvidence(symbol) {
   return status === state.evidenceStatus;
 }
 
+// Why a metric is absent, when the snapshot records it. A property-casualty
+// insurer files no gross-profit line, so it has no gross margin to be missing;
+// requiring one deleted 137 of 242 Growth names — every insurer, most energy —
+// from a comparison their other ratios could have joined. A snapshot published
+// before coverage existed carries none, and is read exactly as it was before.
+function coverageFor(symbol, key) {
+  return state.desk.companies[symbol]?.coverage?.[key] || null;
+}
+function notReported(symbol, key) {
+  return coverageFor(symbol, key) === "not_reported";
+}
+function metricCell(symbol, key, kind) {
+  if (!Number.isFinite(factor(symbol, key)) && notReported(symbol, key)) {
+    return `<span class="na" title="This company does not report the line this ratio is built from">n/a</span>`;
+  }
+  return fmt(factor(symbol, key), kind);
+}
+
 function hasRequiredMetrics(symbol) {
-  return currentMetrics().every(([key]) => Number.isFinite(factor(symbol, key)));
+  // A line the company never files is not a gap in the evidence. Anything
+  // else absent still is: a trailing year we failed to build, or a ratio a
+  // rule declined to publish, both of which do block a comparison.
+  return currentMetrics().every(
+    ([key]) => Number.isFinite(factor(symbol, key)) || notReported(symbol, key),
+  );
 }
 
 function evidenceScope() {
@@ -192,10 +280,16 @@ function renderEvidenceControls() {
   const accepted = base.filter(passesEvidence);
   const available = accepted.filter(hasRequiredMetrics).length;
   const cash = accepted.filter((symbol) => Number.isFinite(factor(symbol, "cash_conversion"))).length;
+  const notApplicable = accepted.filter((symbol) =>
+    currentMetrics().some(([key]) => notReported(symbol, key)),
+  ).length;
+  const naNote = notApplicable
+    ? ` ${notApplicable} of them do not report at least one of these lines at all; that is shown as n/a and is not counted as missing.`
+    : "";
   const defaultNote = state.evidenceStatus === "default"
     ? priceOnlyView() ? "Price view includes all statement statuses." : "Fundamental view excludes broken statements by default."
     : "Evidence status is explicitly filtered.";
-  $("coverage-note").textContent = `${defaultNote} Evidence status removes ${base.length - accepted.length} of ${base.length} names. Required metrics: ${currentMetrics().map(([, label]) => label).join(", ")}. Available for ${available} of ${accepted.length} remaining names; ${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. Cash conversion available for ${cash} of ${accepted.length}. Availability means a finite value, not verified comparability.`;
+  $("coverage-note").textContent = `${defaultNote} Evidence status removes ${base.length - accepted.length} of ${base.length} names. Required metrics: ${currentMetrics().map(([, label]) => label).join(", ")}. Available for ${available} of ${accepted.length} remaining names; ${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. Cash conversion available for ${cash} of ${accepted.length}.${naNote} Availability means a finite value, not verified comparability.`;
   $("evidence-status").value = state.evidenceStatus;
   $("required-metrics").checked = state.requiredMetrics;
 }
@@ -211,6 +305,7 @@ function showEvidence(symbol) {
     ["Quality filing date", company.quality_filed],
   ];
   const reasons = company.trust?.reasons || [];
+  const notes = standoutNotes(symbol);
   const profitable = state.desk.companies[symbol]?.profitable;
   const earns =
     profitable === false
@@ -222,12 +317,41 @@ function showEvidence(symbol) {
     ${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : "<p>No specific issue recorded.</p>"}
     <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
     <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
-    <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : "Unavailable"}</dd>`).join("")}</dl>
+    <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : notReported(symbol, key) ? "Not reported by this filer" : "Unavailable"}</dd>`).join("")}</dl>
+    ${notes.length ? `<h3>What stands out</h3><ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul><p>These are prompts to look further, not conclusions, and they change nothing about the rank or score.</p>` : ""}
     <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
       const row = rankedMap(key).get(symbol);
-      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}` : "Outside the published list; a missing input, failed gate, or shortlist cutoff may apply. Individual exclusion reasons are not exported."}</li>`;
+      const moved = movementLabel(key, symbol);
+      const since = moved ? ` <em>${escapeHtml(moved)}</em>` : "";
+      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}${since}` : `Outside the published list; a missing input, failed gate, or shortlist cutoff may apply. Individual exclusion reasons are not exported.${since}`}</li>`;
     }).join("")}</ul>`;
   $("company-evidence").showModal();
+}
+
+// One line about a number already on the page, when that number is unusual
+// enough to be worth a second look. Nothing here is new data.
+function standoutNotes(symbol) {
+  const company = state.desk.companies[symbol];
+  const factors = company?.factors ?? {};
+  const notes = [];
+  if (Number.isFinite(factors.leverage) && factors.leverage > LEVERAGE_STEER) {
+    notes.push(
+      `Liabilities are ${(factors.leverage * 100).toFixed(0)}% of assets. How much balance sheet is normal varies widely by industry — banks, insurers and property trusts sit this high by construction — so compare it against similar companies rather than reading it as risk on its own.`,
+    );
+  }
+  // Cash conversion is operating cash flow over net income, so it does not
+  // exist at all when the company did not earn anything. A loss is a fact
+  // about the business, never a reason to doubt the accounts.
+  if (
+    company?.profitable !== false &&
+    Number.isFinite(factors.cash_conversion) &&
+    factors.cash_conversion < CASH_CONVERSION_STEER
+  ) {
+    notes.push(
+      `Operating cash flow is ${factors.cash_conversion.toFixed(2)}× net income, so less cash arrived than the profit line implies. One quarter of working capital or a one-off charge can do this; what matters is whether it persists.`,
+    );
+  }
+  return notes;
 }
 
 function renderScreenGates() {
@@ -324,10 +448,10 @@ function renderBody(pageRows) {
   $("body").innerHTML = pageRows
     .map((symbol) => {
       const idea = ranked.get(symbol);
-      let cells = `<td class="rank">${idea?.rank ?? "—"}</td>${companyCell(symbol)}${industryCell(symbol)}`;
+      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
       if (state.view === "overview") {
         for (const [key, , kind] of metrics) {
-          cells += `<td class="metric">${fmt(factor(symbol, key), kind)}</td>`;
+          cells += `<td class="metric">${metricCell(symbol, key, kind)}</td>`;
         }
         cells += `<td class="score">${idea ? idea.score.toFixed(1) : "—"}</td>`;
         cells += `<td><span class="chips">${alsoOn(symbol)
@@ -337,7 +461,7 @@ function renderBody(pageRows) {
         cells += `<td>${money(state.desk.companies[symbol]?.market_cap)}</td>`;
       } else {
         for (const [key, , kind] of metrics) {
-          cells += `<td class="metric">${fmt(factor(symbol, key), kind)}</td>`;
+          cells += `<td class="metric">${metricCell(symbol, key, kind)}</td>`;
         }
         cells += `<td class="score">${idea ? idea.score.toFixed(1) : "—"}</td>`;
       }
@@ -357,6 +481,7 @@ function render() {
   renderEvidenceControls();
   $("caption").textContent = state.desk.captions[state.screen];
   renderScreenGates();
+  renderTrajectory();
   $("ranked-n").textContent = setup.results.length.toLocaleString();
   $("of-n").textContent = `of ${state.desk.universe_count.toLocaleString()} companies`;
   $("this-screen").classList.toggle("on", state.thisScreen);

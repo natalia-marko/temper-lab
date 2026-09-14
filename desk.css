@@ -118,6 +118,11 @@ th.sorted { color: var(--green); }
 }
 .chip.out { background: #f3ece8; color: #7a4538; }
 .chip.also { background: #eef2ea; color: #4a5f50; font-weight: 500; }
+.na { color: #8a948c; font-weight: 500; font-style: italic; }
+.move { margin-left: 6px; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.move.up { background: #e6f0e7; color: #2f6b41; }
+.move.down { background: #f4ece8; color: #8a5a3c; }
+.move.new { background: #e8eef4; color: #3a5a7a; text-transform: uppercase; font-size: 9px; letter-spacing: 0.04em; }
 .trust { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .trust.review { background: #f4ead3; color: #7a5a1e; }
 .trust.broken { background: #f4dcd6; color: #8a2f24; }
