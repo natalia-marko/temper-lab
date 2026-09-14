@@ -1,10 +1,10 @@
 const SCREENS = [
-  ["strength", "Strength"],
   ["growth", "Growth"],
+  ["strength", "Hot tape"],
   ["undervalued", "Cheap on operating profit"],
 ];
 const VIEWS = [
-  ["overview", "Overview"],
+  ["overview", "Summary"],
   ["quality", "Quality & cash flow"],
   ["price", "Price"],
   ["revenue", "Revenue"],
@@ -56,7 +56,7 @@ const LEVERAGE_STEER = 0.75;
 const CASH_CONVERSION_STEER = 0.7;
 const state = {
   desk: null,
-  screen: "strength",
+  screen: "growth",
   view: "overview",
   query: "",
   industry: "",
@@ -106,6 +106,19 @@ function fmt(value, kind) {
   if (kind === "points") return points(value);
   if (kind === "multiple") return value == null ? "—" : `${value.toFixed(2)}×`;
   return value == null ? "—" : String(value);
+}
+
+function scoreCell(idea) {
+  if (!idea) return `<td class="score">—</td>`;
+  return (
+    `<td class="score" title="${idea.score.toFixed(1)} out of 100 on this list">` +
+    `<span class="score-value">${idea.score.toFixed(1)}</span><small>/100</small></td>`
+  );
+}
+
+function metricTd(symbol, key, kind) {
+  const lead = state.screen === "undervalued" && key === "operating_earnings_yield";
+  return `<td class="metric${lead ? " lead" : ""}">${metricCell(symbol, key, kind)}</td>`;
 }
 
 function rankedMap(key) {
@@ -275,6 +288,37 @@ function evidenceScope() {
   return scopeRows().filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry);
 }
 
+function usualAccountsLabel() {
+  return priceOnlyView()
+    ? "Usual: show everyone (price list)"
+    : "Usual: hide statements that do not add up";
+}
+
+function evidenceHint() {
+  const prefix = "This is the accounts, not profit. A loss-making company can still add up.";
+  if (state.evidenceStatus === "default") {
+    return priceOnlyView()
+      ? `${prefix} On a price list, everyone stays, including broken statements.`
+      : `${prefix} On these columns, statements that do not add up are hidden.`;
+  }
+  if (state.evidenceStatus === "all") {
+    return `${prefix} Everyone is shown.`;
+  }
+  if (state.evidenceStatus === "complete") {
+    return `${prefix} Only statements with no flag. That is not the same as every ratio being present.`;
+  }
+  if (state.evidenceStatus === "review") {
+    return `${prefix} Only statements that need a look (thin equity, mixed dates, or stale revenue).`;
+  }
+  if (state.evidenceStatus === "broken") {
+    return `${prefix} Only statements that do not add up.`;
+  }
+  if (state.evidenceStatus === "unknown") {
+    return `${prefix} Only names with no statement grade in this snapshot.`;
+  }
+  return prefix;
+}
+
 function renderEvidenceControls() {
   const base = evidenceScope();
   const accepted = base.filter(passesEvidence);
@@ -286,11 +330,28 @@ function renderEvidenceControls() {
   const naNote = notApplicable
     ? ` ${notApplicable} of them do not report at least one of these lines at all; that is shown as n/a and is not counted as missing.`
     : "";
-  const defaultNote = state.evidenceStatus === "default"
-    ? priceOnlyView() ? "Price view includes all statement statuses." : "Fundamental view excludes broken statements by default."
-    : "Evidence status is explicitly filtered.";
-  $("coverage-note").textContent = `${defaultNote} Evidence status removes ${base.length - accepted.length} of ${base.length} names. Required metrics: ${currentMetrics().map(([, label]) => label).join(", ")}. Available for ${available} of ${accepted.length} remaining names; ${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. Cash conversion available for ${cash} of ${accepted.length}.${naNote} Availability means a finite value, not verified comparability.`;
-  $("evidence-status").value = state.evidenceStatus;
+  const hidden = base.length - accepted.length;
+  const select = $("evidence-status");
+  const options = [
+    ["default", usualAccountsLabel()],
+    ["all", "Everyone, including broken statements"],
+    ["complete", "Only statements that add up"],
+    ["review", "Only statements that need a look"],
+    ["broken", "Only statements that do not add up"],
+    ["unknown", "Only ungraded statements"],
+  ];
+  select.innerHTML = options
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join("");
+  select.value = state.evidenceStatus;
+  $("evidence-hint").textContent = evidenceHint();
+  $("coverage-note").textContent =
+    `This filter hides ${hidden} of ${base.length} names. ` +
+    `Numbers on screen: ${currentMetrics().map(([, label]) => label).join(", ")}. ` +
+    `Available for ${available} of ${accepted.length} remaining names; ` +
+    `${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. ` +
+    `Cash conversion available for ${cash} of ${accepted.length}.${naNote} ` +
+    `Availability means a finite value, not verified comparability.`;
   $("required-metrics").checked = state.requiredMetrics;
 }
 
@@ -441,7 +502,7 @@ function renderBody(pageRows) {
   const metrics =
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
   if (!pageRows.length) {
-    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 + (state.screen === "growth" ? 1 : 0) : 1);
+    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
     $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, industry and evidence filters.</td></tr>`;
     return;
   }
@@ -451,9 +512,9 @@ function renderBody(pageRows) {
       let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
       if (state.view === "overview") {
         for (const [key, , kind] of metrics) {
-          cells += `<td class="metric">${metricCell(symbol, key, kind)}</td>`;
+          cells += metricTd(symbol, key, kind);
         }
-        cells += `<td class="score">${idea ? idea.score.toFixed(1) : "—"}</td>`;
+        cells += scoreCell(idea);
         cells += `<td><span class="chips">${alsoOn(symbol)
           .map((label) => `<span class="chip also">${label}</span>`)
           .join("")}</span></td>`;
@@ -461,9 +522,9 @@ function renderBody(pageRows) {
         cells += `<td>${money(state.desk.companies[symbol]?.market_cap)}</td>`;
       } else {
         for (const [key, , kind] of metrics) {
-          cells += `<td class="metric">${metricCell(symbol, key, kind)}</td>`;
+          cells += metricTd(symbol, key, kind);
         }
-        cells += `<td class="score">${idea ? idea.score.toFixed(1) : "—"}</td>`;
+        cells += scoreCell(idea);
       }
       return `<tr>${cells}</tr>`;
     })
@@ -476,7 +537,7 @@ function screenLabel(key) {
 
 function rankedByPhrase(key) {
   return {
-    strength: "price strength (63- and 252-session return)",
+    strength: "recent 63- and 252-session return",
     growth: "6-month return versus QQQ (60%) and ROE (40%), after the profit and growth gates",
     undervalued: "operating income divided by equity market cap",
   }[key];

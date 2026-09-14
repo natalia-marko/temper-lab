@@ -122,7 +122,25 @@ th.sorted { color: var(--green); }
   text-transform: lowercase; white-space: normal; overflow-wrap: anywhere;
 }
 .metric { font-variant-numeric: tabular-nums; font-weight: 650; color: #215637; }
-.score { font-variant-numeric: tabular-nums; color: #6a7b70; font-size: 12px; }
+.metric.lead {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.score {
+  font-variant-numeric: tabular-nums;
+  color: #215637;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.score small {
+  margin-left: 3px;
+  color: #7a8a80;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip {
   display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px;
@@ -160,6 +178,7 @@ th.sorted { color: var(--green); }
 summary { cursor: pointer; color: var(--green); font-weight: 600; }
 .evidence-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 12px 22px 0; }
 .evidence-filters label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.evidence-filters select { min-width: 280px; max-width: 100%; }
 .evidence-filters select, .evidence-filters button, .close-evidence {
   background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
 }
