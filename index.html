@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Opportunities</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=8e5a910575cc" />
+    <link rel="stylesheet" href="./desk.css?v=84ca5a8e6892" />
   </head>
   <body>
     <div class="desk">
@@ -46,8 +46,8 @@
         <section class="surface">
           <div class="toolbar">
             <label>
-              Screening model
-              <select id="screen"></select>
+              This list
+              <select id="screen" aria-label="This list: who is ranked, and in what order"></select>
             </label>
             <p id="caption" class="caption"></p>
             <p id="screen-gates" class="screen-gates"></p>
@@ -58,15 +58,15 @@
             </div>
           </div>
           <details class="method-info">
-            <summary>How this screen works</summary>
+            <summary>How this list is ranked</summary>
             <p id="method-copy"></p>
             <p id="method-version"></p>
-            <p>Scores are rankings within the screen's scoring universe, not probabilities. Filtering keeps original ranks and scores. Operating yield is TTM operating income divided by equity market capitalization; it is not an enterprise-value yield and does not adjust for debt or cash.</p>
+            <p>Scores are rankings within this list, not probabilities. Inspect, search and filters keep List rank and score. Operating yield is TTM operating income divided by equity market capitalization; it is not an enterprise-value yield and does not adjust for debt or cash.</p>
           </details>
-          <div class="tabs" id="tabs" aria-label="Columns to inspect">
-            <span>Columns</span>
+          <div class="tabs" id="tabs" aria-label="Numbers to inspect for the same names">
+            <span>Inspect</span>
           </div>
-          <p id="column-note" class="column-note" hidden></p>
+          <p id="column-note" class="column-note" role="status"></p>
           <p id="trajectory-note" class="column-note" role="status"></p>
           <div class="evidence-filters">
             <label>Evidence status
@@ -121,6 +121,6 @@
       <h2 id="evidence-title"></h2>
       <div id="evidence-content"></div>
     </dialog>
-    <script src="./desk.js?v=6622b77f6148"></script>
+    <script src="./desk.js?v=138a3c81a023"></script>
   </body>
 </html>

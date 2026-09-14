@@ -392,7 +392,7 @@ function sortHeader(key, label) {
 function renderHead() {
   const metrics =
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
-  let html = `<tr><th class="rank">Rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="industry">Industry</label><select id="industry" aria-label="Filter by industry" title="Filter this column; original ranks and scores stay fixed."></select></th>`;
+  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="industry">Industry</label><select id="industry" aria-label="Filter by industry" title="Filter this column; original ranks and scores stay fixed."></select></th>`;
   if (state.view === "overview") {
     for (const [key, label] of metrics) html += sortHeader(key, label);
     html += `${sortHeader("score", "Score")}<th>Also on</th>${sortHeader("price", "Price")}${sortHeader("market_cap", "Market cap")}`;
@@ -474,6 +474,39 @@ function screenLabel(key) {
   return SCREENS.find(([id]) => id === key)?.[1] ?? key;
 }
 
+function rankedByPhrase(key) {
+  return {
+    strength: "price strength (63- and 252-session return)",
+    growth: "6-month return versus QQQ (60%) and ROE (40%), after the profit and growth gates",
+    undervalued: "operating income divided by equity market cap",
+  }[key];
+}
+
+function inspectNote() {
+  const list = screenLabel(state.screen);
+  const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
+  const rankedBy = rankedByPhrase(state.screen);
+  if (state.view === "overview") {
+    return (
+      `This list is ${list}: List rank is ${rankedBy}. ` +
+      `Inspect only changes which columns you see; it does not pick a different set of companies or a new rank.`
+    );
+  }
+  if (
+    state.screen === "strength" &&
+    (state.view === "quality" || state.view === "revenue" || state.view === "valuation")
+  ) {
+    return (
+      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
+      `List rank is still the tape, not these ratios. Loss-making leaders are expected on a price list.`
+    );
+  }
+  return (
+    `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
+    `List rank and score are still ${rankedBy}.`
+  );
+}
+
 function render() {
   const setup = state.desk.setups[state.screen];
   $("method-copy").textContent = setup.method || "Method not recorded in this snapshot.";
@@ -490,20 +523,25 @@ function render() {
     button.classList.toggle("on", button.dataset.view === state.view);
   }
   const note = $("column-note");
-  if (state.view === "overview") {
-    note.hidden = true;
-  } else {
-    note.hidden = false;
-    const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
-    note.textContent = `Inspecting ${viewLabel.toLowerCase()} numbers. Rank and score are still ${screenLabel(state.screen)}.`;
-  }
+  note.hidden = false;
+  note.textContent = inspectNote();
+  note.classList.toggle(
+    "tape-warning",
+    state.screen === "strength" && state.view !== "overview" && state.view !== "price",
+  );
   const all = rows();
   const pages = Math.max(1, Math.ceil(all.length / state.pageSize));
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
   const sortLabel = { score: "Score", company: "Company", price: "Price", market_cap: "Market cap" }[state.sortKey] || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
-  $("order").textContent = `Sorted by ${sortLabel} · ${state.sortKey === "company" ? (state.sortDir === "asc" ? "A to Z" : "Z to A") : (state.sortDir === "desc" ? "High to low" : "Low to high")} · Original ranks and scores stay fixed under all filters`;
+  const sortDirection = state.sortKey === "company"
+    ? (state.sortDir === "asc" ? "A to Z" : "Z to A")
+    : (state.sortDir === "desc" ? "High to low" : "Low to high");
+  const rankFixed = state.sortKey === "score"
+    ? `List rank is ${screenLabel(state.screen)}`
+    : `Rows are reordered; List rank is still ${screenLabel(state.screen)}`;
+  $("order").textContent = `Sorted by ${sortLabel} · ${sortDirection} · ${rankFixed}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
