@@ -59,7 +59,7 @@ const state = {
   screen: "growth",
   view: "overview",
   query: "",
-  industry: "",
+  sector: "",
   evidenceStatus: "default",
   requiredMetrics: false,
   thisScreen: true,
@@ -297,12 +297,187 @@ function compactIndustry(name) {
   return tidied;
 }
 
+// Nasdaq industry string → one of the 11 GICS sector buckets used by S&P, MSCI,
+// Fidelity and Seeking Alpha. This is Temper Lab's map of vendor labels, not
+// S&P's company-level GICS codes. The vendor's own sector field was not used:
+// 27 industries sit in more than one of their sectors.
+const SECTORS = [
+  ["basic_materials", "Basic materials"],
+  ["communication", "Communication services"],
+  ["consumer_cyclical", "Consumer cyclical"],
+  ["consumer_defensive", "Consumer defensive"],
+  ["energy", "Energy"],
+  ["financials", "Financials"],
+  ["healthcare", "Healthcare"],
+  ["industrials", "Industrials"],
+  ["real_estate", "Real estate"],
+  ["technology", "Technology"],
+  ["utilities", "Utilities"],
+  ["unclassified", "Unclassified"],
+];
+const INDUSTRY_SECTOR = {
+  "Computer Software: Prepackaged Software": "technology",
+  "Computer Software: Programming Data Processing": "technology",
+  "Semiconductors": "technology",
+  "EDP Services": "technology",
+  "Electronic Components": "technology",
+  "Computer Communications Equipment": "technology",
+  "Computer Manufacturing": "technology",
+  "Computer peripheral equipment": "technology",
+  "Telecommunications Equipment": "technology",
+  "Radio And Television Broadcasting And Communications Equipment": "technology",
+  "Biotechnology: Pharmaceutical Preparations": "healthcare",
+  "Biotechnology: Biological Products (No Diagnostic Substances)": "healthcare",
+  "Biotechnology: Commercial Physical & Biological Resarch": "healthcare",
+  "Biotechnology: Electromedical & Electrotherapeutic Apparatus": "healthcare",
+  "Biotechnology: In Vitro & In Vivo Diagnostic Substances": "healthcare",
+  "Biotechnology: Laboratory Analytical Instruments": "healthcare",
+  "Medical/Dental Instruments": "healthcare",
+  "Medical Specialities": "healthcare",
+  "Medical/Nursing Services": "healthcare",
+  "Hospital/Nursing Management": "healthcare",
+  "Misc Health and Biotechnology Services": "healthcare",
+  "Medical Electronics": "healthcare",
+  "Ophthalmic Goods": "healthcare",
+  "Medicinal Chemicals and Botanical Products": "healthcare",
+  "Other Pharmaceuticals": "healthcare",
+  "Major Banks": "financials",
+  "Property-Casualty Insurers": "financials",
+  "Investment Bankers/Brokers/Service": "financials",
+  "Investment Managers": "financials",
+  "Finance: Consumer Services": "financials",
+  "Life Insurance": "financials",
+  "Specialty Insurers": "financials",
+  "Accident &Health Insurance": "financials",
+  "Savings Institutions": "financials",
+  "Finance Companies": "financials",
+  "Finance/Investors Services": "financials",
+  "Misc Corporate Leasing Services": "financials",
+  "Real Estate Investment Trusts": "real_estate",
+  "Real Estate": "real_estate",
+  "Building operators": "real_estate",
+  "Oil & Gas Production": "energy",
+  "Integrated oil Companies": "energy",
+  "Oil/Gas Transmission": "energy",
+  "Oilfield Services/Equipment": "energy",
+  "Oil and Gas Field Machinery": "energy",
+  "Oil Refining/Marketing": "energy",
+  "Coal Mining": "energy",
+  "Electric Utilities: Central": "utilities",
+  "Natural Gas Distribution": "utilities",
+  "Power Generation": "utilities",
+  "Water Supply": "utilities",
+  "Major Chemicals": "basic_materials",
+  "Agricultural Chemicals": "basic_materials",
+  "Specialty Chemicals": "basic_materials",
+  "Containers/Packaging": "basic_materials",
+  "Steel/Iron Ore": "basic_materials",
+  "Mining & Quarrying of Nonmetallic Minerals (No Fuels)": "basic_materials",
+  "Metal Mining": "basic_materials",
+  "Precious Metals": "basic_materials",
+  "Aluminum": "basic_materials",
+  "Forest Products": "basic_materials",
+  "Paper": "basic_materials",
+  "Plastic Products": "basic_materials",
+  "Paints/Coatings": "basic_materials",
+  "Building Materials": "basic_materials",
+  "Industrial Machinery/Components": "industrials",
+  "Business Services": "industrials",
+  "Military/Government/Technical": "industrials",
+  "Metal Fabrications": "industrials",
+  "Electrical Products": "industrials",
+  "Industrial Specialties": "industrials",
+  "Diversified Commercial Services": "industrials",
+  "Aerospace": "industrials",
+  "Engineering & Construction": "industrials",
+  "Professional Services": "industrials",
+  "Transportation Services": "industrials",
+  "Trucking Freight/Courier Services": "industrials",
+  "Air Freight/Delivery Services": "industrials",
+  "Marine Transportation": "industrials",
+  "Railroads": "industrials",
+  "Integrated Freight & Logistics": "industrials",
+  "Construction/Ag Equipment/Trucks": "industrials",
+  "Fluid Controls": "industrials",
+  "Environmental Services": "industrials",
+  "Water Sewer Pipeline Comm & Power Line Construction": "industrials",
+  "Office Equipment/Supplies/Services": "industrials",
+  "Rental/Leasing Companies": "industrials",
+  "Pollution Control Equipment": "industrials",
+  "Precision Instruments": "industrials",
+  "Ordnance And Accessories": "industrials",
+  "Multi-Sector Companies": "industrials",
+  "General Bldg Contractors - Nonresidential Bldgs": "industrials",
+  "Building Products": "industrials",
+  "Miscellaneous manufacturing industries": "industrials",
+  "Professional and commerical equipment": "industrials",
+  "Tools/Hardware": "industrials",
+  "Wholesale Distributors": "industrials",
+  "Electronics Distribution": "industrials",
+  "Hotels/Resorts": "consumer_cyclical",
+  "Restaurants": "consumer_cyclical",
+  "Homebuilding": "consumer_cyclical",
+  "Auto Parts:O.E.M.": "consumer_cyclical",
+  "Other Consumer Services": "consumer_cyclical",
+  "Services-Misc. Amusement & Recreation": "consumer_cyclical",
+  "Other Specialty Stores": "consumer_cyclical",
+  "Department/Specialty Retail Stores": "consumer_cyclical",
+  "Retail-Auto Dealers and Gas Stations": "consumer_cyclical",
+  "Catalog/Specialty Distribution": "consumer_cyclical",
+  "Apparel": "consumer_cyclical",
+  "Auto Manufacturing": "consumer_cyclical",
+  "Clothing/Shoe/Accessory Stores": "consumer_cyclical",
+  "Consumer Electronics/Appliances": "consumer_cyclical",
+  "Home Furnishings": "consumer_cyclical",
+  "RETAIL: Building Materials": "consumer_cyclical",
+  "Recreational Games/Products/Toys": "consumer_cyclical",
+  "Shoe Manufacturing": "consumer_cyclical",
+  "Auto & Home Supply Stores": "consumer_cyclical",
+  "Automotive Aftermarket": "consumer_cyclical",
+  "Retail: Computer Software & Peripheral Equipment": "consumer_cyclical",
+  "Garments and Clothing": "consumer_cyclical",
+  "Consumer Electronics/Video Chains": "consumer_cyclical",
+  "Motor Vehicles": "consumer_cyclical",
+  "Consumer Specialties": "consumer_cyclical",
+  "Durable Goods": "consumer_cyclical",
+  "Textiles": "consumer_cyclical",
+  "Packaged Foods": "consumer_defensive",
+  "Beverages (Production/Distribution)": "consumer_defensive",
+  "Farming/Seeds/Milling": "consumer_defensive",
+  "Food Distributors": "consumer_defensive",
+  "Package Goods/Cosmetics": "consumer_defensive",
+  "Food Chains": "consumer_defensive",
+  "Meat/Poultry/Fish": "consumer_defensive",
+  "Specialty Foods": "consumer_defensive",
+  "Retail-Drug Stores and Proprietary Stores": "consumer_defensive",
+  "Tobacco": "consumer_defensive",
+  "Cable & Other Pay Television Services": "communication",
+  "Broadcasting": "communication",
+  "Newspapers/Magazines": "communication",
+  "Advertising": "communication",
+  "Movies/Entertainment": "communication",
+  "Publishing": "communication",
+  "Books": "communication",
+  Software: "technology",
+  Banks: "financials",
+};
+
+function sectorFor(name) {
+  const raw = (name || "").trim();
+  if (!raw || raw === "__unclassified") return "unclassified";
+  return INDUSTRY_SECTOR[raw] || "unclassified";
+}
+
+function sectorLabel(key) {
+  return SECTORS.find(([id]) => id === key)?.[1] ?? key;
+}
+
 function scopeRows() {
   const ranked = rankedMap(state.screen);
   const needle = state.query.trim().toLowerCase();
   return Object.keys(state.desk.companies).filter((symbol) => {
     const company = state.desk.companies[symbol];
-    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)}`.toLowerCase();
+    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)} ${sectorLabel(sectorFor(company?.industry))}`.toLowerCase();
     return (!state.thisScreen || ranked.has(symbol)) && (!needle || hay.includes(needle));
   });
 }
@@ -310,7 +485,7 @@ function scopeRows() {
 function rows() {
   const ranked = rankedMap(state.screen);
   return scopeRows()
-    .filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry)
+    .filter((symbol) => !state.sector || sectorFor(industryKey(state.desk.companies[symbol])) === state.sector)
     .filter(passesEvidence)
     .filter((symbol) => !state.requiredMetrics || hasRequiredMetrics(symbol))
     .sort((a, b) => {
@@ -394,7 +569,7 @@ function hasRequiredMetrics(symbol) {
 }
 
 function evidenceScope() {
-  return scopeRows().filter((symbol) => !state.industry || industryKey(state.desk.companies[symbol]) === state.industry);
+  return scopeRows().filter((symbol) => !state.sector || sectorFor(industryKey(state.desk.companies[symbol])) === state.sector);
 }
 
 function usualAccountsLabel() {
@@ -562,7 +737,7 @@ function sortHeader(key, label) {
 function renderHead() {
   const metrics =
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
-  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="industry">Industry</label><select id="industry" aria-label="Filter by industry" title="Filter this column; original ranks and scores stay fixed."></select></th>`;
+  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>`;
   if (state.view === "overview") {
     for (const [key, label] of metrics) html += sortHeader(key, label);
     html += `${sortHeader("score", "Score")}<th>Also on</th>${sortHeader("price", "Price")}${sortHeader("market_cap", "Market cap")}`;
@@ -598,7 +773,8 @@ function companyCell(symbol) {
 function industryCell(symbol) {
   const industry = state.desk.companies[symbol]?.industry?.trim() || "";
   const label = compactIndustry(industry);
-  const title = industry || "Industry unavailable";
+  const sector = sectorLabel(sectorFor(industry));
+  const title = industry ? `${sector} · ${industry}` : "Industry unavailable";
   return `<td class="industry-column"><span class="industry" title="${escapeHtml(title)}">${escapeHtml(label)}</span></td>`;
 }
 
@@ -614,7 +790,7 @@ function renderBody(pageRows) {
     state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
   if (!pageRows.length) {
     const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, industry and evidence filters.</td></tr>`;
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, sector and evidence filters.</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
@@ -726,19 +902,16 @@ function render() {
 function renderIndustries() {
   const counts = new Map();
   for (const symbol of scopeRows()) {
-    const industry = industryKey(state.desk.companies[symbol]);
-    counts.set(industry, (counts.get(industry) || 0) + 1);
+    const key = sectorFor(industryKey(state.desk.companies[symbol]));
+    counts.set(key, (counts.get(key) || 0) + 1);
   }
-  const industries = [...new Set(Object.values(state.desk.companies).map(industryKey))]
-    .sort((a, b) => a === "__unclassified" ? 1 : b === "__unclassified" ? -1 : a.localeCompare(b));
-  $("industry").innerHTML = '<option value="">All industries</option>' + industries.map((industry) => {
-    const label = compactIndustry(industry);
-    const count = counts.get(industry) || 0;
-    const title = industry === "__unclassified" ? label : industry;
-    return `<option value="${escapeHtml(industry)}" title="${escapeHtml(title)}"${count ? "" : " disabled"}>${escapeHtml(label)} (${count})</option>`;
+  const keys = SECTORS.map(([key]) => key).filter((key) => key !== "unclassified" || counts.get("unclassified"));
+  $("sector").innerHTML = '<option value="">All sectors</option>' + keys.map((key) => {
+    const count = counts.get(key) || 0;
+    return `<option value="${escapeHtml(key)}"${count ? "" : " disabled"}>${escapeHtml(sectorLabel(key))} (${count})</option>`;
   }).join("");
-  $("industry").value = state.industry;
-  $("industry").classList.toggle("active", Boolean(state.industry));
+  $("sector").value = state.sector;
+  $("sector").classList.toggle("active", Boolean(state.sector));
 }
 
 function bind() {
@@ -758,7 +931,7 @@ function bind() {
   });
   $("reset-filters").addEventListener("click", () => {
     state.query = "";
-    state.industry = "";
+    state.sector = "";
     state.evidenceStatus = "default";
     state.requiredMetrics = false;
     state.page = 0;
@@ -767,11 +940,11 @@ function bind() {
   });
   // The column heading is rebuilt on sorting, paging and screen changes.
   $("head").addEventListener("change", (event) => {
-    if (event.target.id !== "industry") return;
-    state.industry = event.target.value;
+    if (event.target.id !== "sector") return;
+    state.sector = event.target.value;
     state.page = 0;
     render();
-    $("industry").focus();
+    $("sector").focus();
   });
   const select = $("screen");
   select.innerHTML = SCREENS.map(
