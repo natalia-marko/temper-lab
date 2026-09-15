@@ -7,6 +7,7 @@
     <title>Temper Lab — Opportunities</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=42a75193c712" />
+    <link rel="stylesheet" href="./analyst-opportunities.css?v=b34052e68758" />
   </head>
   <body>
     <div class="desk">
@@ -28,7 +29,7 @@
       </aside>
       <main>
         <header class="top">
-          <label class="search">
+          <label class="search" id="company-search">
             <span>Find</span>
             <input id="query" type="search" placeholder="Find a company, ticker or industry" autocomplete="off" />
           </label>
@@ -48,7 +49,11 @@
             <small>Weekly refresh: Sat 08:00 · Copenhagen<br>New results are published manually after refresh.</small>
           </div>
         </section>
-        <section class="surface">
+        <nav class="opportunity-modes" aria-label="Opportunity views">
+          <button type="button" id="company-mode" class="on" aria-pressed="true">Company screens</button>
+          <button type="button" id="analyst-mode" aria-pressed="false">Analyst ratings <span>cross-screen shortlist</span></button>
+        </nav>
+        <section class="surface" id="company-surface">
           <div class="toolbar">
             <label>
               This list
@@ -120,6 +125,21 @@
             </p>
           </div>
         </section>
+        <section class="surface analyst-surface" id="analyst-surface" aria-labelledby="analyst-title" hidden>
+          <div class="analyst-heading"><div><div class="eyebrow">OPINION SCREEN</div><h2 id="analyst-title">Analyst ratings</h2><p>Filter the dated Yahoo analyst summaries for names on at least two published Temper Lab screens. This is not a rank across all liquid stocks.</p></div><div class="analyst-snapshot"><strong id="analyst-coverage">Loading…</strong><small id="analyst-dates"></small></div></div>
+          <p class="analyst-explanation"><strong>Buy share</strong> is the number of Strong Buy plus Buy ratings divided by all five rating categories. If 6 of 10 ratings are Strong Buy or Buy, the Buy share is 60%. It is not a 60% chance the stock will rise or a Temper Lab recommendation.</p>
+          <div class="analyst-controls">
+            <label>Find a company<input id="analyst-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
+            <label>At least this many ratings<select id="analyst-min-total"><option value="1">1 rating</option><option value="3" selected>3 ratings</option><option value="5">5 ratings</option><option value="10">10 ratings</option></select></label>
+            <label>At least one rating of<select id="analyst-category"><option value="any">Any label</option><option value="strong_buy">Strong Buy</option><option value="buy">Buy</option><option value="hold">Hold</option><option value="sell">Sell</option><option value="strong_sell">Strong Sell</option></select></label>
+            <label>Minimum Buy share<select id="analyst-min-share"><option value="0">Any</option><option value="0.5">50%</option><option value="0.7">70%</option><option value="0.9">90%</option></select></label>
+            <label>Order by<select id="analyst-order"><option value="company">Company A–Z</option><option value="share">Buy share, high–low</option><option value="strong_buy">Strong Buy count, high–low</option><option value="coverage">All ratings, high–low</option></select></label>
+            <button type="button" id="analyst-reset">Reset</button>
+          </div>
+          <p id="analyst-count" class="analyst-count" role="status"></p>
+          <div class="analyst-table-wrap"><table><thead><tr><th scope="col">Company</th><th scope="col">On screens</th><th scope="col">Strong Buy</th><th scope="col">Buy</th><th scope="col">Hold</th><th scope="col">Sell</th><th scope="col">Strong Sell</th><th scope="col">All ratings</th><th scope="col">Buy share</th></tr></thead><tbody id="analyst-results"><tr><td colspan="9" class="empty">Loading analyst summaries…</td></tr></tbody></table></div>
+          <p class="analyst-note">Hold is Yahoo’s label—not “Keep.” A missing summary is excluded, not counted as zero votes. The Yahoo 0m category counts are dated when retrieved; individual analyst report publication dates are not supplied. The table orders opinions only, not investment merit. Rating terms can differ among research firms.</p>
+        </section>
       </main>
     </div>
     <dialog id="company-evidence" aria-labelledby="evidence-title">
@@ -128,5 +148,6 @@
       <div id="evidence-content"></div>
     </dialog>
     <script src="./desk.js?v=c69f0ca840d7"></script>
+    <script src="./analyst-opportunities.js?v=390b1409c6e2"></script>
   </body>
 </html>

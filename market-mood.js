@@ -106,41 +106,6 @@ function renderScreenReport(report) {
   }
 }
 
-function renderAnalysts(votes, screenDate) {
-  const target = $("analyst-body");
-  target.replaceChildren();
-  if (!votes?.rows?.length) {
-    $("analyst-status").textContent = "Analyst vote data is unavailable for this snapshot; screen overlap remains independent of analyst coverage.";
-    const tr = appendText(target, "tr", "");
-    appendText(tr, "td", "No dated analyst summaries were retrieved.", "empty").colSpan = 8;
-    return;
-  }
-  const observed = votes.retrieved_at?.slice(0, 10);
-  const dateNote = observed && observed !== screenDate ? ` These opinions were observed on ${day(observed)}, after the ${day(screenDate)} screen freeze.` : "";
-  const supported = votes.rows.filter((row) => row.total >= 3).length;
-  $("analyst-status").textContent = `${votes.covered_count} of ${votes.attempted_count} cross-screen names had usable analyst summaries; ${supported} had at least three ratings.${dateNote} ${votes.missing_symbols?.length || 0} missing summaries are not counted as zero.`;
-  const rows = [...votes.rows].sort((a, b) => {
-    const support = Number(b.total >= 3) - Number(a.total >= 3);
-    if (support) return support;
-    const share = (b.strong_buy + b.buy) / b.total - (a.strong_buy + a.buy) / a.total;
-    return share || b.total - a.total || a.symbol.localeCompare(b.symbol);
-  });
-  for (const row of rows) {
-    const tr = appendText(target, "tr", "");
-    const company = appendText(tr, "td", "");
-    const identity = appendText(company, "div", "", "extreme-identity");
-    appendText(identity, "strong", row.symbol);
-    appendText(identity, "small", row.name || row.symbol);
-    appendText(tr, "td", String(row.strong_buy), "analyst-number");
-    appendText(tr, "td", String(row.buy), "analyst-number");
-    appendText(tr, "td", String(row.hold), "analyst-number");
-    appendText(tr, "td", String(row.sell), "analyst-number");
-    appendText(tr, "td", String(row.strong_sell), "analyst-number");
-    appendText(tr, "td", String(row.total), "analyst-number");
-    appendText(tr, "td", levelPercent((row.strong_buy + row.buy) / row.total), "analyst-number");
-  }
-}
-
 function render(mood) {
   $("week-chip").textContent = `Data as of ${day(mood.as_of)}`;
   $("aside-week").textContent = day(mood.as_of);
@@ -158,7 +123,6 @@ function render(mood) {
   renderScreenLeaders("growth-body", mood.growth_leaders);
   renderScreenLeaders("cheap-body", mood.cheap_leaders);
   renderScreenReport(mood.screen_report);
-  renderAnalysts(mood.analyst_votes, mood.as_of);
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
 }
