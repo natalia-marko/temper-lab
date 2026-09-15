@@ -26,6 +26,10 @@ aside {
 }
 .brand span:last-child { font-weight: 350; }
 .aside-note { font-size: 11px; color: #798474; margin: 12px 10px 39px; line-height: 1.8; }
+.site-nav { display: grid; gap: 5px; }
+.site-nav a { display: block; padding: 11px 12px; border-radius: 7px; color: #61715f; text-decoration: none; font-size: 13px; }
+.site-nav a:hover, .site-nav a:focus-visible { background: #f0f4ec; color: #2c5937; }
+.site-nav a.on { background: #eaf0e5; color: #2c5937; font-weight: 600; }
 .aside-foot { margin-top: auto; border-top: 1px solid #e1e6da; padding: 20px 10px 0; font-size: 11px; color: #63725d; }
 .aside-foot small { display: block; margin-top: 6px; color: #7a8a80; }
 .dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #6b9972; }

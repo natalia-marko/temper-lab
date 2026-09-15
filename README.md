@@ -2,6 +2,14 @@
 
 Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
 
+The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
+closing implied volatility, SPY/QQQ adjusted-close returns, the share of liquid
+names up over 63 QQQ sessions, and the ten highest and lowest 63-session stock
+returns among names with a full price window. Hot Tape ranks both 63- and
+252-session returns, so an extreme's Hot Tape rank is shown only when the stock
+actually appears in the published Hot Tape slice. VIX is non-directional and
+does not rank individual stocks.
+
 This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
 
 Industry has its own column beside Company in every screener view. Use the
@@ -22,6 +30,10 @@ advance the underlying ranking date. Fundamentals retain their own filing period
 
 The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
+After a current screener passes, the release writes `market-mood.json` for the
+same run. Cboe VIX history is fetched at export time; if it is unavailable, the
+page leaves the VIX reading blank. If the mood export itself fails, the page
+detects a stale run ID and waits for a matching refresh.
 It stages and publishes the current screener only after its own checks pass.
 Historical comparison runs afterward as a separate validation phase. A failed
 comparison leaves the current screener published and records a failed
@@ -62,6 +74,8 @@ When changing `desk.js` or `desk.css`, update its `?v=` value in `index.html` to
 the first 12 characters of the file's SHA-256 hash. GitHub Pages caches assets
 separately; versioned URLs prevent new HTML from loading a cached, incompatible
 script. The source tests enforce these versions.
+The Market mood page uses the same 12-character hashes for `desk.css`,
+`market-mood.css`, and `market-mood.js`.
 
 Full startup and filter regression checks (from the factory repository):
 

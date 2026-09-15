@@ -14,6 +14,7 @@ const OVERVIEW = {
   strength: [
     ["momentum_63", "63-session return", "percent"],
     ["momentum_252", "252-session return", "percent"],
+    ["operating_earnings_yield_ev", "OI / EV", "percent"],
   ],
   growth: [
     ["roe", "Return on equity", "percent"],
@@ -869,7 +870,9 @@ function inspectNote() {
         ? " OI / equity cap is the same operating income over the equity market only, so leverage is visible; it is not the rank. Operating margin matches that income. Leases and NCI are not in EV."
         : state.screen === "growth"
           ? " Revenue YoY is why the name is on the list, not the score. Six-month versus QQQ is the tape, not the rank."
-          : "";
+          : state.screen === "strength"
+            ? " OI / EV is whether the operating firm is cheap; it is not the Hot tape rank. Loss-makers and names without EV show n/a. Buying rank 1 is buying what already ran."
+            : "";
     return (
       `This list is ${list}: List rank is ${rankedBy}.` +
       companion +
