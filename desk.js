@@ -16,9 +16,9 @@ const OVERVIEW = {
     ["momentum_252", "252-session return", "percent"],
   ],
   growth: [
+    ["roe", "Return on equity", "percent"],
     ["revenue_yoy", "Revenue YoY", "percent"],
     ["relative_strength_6m", "6-month vs QQQ", "percent"],
-    ["roe", "Return on equity", "percent"],
   ],
   undervalued: [
     ["operating_earnings_yield_ev", "OI / EV", "percent"],
@@ -122,7 +122,9 @@ function scoreCell(idea) {
 }
 
 function metricTd(symbol, key, kind) {
-  const lead = state.screen === "undervalued" && key === "operating_earnings_yield_ev";
+  const lead =
+    (state.screen === "undervalued" && key === "operating_earnings_yield_ev") ||
+    (state.screen === "growth" && key === "roe");
   return `<td class="metric${lead ? " lead" : ""}">${metricCell(symbol, key, kind)}</td>`;
 }
 
@@ -852,7 +854,7 @@ function screenLabel(key) {
 function rankedByPhrase(key) {
   return {
     strength: "recent 63- and 252-session return",
-    growth: "6-month return versus QQQ (60%) and ROE (40%), after the profit and growth gates",
+    growth: "return on equity, after the profit and growth gates",
     undervalued: "operating income divided by EV (equity cap + interest-bearing debt − cash)",
   }[key];
 }
@@ -865,7 +867,9 @@ function inspectNote() {
     const companion =
       state.screen === "undervalued"
         ? " OI / equity cap is the same operating income over the equity market only, so leverage is visible; it is not the rank. Operating margin matches that income. Leases and NCI are not in EV."
-        : "";
+        : state.screen === "growth"
+          ? " Revenue YoY is why the name is on the list, not the score. Six-month versus QQQ is the tape, not the rank."
+          : "";
     return (
       `This list is ${list}: List rank is ${rankedBy}.` +
       companion +
