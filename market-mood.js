@@ -112,7 +112,7 @@ function renderAnalysts(votes, screenDate) {
   if (!votes?.rows?.length) {
     $("analyst-status").textContent = "Analyst vote data is unavailable for this snapshot; screen overlap remains independent of analyst coverage.";
     const tr = appendText(target, "tr", "");
-    appendText(tr, "td", "No dated analyst summaries were retrieved.", "empty").colSpan = 5;
+    appendText(tr, "td", "No dated analyst summaries were retrieved.", "empty").colSpan = 8;
     return;
   }
   const observed = votes.retrieved_at?.slice(0, 10);
@@ -133,6 +133,9 @@ function renderAnalysts(votes, screenDate) {
     appendText(identity, "small", row.name || row.symbol);
     appendText(tr, "td", String(row.strong_buy), "analyst-number");
     appendText(tr, "td", String(row.buy), "analyst-number");
+    appendText(tr, "td", String(row.hold), "analyst-number");
+    appendText(tr, "td", String(row.sell), "analyst-number");
+    appendText(tr, "td", String(row.strong_sell), "analyst-number");
     appendText(tr, "td", String(row.total), "analyst-number");
     appendText(tr, "td", levelPercent((row.strong_buy + row.buy) / row.total), "analyst-number");
   }
