@@ -552,11 +552,23 @@ function coverageFor(symbol, key) {
 function notReported(symbol, key) {
   return coverageFor(symbol, key) === "not_reported";
 }
-function metricCell(symbol, key, kind) {
-  if (!Number.isFinite(factor(symbol, key)) && notReported(symbol, key)) {
-    return `<span class="na" title="This company does not report the line this ratio is built from">n/a</span>`;
+function missingMetricTitle(symbol, key) {
+  const reason = coverageFor(symbol, key);
+  if (reason === "not_reported") {
+    return "This company does not report the line this ratio is built from";
   }
-  return fmt(factor(symbol, key), kind);
+  if (reason === "unavailable") {
+    return "The trailing year for this ratio could not be built";
+  }
+  if (reason === "not_comparable") {
+    return "This ratio was not published as comparable";
+  }
+  return "No number for this ratio in this snapshot";
+}
+
+function metricCell(symbol, key, kind) {
+  if (Number.isFinite(factor(symbol, key))) return fmt(factor(symbol, key), kind);
+  return `<span class="na" title="${missingMetricTitle(symbol, key)}">n/a</span>`;
 }
 
 function hasRequiredMetrics(symbol) {
