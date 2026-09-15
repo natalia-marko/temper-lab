@@ -21,7 +21,8 @@ const OVERVIEW = {
     ["roe", "Return on equity", "percent"],
   ],
   undervalued: [
-    ["operating_earnings_yield", "Operating yield", "percent"],
+    ["operating_earnings_yield_ev", "OI / EV", "percent"],
+    ["operating_earnings_yield", "OI / equity cap", "percent"],
     ["operating_margin", "TTM operating margin", "percent"],
   ],
 };
@@ -43,7 +44,8 @@ const COLUMNS = {
     ["acceleration", "Revenue acceleration", "points"],
   ],
   valuation: [
-    ["operating_earnings_yield", "Operating yield", "percent"],
+    ["operating_earnings_yield_ev", "OI / EV", "percent"],
+    ["operating_earnings_yield", "OI / equity cap", "percent"],
     ["roe", "Return on equity", "percent"],
     ["net_margin", "Net margin", "percent"],
   ],
@@ -120,7 +122,7 @@ function scoreCell(idea) {
 }
 
 function metricTd(symbol, key, kind) {
-  const lead = state.screen === "undervalued" && key === "operating_earnings_yield";
+  const lead = state.screen === "undervalued" && key === "operating_earnings_yield_ev";
   return `<td class="metric${lead ? " lead" : ""}">${metricCell(symbol, key, kind)}</td>`;
 }
 
@@ -521,7 +523,19 @@ function rows() {
 }
 
 function currentMetrics() {
-  return state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
+  if (state.view === "overview") return OVERVIEW[state.screen];
+  if (state.view === "quality" && state.screen === "undervalued") {
+    // Cheap ranks on operating income / equity cap. ROE is NI / book — leverage
+    // lifts both — so it is not a quality stamp here. Gross margin is mostly
+    // unfiled on this list. Operating margin shares the ranking numerator.
+    return [
+      ["operating_margin", "TTM operating margin", "percent"],
+      ["net_margin", "TTM net margin", "percent"],
+      ["cash_conversion", "TTM cash / profit", "multiple"],
+      ["leverage", "Liabilities / assets", "percent"],
+    ];
+  }
+  return COLUMNS[state.view];
 }
 
 function trustStatus(symbol) {
@@ -750,8 +764,7 @@ function sortHeader(key, label) {
 }
 
 function renderHead() {
-  const metrics =
-    state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
+  const metrics = currentMetrics();
   let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>`;
   if (state.view === "overview") {
     for (const [key, label] of metrics) html += sortHeader(key, label);
@@ -801,8 +814,7 @@ function escapeHtml(value) {
 
 function renderBody(pageRows) {
   const ranked = rankedMap(state.screen);
-  const metrics =
-    state.view === "overview" ? OVERVIEW[state.screen] : COLUMNS[state.view];
+  const metrics = currentMetrics();
   if (!pageRows.length) {
     const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
     $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, sector and evidence filters.</td></tr>`;
@@ -841,7 +853,7 @@ function rankedByPhrase(key) {
   return {
     strength: "recent 63- and 252-session return",
     growth: "6-month return versus QQQ (60%) and ROE (40%), after the profit and growth gates",
-    undervalued: "operating income divided by equity market cap",
+    undervalued: "operating income divided by EV (equity cap + interest-bearing debt − cash)",
   }[key];
 }
 
@@ -852,7 +864,7 @@ function inspectNote() {
   if (state.view === "overview") {
     const companion =
       state.screen === "undervalued"
-        ? " Operating margin is the same operating-income family, for reading, not a second rank."
+        ? " OI / equity cap is the same operating income over the equity market only, so leverage is visible; it is not the rank. Operating margin matches that income. Leases and NCI are not in EV."
         : "";
     return (
       `This list is ${list}: List rank is ${rankedBy}.` +
@@ -867,6 +879,22 @@ function inspectNote() {
     return (
       `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
       `List rank is still the tape, not these ratios. Loss-making leaders are expected on a price list.`
+    );
+  }
+  if (state.screen === "undervalued" && state.view === "quality") {
+    return (
+      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
+      `List rank and score are still ${rankedBy}. ` +
+      `Operating margin matches that operating income. ` +
+      `Gross margin is omitted: most Cheap names never file a gross-profit line. ` +
+      `ROE is omitted here: it is net income over book, and leverage lifts it the same way it lifts the yield. It remains on Valuation.`
+    );
+  }
+  if (state.screen === "undervalued" && state.view === "valuation") {
+    return (
+      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
+      `List rank and score are still ${rankedBy}. ` +
+      `OI / equity cap is reading, not the rank. ROE on this tab is net income over book equity, not a Cheap quality grade.`
     );
   }
   return (
