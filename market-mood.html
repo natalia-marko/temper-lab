@@ -7,7 +7,7 @@
     <title>Temper Lab — Market mood</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=42a75193c712" />
-    <link rel="stylesheet" href="./market-mood.css?v=caf3ee430aa7" />
+    <link rel="stylesheet" href="./market-mood.css?v=3dbe21a0ffb1" />
   </head>
   <body>
     <div class="desk">
@@ -34,7 +34,6 @@
               <div class="vix-reading"><strong id="vix-close">—</strong><span>index points</span></div>
               <p class="vix-change" id="vix-week"></p>
               <p class="card-caption">30-day implied S&amp;P 500 volatility, annualized. This measures expected movement, not whether prices will rise or fall.</p>
-              <a id="vix-source" href="https://www.cboe.com/tradable_products/vix/vix_historical_data" rel="noopener noreferrer" target="_blank">Cboe historical closes ↗</a>
             </article>
             <article class="mood-card breadth-card">
               <div class="card-label">LIQUID TAPE <span>63 QQQ sessions</span></div>
@@ -49,7 +48,7 @@
             </article>
           </section>
           <section class="extremes-intro">
-            <div><div class="eyebrow">OBSERVED PRICE MOVES</div><h2>Winners &amp; losers</h2><p>Largest and smallest 63-session adjusted-close returns among liquid names with a full QQQ-aligned price history.</p></div>
+            <div><div class="eyebrow">OBSERVED PRICE MOVES</div><h2>Winners</h2><p>Largest 63-session adjusted-close returns among liquid names with a full QQQ-aligned price history.</p></div>
             <span class="window-chip">About 3 months · 63 sessions</span>
           </section>
           <div class="extremes-grid">
@@ -57,15 +56,11 @@
               <div class="extreme-heading"><h3 id="winners-title">Winners</h3><span>highest 63-session return</span></div>
               <div class="extreme-table-wrap"><table><thead><tr><th scope="col">Company</th><th scope="col">63 sessions</th><th scope="col">Hot Tape</th></tr></thead><tbody id="winners-body"></tbody></table></div>
             </section>
-            <section class="extreme-card" aria-labelledby="losers-title">
-              <div class="extreme-heading"><h3 id="losers-title">Losers</h3><span>lowest 63-session return</span></div>
-              <div class="extreme-table-wrap"><table><thead><tr><th scope="col">Company</th><th scope="col">63 sessions</th><th scope="col">Hot Tape</th></tr></thead><tbody id="losers-body"></tbody></table></div>
-            </section>
           </div>
-          <p class="mood-method">Hot Tape ranks 63- and 252-session returns together (60/40) and publishes its hottest slice. These extremes sort the 63-session leg across the full price-history pool. A blank Hot Tape rank means the name is outside that published slice; it is not a judgment about the business. VIX comes from S&amp;P 500 options and is a separate measure from this stock tape.</p>
+          <p class="mood-method">Hot Tape ranks 63- and 252-session returns together (60/40) and publishes its hottest slice. Winners here sort the 63-session leg across the full price-history pool. A blank Hot Tape rank means the name is outside that published slice; it is not a judgment about the business.</p>
         </div>
       </main>
     </div>
-    <script src="./market-mood.js?v=5ad520ff4449"></script>
+    <script src="./market-mood.js?v=90f93b32b26d"></script>
   </body>
 </html>

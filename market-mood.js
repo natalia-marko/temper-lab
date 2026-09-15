@@ -74,7 +74,6 @@ function render(mood) {
   $("breadth-copy").textContent = `${mood.breadth?.n_63 ?? 0} complete names · median 63-session return ${percent(mood.breadth?.median_63)}. Breadth is a snapshot of this liquid universe, not all stocks.`;
   renderIndices(mood.indices);
   renderExtremes("winners-body", mood.winners);
-  renderExtremes("losers-body", mood.losers);
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
 }

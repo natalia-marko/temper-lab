@@ -4,7 +4,7 @@ Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
 
 The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
 closing implied volatility, SPY/QQQ adjusted-close returns, the share of liquid
-names up over 63 QQQ sessions, and the ten highest and lowest 63-session stock
+names up over 63 QQQ sessions, and the ten highest 63-session stock
 returns among names with a full price window. Hot Tape ranks both 63- and
 252-session returns, so an extreme's Hot Tape rank is shown only when the stock
 actually appears in the published Hot Tape slice. VIX is non-directional and
