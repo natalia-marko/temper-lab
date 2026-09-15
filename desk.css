@@ -43,6 +43,8 @@ main { margin-left: 215px; }
   flex: 1; max-width: 420px; height: 36px; border: 1px solid #cddbd1; border-radius: 8px;
   padding: 0 12px; background: #fff;
 }
+.top-page-link { display: inline-flex; align-items: center; white-space: nowrap; padding: 8px 11px; border: 1px solid #d0dfd2; border-radius: 7px; color: #245e42; background: #eef5ed; font-size: 12px; font-weight: 650; text-decoration: none; }
+.top-page-link:hover, .top-page-link:focus-visible { border-color: #9bbda2; background: #e2eee3; }
 .badge {
   padding: 6px 10px; border-radius: 999px; background: #eef2ea; color: #355544;
   font-size: 11px; font-weight: 600; white-space: nowrap;
