@@ -1,16 +1,6 @@
-[hidden] { display: none !important; }
-.opportunity-modes { display: flex; gap: 8px; margin: 12px 28px 0; }
-.opportunity-modes button { padding: 10px 15px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #5e7066; cursor: pointer; font-size: 12px; font-weight: 600; }
-.opportunity-modes button.on { border-color: #9fbea9; background: #eef4ef; color: #254e3b; }
-.opportunity-modes span { display: block; color: #7d8d80; font-size: 10px; font-weight: 400; }
+.analyst-top-label { color: #6e7f72; font-size: 12px; letter-spacing: .03em; }
 .analyst-surface { padding-bottom: 18px; }
-.analyst-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding: 24px 22px 12px; }
-.analyst-heading h2 { margin: 4px 0 8px; color: #2b4b39; font-size: 23px; }
-.analyst-heading p { max-width: 680px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.analyst-snapshot { display: grid; min-width: 180px; gap: 5px; text-align: right; }
-.analyst-snapshot strong { color: #254e3b; font-size: 14px; }
-.analyst-snapshot small { color: #7d8d80; font-size: 10px; line-height: 1.5; }
-.analyst-explanation { margin: 6px 22px 15px; padding: 12px 15px; border: 1px solid #d4e2d6; border-radius: 9px; background: #f4f7f3; color: #526e5b; font-size: 12px; line-height: 1.6; }
+.analyst-explanation { margin: 18px 22px 15px; padding: 12px 15px; border: 1px solid #d4e2d6; border-radius: 9px; background: #f4f7f3; color: #526e5b; font-size: 12px; line-height: 1.6; }
 .analyst-explanation strong { color: #2b4b39; }
 .analyst-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; padding: 0 22px 14px; }
 .analyst-controls label { display: grid; gap: 5px; color: #718075; font-size: 10px; }
@@ -30,5 +20,4 @@
 .analyst-screens { color: #7d8d80; font-size: 10px; white-space: nowrap; }
 .analyst-count-cell { color: #54755d; font-size: 12px; font-variant-numeric: tabular-nums; }
 .analyst-note { margin: 15px 22px 0; color: #708275; font-size: 11px; line-height: 1.7; }
-@media (max-width: 860px) { .analyst-heading { flex-direction: column; }.analyst-snapshot { text-align: left; }.opportunity-modes { margin: 12px 14px 0; } }
-@media (max-width: 480px) { .analyst-heading { padding: 18px 12px 10px; }.analyst-explanation { margin: 6px 12px 14px; }.analyst-controls { padding: 0 12px 14px; }.analyst-count { padding: 10px 12px; }.analyst-note { margin: 12px; } }
+@media (max-width: 620px) { .analyst-explanation { margin: 14px 14px 12px; }.analyst-controls { padding: 0 14px 14px; }.analyst-count { padding: 10px 14px; }.analyst-note { margin: 12px 14px 0; } }

@@ -2,11 +2,10 @@
 
 Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
 
-The Opportunities page carries a second view, Analyst ratings, reached from the
-Company screens / Analyst ratings buttons or by opening `./?view=analysts`. It
-filters Yahoo's five current-month rating counts for the names appearing on at
-least two published screens, so it is a cross-screen shortlist, not a fourth
-rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
+Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
+after Market mood. It filters Yahoo's five current-month rating counts for the
+names appearing on at least two published screens, so it is a cross-screen
+shortlist, not a fourth rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
 categories, including Hold, Sell, and Strong Sell. Counts are dated by retrieval
 because Yahoo's summary carries no per-report publication dates, and a name
 whose summary is missing is excluded rather than counted as zero votes. The view
@@ -92,8 +91,8 @@ the first 12 characters of the file's SHA-256 hash. GitHub Pages caches assets
 separately; versioned URLs prevent new HTML from loading a cached, incompatible
 script. The source tests enforce these versions.
 The Market mood page uses the same 12-character hashes for `desk.css`,
-`market-mood.css`, and `market-mood.js`. `index.html` also versions
-`analyst-opportunities.css` and `analyst-opportunities.js` the same way.
+`market-mood.css`, and `market-mood.js`; the Analyst ratings page does the same
+for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 
 Full startup and filter regression checks (from the factory repository):
 

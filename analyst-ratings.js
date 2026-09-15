@@ -64,19 +64,6 @@ function renderAnalystResults() {
   }
 }
 
-function setOpportunityMode(mode) {
-  const analyst = mode === "analysts";
-  analystEl("company-surface").hidden = analyst;
-  analystEl("analyst-surface").hidden = !analyst;
-  analystEl("company-search").hidden = analyst;
-  for (const [id, active] of [["company-mode", !analyst], ["analyst-mode", analyst]]) {
-    const button = analystEl(id);
-    button.classList.toggle("on", active);
-    button.setAttribute("aria-pressed", String(active));
-  }
-  if (analyst && analystState.mood) renderAnalystResults();
-}
-
 async function loadAnalystSnapshot() {
   try {
     const [moodResponse, deskResponse, releaseResponse] = await Promise.all([
@@ -98,19 +85,20 @@ async function loadAnalystSnapshot() {
       throw new Error("Analyst coverage does not match the cross-screen shortlist.");
     }
     analystState.mood = mood;
+    analystEl("week-chip").textContent = `Data as of ${analystDate(mood.as_of)}`;
+    analystEl("aside-week").textContent = analystDate(mood.as_of);
     analystEl("analyst-coverage").textContent = `${votes.covered_count} of ${votes.attempted_count} summaries available`;
     analystEl("analyst-dates").textContent = `Screens: ${analystDate(mood.as_of)} · Analyst counts retrieved: ${analystDate(votes.retrieved_at)}`;
     renderAnalystResults();
   } catch (error) {
-    analystEl("analyst-coverage").textContent = "Snapshot unavailable";
+    analystEl("week-chip").textContent = "Snapshot unavailable";
+    analystEl("analyst-coverage").textContent = "";
     analystEl("analyst-count").textContent = error instanceof Error ? error.message : "Unable to load analyst ratings.";
     analystEl("analyst-results").replaceChildren();
   }
 }
 
 function startAnalystView() {
-  analystEl("company-mode").addEventListener("click", () => setOpportunityMode("companies"));
-  analystEl("analyst-mode").addEventListener("click", () => setOpportunityMode("analysts"));
   for (const [id, key, event] of [
     ["analyst-query", "query", "input"], ["analyst-min-total", "minTotal", "change"],
     ["analyst-category", "category", "change"], ["analyst-min-share", "minShare", "change"],
@@ -124,7 +112,6 @@ function startAnalystView() {
     for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"], ["analyst-order", "company"]]) analystEl(id).value = value;
     renderAnalystResults();
   });
-  if (new URLSearchParams(location.search).get("view") === "analysts") setOpportunityMode("analysts");
   void loadAnalystSnapshot();
 }
 
