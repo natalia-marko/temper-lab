@@ -20,7 +20,10 @@ const OVERVIEW = {
     ["relative_strength_6m", "6-month vs QQQ", "percent"],
     ["roe", "Return on equity", "percent"],
   ],
-  undervalued: [["operating_earnings_yield", "Operating yield", "percent"]],
+  undervalued: [
+    ["operating_earnings_yield", "Operating yield", "percent"],
+    ["operating_margin", "TTM operating margin", "percent"],
+  ],
 };
 const COLUMNS = {
   quality: [
@@ -847,9 +850,14 @@ function inspectNote() {
   const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
   const rankedBy = rankedByPhrase(state.screen);
   if (state.view === "overview") {
+    const companion =
+      state.screen === "undervalued"
+        ? " Operating margin is the same operating-income family, for reading, not a second rank."
+        : "";
     return (
-      `This list is ${list}: List rank is ${rankedBy}. ` +
-      `Inspect only changes which columns you see; it does not pick a different set of companies or a new rank.`
+      `This list is ${list}: List rank is ${rankedBy}.` +
+      companion +
+      ` Inspect only changes which columns you see; it does not pick a different set of companies or a new rank.`
     );
   }
   if (
