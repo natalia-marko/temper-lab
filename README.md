@@ -10,6 +10,11 @@ returns among names with a full price window. Hot Tape ranks both 63- and
 actually appears in the published Hot Tape slice. VIX is non-directional and
 does not rank individual stocks.
 
+The same page also shows the first ten ranks from Growth and Cheap on operating
+profit. Growth displays ROE beside its rank after its revenue, profit, and base
+revenue gates; Cheap displays TTM operating income / EV beside its own rank.
+These are screen ranks, not the largest stock returns or comparable scores.
+
 This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
 
 Industry has its own column beside Company in every screener view. Use the

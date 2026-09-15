@@ -11,6 +11,10 @@ function percent(value, digits = 1) {
   return `${value > 0 ? "+" : ""}${(value * 100).toFixed(digits)}%`;
 }
 
+function levelPercent(value) {
+  return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "—";
+}
+
 function vixPoints(value) {
   if (!Number.isFinite(value)) return "—";
   return `${value > 0 ? "+" : ""}${value.toFixed(2)} pts`;
@@ -60,6 +64,25 @@ function renderExtremes(id, rows) {
   }
 }
 
+function renderScreenLeaders(id, rows) {
+  const target = $(id);
+  target.replaceChildren();
+  if (!rows?.length) {
+    const tr = appendText(target, "tr", "");
+    appendText(tr, "td", "No screen leaders recorded for this Friday.", "empty").colSpan = 3;
+    return;
+  }
+  for (const item of rows) {
+    const tr = appendText(target, "tr", "");
+    const company = appendText(tr, "td", "");
+    const identity = appendText(company, "div", "", "extreme-identity");
+    appendText(identity, "strong", item.symbol);
+    appendText(identity, "small", item.name || item.symbol);
+    appendText(tr, "td", levelPercent(item.metric), "extreme-return");
+    appendText(tr, "td", Number.isInteger(item.rank) ? `#${item.rank}` : "—", "extreme-rank");
+  }
+}
+
 function render(mood) {
   $("week-chip").textContent = `Data as of ${day(mood.as_of)}`;
   $("aside-week").textContent = day(mood.as_of);
@@ -74,6 +97,8 @@ function render(mood) {
   $("breadth-copy").textContent = `${mood.breadth?.n_63 ?? 0} complete names · median 63-session return ${percent(mood.breadth?.median_63)}. Breadth is a snapshot of this liquid universe, not all stocks.`;
   renderIndices(mood.indices);
   renderExtremes("winners-body", mood.winners);
+  renderScreenLeaders("growth-body", mood.growth_leaders);
+  renderScreenLeaders("cheap-body", mood.cheap_leaders);
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
 }
