@@ -6,7 +6,11 @@ Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
 after Market mood. It filters Yahoo's five current-month rating counts for the
 names appearing on at least two published screens, so it is a cross-screen
 shortlist, not a fourth rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
-categories, including Hold, Sell, and Strong Sell. Counts are dated by retrieval
+categories, including Hold, Sell, and Strong Sell. Buy share Δ is this month’s
+buy share minus the previous month’s, in percentage points; a missing month is
+shown as n/a, not zero. Target median and implied upside use the freeze Friday
+close, not Yahoo’s live price. Positive implied upside is the usual sell-side
+stance, not a cheapness signal. Counts and targets are dated by retrieval
 because Yahoo's summary carries no per-report publication dates, and a name
 whose summary is missing is excluded rather than counted as zero votes. The view
 refuses to render unless `market-mood.json`, `desk.json`, and `release.json`

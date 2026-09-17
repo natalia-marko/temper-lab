@@ -1,5 +1,6 @@
 const analystState = { mood: null, filters: { query: "", minTotal: 3, category: "any", minShare: 0, order: "company" } };
 const analystEl = (id) => document.getElementById(id);
+const ANALYST_COLUMNS = 13;
 
 function analystDate(iso) {
   if (!iso) return "date unavailable";
@@ -9,7 +10,21 @@ function analystDate(iso) {
 }
 
 function buyShare(row) {
+  if (!row?.total) return null;
   return (row.strong_buy + row.buy) / row.total;
+}
+
+function trendShare(row, period) {
+  const slot = row.trend?.[period];
+  if (!slot?.total) return null;
+  return (slot.strong_buy + slot.buy) / slot.total;
+}
+
+function buyShareDelta(row) {
+  const current = buyShare(row);
+  const prior = trendShare(row, "-1m");
+  if (current == null || prior == null) return null;
+  return current - prior;
 }
 
 function filteredAnalysts(votes, filters) {
@@ -23,6 +38,14 @@ function filteredAnalysts(votes, filters) {
       if (filters.order === "share") return buyShare(b) - buyShare(a) || b.total - a.total || a.symbol.localeCompare(b.symbol);
       if (filters.order === "strong_buy") return b.strong_buy - a.strong_buy || b.total - a.total || a.symbol.localeCompare(b.symbol);
       if (filters.order === "coverage") return b.total - a.total || a.symbol.localeCompare(b.symbol);
+      if (filters.order === "delta") {
+        const deltaA = buyShareDelta(a);
+        const deltaB = buyShareDelta(b);
+        if (deltaA == null && deltaB == null) return a.symbol.localeCompare(b.symbol);
+        if (deltaA == null) return 1;
+        if (deltaB == null) return -1;
+        return deltaB - deltaA || b.total - a.total || a.symbol.localeCompare(b.symbol);
+      }
       return a.symbol.localeCompare(b.symbol);
     });
 }
@@ -35,6 +58,27 @@ function analystText(parent, tag, content, className) {
   return child;
 }
 
+function analystCell(parent, value, format, className) {
+  if (value == null || Number.isNaN(value)) {
+    return analystText(parent, "td", "n/a", "analyst-na");
+  }
+  return analystText(parent, "td", format(value), className || "analyst-count-cell");
+}
+
+function formatShare(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatDelta(value) {
+  const points = value * 100;
+  const sign = points > 0 ? "+" : "";
+  return `${sign}${points.toFixed(1)} pp`;
+}
+
+function formatPrice(value) {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 function renderAnalystResults() {
   const votes = analystState.mood?.analyst_votes;
   const target = analystEl("analyst-results");
@@ -42,7 +86,7 @@ function renderAnalystResults() {
   if (!votes?.rows?.length) {
     analystEl("analyst-count").textContent = "No usable analyst summaries in this snapshot.";
     const tr = analystText(target, "tr", "");
-    analystText(tr, "td", "No dated ratings are available.", "empty").colSpan = 9;
+    analystText(tr, "td", "No dated ratings are available.", "empty").colSpan = ANALYST_COLUMNS;
     return;
   }
   const rows = filteredAnalysts(votes, analystState.filters);
@@ -50,7 +94,7 @@ function renderAnalystResults() {
   analystEl("analyst-count").textContent = `${rows.length} of ${votes.covered_count} rated cross-screen names match these filters. ${missing} missing ${missing === 1 ? "summary is" : "summaries are"} excluded.`;
   if (!rows.length) {
     const tr = analystText(target, "tr", "");
-    analystText(tr, "td", "No rated companies match. Change or reset the filters.", "empty").colSpan = 9;
+    analystText(tr, "td", "No rated companies match. Change or reset the filters.", "empty").colSpan = ANALYST_COLUMNS;
     return;
   }
   for (const row of rows) {
@@ -58,9 +102,13 @@ function renderAnalystResults() {
     const company = analystText(tr, "td", "");
     analystText(company, "strong", row.symbol);
     analystText(company, "small", row.name || row.symbol);
-    analystText(tr, "td", (row.screens || []).map((key) => ({ strength: "Hot tape", growth: "Growth", undervalued: "Cheap" }[key] || key)).join(" · "), "analyst-screens");
+    analystText(tr, "td", (row.screens || []).map((key) => ({ strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" }[key] || key)).join(" · "), "analyst-screens");
     for (const key of ["strong_buy", "buy", "hold", "sell", "strong_sell", "total"]) analystText(tr, "td", String(row[key]), "analyst-count-cell");
-    analystText(tr, "td", `${(buyShare(row) * 100).toFixed(1)}%`, "analyst-count-cell");
+    analystCell(tr, buyShare(row), formatShare);
+    analystCell(tr, buyShareDelta(row), formatDelta);
+    analystCell(tr, row.target_median, formatPrice);
+    analystCell(tr, row.implied_upside, formatShare);
+    analystCell(tr, row.target_dispersion, formatShare);
   }
 }
 

@@ -9,7 +9,7 @@
 .analyst-controls button { cursor: pointer; }
 .analyst-count { margin: 0; padding: 10px 22px; border-top: 1px solid var(--line); color: #526e5b; font-size: 11px; }
 .analyst-table-wrap { overflow: auto; max-height: 610px; }
-.analyst-table-wrap table { width: 100%; min-width: 955px; }
+.analyst-table-wrap table { width: 100%; min-width: 1280px; }
 .analyst-table-wrap th { position: sticky; top: 0; z-index: 1; background: #fff; white-space: nowrap; }
 .analyst-table-wrap th:not(:first-child), .analyst-table-wrap td:not(:first-child) { text-align: right; }
 .analyst-table-wrap td { height: 50px; padding: 7px 12px; }
@@ -19,5 +19,6 @@
 .analyst-table-wrap td:first-child small { overflow: hidden; max-width: 175px; color: #7d8d80; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .analyst-screens { color: #7d8d80; font-size: 10px; white-space: nowrap; }
 .analyst-count-cell { color: #54755d; font-size: 12px; font-variant-numeric: tabular-nums; }
+.analyst-na { color: #8a9a8d; font-size: 12px; }
 .analyst-note { margin: 15px 22px 0; color: #708275; font-size: 11px; line-height: 1.7; }
 @media (max-width: 620px) { .analyst-explanation { margin: 14px 14px 12px; }.analyst-controls { padding: 0 14px 14px; }.analyst-count { padding: 10px 14px; }.analyst-note { margin: 12px 14px 0; } }
