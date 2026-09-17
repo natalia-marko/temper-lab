@@ -1,4 +1,7 @@
-const analystState = { mood: null, filters: { query: "", minTotal: 3, category: "any", minShare: 0, order: "company" } };
+const ANALYST_SORT_KEYS = ["company", "overlap", "strong_buy", "buy", "hold", "sell", "strong_sell", "total", "buy_share", "buy_share_delta", "target_median", "implied_upside", "target_range"];
+const ANALYST_SORT_DEFAULT_DIR = { company: "asc" };
+const ANALYST_DEFAULT_FILTERS = { query: "", minTotal: 3, category: "any", minShare: 0, sortKey: "overlap", sortDir: "desc" };
+const analystState = { mood: null, filters: { ...ANALYST_DEFAULT_FILTERS } };
 const analystEl = (id) => document.getElementById(id);
 const ANALYST_COLUMNS = 13;
 
@@ -27,27 +30,49 @@ function buyShareDelta(row) {
   return current - prior;
 }
 
+function analystSortValue(row, key) {
+  if (key === "company") return row.symbol;
+  if (key === "overlap") return (row.screens || []).length;
+  if (key === "buy_share") return buyShare(row);
+  if (key === "buy_share_delta") return buyShareDelta(row);
+  if (key === "target_range") return row.target_dispersion ?? null;
+  if (key === "target_median" || key === "implied_upside") return row[key] ?? null;
+  return row[key] ?? null;
+}
+
+function analystCompareKey(a, b, key, direction) {
+  const va = analystSortValue(a, key);
+  const vb = analystSortValue(b, key);
+  const aMissing = va == null || (typeof va === "number" && Number.isNaN(va));
+  const bMissing = vb == null || (typeof vb === "number" && Number.isNaN(vb));
+  if (aMissing && bMissing) return 0;
+  if (aMissing) return 1;
+  if (bMissing) return -1;
+  if (typeof va === "string") return direction === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+  return direction === "asc" ? va - vb : vb - va;
+}
+
+function analystRowCompare(a, b, sortKey, sortDir) {
+  const primary = analystCompareKey(a, b, sortKey, sortDir);
+  if (primary !== 0) return primary;
+  if (sortKey !== "buy_share") {
+    const secondary = analystCompareKey(a, b, "buy_share", "desc");
+    if (secondary !== 0) return secondary;
+  }
+  if (sortKey !== "company") return a.symbol.localeCompare(b.symbol);
+  return 0;
+}
+
 function filteredAnalysts(votes, filters) {
   const query = filters.query.trim().toLowerCase();
+  const sortKey = ANALYST_SORT_KEYS.includes(filters.sortKey) ? filters.sortKey : "overlap";
+  const sortDir = filters.sortDir === "asc" ? "asc" : "desc";
   return (votes?.rows || [])
     .filter((row) => row.total >= filters.minTotal)
     .filter((row) => filters.category === "any" || row[filters.category] > 0)
-    .filter((row) => buyShare(row) >= filters.minShare)
+    .filter((row) => (buyShare(row) ?? 0) >= filters.minShare)
     .filter((row) => !query || `${row.symbol} ${row.name}`.toLowerCase().includes(query))
-    .sort((a, b) => {
-      if (filters.order === "share") return buyShare(b) - buyShare(a) || b.total - a.total || a.symbol.localeCompare(b.symbol);
-      if (filters.order === "strong_buy") return b.strong_buy - a.strong_buy || b.total - a.total || a.symbol.localeCompare(b.symbol);
-      if (filters.order === "coverage") return b.total - a.total || a.symbol.localeCompare(b.symbol);
-      if (filters.order === "delta") {
-        const deltaA = buyShareDelta(a);
-        const deltaB = buyShareDelta(b);
-        if (deltaA == null && deltaB == null) return a.symbol.localeCompare(b.symbol);
-        if (deltaA == null) return 1;
-        if (deltaB == null) return -1;
-        return deltaB - deltaA || b.total - a.total || a.symbol.localeCompare(b.symbol);
-      }
-      return a.symbol.localeCompare(b.symbol);
-    });
+    .sort((a, b) => analystRowCompare(a, b, sortKey, sortDir));
 }
 
 function analystText(parent, tag, content, className) {
@@ -79,7 +104,38 @@ function formatPrice(value) {
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
+function syncAnalystSortHeaders() {
+  const { sortKey, sortDir } = analystState.filters;
+  for (const button of document.querySelectorAll("[data-analyst-sort]")) {
+    const key = button.dataset.analystSort;
+    const active = key === sortKey;
+    const heading = button.closest("th");
+    heading.classList.toggle("sorted", active);
+    if (active) heading.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending");
+    else heading.removeAttribute("aria-sort");
+    button.textContent = button.dataset.label;
+    if (active) {
+      const mark = document.createElement("span");
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = sortDir === "asc" ? " ↑" : " ↓";
+      button.appendChild(mark);
+    }
+  }
+}
+
+function toggleAnalystSort(key) {
+  const filters = analystState.filters;
+  if (filters.sortKey === key) {
+    filters.sortDir = filters.sortDir === "asc" ? "desc" : "asc";
+  } else {
+    filters.sortKey = key;
+    filters.sortDir = ANALYST_SORT_DEFAULT_DIR[key] || "desc";
+  }
+  renderAnalystResults();
+}
+
 function renderAnalystResults() {
+  syncAnalystSortHeaders();
   const votes = analystState.mood?.analyst_votes;
   const target = analystEl("analyst-results");
   target.replaceChildren();
@@ -150,16 +206,22 @@ function startAnalystView() {
   for (const [id, key, event] of [
     ["analyst-query", "query", "input"], ["analyst-min-total", "minTotal", "change"],
     ["analyst-category", "category", "change"], ["analyst-min-share", "minShare", "change"],
-    ["analyst-order", "order", "change"],
   ]) analystEl(id).addEventListener(event, (change) => {
     analystState.filters[key] = ["minTotal", "minShare"].includes(key) ? Number(change.target.value) : change.target.value;
     renderAnalystResults();
   });
   analystEl("analyst-reset").addEventListener("click", () => {
-    analystState.filters = { query: "", minTotal: 3, category: "any", minShare: 0, order: "company" };
-    for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"], ["analyst-order", "company"]]) analystEl(id).value = value;
+    analystState.filters = { ...ANALYST_DEFAULT_FILTERS };
+    for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"]]) analystEl(id).value = value;
     renderAnalystResults();
   });
+  document.querySelector(".analyst-table-wrap thead").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-analyst-sort]");
+    if (!button) return;
+    toggleAnalystSort(button.dataset.analystSort);
+    button.focus();
+  });
+  syncAnalystSortHeaders();
   void loadAnalystSnapshot();
 }
 

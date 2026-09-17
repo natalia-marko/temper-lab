@@ -11,6 +11,7 @@
 .analyst-table-wrap { overflow: auto; max-height: 610px; }
 .analyst-table-wrap table { width: 100%; min-width: 1280px; }
 .analyst-table-wrap th { position: sticky; top: 0; z-index: 1; background: #fff; white-space: nowrap; }
+.analyst-table-wrap th button { cursor: pointer; }
 .analyst-table-wrap th:not(:first-child), .analyst-table-wrap td:not(:first-child) { text-align: right; }
 .analyst-table-wrap td { height: 50px; padding: 7px 12px; }
 .analyst-table-wrap td:first-child { min-width: 150px; }

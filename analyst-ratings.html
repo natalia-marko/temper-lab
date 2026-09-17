@@ -7,7 +7,7 @@
     <title>Temper Lab — Analyst ratings</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=42a75193c712" />
-    <link rel="stylesheet" href="./analyst-ratings.css?v=2ed749b8fd24" />
+    <link rel="stylesheet" href="./analyst-ratings.css?v=d5f8d6ffb012" />
   </head>
   <body>
     <div class="desk">
@@ -42,16 +42,15 @@
             <label>At least this many ratings<select id="analyst-min-total"><option value="1">1 rating</option><option value="3" selected>3 ratings</option><option value="5">5 ratings</option><option value="10">10 ratings</option></select></label>
             <label>At least one rating of<select id="analyst-category"><option value="any">Any label</option><option value="strong_buy">Strong Buy</option><option value="buy">Buy</option><option value="hold">Hold</option><option value="sell">Sell</option><option value="strong_sell">Strong Sell</option></select></label>
             <label>Minimum Buy share<select id="analyst-min-share"><option value="0">Any</option><option value="0.5">50%</option><option value="0.7">70%</option><option value="0.9">90%</option></select></label>
-            <label>Order by<select id="analyst-order"><option value="company">Company A–Z</option><option value="share">Buy share, high–low</option><option value="delta">Buy share Δ, high–low</option><option value="strong_buy">Strong Buy count, high–low</option><option value="coverage">All ratings, high–low</option></select></label>
             <button type="button" id="analyst-reset">Reset</button>
           </div>
           <p id="analyst-count" class="analyst-count" role="status"></p>
-          <div class="analyst-table-wrap"><table><thead><tr><th scope="col">Company</th><th scope="col">On screens</th><th scope="col">Strong Buy</th><th scope="col">Buy</th><th scope="col">Hold</th><th scope="col">Sell</th><th scope="col">Strong Sell</th><th scope="col">All ratings</th><th scope="col">Buy share</th><th scope="col">Buy share Δ</th><th scope="col">Target median</th><th scope="col">Implied upside</th><th scope="col">Target range</th></tr></thead><tbody id="analyst-results"><tr><td colspan="13" class="empty">Loading analyst summaries…</td></tr></tbody></table></div>
+          <div class="analyst-table-wrap"><table><thead><tr><th scope="col"><button type="button" data-analyst-sort="company" data-label="Company">Company</button></th><th scope="col" class="sorted" aria-sort="descending"><button type="button" data-analyst-sort="overlap" data-label="On screens">On screens</button></th><th scope="col"><button type="button" data-analyst-sort="strong_buy" data-label="Strong Buy">Strong Buy</button></th><th scope="col"><button type="button" data-analyst-sort="buy" data-label="Buy">Buy</button></th><th scope="col"><button type="button" data-analyst-sort="hold" data-label="Hold">Hold</button></th><th scope="col"><button type="button" data-analyst-sort="sell" data-label="Sell">Sell</button></th><th scope="col"><button type="button" data-analyst-sort="strong_sell" data-label="Strong Sell">Strong Sell</button></th><th scope="col"><button type="button" data-analyst-sort="total" data-label="All ratings">All ratings</button></th><th scope="col"><button type="button" data-analyst-sort="buy_share" data-label="Buy share">Buy share</button></th><th scope="col"><button type="button" data-analyst-sort="buy_share_delta" data-label="Buy share Δ">Buy share Δ</button></th><th scope="col"><button type="button" data-analyst-sort="target_median" data-label="Target median">Target median</button></th><th scope="col"><button type="button" data-analyst-sort="implied_upside" data-label="Implied upside">Implied upside</button></th><th scope="col"><button type="button" data-analyst-sort="target_range" data-label="Target range">Target range</button></th></tr></thead><tbody id="analyst-results"><tr><td colspan="13" class="empty">Loading analyst summaries…</td></tr></tbody></table></div>
           <noscript><p class="empty">Enable JavaScript to load the analyst summaries.</p></noscript>
-          <p class="analyst-note">Hold is Yahoo’s label—not “Keep.” A missing summary is excluded, not counted as zero votes. The Yahoo 0m category counts and price targets are dated when retrieved; individual report publication dates are not supplied. Target range is (high − low) / median. The table orders opinions only, not investment merit. Rating terms can differ among research firms.</p>
+          <p class="analyst-note">Hold is Yahoo’s label—not “Keep.” A missing summary is excluded, not counted as zero votes. The Yahoo 0m category counts and price targets are dated when retrieved; individual report publication dates are not supplied. Target range is (high − low) / median. Every column header sorts the table; the first click on a numeric column is high–low, click again to flip. Ties fall back to Buy share high–low, then ticker. Missing values (n/a) sink last in every direction. The default is On screens, triples first — corroboration breadth, not a Street rank. Reset restores the default. The table orders opinions only, not investment merit. Rating terms can differ among research firms.</p>
         </section>
       </main>
     </div>
-    <script src="./analyst-ratings.js?v=d2ad5bd73bf4"></script>
+    <script src="./analyst-ratings.js?v=fe2038618e32"></script>
   </body>
 </html>
