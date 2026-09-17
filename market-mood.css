@@ -46,11 +46,24 @@
 .weekly-stat strong { color: #254e3b; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .weekly-stat span { color: #718075; font-size: 11px; }
 .weekly-change { margin: 13px 28px 18px; color: #526e5b; font-size: 12px; line-height: 1.6; }
+.weekly-stat.multi-stat { flex-wrap: wrap; row-gap: 4px; }
+.weekly-stat-hint { flex-basis: 100%; color: #829187; font-size: 10px; font-variant-numeric: tabular-nums; }
 .overlap-card { margin: 0 28px; border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
 .overlap-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 15px 20px; border-bottom: 1px solid var(--line); }
 .overlap-heading h3 { margin: 0; color: #2b4b39; font-size: 17px; }
 .overlap-heading span { color: #7d8d80; font-size: 10px; }
+.overlap-group + .overlap-group { border-top: 1px solid var(--line); }
+.overlap-group-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 20px 6px; }
+.overlap-group-heading h4 { margin: 0; color: #2b4b39; font-size: 13px; }
+.overlap-group-heading span { color: #7d8d80; font-size: 10px; }
+.overlap-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 20px 12px; }
+.overlap-chip { padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #526e5b; font-size: 11px; cursor: pointer; }
+.overlap-chip:hover:not(:disabled) { border-color: #b7c9bb; }
+.overlap-chip.on { border-color: #629372; background: #eef4ef; color: #2b4b39; }
+.overlap-chip:disabled { color: #b3c0b6; cursor: not-allowed; opacity: 0.7; }
 .overlap-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 455px; overflow: auto; }
+.overlap-list-triples { max-height: 260px; }
+.overlap-empty { padding: 14px 20px; color: #7d8d80; font-size: 11px; }
 .overlap-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 9px 20px; border-bottom: 1px solid #edf1ed; }
 .overlap-item:nth-child(odd) { border-right: 1px solid #edf1ed; }
 .overlap-identity { display: grid; min-width: 0; gap: 2px; }
@@ -63,4 +76,4 @@
 @media (max-width: 1100px) { .mood-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.index-card { grid-column: 1 / -1; min-height: 0; }.index-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; } }
 @media (max-width: 1250px) { .extremes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 800px) { .extremes-grid { grid-template-columns: 1fr; } }
-@media (max-width: 620px) { .mood-grid { grid-template-columns: 1fr; margin: 12px 14px 25px; }.mood-card { min-height: 0; }.index-card { grid-column: auto; }.index-rows { grid-template-columns: 1fr; gap: 0; }.extremes-intro { align-items: flex-start; flex-direction: column; margin: 0 14px 14px; }.extremes-grid { margin: 0 14px; }.mood-method { margin: 16px 14px 30px; }.mood-status { margin: 12px 14px; }.weekly-stat-grid { grid-template-columns: 1fr; margin: 0 14px; gap: 8px; }.weekly-change { margin: 12px 14px; }.overlap-card { margin: 0 14px; }.overlap-heading { flex-direction: column; align-items: flex-start; }.overlap-list { grid-template-columns: 1fr; max-height: 410px; }.overlap-item:nth-child(odd) { border-right: 0; } }
+@media (max-width: 620px) { .mood-grid { grid-template-columns: 1fr; margin: 12px 14px 25px; }.mood-card { min-height: 0; }.index-card { grid-column: auto; }.index-rows { grid-template-columns: 1fr; gap: 0; }.extremes-intro { align-items: flex-start; flex-direction: column; margin: 0 14px 14px; }.extremes-grid { margin: 0 14px; }.mood-method { margin: 16px 14px 30px; }.mood-status { margin: 12px 14px; }.weekly-stat-grid { grid-template-columns: 1fr; margin: 0 14px; gap: 8px; }.weekly-change { margin: 12px 14px; }.overlap-card { margin: 0 14px; }.overlap-heading { flex-direction: column; align-items: flex-start; }.overlap-group-heading { padding: 12px 14px 4px; flex-direction: column; align-items: flex-start; gap: 2px; }.overlap-chips { padding: 4px 14px 12px; }.overlap-list { grid-template-columns: 1fr; max-height: 410px; }.overlap-item:nth-child(odd) { border-right: 0; } }

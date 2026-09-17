@@ -84,26 +84,143 @@ function renderScreenLeaders(id, rows) {
 }
 
 const SCREEN_NAMES = { strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" };
+const OVERLAP_PAIR_KEYS = ["strength_growth", "growth_undervalued", "strength_undervalued"];
+const OVERLAP_PAIR_LABELS = {
+  strength_growth: "Hot Tape · Growth",
+  growth_undervalued: "Growth · Cheap",
+  strength_undervalued: "Hot Tape · Cheap",
+};
+
+const overlapState = { doublesFilter: "all", triples: [], doubles: [] };
+
+function splitOverlap(rows) {
+  const triples = [];
+  const doubles = [];
+  for (const row of rows || []) {
+    const size = (row.screens || []).length;
+    if (size === 3) triples.push(row);
+    else if (size === 2) doubles.push(row);
+  }
+  return { triples, doubles };
+}
+
+function overlapPairKey(row) {
+  const screens = new Set(row.screens || []);
+  if (screens.has("strength") && screens.has("growth") && !screens.has("undervalued")) return "strength_growth";
+  if (screens.has("growth") && screens.has("undervalued") && !screens.has("strength")) return "growth_undervalued";
+  if (screens.has("strength") && screens.has("undervalued") && !screens.has("growth")) return "strength_undervalued";
+  return null;
+}
+
+function filterDoubles(rows, key) {
+  if (key === "all") return rows;
+  if (key === "new") return rows.filter((row) => row.new_overlap === true);
+  return rows.filter((row) => overlapPairKey(row) === key);
+}
+
+function doublesCounts(rows) {
+  const totals = { all: rows.length, strength_growth: 0, growth_undervalued: 0, strength_undervalued: 0, new: 0 };
+  for (const row of rows) {
+    const key = overlapPairKey(row);
+    if (key && key in totals) totals[key] += 1;
+    if (row.new_overlap === true) totals.new += 1;
+  }
+  return totals;
+}
+
+function renderOverlapRow(target, row) {
+  const item = appendText(target, "div", "", "overlap-item");
+  const identity = appendText(item, "div", "", "overlap-identity");
+  appendText(identity, "strong", row.symbol);
+  appendText(identity, "small", row.name || row.symbol);
+  const badges = appendText(item, "div", "", "overlap-badges");
+  for (const key of row.screens || []) appendText(badges, "span", SCREEN_NAMES[key] || key, "overlap-badge");
+  if (row.new_overlap === true) appendText(badges, "span", "New overlap", "overlap-badge overlap-new");
+}
+
+function renderTriples(rows) {
+  const target = $("triples-list");
+  target.replaceChildren();
+  $("triples-count").textContent = `${rows.length} name${rows.length === 1 ? "" : "s"} · alphabetical`;
+  if (!rows.length) {
+    appendText(target, "div", "No name is on all three screens this Friday.", "overlap-empty");
+    return;
+  }
+  for (const row of rows) renderOverlapRow(target, row);
+}
+
+function renderDoublesChips(counts) {
+  const target = $("overlap-chips");
+  target.replaceChildren();
+  const options = [["all", "All"], ...OVERLAP_PAIR_KEYS.map((key) => [key, OVERLAP_PAIR_LABELS[key]]), ["new", "New this week"]];
+  for (const [key, label] of options) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "overlap-chip";
+    button.dataset.doublesFilter = key;
+    if (overlapState.doublesFilter === key) {
+      button.classList.add("on");
+      button.setAttribute("aria-pressed", "true");
+    } else {
+      button.setAttribute("aria-pressed", "false");
+    }
+    button.textContent = `${label} (${counts[key] ?? 0})`;
+    button.disabled = (counts[key] ?? 0) === 0 && key !== "all";
+    target.appendChild(button);
+  }
+}
+
+function renderDoubles() {
+  const target = $("doubles-list");
+  target.replaceChildren();
+  const filtered = filterDoubles(overlapState.doubles, overlapState.doublesFilter);
+  const doubleCount = overlapState.doubles.length;
+  $("doubles-count").textContent = `${filtered.length} of ${doubleCount} · alphabetical within the filter`;
+  if (!filtered.length) {
+    appendText(target, "div", "No name matches this pair for the current Friday.", "overlap-empty");
+    return;
+  }
+  for (const row of filtered) renderOverlapRow(target, row);
+}
+
+function renderOverlapCard(report) {
+  const rows = report?.overlap || [];
+  const { triples, doubles } = splitOverlap(rows);
+  overlapState.triples = triples;
+  overlapState.doubles = doubles;
+  $("overlap-count").textContent = `${rows.length} names · triples first, then two-screen names`;
+  renderTriples(triples);
+  renderDoublesChips(doublesCounts(doubles));
+  renderDoubles();
+}
 
 function renderScreenReport(report) {
-  $("report-unique").textContent = Number.isInteger(report?.unique_count) ? report.unique_count.toLocaleString() : "—";
-  $("report-multi").textContent = Number.isInteger(report?.multi_count) ? report.multi_count.toLocaleString() : "—";
+  const unique = Number.isInteger(report?.unique_count) ? report.unique_count : null;
+  const multi = Number.isInteger(report?.multi_count) ? report.multi_count : null;
+  $("report-unique").textContent = unique != null ? unique.toLocaleString() : "—";
+  $("report-multi").textContent = multi != null ? multi.toLocaleString() : "—";
   $("report-triple").textContent = Number.isInteger(report?.triple_count) ? report.triple_count.toLocaleString() : "—";
+  $("report-multi-share").textContent = unique && multi != null
+    ? `${((multi / unique) * 100).toFixed(1)}% of ${unique.toLocaleString()} screened`
+    : "";
   $("report-change").textContent = report?.previous_as_of
     ? `Since ${day(report.previous_as_of)}: ${report.new_overlap_count} names entered the two-or-more-screen group and ${report.lost_overlap_count} left it. Net ${report.multi_count - report.previous_multi_count >= 0 ? "+" : ""}${report.multi_count - report.previous_multi_count}. Membership changes are not analyst upgrades.`
     : "No prior weekly snapshot is available for an overlap comparison.";
-  const target = $("overlap-list");
-  target.replaceChildren();
-  $("overlap-count").textContent = `${report?.overlap?.length ?? 0} names · alphabetical within each overlap group`;
-  for (const row of report?.overlap || []) {
-    const item = appendText(target, "div", "", "overlap-item");
-    const identity = appendText(item, "div", "", "overlap-identity");
-    appendText(identity, "strong", row.symbol);
-    appendText(identity, "small", row.name || row.symbol);
-    const badges = appendText(item, "div", "", "overlap-badges");
-    for (const key of row.screens || []) appendText(badges, "span", SCREEN_NAMES[key] || key, "overlap-badge");
-    if (row.new_overlap === true) appendText(badges, "span", "New overlap", "overlap-badge overlap-new");
-  }
+  renderOverlapCard(report);
+}
+
+function bindOverlapControls() {
+  const chips = $("overlap-chips");
+  if (!chips || chips.dataset.bound === "true") return;
+  chips.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-doubles-filter]");
+    if (!button || button.disabled) return;
+    overlapState.doublesFilter = button.dataset.doublesFilter;
+    renderDoublesChips(doublesCounts(overlapState.doubles));
+    renderDoubles();
+    chips.querySelector(`[data-doubles-filter="${overlapState.doublesFilter}"]`)?.focus();
+  });
+  chips.dataset.bound = "true";
 }
 
 function render(mood) {
@@ -123,6 +240,7 @@ function render(mood) {
   renderScreenLeaders("growth-body", mood.growth_leaders);
   renderScreenLeaders("cheap-body", mood.cheap_leaders);
   renderScreenReport(mood.screen_report);
+  bindOverlapControls();
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
 }
