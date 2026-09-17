@@ -7,7 +7,7 @@
     <title>Temper Lab — Analyst ratings</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=42a75193c712" />
-    <link rel="stylesheet" href="./analyst-ratings.css?v=d5f8d6ffb012" />
+    <link rel="stylesheet" href="./analyst-ratings.css?v=295b37d04895" />
   </head>
   <body>
     <div class="desk">
@@ -42,6 +42,7 @@
             <label>At least this many ratings<select id="analyst-min-total"><option value="1">1 rating</option><option value="3" selected>3 ratings</option><option value="5">5 ratings</option><option value="10">10 ratings</option></select></label>
             <label>At least one rating of<select id="analyst-category"><option value="any">Any label</option><option value="strong_buy">Strong Buy</option><option value="buy">Buy</option><option value="hold">Hold</option><option value="sell">Sell</option><option value="strong_sell">Strong Sell</option></select></label>
             <label>Minimum Buy share<select id="analyst-min-share"><option value="0">Any</option><option value="0.5">50%</option><option value="0.7">70%</option><option value="0.9">90%</option></select></label>
+            <label>Industry<select id="analyst-industry"><option value="any">Any industry</option></select></label>
             <button type="button" id="analyst-reset">Reset</button>
           </div>
           <p id="analyst-count" class="analyst-count" role="status"></p>
@@ -51,6 +52,6 @@
         </section>
       </main>
     </div>
-    <script src="./analyst-ratings.js?v=fe2038618e32"></script>
+    <script src="./analyst-ratings.js?v=03c65fce790a"></script>
   </body>
 </html>

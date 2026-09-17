@@ -6,6 +6,7 @@
 .analyst-controls label { display: grid; gap: 5px; color: #718075; font-size: 10px; }
 .analyst-controls input, .analyst-controls select, .analyst-controls button { min-height: 34px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
 .analyst-controls input { width: 155px; }
+.analyst-controls select#analyst-industry { max-width: 240px; }
 .analyst-controls button { cursor: pointer; }
 .analyst-count { margin: 0; padding: 10px 22px; border-top: 1px solid var(--line); color: #526e5b; font-size: 11px; }
 .analyst-table-wrap { overflow: auto; max-height: 610px; }

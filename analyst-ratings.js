@@ -1,6 +1,7 @@
 const ANALYST_SORT_KEYS = ["company", "overlap", "strong_buy", "buy", "hold", "sell", "strong_sell", "total", "buy_share", "buy_share_delta", "target_median", "implied_upside", "target_range"];
 const ANALYST_SORT_DEFAULT_DIR = { company: "asc" };
-const ANALYST_DEFAULT_FILTERS = { query: "", minTotal: 3, category: "any", minShare: 0, sortKey: "overlap", sortDir: "desc" };
+const ANALYST_DEFAULT_FILTERS = { query: "", minTotal: 3, category: "any", minShare: 0, industry: "any", sortKey: "overlap", sortDir: "desc" };
+const ANALYST_INDUSTRY_UNSPECIFIED = "__none__";
 const analystState = { mood: null, filters: { ...ANALYST_DEFAULT_FILTERS } };
 const analystEl = (id) => document.getElementById(id);
 const ANALYST_COLUMNS = 13;
@@ -63,14 +64,44 @@ function analystRowCompare(a, b, sortKey, sortDir) {
   return 0;
 }
 
+function rowIndustry(row) {
+  const value = row?.industry;
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function analystIndustryOptions(votes) {
+  const rows = votes?.rows || [];
+  const known = new Set();
+  let hasMissing = false;
+  for (const row of rows) {
+    const industry = rowIndustry(row);
+    if (industry) known.add(industry);
+    else hasMissing = true;
+  }
+  const sorted = [...known].sort((a, b) => a.localeCompare(b));
+  const options = [{ value: "any", label: "Any industry" }];
+  for (const industry of sorted) options.push({ value: industry, label: industry });
+  if (hasMissing) options.push({ value: ANALYST_INDUSTRY_UNSPECIFIED, label: "Industry not reported" });
+  return options;
+}
+
+function matchesIndustry(row, industry) {
+  if (industry === "any") return true;
+  const value = rowIndustry(row);
+  if (industry === ANALYST_INDUSTRY_UNSPECIFIED) return value === null;
+  return value === industry;
+}
+
 function filteredAnalysts(votes, filters) {
   const query = filters.query.trim().toLowerCase();
+  const industry = filters.industry || "any";
   const sortKey = ANALYST_SORT_KEYS.includes(filters.sortKey) ? filters.sortKey : "overlap";
   const sortDir = filters.sortDir === "asc" ? "asc" : "desc";
   return (votes?.rows || [])
     .filter((row) => row.total >= filters.minTotal)
     .filter((row) => filters.category === "any" || row[filters.category] > 0)
     .filter((row) => (buyShare(row) ?? 0) >= filters.minShare)
+    .filter((row) => matchesIndustry(row, industry))
     .filter((row) => !query || `${row.symbol} ${row.name}`.toLowerCase().includes(query))
     .sort((a, b) => analystRowCompare(a, b, sortKey, sortDir));
 }
@@ -189,6 +220,7 @@ async function loadAnalystSnapshot() {
       throw new Error("Analyst coverage does not match the cross-screen shortlist.");
     }
     analystState.mood = mood;
+    populateAnalystIndustrySelect(votes);
     analystEl("week-chip").textContent = `Data as of ${analystDate(mood.as_of)}`;
     analystEl("aside-week").textContent = analystDate(mood.as_of);
     analystEl("analyst-coverage").textContent = `${votes.covered_count} of ${votes.attempted_count} summaries available`;
@@ -202,17 +234,35 @@ async function loadAnalystSnapshot() {
   }
 }
 
+function populateAnalystIndustrySelect(votes) {
+  const select = analystEl("analyst-industry");
+  if (!select) return;
+  const options = analystIndustryOptions(votes);
+  const current = analystState.filters.industry;
+  select.replaceChildren();
+  for (const { value, label } of options) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  }
+  const values = new Set(options.map(({ value }) => value));
+  select.value = values.has(current) ? current : "any";
+  analystState.filters.industry = select.value;
+}
+
 function startAnalystView() {
   for (const [id, key, event] of [
     ["analyst-query", "query", "input"], ["analyst-min-total", "minTotal", "change"],
     ["analyst-category", "category", "change"], ["analyst-min-share", "minShare", "change"],
+    ["analyst-industry", "industry", "change"],
   ]) analystEl(id).addEventListener(event, (change) => {
     analystState.filters[key] = ["minTotal", "minShare"].includes(key) ? Number(change.target.value) : change.target.value;
     renderAnalystResults();
   });
   analystEl("analyst-reset").addEventListener("click", () => {
     analystState.filters = { ...ANALYST_DEFAULT_FILTERS };
-    for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"]]) analystEl(id).value = value;
+    for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"], ["analyst-industry", "any"]]) analystEl(id).value = value;
     renderAnalystResults();
   });
   document.querySelector(".analyst-table-wrap thead").addEventListener("click", (event) => {
