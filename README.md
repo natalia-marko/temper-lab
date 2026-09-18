@@ -2,6 +2,14 @@
 
 Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
 
+The homepage also shows a separate experimental **12-month outlook** with
+five quality-and-momentum candidates, model return ranges, conditional valuation
+scenarios and disclosed validation results. The model is not promoted to the
+selection rule and no win probability is claimed. `outlook.json` must identify
+the same run and snapshot hash as `desk.json` and `release.json`; mismatches
+hide the estimates. See `research_engine/docs/outlook-12m.md` in the factory
+repository for methodology, limitations, dependencies and verification.
+
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
 after Market mood. It filters Yahoo's five current-month rating counts for the
 names appearing on at least two published screens, so it is a cross-screen
