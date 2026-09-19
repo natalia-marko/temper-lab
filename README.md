@@ -63,6 +63,13 @@ same run. Cboe VIX history is fetched at export time; if it is unavailable, the
 page leaves the VIX reading blank. If the mood export itself fails, the page
 detects a stale run ID and waits for a matching refresh.
 It stages and publishes the current screener only after its own checks pass.
+Here, release promotion means writing the validated files to the factory's
+local `share/` folder. Updating this website still requires the separate
+`tools/publish_public_site.sh` upload; a successful local job is not a deployment.
+The weekly and release gates require QQQ, SPY, market features, growth rankings,
+and the research panel to agree on the latest stock session in the latest
+completed calendar week. A wholly stale lake fails; a Friday holiday can use
+Thursday's session. Fundamentals keep their independent filing dates.
 Historical comparison runs afterward as a separate validation phase. A failed
 comparison leaves the current screener published and records a failed
 validation status in `release.json`.
@@ -97,6 +104,11 @@ fails:
 python tools/release_weekly.py
 # then copy share/ into this repository and push with the public-site workflow
 ```
+
+After an interrupted weekly run, rerun `./run_weekly.sh` in the factory on the
+same day. Completed stock and SEC batches are reused. Benchmark `--resume`
+reuses an identical completed request and replaces the yearly benchmark files
+when a new week must be saved, including recovery from a partially saved run.
 
 When changing `desk.js` or `desk.css`, update its `?v=` value in `index.html` to
 the first 12 characters of the file's SHA-256 hash. GitHub Pages caches assets
