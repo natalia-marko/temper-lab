@@ -4,7 +4,7 @@
 // 27 industries sit in more than one of their sectors.
 //
 // Loaded before every page script that groups companies by sector, so both the
-// Opportunities dropdown and the Analyst ratings filter see one taxonomy.
+// Research dropdown and the Analyst ratings filter see one taxonomy.
 const SECTORS = [
   ["basic_materials", "Basic materials"],
   ["communication", "Communication services"],

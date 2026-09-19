@@ -22,13 +22,13 @@ function outlookCard(row) {
     <div class="outlook-card-top"><span class="outlook-rank">${row.rank}</span><strong>${outlookEscape(row.symbol)}</strong><span>${outlookEscape(row.sector.replaceAll("_", " "))}</span></div>
     <h3>${outlookEscape(row.name)}</h3>
     <div class="outlook-estimate ${row.total_median < 0 ? "outlook-negative" : ""}">${outlookPercent(row.total_median)}</div>
-    <p class="outlook-label">Experimental central estimate · 12M total return</p>
-    <div class="outlook-range"><span>Lower <b>${outlookPercent(row.total_low)}</b></span><span>Upper <b>${outlookPercent(row.total_high)}</b></span></div>
-    <p class="outlook-label">15th–85th model percentiles. Losses can exceed this range.</p>
-    <p class="outlook-relative">Central excess vs QQQ: <strong>${outlookPercent(row.excess_median, true)}</strong></p>
+    <p class="outlook-label">12-month return, model midpoint</p>
+    <div class="outlook-range"><span>Low <b>${outlookPercent(row.total_low)}</b></span><span>High <b>${outlookPercent(row.total_high)}</b></span></div>
+    <p class="outlook-label">Model low / high. The real result can be worse than low.</p>
+    <p class="outlook-relative">Model vs QQQ: <strong>${outlookPercent(row.excess_median, true)}</strong></p>
     <dl class="outlook-facts"><div><dt>Revenue growth</dt><dd>${outlookPercent(f.revenue_yoy)}</dd></div><div><dt>Return on equity</dt><dd>${outlookPercent(f.return_on_equity)}</dd></div><div><dt>Cash / profit</dt><dd>${f.cash_conversion.toFixed(2)}×</dd></div></dl>
     <details><summary>Evidence, scenarios & risks</summary>
-      <p>Selected by quality gates and a 60/40 momentum–ROE rank. This is separate from the experimental forecast.</p>
+      <p>The rank is strength and ROE. The return model did not pick these names.</p>
       <p>Reference close: $${row.reference_price.toFixed(2)} on ${outlookEscape(row.price_date)}. Estimates use next-session entry; they are total returns, not share-price targets.</p>
       <p>Revenue quarter: ${outlookEscape(row.evidence.revenue_period_end)} · filed ${outlookEscape(row.evidence.revenue_filed)}. Quality filing: ${outlookEscape(row.evidence.quality_filed)}.</p>
       <p>Trailing earnings yield ${outlookPercent(f.earnings_yield)} · annualised volatility ${outlookPercent(f.volatility_252)} · liabilities/assets ${outlookPercent(f.leverage)}.</p>
@@ -56,11 +56,11 @@ function renderOutlook(report, now = new Date()) {
   const age = Math.floor((now - new Date(`${report.as_of}T00:00:00Z`)) / 86400000);
   const caution = report.validation.model_beats_both_baselines
     ? "Experimental estimates. Historical coverage is incomplete, and no forecast probability is validated."
-    : "The AI model did not beat both simple baselines. The five names use the transparent 60/40 shortlist; return estimates are experimental.";
-  return `<div class="outlook-heading"><div><div class="eyebrow">RESEARCH SHORTLIST · 252 TRADING SESSIONS</div><h2>Five candidates. A year ahead.</h2><p>Quality and momentum, with a view of potential return and downside.</p></div><span class="badge">Experimental outlook</span></div>
+    : "Picked for strength and profitability, max two per sector. The return model is extra; it has not beaten those simple lists.";
+  return `<div class="outlook-heading"><div><div class="eyebrow">RESEARCH SHORTLIST · 252 TRADING SESSIONS</div><h2>Five names, next 12 months</h2><p>Ranked by recent strength and profitability. The bands are a model, not a claim they beat QQQ.</p></div><span class="badge">Experimental</span></div>
     <p class="outlook-notice">${caution}</p>
-    <p class="outlook-date">Data as of ${outlookEscape(report.as_of)}${age > 7 ? " · This snapshot is over a week old; refresh before relying on these estimates." : ""} · ${report.candidate_count} qualifying candidates · maximum two per sector.</p>
-    ${report.record_type === "retrospective_reconstruction" ? '<p class="outlook-date">Initial retrospective reconstruction; this is not a forecast recorded on the signal date.</p>' : ""}
+    <p class="outlook-date">As of ${outlookEscape(report.as_of)} · ${report.candidate_count} passed the quality screen · max two per sector.${age > 7 ? " Over a week old." : ""}</p>
+    ${report.record_type === "retrospective_reconstruction" ? '<p class="outlook-date">Filled in later from that Friday’s files, not issued that day.</p>' : ""}
     <div class="outlook-grid">${report.candidates.length ? report.candidates.map(outlookCard).join("") : '<p>No candidates passed the evidence and diversification checks.</p>'}</div>
     ${report.candidates.length < 5 ? '<p class="outlook-date">Fewer than five passed all selection constraints. The rules have not been relaxed.</p>' : ""}
     ${outlookEvidence(report)}`;

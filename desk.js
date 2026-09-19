@@ -306,7 +306,7 @@ function compactIndustry(name) {
 }
 
 // The SECTORS list, INDUSTRY_SECTOR map, and sectorFor / sectorLabel helpers
-// live in share/sectors.js so Opportunities and Analyst ratings share one
+// live in share/sectors.js so Research and Analyst ratings share one
 // taxonomy. That file is loaded before this one on every page that needs it.
 
 function scopeRows() {
