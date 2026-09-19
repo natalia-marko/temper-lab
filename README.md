@@ -23,7 +23,9 @@ because Yahoo's summary carries no per-report publication dates, and a name
 whose summary is missing is excluded rather than counted as zero votes. The view
 refuses to render unless `market-mood.json`, `desk.json`, and `release.json`
 agree on the same run, and unless its coverage reconciles with the cross-screen
-count.
+count. The sortable dated Close column sits immediately before Target median
+and displays the frozen reference close used in implied upside. Its date follows
+the snapshot; unavailable closes display n/a and sort last in either direction.
 
 The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
 closing implied volatility, SPY/QQQ adjusted-close returns, the share of liquid

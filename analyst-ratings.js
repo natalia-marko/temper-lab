@@ -1,9 +1,9 @@
-const ANALYST_SORT_KEYS = ["company", "overlap", "strong_buy", "buy", "hold", "sell", "strong_sell", "total", "buy_share", "buy_share_delta", "target_median", "implied_upside", "target_range"];
+const ANALYST_SORT_KEYS = ["company", "overlap", "strong_buy", "buy", "hold", "sell", "strong_sell", "total", "buy_share", "buy_share_delta", "friday_close", "target_median", "implied_upside", "target_range"];
 const ANALYST_SORT_DEFAULT_DIR = { company: "asc" };
 const ANALYST_DEFAULT_FILTERS = { query: "", minTotal: 3, category: "any", minShare: 0, sector: "", sortKey: "overlap", sortDir: "desc" };
 const analystState = { mood: null, filters: { ...ANALYST_DEFAULT_FILTERS } };
 const analystEl = (id) => document.getElementById(id);
-const ANALYST_COLUMNS = 13;
+const ANALYST_COLUMNS = 14;
 
 function analystDate(iso) {
   if (!iso) return "date unavailable";
@@ -140,7 +140,9 @@ function syncAnalystSortHeaders() {
     heading.classList.toggle("sorted", active);
     if (active) heading.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending");
     else heading.removeAttribute("aria-sort");
-    button.textContent = button.dataset.label;
+    button.textContent = key === "friday_close" && analystState.mood?.as_of
+      ? `Close · ${analystDate(analystState.mood.as_of)}`
+      : button.dataset.label;
     if (active) {
       const mark = document.createElement("span");
       mark.setAttribute("aria-hidden", "true");
@@ -189,6 +191,7 @@ function renderAnalystResults() {
     for (const key of ["strong_buy", "buy", "hold", "sell", "strong_sell", "total"]) analystText(tr, "td", String(row[key]), "analyst-count-cell");
     analystCell(tr, buyShare(row), formatShare);
     analystCell(tr, buyShareDelta(row), formatDelta);
+    analystCell(tr, row.friday_close, formatPrice);
     analystCell(tr, row.target_median, formatPrice);
     analystCell(tr, row.implied_upside, formatShare);
     analystCell(tr, row.target_dispersion, formatShare);
