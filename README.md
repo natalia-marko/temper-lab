@@ -87,14 +87,11 @@ machine and connectivity; GitHub Pages only serves the published snapshot.
 
 https://temper-lab.com
 
-## Custom domain later
+## Hosting
 
-1. Buy the domain.
-2. In this repository, add a `CNAME` file whose only line is the domain (`desk.example.com`).
-3. GitHub → Settings → Pages → Custom domain. GitHub will issue HTTPS.
-4. At the registrar, add a CNAME record to `natalia-marko.github.io`.
-
-Do not point the domain at a Cloudflare quick tunnel. This Pages site is the durable host.
+The public address is `https://temper-lab.com`, recorded in `CNAME`. GitHub
+Pages serves the separately published site. Keep this file when publishing;
+the local dashboard and temporary preview tunnels are separate from that host.
 
 ## Update the snapshot
 
@@ -120,9 +117,12 @@ The Market mood page uses the same 12-character hashes for `desk.css`,
 `market-mood.css`, and `market-mood.js`; the Analyst ratings page does the same
 for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 
-Full startup and filter regression checks (from the factory repository):
+Public-page logic and markup regression checks (from the factory repository):
 
 ```bash
-npm install --prefix /tmp/temper-dom-check --no-audit --no-fund jsdom@27.0.1
-NODE_PATH=/tmp/temper-dom-check/node_modules node --test tests/public_desk.test.cjs tests/public_desk_startup.test.cjs
+node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs
 ```
+
+These use Node's built-in test runner; no extra DOM package is needed. They
+do not replace browser layout testing. The factory's `short_commands.md`
+contains the complete release gate and publication commands.
