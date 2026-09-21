@@ -2,6 +2,7 @@ const SCREENS = [
   ["growth", "Growth"],
   ["strength", "Hot tape"],
   ["undervalued", "Cheap on operating profit"],
+  ["conviction", "Conviction · analysts"],
 ];
 const VIEWS = [
   ["overview", "Summary"],
@@ -9,6 +10,7 @@ const VIEWS = [
   ["price", "Price"],
   ["revenue", "Revenue"],
   ["valuation", "Valuation"],
+  ["analysts", "Analysts"],
 ];
 const OVERVIEW = {
   strength: [
@@ -26,8 +28,16 @@ const OVERVIEW = {
     ["operating_earnings_yield", "OI / equity cap", "percent"],
     ["operating_margin", "TTM operating margin", "percent"],
   ],
+  conviction: [
+    ["strong_buy", "Strong-buy share", "share"],
+    ["analyst_total", "Ratings", "count"],
+    ["up_last_30_days", "EPS up · 30d", "count"],
+    ["down_last_30_days", "EPS down · 30d", "count"],
+    ["revision_breadth", "Revision breadth", "percent"],
+  ],
 };
 const COLUMNS = {
+  analysts: OVERVIEW.conviction,
   quality: [
     ["roe", "TTM return on equity", "percent"],
     ["net_margin", "TTM net margin", "percent"],
@@ -108,6 +118,7 @@ function day(iso) {
   });
 }
 function fmt(value, kind) {
+  if (kind === "share") return value == null ? "—" : `${(value * 100).toFixed(2)}%`;
   if (kind === "percent") return pct(value);
   if (kind === "points") return points(value);
   if (kind === "multiple") return value == null ? "—" : `${value.toFixed(2)}×`;
@@ -130,7 +141,7 @@ function metricTd(symbol, key, kind) {
 }
 
 function rankedMap(key) {
-  return new Map((state.desk.setups[key].results || []).map((row) => [row.symbol, row]));
+  return new Map((state.desk.setups[key]?.results || []).map((row) => [row.symbol, row]));
 }
 function factor(symbol, key) {
   return state.desk.companies[symbol]?.factors?.[key];
@@ -383,10 +394,14 @@ function priceOnlyView() {
   return state.view === "price" || (state.view === "overview" && state.screen === "strength");
 }
 
+function analystView() {
+  return state.view === "analysts" || (state.view === "overview" && state.screen === "conviction");
+}
+
 function passesEvidence(symbol) {
   const status = trustStatus(symbol);
   if (state.evidenceStatus === "all") return true;
-  if (state.evidenceStatus === "default") return priceOnlyView() || status !== "broken";
+  if (state.evidenceStatus === "default") return priceOnlyView() || analystView() || status !== "broken";
   return status === state.evidenceStatus;
 }
 
@@ -434,6 +449,7 @@ function evidenceScope() {
 }
 
 function usualAccountsLabel() {
+  if (analystView()) return "Usual: show everyone (analyst view)";
   return priceOnlyView()
     ? "Usual: show everyone (price list)"
     : "Usual: hide statements that do not add up";
@@ -442,6 +458,7 @@ function usualAccountsLabel() {
 function evidenceHint() {
   const prefix = "This is the accounts, not profit. A loss-making company can still add up.";
   if (state.evidenceStatus === "default") {
+    if (analystView()) return "Analyst sentiment does not grade the accounts. Statement flags remain visible; use Quality & cash flow to inspect them.";
     return priceOnlyView()
       ? `${prefix} On a price list, everyone stays, including broken statements.`
       : `${prefix} On these columns, statements that do not add up are hidden.`;
@@ -509,6 +526,7 @@ function showEvidence(symbol) {
     ["Revenue fiscal period end", company.revenue_period_end],
     ["Revenue filing date", company.revenue_filed],
     ["Quality filing date", company.quality_filed],
+    ["Analyst observations collected", company.analyst?.retrieved_at],
   ];
   const reasons = company.trust?.reasons || [];
   const notes = standoutNotes(symbol);
@@ -523,13 +541,15 @@ function showEvidence(symbol) {
     ${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : "<p>No specific issue recorded.</p>"}
     <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
     <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
+    ${company.analyst ? "<p>Analyst counts are dated by collection, which can be after the price date. EPS revisions cover the current fiscal year (Yahoo 0y). They are not individual report dates.</p>" : ""}
     <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : notReported(symbol, key) ? "Not reported by this filer" : "Unavailable"}</dd>`).join("")}</dl>
     ${notes.length ? `<h3>What stands out</h3><ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul><p>These are prompts to look further, not conclusions, and they change nothing about the rank or score.</p>` : ""}
     <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
       const row = rankedMap(key).get(symbol);
       const moved = movementLabel(key, symbol);
       const since = moved ? ` <em>${escapeHtml(moved)}</em>` : "";
-      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}${since}` : `Outside the published list; a missing input, failed gate, or shortlist cutoff may apply. Individual exclusion reasons are not exported.${since}`}</li>`;
+      const excluded = state.desk.setups[key]?.exclusions?.find((entry) => entry.symbol === symbol);
+      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}${since}` : excluded ? escapeHtml(excluded.reasons.join("; ")) : `Outside the published list; a missing input, failed gate, or shortlist cutoff may apply.${since}`}</li>`;
     }).join("")}</ul>`;
   $("company-evidence").showModal();
 }
@@ -686,6 +706,7 @@ function rankedByPhrase(key) {
     strength: "recent 63- and 252-session return",
     growth: "return on equity, after the profit and growth gates",
     undervalued: "operating income divided by EV (equity cap + interest-bearing debt − cash)",
+    conviction: "50% strong-buy-share percentile + 50% EPS-revision-breadth percentile",
   }[key];
 }
 
@@ -693,6 +714,11 @@ function inspectNote() {
   const list = screenLabel(state.screen);
   const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
   const rankedBy = rankedByPhrase(state.screen);
+  if (analystView()) {
+    const dates = state.desk.setups.conviction?.analyst_dates;
+    const collected = dates ? `Collected ${day(dates.first)}${day(dates.last) !== day(dates.first) ? `–${day(dates.last)}` : ""}; price reference ${day(state.desk.as_of)}.` : "No dated analyst capture is available for this price week.";
+    return `${list} rank stays ${rankedBy}. ${collected} Strong-buy share = Strong Buy / all ratings. Breadth = (up − down) / (up + down), for current-fiscal-year EPS over 30 days. Zero means no net revisions; n/a means missing. Inspect counts: one upward revision can have the same breadth as ten.`;
+  }
   if (state.view === "overview") {
     const companion =
       state.screen === "undervalued"
@@ -831,7 +857,7 @@ function bind() {
     $("sector").focus();
   });
   const select = $("screen");
-  select.innerHTML = SCREENS.map(
+  select.innerHTML = SCREENS.filter(([key]) => state.desk.setups[key]).map(
     ([key, label]) => `<option value="${key}">${label}</option>`,
   ).join("");
   select.value = state.screen;
@@ -917,7 +943,7 @@ async function start() {
     const asOf = `Data as of ${day(state.desk.as_of)}`;
     $("heading-copy").textContent = state.desk.heading;
     $("week-chip").textContent = asOf;
-    $("week-chip").title = "Prices and rankings use this date. Fundamental figures use their latest available filings.";
+    $("week-chip").title = "Price reference and fundamental signals use this date. Analyst observations use their separately displayed collection dates.";
     $("snapshot-built").textContent = `${state.desk.universe_count.toLocaleString()} liquid names${state.desk.recorded_at ? ` · Snapshot built ${day(state.desk.recorded_at)}` : ""}`;
     $("aside-week").textContent = asOf;
     if (!controlsBound) {

@@ -27,6 +27,15 @@ count. The sortable dated Close column sits immediately before Target median
 and displays the frozen reference close used in implied upside. Its date follows
 the snapshot; unavailable closes display n/a and sort last in either direction.
 
+Insights is a fourth page, `insights.html`, not a rank. It overlays parsed SEC
+Form 4 / 13D / 13G events on this week’s published Strength, Growth, and Cheap
+names. Open-market buys are Form 4 code P of at least $50,000 (dollars) and 13D
+filings with an open-market cash price near the freeze close. Warrant conversions
+and 13G 5% ownership levels are listed as other filings, not buys. Dates are SEC
+acceptance times. Empty means no qualifying trade in the window after a fetch.
+The page refuses to render unless `insights.json` matches `desk.json` and
+`release.json` on the same freeze. Conviction is not this list.
+
 The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
 closing implied volatility, SPY/QQQ adjusted-close returns, the share of liquid
 names up over 63 QQQ sessions, and the ten highest 63-session stock
@@ -60,6 +69,9 @@ advance the underlying ranking date. Fundamentals retain their own filing period
 
 The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
+Ownership insights is a separate `com.temperlab.ownership` job, Tuesday and
+Friday at 08:00, overlaying parsed Form 4 / 13D trades on that freeze. SMTP for
+that mail lives in the factory file `config/digest.local.env`, not in `.zshrc`.
 After a current screener passes, the release writes `market-mood.json` for the
 same run. Cboe VIX history is fetched at export time; if it is unavailable, the
 page leaves the VIX reading blank. If the mood export itself fails, the page

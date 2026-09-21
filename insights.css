@@ -1,0 +1,21 @@
+.insights-label { color: #6e7f72; font-size: 12px; letter-spacing: .03em; }
+.insights-surface { padding-bottom: 22px; }
+.insights-explanation { margin: 18px 22px 15px; padding: 12px 15px; border: 1px solid #d4e2d6; border-radius: 9px; background: #f4f7f3; color: #526e5b; font-size: 12px; line-height: 1.6; }
+.insights-explanation strong { color: #2b4b39; }
+.insights-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; padding: 0 22px 14px; }
+.insights-controls label { display: grid; gap: 5px; color: #718075; font-size: 10px; }
+.insights-controls input, .insights-controls select, .insights-controls button { min-height: 34px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
+.insights-controls input { width: 155px; }
+.insights-count { margin: 0; padding: 10px 22px; border-top: 1px solid var(--line); color: #526e5b; font-size: 11px; }
+.insights-list { display: grid; gap: 10px; padding: 14px 22px 0; }
+.insight-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.insight-card header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.insight-card strong { color: #304b3b; font-size: 13px; }
+.insight-card .kind { color: #1e6547; font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.insight-card .kind.sell { color: #8a4b3a; }
+.insight-card .kind.other { color: #6e7f72; }
+.insight-card p { margin: 6px 0 0; color: #3d5346; font-size: 13px; line-height: 1.5; }
+.insight-card small, .insight-card a { color: #7d8d80; font-size: 11px; }
+.insight-card a { display: inline-block; margin-top: 6px; }
+.insights-note { margin: 15px 22px 0; color: #708275; font-size: 11px; line-height: 1.7; }
+@media (max-width: 620px) { .insights-explanation { margin: 14px 14px 12px; }.insights-controls { padding: 0 14px 14px; }.insights-count { padding: 10px 14px; }.insights-list { padding: 12px 14px 0; }.insights-note { margin: 12px 14px 0; } }
