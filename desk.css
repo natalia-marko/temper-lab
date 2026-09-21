@@ -38,11 +38,14 @@ main { margin-left: 215px; }
   min-height: 64px; display: flex; align-items: center; justify-content: space-between;
   gap: 16px; padding: 0 28px; border-bottom: 1px solid var(--line); background: #fbfcf9;
 }
-.search { display: flex; align-items: center; gap: 10px; color: #8c938c; font-size: 11px; flex: 1; }
+.search-block { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.search { display: flex; align-items: center; gap: 10px; color: #8c938c; font-size: 11px; }
 .search input {
   flex: 1; max-width: 420px; height: 36px; border: 1px solid #cddbd1; border-radius: 8px;
   padding: 0 12px; background: #fff;
 }
+.search-status { margin: 0; max-width: 520px; font-size: 12px; line-height: 1.4; color: #6a4a2e; }
+.search-status[hidden] { display: none; }
 .top-page-link { display: inline-flex; align-items: center; white-space: nowrap; padding: 8px 11px; border: 1px solid #d0dfd2; border-radius: 7px; color: #245e42; background: #eef5ed; font-size: 12px; font-weight: 650; text-decoration: none; }
 .top-page-link:hover, .top-page-link:focus-visible { border-color: #9bbda2; background: #e2eee3; }
 .badge {
@@ -210,7 +213,7 @@ dialog dd { margin: 0; overflow-wrap: anywhere; }
 }
 @media (max-width: 480px) {
   .top { padding: 10px 14px; flex-wrap: wrap; }
-  .search { min-width: 0; }
+  .search-block, .search { min-width: 0; }
   .search input { min-width: 0; width: 100%; }
   .heading { padding: 20px 14px 8px; }
   .surface { margin: 12px 10px 24px; }

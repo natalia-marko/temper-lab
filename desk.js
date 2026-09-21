@@ -320,8 +320,48 @@ function compactIndustry(name) {
 // live in share/sectors.js so Research and Analyst ratings share one
 // taxonomy. That file is loaded before this one on every page that needs it.
 
+function liquidCount() {
+  return state.desk.universe_count || Object.keys(state.desk.companies || {}).length;
+}
+
+function matchedSymbol(query) {
+  const token = (query ?? state.query).trim();
+  if (!token || /\s/.test(token)) return null;
+  const upper = token.toUpperCase();
+  return Object.prototype.hasOwnProperty.call(state.desk.companies || {}, upper) ? upper : null;
+}
+
+function looksLikeTicker(query) {
+  return /^[A-Za-z][A-Za-z0-9.]{0,5}$/.test((query ?? state.query).trim());
+}
+
+function searchNotice(visible) {
+  const q = state.query.trim();
+  if (!q) return "";
+  const n = Number(liquidCount()).toLocaleString();
+  const symbol = matchedSymbol(q);
+  if (symbol) {
+    if (rankedMap(state.screen).has(symbol)) return "";
+    return `${symbol} is in the liquid universe, not on this published list.`;
+  }
+  if (visible.length) return "";
+  if (looksLikeTicker(q)) {
+    return `${q.toUpperCase()} is not among this week's ${n} liquid names.`;
+  }
+  return "No companies match. Reset filters to clear search, sector and evidence filters.";
+}
+
+function setSearchStatus(message) {
+  const node = $("search-status");
+  if (!node) return;
+  node.textContent = message;
+  node.hidden = !message;
+}
+
 function scopeRows() {
   const ranked = rankedMap(state.screen);
+  const exact = matchedSymbol(state.query);
+  if (exact) return [exact];
   const needle = state.query.trim().toLowerCase();
   return Object.keys(state.desk.companies).filter((symbol) => {
     const company = state.desk.companies[symbol];
@@ -669,10 +709,11 @@ function renderBody(pageRows) {
   const metrics = currentMetrics();
   if (!pageRows.length) {
     const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
-    const message = state.screen === "conviction" && state.thisScreen && !ranked.size
-      ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
-      : "No companies match. Reset filters to clear search, sector and evidence filters.";
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">${message}</td></tr>`;
+    const message = searchNotice([])
+      || (state.screen === "conviction" && state.thisScreen && !ranked.size
+        ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
+        : "No companies match. Reset filters to clear search, sector and evidence filters.");
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">${escapeHtml(message)}</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
@@ -808,6 +849,7 @@ function render() {
     : "0 companies";
   $("prev").disabled = state.page === 0;
   $("next").disabled = state.page >= pages - 1;
+  setSearchStatus(searchNotice(all));
   renderHead();
   renderBody(shown);
 }

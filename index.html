@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Research</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=42a75193c712" />
+    <link rel="stylesheet" href="./desk.css?v=5ab456df2f84" />
     <link rel="stylesheet" href="./outlook.css?v=f1c44cb52d00" />
   </head>
   <body>
@@ -31,10 +31,13 @@
       </aside>
       <main>
         <header class="top">
-          <label class="search">
-            <span>Find</span>
-            <input id="query" type="search" placeholder="Find a company, ticker or industry" autocomplete="off" />
-          </label>
+          <div class="search-block">
+            <label class="search">
+              <span>Find</span>
+              <input id="query" type="search" placeholder="Find a company, ticker or industry" autocomplete="off" aria-describedby="search-status" />
+            </label>
+            <p id="search-status" class="search-status" role="status" aria-live="polite" hidden></p>
+          </div>
           <a class="top-page-link" href="./market-mood.html">Market mood →</a>
           <a class="top-page-link" href="./analyst-ratings.html">Analyst ratings →</a>
           <a class="top-page-link" href="./insights.html">Insights →</a>
@@ -134,7 +137,7 @@
       <div id="evidence-content"></div>
     </dialog>
     <script src="./sectors.js?v=1cdbdb7f59aa"></script>
-    <script src="./desk.js?v=52ac688e0352"></script>
+    <script src="./desk.js?v=5b66fddbeb58"></script>
     <script src="./outlook.js?v=e183f75e21b7"></script>
   </body>
 </html>
