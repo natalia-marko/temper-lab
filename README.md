@@ -158,3 +158,16 @@ node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cj
 These use Node's built-in test runner; no extra DOM package is needed. They
 do not replace browser layout testing. The factory's `short_commands.md`
 contains the complete release gate and publication commands.
+
+## Potential research
+
+Choose **Inspect → Potential research** or the **Potential research** status
+filter to review the liquid universe without a Potential score. Select a company
+for revenue history, funding, share growth, review sources and milestones. Search
+also accepts researched tags such as `quantum`. Inactive names stay visible.
+
+The four screeners retain their logic. The two-report Growth confirmation is a
+research graduation flag; it does not replace Growth membership. Reviews may be
+newer than Friday prices and show their own recording time. Statuses are
+experimental and have no demonstrated predictive value. Older freezes that lack
+this evidence display no invented status.

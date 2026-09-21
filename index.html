@@ -93,6 +93,12 @@
                 <option value="unknown">Only ungraded statements</option>
               </select>
             </label>
+            <label>Potential research
+              <select id="potential-status" aria-label="Filter by unranked research status">
+                <option value="">All companies</option><option value="tracked">All tracked research</option>
+                <option value="emerging">Emerging</option><option value="speculative">Speculative</option><option value="inactive">Inactive / evidence needed</option>
+              </select>
+            </label>
             <label><input id="required-metrics" type="checkbox"> Only names with the numbers on screen</label>
             <button id="reset-filters" type="button">Reset filters</button>
           </div>
@@ -137,7 +143,7 @@
       <div id="evidence-content"></div>
     </dialog>
     <script src="./sectors.js?v=1cdbdb7f59aa"></script>
-    <script src="./desk.js?v=5b66fddbeb58"></script>
+    <script src="./desk.js?v=7044acf02073"></script>
     <script src="./outlook.js?v=e183f75e21b7"></script>
   </body>
 </html>

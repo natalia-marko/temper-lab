@@ -11,6 +11,7 @@ const VIEWS = [
   ["revenue", "Revenue"],
   ["valuation", "Valuation"],
   ["analysts", "Analysts"],
+  ["potential", "Potential research"],
 ];
 const OVERVIEW = {
   strength: [
@@ -37,6 +38,7 @@ const OVERVIEW = {
   ],
 };
 const COLUMNS = {
+  potential: [["research_revenue", "TTM revenue", "money"], ["research_burn", "TTM operating cash flow", "money"], ["research_runway", "Funding coverage · months", "months"], ["research_dilution", "Shares outstanding · YoY", "percent"]],
   analysts: OVERVIEW.conviction,
   quality: [
     ["roe", "TTM return on equity", "percent"],
@@ -78,6 +80,7 @@ const state = {
   sector: "",
   evidenceStatus: "default",
   requiredMetrics: false,
+  potentialStatus: "",
   thisScreen: true,
   sortKey: "score",
   sortDir: "desc",
@@ -118,6 +121,8 @@ function day(iso) {
   });
 }
 function fmt(value, kind) {
+  if (kind === "money") return money(value);
+  if (kind === "months") return value == null ? "—" : value.toFixed(1);
   if (kind === "share") return value == null ? "—" : `${(value * 100).toFixed(2)}%`;
   if (kind === "percent") return pct(value);
   if (kind === "points") return points(value);
@@ -144,6 +149,8 @@ function rankedMap(key) {
   return new Map((state.desk.setups[key]?.results || []).map((row) => [row.symbol, row]));
 }
 function factor(symbol, key) {
+  const p = state.desk.companies[symbol]?.potential;
+  if (key.startsWith("research_")) return ({ research_revenue: p?.ttm_revenue, research_burn: p?.ttm_operating_cash_flow, research_runway: p?.funding?.runway_months, research_dilution: p?.shares?.change })[key];
   return state.desk.companies[symbol]?.factors?.[key];
 }
 
@@ -365,7 +372,7 @@ function scopeRows() {
   const needle = state.query.trim().toLowerCase();
   return Object.keys(state.desk.companies).filter((symbol) => {
     const company = state.desk.companies[symbol];
-    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)} ${sectorLabel(sectorFor(company?.industry))}`.toLowerCase();
+    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)} ${sectorLabel(sectorFor(company?.industry))} ${(company?.potential?.tags || []).join(" ")}`.toLowerCase();
     return (!state.thisScreen || ranked.has(symbol)) && (!needle || hay.includes(needle));
   });
 }
@@ -374,6 +381,10 @@ function rows() {
   const ranked = rankedMap(state.screen);
   return scopeRows()
     .filter((symbol) => !state.sector || sectorFor(industryKey(state.desk.companies[symbol])) === state.sector)
+    .filter((symbol) => {
+      const p = state.desk.companies[symbol]?.potential;
+      return !state.potentialStatus || (state.potentialStatus === "tracked" ? !!p : p?.status === state.potentialStatus);
+    })
     .filter(passesEvidence)
     .filter((symbol) => !state.requiredMetrics || hasRequiredMetrics(symbol))
     .sort((a, b) => {
@@ -582,6 +593,7 @@ function showEvidence(symbol) {
     <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
     <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
     ${company.analyst ? "<p>Analyst counts are dated by collection, which can be after the price date. EPS revisions cover the current fiscal year (Yahoo 0y). They are not individual report dates.</p>" : ""}
+    ${potentialEvidence(company.potential)}
     <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : notReported(symbol, key) ? "Not reported by this filer" : "Unavailable"}</dd>`).join("")}</dl>
     ${notes.length ? `<h3>What stands out</h3><ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul><p>These are prompts to look further, not conclusions, and they change nothing about the rank or score.</p>` : ""}
     <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
@@ -631,8 +643,13 @@ function renderScreenGates() {
   // Labels still come from desk.json's setups.<screen>.gates, generated from
   // the real gate definitions in build_lake_ideas.py, never hardcoded here -
   // hardcoded English drifted from the actual gates once before.
-  const labels = state.desk.setups?.[state.screen]?.gates || [];
   const element = $("screen-gates");
+  if (state.view === "potential") {
+    element.innerHTML = "";
+    element.textContent = "Unranked research context. Statuses have no Potential score or predictive claim.";
+    return;
+  }
+  const labels = state.desk.setups?.[state.screen]?.gates || [];
   if (!labels.length) {
     element.innerHTML = "";
     element.textContent = "No entry gates: every eligible company is scored.";
@@ -665,6 +682,10 @@ function renderHead() {
     for (const [key, label] of metrics) html += sortHeader(key, label);
     html += sortHeader("score", "Score");
   }
+  if (state.view === "potential") {
+    html = html.replace(/<th class="rank"[^>]*>.*?<\/th>/, "<th>Research status</th>");
+    html = html.replace(sortHeader("score", "Score"), "");
+  }
   html += `</tr>`;
   $("head").innerHTML = html;
   renderIndustries();
@@ -687,7 +708,8 @@ function companyCell(symbol) {
     (status !== "complete"
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
       : "") + lossmakingChip(symbol);
-  return `<td><button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></td>`;
+  const researchChip = company?.potential ? `<span class="flag">${escapeHtml(company.potential.status)}</span>` : "";
+  return `<td><button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}${researchChip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></td>`;
 }
 
 function industryCell(symbol) {
@@ -708,7 +730,7 @@ function renderBody(pageRows) {
   const ranked = rankedMap(state.screen);
   const metrics = currentMetrics();
   if (!pageRows.length) {
-    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
+    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : state.view === "potential" ? 0 : 1);
     const message = searchNotice([])
       || (state.screen === "conviction" && state.thisScreen && !ranked.size
         ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
@@ -734,8 +756,9 @@ function renderBody(pageRows) {
         for (const [key, , kind] of metrics) {
           cells += metricTd(symbol, key, kind);
         }
-        cells += scoreCell(idea);
+        if (state.view !== "potential") cells += scoreCell(idea);
       }
+      if (state.view === "potential") cells = cells.replace(/<td class="rank">.*?<\/td>/, `<td>${escapeHtml(state.desk.companies[symbol]?.potential?.status || "Not tracked")}</td>`);
       return `<tr>${cells}</tr>`;
     })
     .join("");
@@ -755,6 +778,7 @@ function rankedByPhrase(key) {
 }
 
 function inspectNote() {
+  if (state.view === "potential") return "Unranked research context. Review revenue, funding, dilution and milestones by selecting a company. Funding coverage is a constant-burn scenario, not a forecast. Missing evidence is unknown; statuses have no validated predictive value.";
   const list = screenLabel(state.screen);
   const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
   const rankedBy = rankedByPhrase(state.screen);
@@ -814,11 +838,17 @@ function render() {
   $("method-copy").textContent = setup.method || "Method not recorded in this snapshot.";
   $("method-version").textContent = `Method version: ${setup.version || "not recorded"}`;
   renderEvidenceControls();
-  $("caption").textContent = state.desk.captions[state.screen];
+  $("potential-status").value = state.potentialStatus;
+  $("caption").textContent = state.view === "potential"
+    ? "Research context — revenue, funding, dilution and milestones; no rank."
+    : state.desk.captions[state.screen];
   renderScreenGates();
   renderTrajectory();
-  $("ranked-n").textContent = setup.results.length.toLocaleString();
-  $("of-n").textContent = `of ${state.desk.universe_count.toLocaleString()} companies`;
+  const potentialCount = Object.values(state.desk.companies).filter((company) => company.potential).length;
+  $("ranked-n").textContent = (state.view === "potential" ? potentialCount : setup.results.length).toLocaleString();
+  $("of-n").textContent = state.view === "potential"
+    ? `tracked research entries of ${state.desk.universe_count.toLocaleString()} liquid companies`
+    : `of ${state.desk.universe_count.toLocaleString()} companies`;
   $("this-screen").classList.toggle("on", state.thisScreen);
   $("all-liquid").classList.toggle("on", !state.thisScreen);
   for (const button of document.querySelectorAll("#tabs button")) {
@@ -843,7 +873,7 @@ function render() {
   const rankFixed = state.sortKey === "score"
     ? `List rank is ${screenLabel(state.screen)}`
     : `Rows are reordered; List rank is still ${screenLabel(state.screen)}`;
-  $("order").textContent = `Sorted by ${sortLabel} · ${sortDirection} · ${rankFixed}`;
+  $("order").textContent = state.view === "potential" ? `Research view · sorted by ${sortLabel} · ${sortDirection} · no Potential score` : `Sorted by ${sortLabel} · ${sortDirection} · ${rankFixed}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
@@ -879,6 +909,15 @@ function bind() {
     state.page = 0;
     render();
   });
+  $("potential-status").addEventListener("change", (event) => {
+    state.potentialStatus = event.target.value;
+    if (state.potentialStatus) {
+      state.thisScreen = false; state.view = "potential";
+      state.sortKey = "company"; state.sortDir = "asc";
+      state.requiredMetrics = false; state.evidenceStatus = "all";
+    }
+    state.page = 0; render();
+  });
   $("required-metrics").addEventListener("change", (event) => {
     state.requiredMetrics = event.target.checked;
     state.page = 0;
@@ -889,6 +928,7 @@ function bind() {
     state.sector = "";
     state.evidenceStatus = "default";
     state.requiredMetrics = false;
+    state.potentialStatus = "";
     state.page = 0;
     $("query").value = "";
     render();
@@ -923,8 +963,9 @@ function bind() {
     if (key === "overview") button.classList.add("on");
     button.addEventListener("click", () => {
       state.view = key;
-      state.sortKey = "score";
-      state.sortDir = "desc";
+      if (key === "potential") { state.thisScreen = false; state.potentialStatus = "tracked"; state.requiredMetrics = false; state.evidenceStatus = "all"; }
+      state.sortKey = key === "potential" ? "company" : "score";
+      state.sortDir = key === "potential" ? "asc" : "desc";
       state.page = 0;
       render();
     });
@@ -1005,6 +1046,40 @@ async function start() {
       start();
     });
   }
+}
+
+
+function potentialEvidence(p) {
+  if (!p) return "";
+  const f = p.funding || {};
+  const link = (url, label) => typeof url === "string" && url.startsWith("https://")
+    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : escapeHtml(label);
+  const fields = [
+    ["Status", p.status], ["Tags", (p.tags || []).join(", ") || "None"],
+    ["Research review recorded · may be after the price date", p.review?.reviewed_at || "Not reviewed"],
+    ["Review due", p.review?.review_due || "Not set"],
+    ["TTM revenue", money(p.ttm_revenue)], ["TTM operating cash flow", money(p.ttm_operating_cash_flow)],
+    ["Cash only · incomplete funding measure", money(p.cash_only)],
+    ["Cash + short-term investments less restrictions and near-term debt", money(f.available_funds)],
+    ["Long-term investments · excluded from coverage", money(f.long_term_investments)],
+    ["Monthly operating burn + cash capex", money(f.monthly_burn)],
+    ["Funding period end", f.period_end || "Unknown"],
+    ["Funding coverage · constant-burn months", f.runway_months == null ? "Unknown / not applicable" : f.runway_months.toFixed(1)],
+    ["Shares outstanding · YoY", p.shares ? `${pct(p.shares.change)} (${p.shares.from} to ${p.shares.to})` : "Unknown; requires comparable counts and no intervening split"],
+    ["Debt review", p.review?.debt_review || "Unknown"],
+    ["Dilution review", p.review?.dilution_review || "Unknown"],
+    ["Going-concern review", p.review?.going_concern_review || "Unknown"],
+    ["Growth research graduation", p.growth_promotion?.confirmed ? "Confirmed for two consecutive reporting periods" : "Not confirmed for two consecutive reporting periods"],
+  ];
+  return `<h3>Potential / research status</h3><p>${escapeHtml(p.validation)}</p>
+    <dl>${fields.map(([k,v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join("")}</dl>
+    <p>${escapeHtml(f.basis || "Funding evidence unavailable")}</p><p>${escapeHtml(f.commitments_note || "")}</p>
+    <p>${escapeHtml(p.review?.notes || "Operating milestones and funding require a sourced review.")}</p>
+    ${p.review ? `<p>${link(p.review.source_url, "Review source")} · source date ${escapeHtml(p.review.source_date)}</p>` : ""}
+    <p>${escapeHtml(p.growth_promotion?.meaning || "")}</p>
+    <h4>Evidence still needed / risks</h4><ul>${(p.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join("") || "<li>No rule flagged; still experimental.</li>"}</ul>
+    <h4>Revenue history and TTM gross margin at each filing</h4><ul>${(p.history || []).map(r => `<li>${escapeHtml(r.period_end)} · revenue ${money(r.revenue)} · YoY ${pct(r.revenue_yoy)} · TTM gross margin ${pct(r.gross_margin)} · filed ${escapeHtml(r.filed)}</li>`).join("")}</ul>
+    <h4>Milestones</h4><ul>${(p.review?.milestones || []).map(m => `<li>${escapeHtml(m.target_date)} · ${escapeHtml(m.state)} · ${escapeHtml(m.description)} (${escapeHtml(m.date_basis)}) · ${link(m.source_url, "Source")}</li>`).join("") || "<li>No dated milestone reviewed.</li>"}</ul>`;
 }
 
 start();
