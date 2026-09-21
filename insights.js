@@ -200,9 +200,9 @@ function bindInsights() {
 function startInsights() {
   bindInsights();
   Promise.all([
-    fetch("./insights.json").then(r => r.json()),
-    fetch("./desk.json").then(r => r.json()),
-    fetch("./release.json").then(r => r.json()),
+    fetch("./insights.json", { cache: "no-store" }).then(r => r.json()),
+    fetch("./desk.json", { cache: "no-store" }).then(r => r.json()),
+    fetch("./release.json", { cache: "no-store" }).then(r => r.json()),
   ]).then(([digest, desk, release]) => {
     const status = document.getElementById("insights-status");
     if (digest.schema !== "ownership-digest-1") {
