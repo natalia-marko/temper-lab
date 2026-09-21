@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-09-21T11:34:15+00:00",
+  "built_at": "2026-09-21T11:55:40+00:00",
   "counts": {
     "open_market_buy": 2,
     "open_market_sell": 33
@@ -615,7 +615,7 @@
       "shares": 5375.0,
       "symbol": "TVTX",
       "trade_date": "2026-09-15",
-      "usd": 335004.6
+      "usd": 335004.59
     },
     {
       "accepted_at": "2026-09-18T20:30:08.000Z",
@@ -746,7 +746,7 @@
     }
   ],
   "freeze_as_of": "2026-09-18",
-  "freeze_run_id": "2026-09-18-76365302b393",
+  "freeze_run_id": "2026-09-18-2b19bec26efc",
   "schema": "ownership-digest-1",
   "since": "2026-09-18",
   "universe_n": 426,

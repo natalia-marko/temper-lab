@@ -1,6 +1,22 @@
 # Temper Lab — Opportunities snapshot
 
-Read-only weekly lists: Strength, Growth, and Cheap on operating profit.
+Read-only weekly lists: Strength, Growth, Cheap on operating profit, and Conviction.
+
+**Conviction** ranks the shared eligible universe with at least five analyst
+ratings and usable inputs: 50% strong-buy-share percentile plus 50% current
+fiscal-year (`0y`) EPS revision-breadth percentile. Breadth is `(up − down) /
+(up + down)` over 30 days; no revisions is neutral zero, missing data is excluded.
+It publishes the top 10%, with a 50-name floor and 150-name cap when available.
+Average ranks handle ties, so even the highest composite score need not reach 100.
+The raw counts matter: one upward revision and ten upward revisions both have
+breadth 1. These are research signals, not probabilities or a history of upgrades.
+
+Use Conviction to find analyst-supported candidates, then inspect Quality and
+Valuation. Or keep the Growth/Cheap list and select **Analysts** to inspect its
+sentiment without changing its original ranks. Collection dates are shown
+separately from the price date: a Monday capture was not known at Friday's close.
+Earlier weeks without saved analyst data stay empty. Conviction does not enter
+the three-list Composite or the Analyst ratings page's overlap cohort.
 
 The homepage also shows a separate experimental **12-month outlook** with
 five quality-and-momentum candidates, model return ranges, conditional valuation
@@ -13,7 +29,7 @@ repository for methodology, limitations, dependencies and verification.
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
 after Market mood. It filters Yahoo's five current-month rating counts for the
 names appearing on at least two published screens, so it is a cross-screen
-shortlist, not a fourth rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
+shortlist, distinct from the Conviction rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
 categories, including Hold, Sell, and Strong Sell. Buy share Δ is this month’s
 buy share minus the previous month’s, in percentage points; a missing month is
 shown as n/a, not zero. Target median and implied upside use the freeze Friday

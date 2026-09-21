@@ -669,7 +669,10 @@ function renderBody(pageRows) {
   const metrics = currentMetrics();
   if (!pageRows.length) {
     const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : 1);
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">No companies match. Reset filters to clear search, sector and evidence filters.</td></tr>`;
+    const message = state.screen === "conviction" && state.thisScreen && !ranked.size
+      ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
+      : "No companies match. Reset filters to clear search, sector and evidence filters.";
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">${message}</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
