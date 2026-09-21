@@ -37,7 +37,7 @@ function filteredInsights(events, filters) {
     if (filters.kind === "open_market_sell" && event.event_type !== "open_market_sell") return false;
     if (filters.kind === "other" && (event.event_type === "open_market_buy" || event.event_type === "open_market_sell")) return false;
     if (!query) return true;
-    const blob = [event.symbol, event.name, event.filer, event.plain_reason].join(" ").toLowerCase();
+    const blob = [event.symbol, event.name, event.filer, event.filer_title, event.filer_kind, event.plain_reason].join(" ").toLowerCase();
     return blob.includes(query);
   });
 }
@@ -71,6 +71,30 @@ function monthTape(return21) {
 
 function sideLabel(type) {
   return SIDE_LABEL[type] || KIND_LABEL[type] || type;
+}
+
+const ROLE_LABEL = {
+  officer: "Officer",
+  director: "Director",
+  "ten-percent holder": "10% holder",
+  insider: "Insider",
+  institution: "Institution",
+};
+const ENTITY_NAME = /\b(l\.?p\.?|llp|llc|inc\.?|ltd\.?|corp\.?|plc|partners|management|advisors?)\b/i;
+
+function whoLabel(event) {
+  const form = String(event.form || "");
+  const namedInstitution = ENTITY_NAME.test(event.filer || "");
+  const kind = event.filer_kind
+    || (form.startsWith("SC 13") || event.filer_role === "institution" || namedInstitution ? "institution" : "person");
+  let title = (event.filer_title || "").trim();
+  if (!title) {
+    if (event.event_type === "passive_holder") title = "13G";
+    else if (event.event_type === "exercise_or_convert") title = "Exercise";
+    else if (event.event_type === "ownership_disclosure") title = event.form || "13D";
+    else title = ROLE_LABEL[event.filer_role] || event.filer_role || "filer";
+  }
+  return `${kind === "institution" ? "Institution" : "Person"} · ${title}`;
 }
 
 function overlayContext(event) {
@@ -133,7 +157,7 @@ function renderInsights() {
   table.className = "insights-table";
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
-  for (const label of ["Ticker", "Side", "Amount", "% cap", "Price"]) {
+  for (const label of ["Ticker", "Side", "Who", "Amount", "% cap", "Price"]) {
     appendText(headRow, "th", label);
   }
   head.appendChild(headRow);
@@ -148,6 +172,11 @@ function renderInsights() {
     name.textContent = event.name || event.symbol;
     ticker.appendChild(name);
     appendText(tr, "td", sideLabel(event.event_type), `side ${kindClass(event.event_type)}`);
+    const who = appendText(tr, "td", whoLabel(event), "who");
+    const filer = document.createElement("span");
+    filer.className = "meta";
+    filer.textContent = event.filer || "";
+    who.appendChild(filer);
     appendText(tr, "td", compactUsd(ctx.usd), "amount");
     appendText(tr, "td", formatFracCap(ctx.frac), "frac");
     const tape = monthTape(ctx.return21) || "n/a";

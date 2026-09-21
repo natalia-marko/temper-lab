@@ -45,7 +45,8 @@ the snapshot; unavailable closes display n/a and sort last in either direction.
 
 Insights is a fourth page, `insights.html`, not a rank. It overlays parsed SEC
 Form 4 / 13D / 13G events on this week’s published Strength, Growth, and Cheap
-names. The table shows ticker, bought/sold, trade dollars, dollars as a fraction
+names. The table shows ticker, bought/sold, who (person vs institution, then
+director or officer title from the Form 4), trade dollars, dollars as a fraction
 of freeze Friday market cap (sells negative), and the 21-session freeze-Friday
 return labeled as past-month tape. That month window is not Hot tape’s 63-session
 leg. Open-market buys are Form 4 code P of at least $50,000 (dollars) and 13D
