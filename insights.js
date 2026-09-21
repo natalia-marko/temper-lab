@@ -5,6 +5,13 @@ const KIND_LABEL = {
   exercise_or_convert: "Exercise / convert",
   ownership_disclosure: "Ownership filing",
 };
+const SIDE_LABEL = {
+  open_market_buy: "bought",
+  open_market_sell: "sold",
+  passive_holder: "13G",
+  exercise_or_convert: "exercise",
+  ownership_disclosure: "filed",
+};
 
 const insightsState = {
   digest: null,
@@ -14,9 +21,9 @@ const insightsState = {
 };
 
 function kindClass(type) {
-  if (type === "open_market_buy") return "kind";
-  if (type === "open_market_sell") return "kind sell";
-  return "kind other";
+  if (type === "open_market_buy") return "buy";
+  if (type === "open_market_sell") return "sell";
+  return "other";
 }
 
 function screenLabel(key) {
@@ -35,9 +42,59 @@ function filteredInsights(events, filters) {
   });
 }
 
-function money(value) {
-  if (value == null || Number.isNaN(Number(value))) return "";
-  return `$${Math.round(Number(value)).toLocaleString("en-US")}`;
+function compactUsd(value) {
+  if (value == null || Number.isNaN(Number(value))) return "n/a";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(Number(value));
+}
+
+function formatFracCap(frac) {
+  if (frac == null || Number.isNaN(Number(frac))) return "n/a";
+  const pct = Number(frac) * 100;
+  const abs = Math.abs(pct);
+  const digits = abs >= 1 ? 2 : abs >= 0.01 ? 3 : 4;
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(digits)}%`;
+}
+
+function monthTape(return21) {
+  if (return21 == null || Number.isNaN(Number(return21))) return "";
+  const pct = Number(return21) * 100;
+  const digits = Math.abs(pct) >= 1 ? 0 : 1;
+  const shown = `${pct >= 0 ? "+" : ""}${pct.toFixed(digits)}%`;
+  const trend = return21 > 0 ? "trending up" : return21 < 0 ? "trending down" : "flat";
+  return `Price: ${shown} past month (${trend})`;
+}
+
+function sideLabel(type) {
+  return SIDE_LABEL[type] || KIND_LABEL[type] || type;
+}
+
+function overlayContext(event) {
+  const company = insightsState.desk?.companies?.[event.symbol] || {};
+  const cap = event.market_cap ?? company.market_cap;
+  let frac = event.usd_frac_cap;
+  if (frac == null && cap > 0 && event.usd != null) {
+    frac = event.usd / cap;
+    if (event.event_type === "open_market_sell") frac = -frac;
+  }
+  return {
+    cap,
+    usd: event.usd,
+    frac,
+    return21: event.return_21,
+  };
+}
+
+function appendText(parent, tag, text, className) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = text;
+  parent.appendChild(node);
+  return node;
 }
 
 function renderInsights() {
@@ -70,35 +127,54 @@ function renderInsights() {
     root.appendChild(empty);
     return;
   }
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  const table = document.createElement("table");
+  table.className = "insights-table";
+  const head = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  for (const label of ["Ticker", "Side", "Amount", "% cap", "Price"]) {
+    appendText(headRow, "th", label);
+  }
+  head.appendChild(headRow);
+  table.appendChild(head);
+  const body = document.createElement("tbody");
   for (const event of rows) {
-    const card = document.createElement("article");
-    card.className = "insight-card";
-    const header = document.createElement("header");
-    const who = document.createElement("strong");
-    who.textContent = `${event.symbol} · ${event.name || event.symbol}`;
-    const kind = document.createElement("span");
-    kind.className = kindClass(event.event_type);
-    kind.textContent = KIND_LABEL[event.event_type] || event.event_type;
-    header.appendChild(who);
-    header.appendChild(kind);
-    const reason = document.createElement("p");
-    reason.textContent = event.plain_reason;
-    const meta = document.createElement("small");
+    const ctx = overlayContext(event);
+    const tr = document.createElement("tr");
+    const ticker = appendText(tr, "td", event.symbol, "ticker");
+    const name = document.createElement("span");
+    name.className = "meta";
+    name.textContent = event.name || event.symbol;
+    ticker.appendChild(name);
+    appendText(tr, "td", sideLabel(event.event_type), `side ${kindClass(event.event_type)}`);
+    appendText(tr, "td", compactUsd(ctx.usd), "amount");
+    appendText(tr, "td", formatFracCap(ctx.frac), "frac");
+    const tape = monthTape(ctx.return21) || "n/a";
+    const price = appendText(
+      tr,
+      "td",
+      tape,
+      `tape${ctx.return21 > 0 ? " up" : ctx.return21 < 0 ? " down" : ""}`,
+    );
+    const reason = document.createElement("span");
+    reason.className = "meta";
     const screens = (event.screens || []).map(screenLabel).join(" · ");
-    const bits = [event.form, screens, event.trade_date || event.accepted_at, money(event.usd)].filter(Boolean);
-    meta.textContent = bits.join(" · ");
-    card.appendChild(header);
-    card.appendChild(reason);
-    card.appendChild(meta);
+    const bits = [event.plain_reason, event.form, screens, event.trade_date || event.accepted_at].filter(Boolean);
+    reason.textContent = bits.join(" · ");
+    price.appendChild(reason);
     if (event.sec_url) {
       const link = document.createElement("a");
       link.href = event.sec_url;
       link.textContent = "SEC filing";
       link.rel = "noopener noreferrer";
-      card.appendChild(link);
+      price.appendChild(link);
     }
-    root.appendChild(card);
+    body.appendChild(tr);
   }
+  table.appendChild(body);
+  wrap.appendChild(table);
+  root.appendChild(wrap);
 }
 
 function bindInsights() {
