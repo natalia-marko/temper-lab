@@ -40,10 +40,13 @@ function reasonLabel(reason) {
 
 function matchRank(name, query) {
   const ticker = name.ticker.toLowerCase();
+  const company = name.name.toLowerCase();
   if (ticker === query) return 0;
   if (query.length >= 2 && ticker.startsWith(query)) return 1;
-  const words = name.name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  if (words.some((word) => word === query)) return 2;
+  if (query.length >= 3 && company.startsWith(query)) return 2;
+  const words = company.split(/[^a-z0-9]+/).filter(Boolean);
+  if (words.some((word) => word === query)) return 3;
+  if (query.length >= 5 && words.some((word) => word.startsWith(query))) return 4;
   return -1;
 }
 
@@ -158,8 +161,9 @@ function renderBook(book) {
       : `${rows.length.toLocaleString()} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
     const chip = document.querySelector("#jev-chip");
     if (chip) chip.textContent = book.as_of;
-    modeButton.textContent = state.mode === "select" ? "Select" : "Deselect";
+    modeButton.textContent = "";
     modeButton.setAttribute("aria-pressed", state.mode === "deselect" ? "true" : "false");
+    modeButton.setAttribute("aria-label", state.mode === "select" ? "Tick the names on screen" : "Clear ticks on screen");
 
     if (!rows.length) {
       list.innerHTML = `<p class="empty">No names match that search.</p>`;
@@ -235,6 +239,21 @@ function renderBook(book) {
     document.querySelector(id).addEventListener("input", paint);
   });
   document.querySelector("#jev-margin").addEventListener("change", paint);
+  document.querySelector("#jev-reset").addEventListener("click", () => {
+    state.selected.clear();
+    state.query = "";
+    state.filter = "all";
+    state.mode = "select";
+    document.querySelector("#jev-query").value = "";
+    document.querySelector("#jev-mdd").value = "28";
+    document.querySelector("#jev-beta").value = "1.8";
+    document.querySelector("#jev-de").value = "1.5";
+    document.querySelector("#jev-margin").checked = true;
+    document.querySelectorAll("[data-filter]").forEach((item) => {
+      item.classList.toggle("on", item.getAttribute("data-filter") === "all");
+    });
+    paint();
+  });
   modeButton.addEventListener("click", () => {
     const policy = readPolicy(document);
     const rows = visibleNames(names, policy, state.query, state.filter);

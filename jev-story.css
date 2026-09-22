@@ -25,15 +25,14 @@
 .jev-controls input[type="search"] { width: min(280px, 100%); font-weight: 450; }
 .jev-controls button.on { background: #214d36; color: #fff; border-color: #214d36; }
 .jev-ticked { margin-left: auto; color: #7a8a80; font-size: 12px; font-variant-numeric: tabular-nums; }
-#jev-mode { }
+#jev-mode { width: 36px; min-width: 36px; padding: 0; border: 1.5px solid #3d5246; background: #fff; }
 .jev-split { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.7fr); gap: 14px; margin: 0 28px 18px; align-items: start; }
 .jev-split .surface { margin: 0; }
 .jev-list { max-height: 70vh; overflow: auto; padding: 0 8px 12px; }
 .jev-table thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
 .jev-table tr.on { background: #f4f7f2; }
-.jev-table tr.rejected { opacity: 0.72; }
-.jev-table button { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: #214d36; }
-.jev-table button:disabled { opacity: 0.35; }
+.jev-table tr.rejected td:not(:first-child) { opacity: 0.72; }
+.jev-table button { width: 28px; height: 28px; border: 1.5px solid #3d5246; border-radius: 6px; background: #fff; color: #1a3d2b; }
 .jev-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 650; white-space: nowrap; }
 .jev-chip.pass { color: #1e6547; background: #e7f3ec; }
 .jev-chip.fail { color: #8a4b3a; background: #f8ebe6; }
