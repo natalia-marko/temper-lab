@@ -7,7 +7,7 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=5ab456df2f84" />
-    <link rel="stylesheet" href="./insights.css?v=83e88b37d772" />
+    <link rel="stylesheet" href="./insights.css?v=0c11375a052a" />
   </head>
   <body>
     <div class="desk">
@@ -28,7 +28,7 @@
           <div>
             <div class="eyebrow">OWNERSHIP INSIGHTS</div>
             <h1>Reported buys</h1>
-            <p>Open-market Form 4 purchases of at least $50,000, and 13D cash buys, on this week’s Strength, Growth, and Cheap names. Amount is trade dollars. % cap uses freeze Friday market cap (sells negative). Past month is 21 QQQ sessions to that Friday, not Hot tape’s 63-session window. Warrant conversions and 13G filings are listed separately and are not buys.</p>
+            <p>Parsed buys on this week’s Strength, Growth, and Cheap names. Not a rank, and not Conviction.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status">Loading…</span>
@@ -37,7 +37,7 @@
         </section>
         <p id="insights-status" class="mood-status" role="status">Loading reported trades…</p>
         <section class="surface insights-surface" aria-label="Reported ownership trades">
-          <p class="insights-explanation"><strong>Buy</strong> means a parsed Form 4 code P (or a 13D with an open-market cash price near the freeze close). <strong>$50,000</strong> is dollars, not shares. <strong>Who</strong> is the reporting owner: person or institution, then director / officer title from the Form 4. <strong>% cap</strong> is trade dollars divided by freeze Friday cap. <strong>Past month</strong> is 21 QQQ sessions of adjusted close, labeled up or down. <strong>5%</strong> on a 13G is an ownership level, not a buy signal. This page does not rank names and does not use Conviction.</p>
+          <p class="insights-explanation"><strong>Buy</strong> means Form 4 code P of at least $50,000, or a 13D that states an open-market cash purchase near Friday’s close. Warrant conversions and 13G stakes are not buys. <strong>Amount</strong> is dollars. <strong>Who</strong> is person or institution, then director or officer title. <strong>% cap</strong> uses Friday’s market cap; sells are negative. <strong>Past month</strong> is 21 trading days ending that Friday.</p>
           <div class="insights-controls">
             <label>Find a company<input id="insights-query" type="search" placeholder="Ticker, filer, or company" autocomplete="off" /></label>
             <label>Show<select id="insights-kind">
@@ -51,10 +51,10 @@
           <p id="insights-count" class="insights-count" role="status"></p>
           <div id="insights-list" class="insights-list"></div>
           <noscript><p class="empty">Enable JavaScript to load reported trades.</p></noscript>
-          <p class="insights-note">Dates are SEC acceptance times. Empty means no qualifying trade in the window, not a missing file. The SEC document is the source; this page is a filter over it. Tape is freeze Friday, not the filing day.</p>
+          <p class="insights-note">Date is the trade day. The list window uses SEC acceptance times. Empty means no qualifying trade in the window. The filing is the source.</p>
         </section>
       </main>
     </div>
-    <script src="./insights.js?v=068726339e02"></script>
+    <script src="./insights.js?v=c3947903b62b"></script>
   </body>
 </html>

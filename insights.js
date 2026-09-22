@@ -157,7 +157,7 @@ function renderInsights() {
   table.className = "insights-table";
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
-  for (const label of ["Ticker", "Side", "Who", "Amount", "% cap", "Price"]) {
+  for (const label of ["Date", "Ticker", "Side", "Who", "Amount", "% cap", "Price"]) {
     appendText(headRow, "th", label);
   }
   head.appendChild(headRow);
@@ -166,6 +166,7 @@ function renderInsights() {
   for (const event of rows) {
     const ctx = overlayContext(event);
     const tr = document.createElement("tr");
+    appendText(tr, "td", event.trade_date || "", "deal");
     const ticker = appendText(tr, "td", event.symbol, "ticker");
     const name = document.createElement("span");
     name.className = "meta";
@@ -189,7 +190,7 @@ function renderInsights() {
     const reason = document.createElement("span");
     reason.className = "meta";
     const screens = (event.screens || []).map(screenLabel).join(" · ");
-    const bits = [event.plain_reason, event.form, screens, event.trade_date || event.accepted_at].filter(Boolean);
+    const bits = [event.plain_reason, event.form, screens].filter(Boolean);
     reason.textContent = bits.join(" · ");
     price.appendChild(reason);
     if (event.sec_url) {
