@@ -60,9 +60,11 @@ The page refuses to render unless `insights.json` matches `desk.json` and
 `release.json` on the same freeze. Conviction is not this list.
 
 Jev story is a fifth page, `jev-story.html`, last in the sidebar after Insights.
-It states the method: hard number gates, then a facts-only state, then typed
-Choice, Score, and Noul. The run itself is local `jev_approach`. The page does
-not call the model, and it does not write the weekly book.
+The book is the US common-stock identity list. Drawdown and beta versus SPY
+come from the trailing year of prices. Operating margin and interest-bearing
+debt over book equity come from filings. A missing input is not a pass. A
+catalyst sentence is shown only when a source URL is already on file. The page
+does not call the model, and it does not write the weekly book.
 
 The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
 the share of liquid names up over 63 sessions against the 252-session share, and

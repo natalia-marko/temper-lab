@@ -7,13 +7,14 @@
     <title>Temper Lab — Jev story</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./jev-story.css?v=2789c3fba07a" />
+    <link rel="stylesheet" href="./insights.css?v=0c11375a052a" />
+    <link rel="stylesheet" href="./jev-story.css?v=c602ebb7489d" />
   </head>
   <body>
     <div class="desk">
       <aside>
         <a class="brand" href="./"><span>t</span>temper<span>lab</span></a>
-        <p class="aside-note">Hard filters, then a typed read. Not the weekly freeze, and not a rank.</p>
+        <p class="aside-note">Hard filters on the US list. Not the weekly freeze, and not a rank.</p>
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a href="./market-mood.html">Market mood</a>
           <a href="./">Research</a>
@@ -21,11 +22,11 @@
           <a href="./insights.html">Insights</a>
           <a class="on" href="./jev-story.html" aria-current="page">Jev story</a>
         </nav>
-        <div class="aside-foot"><span class="dot"></span>Method page<small>Not the weekly freeze</small></div>
+        <div class="aside-foot"><span class="dot"></span>Illustrative tape<small>Not the weekly freeze</small></div>
       </aside>
       <main>
         <header class="top">
-          <span class="insights-label">Typed classification / local run</span>
+          <span class="insights-label">Phase 1 / local arithmetic</span>
           <a class="top-page-link" href="./insights.html">Insights →</a>
           <span class="badge">Not a weekly snapshot</span>
         </header>
@@ -33,36 +34,37 @@
           <div>
             <div class="eyebrow">JEV STORY</div>
             <h1>Hard filters, then a typed read</h1>
-            <p>Math first. Jev only sees names that already passed the numbers, and only as a facts-only state string.</p>
+            <p>Math first. A name that fails a gate never reaches a model. A blank number is not a pass.</p>
           </div>
           <div class="snapshot-status">
-            <span class="week" role="status">Local run</span>
-            <small>Separate from Saturday’s freeze.<br>Does not write the research book.</small>
+            <span id="jev-chip" class="week" role="status">Loading…</span>
+            <small>US common stocks.<br>Does not write the research book.</small>
           </div>
         </section>
-        <p class="jev-lede">Same site as Research, Market mood, and Insights. Not a screener rank, not Form 4 insights, and not mixed into the weekly book.</p>
-        <section class="surface jev-surface" aria-label="How Jev is used here">
-          <ol class="phase-list">
-            <li>
-              <span class="phase-kicker">Phase 1</span>
-              <strong>Numerical pre-filter</strong>
-              <span>Trailing max drawdown, beta, debt-to-equity, and operating margin are hard gates. Fail any one and the name never reaches Jev. This step is arithmetic, not a model.</span>
-            </li>
-            <li>
-              <span class="phase-kicker">Phase 2</span>
-              <strong>Facts-only state</strong>
-              <span>Survivors are turned into a short equity profile: listed metrics plus catalyst text. No “buy”, “cheap”, or “asymmetric” labels. Jev is state-sensitive; editorial wording would steer the answer.</span>
-            </li>
-            <li>
-              <span class="phase-kicker">Phase 3</span>
-              <strong>Typed questions, then a rule</strong>
-              <span>Choice, Score, and Noul come back as numbers software can branch on. Low confidence, or a Noul in the middle, is a dry run — not a pass. The model does not value the asset and does not write prose.</span>
-            </li>
-          </ol>
-          <p class="jev-limits"><strong>Limits.</strong> Jev cannot do fundamental valuation. A high Score is not a 100% annual-return forecast. Ambiguous filings should fail the confidence gate rather than be forced into a bucket.</p>
-          <p class="jev-note">The classifier is the local <code>jev_approach</code> run on this machine. This page does not call it, and it does not write Saturday’s lists.</p>
+        <p class="jev-lede">Drawdown is the trailing year of prices. Beta is versus SPY. Debt is filed interest-bearing debt over book equity. A news sentence appears only with a source URL.</p>
+        <section class="surface jev-surface" aria-label="Jev intake">
+          <p id="jev-counts" class="jev-counts">Loading…</p>
+          <div class="jev-gates">
+            <label>Max drawdown %<input id="jev-mdd" type="number" min="0" max="80" step="0.5" value="28" /></label>
+            <label>Max beta<input id="jev-beta" type="number" min="0" max="4" step="0.05" value="1.8" /></label>
+            <label>Max debt / equity<input id="jev-de" type="number" min="0" max="10" step="0.05" value="1.5" /></label>
+            <label class="jev-check"><input id="jev-margin" type="checkbox" checked /> Positive operating margin</label>
+          </div>
+          <div class="jev-controls">
+            <label>Find<input id="jev-query" type="search" placeholder="Ticker or name" autocomplete="off" /></label>
+            <button type="button" data-filter="all" class="on">All</button>
+            <button type="button" data-filter="survivors">Survivors</button>
+            <button type="button" data-filter="rejected">Rejected</button>
+            <button type="button" data-filter="unmeasured">Not measured</button>
+            <button type="button" id="jev-mode" aria-pressed="false">Select</button>
+          </div>
+          <p id="jev-status" class="insights-count" role="status">Loading the book…</p>
+          <div id="jev-list" class="jev-list"></div>
+          <div id="jev-detail" class="jev-detail" hidden></div>
+          <p class="jev-note">The list is the US identity snapshot. Gates use Friday prices and filings already on disk. No catalyst means no sentence was written. The model stays in <code>jev_approach</code>. This page does not write Saturday’s lists.</p>
         </section>
       </main>
     </div>
+    <script src="./jev-story.js?v=5295a5f73c64"></script>
   </body>
 </html>
