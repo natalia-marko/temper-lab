@@ -38,6 +38,45 @@ function reasonLabel(reason) {
   return REASON_LABEL[reason] || reason;
 }
 
+const READ_LABEL = {
+  SHORTLIST: "Shortlist",
+  REVIEW: "Needs review",
+  REJECTED: "Read rejected",
+  ERROR: "Read failed",
+};
+
+const SETUP_LABEL = {
+  asymmetric_growth_catalyst: "Growth catalyst",
+  overextended_valuation_risk: "Valuation risk",
+  stable_value_drift: "No discrete catalyst",
+  unclear: "Unclear",
+};
+
+function savedRead(name) {
+  const read = name && name.jev;
+  if (!read || typeof read !== "object" || !READ_LABEL[read.status]) return null;
+  if (read.answers != null && (typeof read.answers !== "object" || !read.answers.setup)) return null;
+  return read;
+}
+
+function readBlock(name) {
+  const read = savedRead(name);
+  if (!read) return `<p class="jev-tape">No Jev answer on file.</p>`;
+  const answers = read.answers;
+  const metrics = answers
+    ? `<dl class="jev-metrics">
+        <div><dt>Setup</dt><dd>${escapeText(SETUP_LABEL[answers.setup] || answers.setup)}</dd></div>
+        <div><dt>Guidance</dt><dd>${formatRatio(answers.guidanceNoul)}</dd></div>
+        <div><dt>Disruption</dt><dd>${formatRatio(answers.disruptionScore)}</dd></div>
+        <div><dt>Confidence</dt><dd>${formatRatio(answers.setupConfidence)}</dd></div>
+      </dl>`
+    : "";
+  const reasons = Array.isArray(read.reasons) && read.reasons.length
+    ? `<p class="jev-tape">${escapeText(read.reasons.join(". "))}.</p>`
+    : "";
+  return `<p class="jev-verdict">${escapeText(READ_LABEL[read.status])}. Saved from a Mac run. This page did not call the model.</p>${metrics}${reasons}<p class="jev-tape">${escapeText(read.model || "No model recorded")} · ${escapeText(read.run || "")}</p>`;
+}
+
 function matchRank(name, query) {
   const ticker = name.ticker.toLowerCase();
   const company = name.name.toLowerCase();
@@ -57,6 +96,7 @@ function visibleNames(names, policy, query, filter) {
     if (filter === "survivors" && result.status !== "PASSED") return false;
     if (filter === "rejected" && result.status !== "REJECTED") return false;
     if (filter === "unmeasured" && result.status !== "NOT_MEASURED") return false;
+    if (filter === "read" && !savedRead(name)) return false;
     if (!q) return true;
     return matchRank(name, q) >= 0;
   });
@@ -94,6 +134,7 @@ function factsOnly(name, asOf) {
     interest_bearing_debt_to_book_equity: name.debtToEquity,
     operating_margin: name.operatingMargin,
     catalyst: name.catalyst || null,
+    jev: savedRead(name),
   };
 }
 
@@ -166,10 +207,13 @@ function renderBook(book) {
     modeButton.setAttribute("aria-label", state.mode === "select" ? "Tick the names on screen" : "Clear ticks on screen");
 
     if (!rows.length) {
-      list.innerHTML = `<p class="empty">No names match that search.</p>`;
+      const empty = state.filter === "read" && !state.query.trim()
+        ? "No saved Jev answer is in this file."
+        : "No names match that search.";
+      list.innerHTML = `<p class="empty">${empty}</p>`;
     } else {
       list.innerHTML = `<table class="insights-table jev-table"><thead><tr>
-        <th></th><th>Ticker</th><th>MDD</th><th>Beta</th><th>D/E</th><th>OM</th><th>Status</th>
+        <th></th><th>Ticker</th><th>MDD</th><th>Beta</th><th>D/E</th><th>OM</th><th>Status</th><th>Read</th>
       </tr></thead><tbody>${rows.map((name) => {
         const result = runPhase1(name, policy);
         const on = state.selected.has(name.ticker);
@@ -183,6 +227,7 @@ function renderBook(book) {
           <td>${formatRatio(name.debtToEquity)}</td>
           <td>${formatMargin(name.operatingMargin)}</td>
           <td><span class="jev-chip ${tone}">${label}</span></td>
+          <td>${savedRead(name) ? `<span class="jev-chip ${savedRead(name).status === "SHORTLIST" ? "pass" : savedRead(name).status === "ERROR" ? "gap" : "fail"}">${escapeText(READ_LABEL[savedRead(name).status])}</span>` : `<span class="jev-tape">n/a</span>`}</td>
         </tr>`;
       }).join("")}</tbody></table>`;
     }
@@ -219,6 +264,8 @@ function renderBook(book) {
       </dl>
       <p class="jev-kicker">Catalyst</p>
       ${catalyst}
+      <p class="jev-kicker">Jev read</p>
+      ${readBlock(active)}
       <details><summary>Facts</summary><pre>${escapeText(JSON.stringify(factsOnly(active, book.as_of), null, 2))}</pre></details>`;
   }
 
