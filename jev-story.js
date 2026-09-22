@@ -41,9 +41,9 @@ function reasonLabel(reason) {
 function matchRank(name, query) {
   const ticker = name.ticker.toLowerCase();
   if (ticker === query) return 0;
-  if (ticker.startsWith(query)) return 1;
-  const words = name.name.toLowerCase().split(/[^a-z0-9]+/);
-  if (words.some((word) => word.startsWith(query))) return 2;
+  if (query.length >= 2 && ticker.startsWith(query)) return 1;
+  const words = name.name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  if (words.some((word) => word === query)) return 2;
   return -1;
 }
 
@@ -150,7 +150,12 @@ function renderBook(book) {
     document.querySelector("#jev-n-gap").textContent = unmeasured.toLocaleString();
     document.querySelector("#jev-shown").textContent = `${rows.length.toLocaleString()} of ${names.length.toLocaleString()}`;
     document.querySelector("#jev-ticked").textContent = state.selected.size ? `${state.selected.size} ticked` : "";
-    status.textContent = `${rows.length.toLocaleString()} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
+    const typed = state.query.trim().toLowerCase();
+    const exact = typed ? names.find((name) => name.ticker.toLowerCase() === typed) : null;
+    const exactHidden = exact && !rows.some((name) => name.ticker === exact.ticker);
+    status.textContent = exactHidden
+      ? `${exact.ticker} is ${runPhase1(exact, policy).status === "REJECTED" ? "rejected" : "not measured"} (${reasonLabel(runPhase1(exact, policy).reason)}). Choose All to see it.`
+      : `${rows.length.toLocaleString()} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
     const chip = document.querySelector("#jev-chip");
     if (chip) chip.textContent = book.as_of;
     modeButton.textContent = state.mode === "select" ? "Select" : "Deselect";
