@@ -57,17 +57,16 @@ The page refuses to render unless `insights.json` matches `desk.json` and
 `release.json` on the same freeze. Conviction is not this list.
 
 The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
-closing implied volatility, SPY/QQQ adjusted-close returns, the share of liquid
-names up over 63 QQQ sessions, and the ten highest 63-session stock
-returns among names with a full price window. Hot Tape ranks both 63- and
-252-session returns, so an extreme's Hot Tape rank is shown only when the stock
-actually appears in the published Hot Tape slice. VIX is non-directional and
-does not rank individual stocks.
+closing implied volatility, SPY/QQQ adjusted-close returns, and the share of liquid
+names up over 63 QQQ sessions. VIX is non-directional and does not rank individual
+stocks.
 
-The same page also shows the first ten ranks from Growth and Cheap on operating
-profit. Growth displays ROE beside its rank after its revenue, profit, and base
+The same page also shows the first ten ranks from Conviction, Growth, and Cheap
+on operating profit. Conviction displays its analyst score beside its rank.
+Growth displays ROE beside its rank after its revenue, profit, and base
 revenue gates; Cheap displays TTM operating income / EV beside its own rank.
 These are screen ranks, not the largest stock returns or comparable scores.
+Conviction does not enter the three-screen overlap count.
 
 This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
 

@@ -43,28 +43,11 @@ function renderIndices(indices) {
   }
 }
 
-function renderExtremes(id, rows) {
-  const target = $(id);
-  target.replaceChildren();
-  if (!rows?.length) {
-    const tr = appendText(target, "tr", "");
-    appendText(tr, "td", "No complete price histories for this Friday.", "empty").colSpan = 3;
-    return;
-  }
-  for (const [index, item] of rows.entries()) {
-    const tr = appendText(target, "tr", "");
-    const company = appendText(tr, "td", "");
-    const companyLine = appendText(company, "div", "", "extreme-company");
-    appendText(companyLine, "span", String(index + 1).padStart(2, "0"), "extreme-number");
-    const identity = appendText(companyLine, "span", "", "extreme-identity");
-    appendText(identity, "strong", item.symbol);
-    appendText(identity, "small", item.name || item.symbol);
-    appendText(tr, "td", percent(item.momentum_63), item.momentum_63 < 0 ? "extreme-return negative" : "extreme-return positive");
-    appendText(tr, "td", Number.isInteger(item.hot_tape_rank) ? `#${item.hot_tape_rank}` : "—", "extreme-rank");
-  }
+function scoreText(value) {
+  return Number.isFinite(value) ? value.toFixed(1) : "—";
 }
 
-function renderScreenLeaders(id, rows) {
+function renderScreenLeaders(id, rows, format = "share") {
   const target = $(id);
   target.replaceChildren();
   if (!rows?.length) {
@@ -78,7 +61,8 @@ function renderScreenLeaders(id, rows) {
     const identity = appendText(company, "div", "", "extreme-identity");
     appendText(identity, "strong", item.symbol);
     appendText(identity, "small", item.name || item.symbol);
-    appendText(tr, "td", levelPercent(item.metric), "extreme-return");
+    const metric = format === "score" ? scoreText(item.metric) : levelPercent(item.metric);
+    appendText(tr, "td", metric, "extreme-return");
     appendText(tr, "td", Number.isInteger(item.rank) ? `#${item.rank}` : "—", "extreme-rank");
   }
 }
@@ -236,7 +220,7 @@ function render(mood) {
   $("breadth-fill").style.width = Number.isFinite(share) ? `${Math.max(0, Math.min(100, share * 100))}%` : "0%";
   $("breadth-copy").textContent = `${mood.breadth?.n_63 ?? 0} complete names · median 63-session return ${percent(mood.breadth?.median_63)}. Breadth is a snapshot of this liquid universe, not all stocks.`;
   renderIndices(mood.indices);
-  renderExtremes("winners-body", mood.winners);
+  renderScreenLeaders("conviction-body", mood.conviction_leaders, "score");
   renderScreenLeaders("growth-body", mood.growth_leaders);
   renderScreenLeaders("cheap-body", mood.cheap_leaders);
   renderScreenReport(mood.screen_report);
