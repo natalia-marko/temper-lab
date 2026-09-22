@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Research</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=5ab456df2f84" />
+    <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
     <link rel="stylesheet" href="./outlook.css?v=f1c44cb52d00" />
   </head>
   <body>
@@ -56,8 +56,17 @@
             <small>Weekly refresh: Sat 08:00 · Copenhagen<br>New results are published manually after refresh.</small>
           </div>
         </section>
-        <section id="outlook" class="surface" aria-label="12-month research outlook" aria-live="polite">Loading the 12-month outlook…</section>
-        <section class="surface">
+        <div class="page-switch" role="tablist" aria-label="Research">
+          <button type="button" id="show-screener" class="on" role="tab" aria-selected="true" aria-controls="screener-panel">Screener</button>
+          <button type="button" id="show-experiment" role="tab" aria-selected="false" aria-controls="experiment-switch">Experiment</button>
+        </div>
+        <div id="experiment-switch" class="page-switch sub" role="tablist" aria-label="Experiment" hidden>
+          <button type="button" id="show-outlook" class="on" role="tab" aria-selected="true" aria-controls="outlook">12-month outlook</button>
+          <button type="button" id="show-potential" role="tab" aria-selected="false" aria-controls="screener-panel">Potential research</button>
+        </div>
+        <section id="outlook" class="surface" aria-label="12-month research outlook" aria-live="polite" hidden>Loading the 12-month outlook…</section>
+        <section id="screener-panel" class="surface">
+          <div id="screener-tools">
           <div class="toolbar">
             <label>
               This list
@@ -75,13 +84,11 @@
             <summary>How this list is ranked</summary>
             <p id="method-copy"></p>
             <p id="method-version"></p>
-            <p>Scores are rankings within this list, not probabilities. Inspect, search and filters keep List rank and score. Cheap ranks TTM operating income / enterprise value (equity cap + interest-bearing debt − cash). Conviction ranks analyst sentiment; collection dates can be later than the price reference. Use Quality &amp; cash flow and Valuation to examine a candidate further.</p>
+            <p>Score is a rank in this list, not a probability.</p>
           </details>
           <div class="tabs" id="tabs" aria-label="Numbers to inspect for the same names">
             <span>Inspect</span>
           </div>
-          <p id="column-note" class="column-note" role="status"></p>
-          <p id="trajectory-note" class="column-note" role="status"></p>
           <div class="evidence-filters">
             <label>Accounts
               <select id="evidence-status" aria-label="Filter by whether the accounts add up, not by profit">
@@ -93,15 +100,25 @@
                 <option value="unknown">Only ungraded statements</option>
               </select>
             </label>
-            <label>Potential research
-              <select id="potential-status" aria-label="Filter by unranked research status">
-                <option value="">All companies</option><option value="tracked">All tracked research</option>
-                <option value="emerging">Emerging</option><option value="speculative">Speculative</option><option value="inactive">Inactive / evidence needed</option>
-              </select>
-            </label>
             <label><input id="required-metrics" type="checkbox"> Only names with the numbers on screen</label>
             <button id="reset-filters" type="button">Reset filters</button>
           </div>
+          </div>
+          <div id="potential-tools" class="toolbar" hidden>
+            <label>Status
+              <select id="potential-status" aria-label="Filter by unranked research status">
+                <option value="">All companies</option>
+                <option value="tracked">All tracked research</option>
+                <option value="emerging">Emerging</option>
+                <option value="speculative">Speculative</option>
+                <option value="inactive">Inactive / evidence needed</option>
+              </select>
+            </label>
+            <div class="count"><strong id="potential-n">0</strong> tracked<span id="potential-of"></span></div>
+            <button id="reset-potential" type="button">Reset</button>
+          </div>
+          <p id="column-note" class="column-note" role="status"></p>
+          <p id="trajectory-note" class="column-note" role="status"></p>
           <p id="evidence-hint" class="column-note" role="status"></p>
           <p id="coverage-note" class="column-note" role="status"></p>
           <div class="order" id="order"></div>
@@ -119,19 +136,10 @@
               <button type="button" id="next" aria-label="Next page">›</button>
             </div>
             <p class="trust-legend">
-              <span class="trust review">Review</span>
-              a number needs inspection (for example thin book equity,
-              mixed filing dates, or stale revenue). Select a company for its evidence.
-              <span class="trust broken">Broken</span>
-              the income statement does not add up.
-              <span class="flag loss">Lossmaking</span>
-              trailing twelve-month net income is negative — a fact about the
-              business, not a problem with its accounts.
-              <span class="na">n/a</span>
-              no number for this ratio in this snapshot. Hover the cell for why
-              (the filer does not report the line, the trailing year could not
-              be built, or the ratio was not published as comparable).
-              No badge means no flagged issue, not complete metric coverage or independent verification.
+              <span class="trust review">Review</span> a number needs a look.
+              <span class="trust broken">Broken</span> the statement does not add up.
+              <span class="flag loss">Lossmaking</span> negative profit, not a broken statement.
+              <span class="na">n/a</span> hover the cell.
             </p>
           </div>
         </section>
@@ -143,7 +151,7 @@
       <div id="evidence-content"></div>
     </dialog>
     <script src="./sectors.js?v=1cdbdb7f59aa"></script>
-    <script src="./desk.js?v=7044acf02073"></script>
-    <script src="./outlook.js?v=e183f75e21b7"></script>
+    <script src="./desk.js?v=45f3aeb44cd8"></script>
+    <script src="./outlook.js?v=17b7d3191e8f"></script>
   </body>
 </html>

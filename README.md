@@ -18,7 +18,8 @@ separately from the price date: a Monday capture was not known at Friday's close
 Earlier weeks without saved analyst data stay empty. Conviction does not enter
 the three-list Composite or the Analyst ratings page's overlap cohort.
 
-The homepage also shows a separate experimental **12-month outlook** with
+The homepage opens on **Screener**. **Experiment** holds the 12-month outlook and
+Potential research, which are not ranks. The outlook shows
 five quality-and-momentum candidates, model return ranges, conditional valuation
 scenarios and disclosed validation results. The model is not promoted to the
 selection rule and no win probability is claimed. `outlook.json` must identify
@@ -56,17 +57,13 @@ acceptance times. Empty means no qualifying trade in the window after a fetch.
 The page refuses to render unless `insights.json` matches `desk.json` and
 `release.json` on the same freeze. Conviction is not this list.
 
-The separate Market mood page uses the same frozen Friday. It shows Cboe VIX
-closing implied volatility, SPY/QQQ adjusted-close returns, and the share of liquid
-names up over 63 QQQ sessions. VIX is non-directional and does not rank individual
-stocks.
+The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
+the share of liquid names up over 63 sessions against the 252-session share, and
+SPY versus QQQ. VIX is non-directional and does not rank individual stocks.
 
-The same page also shows the first ten ranks from Conviction, Growth, and Cheap
-on operating profit. Conviction displays its analyst score beside its rank.
-Growth displays ROE beside its rank after its revenue, profit, and base
-revenue gates; Cheap displays TTM operating income / EV beside its own rank.
-These are screen ranks, not the largest stock returns or comparable scores.
-Conviction does not enter the three-screen overlap count.
+**Lists** shows who sits on more than one of Hot Tape, Growth, and Cheap versus
+the prior Friday, then Conviction’s first ten. That score is not a probability
+and does not enter the overlap. Growth and Cheap ranks stay on the Screener.
 
 This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
 
@@ -160,8 +157,8 @@ contains the complete release gate and publication commands.
 
 ## Potential research
 
-Choose **Inspect → Potential research** or the **Potential research** status
-filter to review the liquid universe without a Potential score. Select a company
+Choose **Experiment → Potential research** to review the liquid universe without
+a Potential score. Select a company
 for revenue history, funding, share growth, review sources and milestones. Search
 also accepts researched tags such as `quantum`. Inactive names stay visible.
 

@@ -77,7 +77,7 @@ async function loadOutlook() {
     if (invalid) throw new Error(invalid);
     root.innerHTML = renderOutlook(report);
   } catch (error) {
-    root.textContent = `12-month outlook: ${error.message} The screener below remains available.`;
+    root.textContent = `12-month outlook: ${error.message} Open Screener for the weekly lists.`;
   }
 }
 void loadOutlook();

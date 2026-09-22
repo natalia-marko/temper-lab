@@ -11,7 +11,6 @@ const VIEWS = [
   ["revenue", "Revenue"],
   ["valuation", "Valuation"],
   ["analysts", "Analysts"],
-  ["potential", "Potential research"],
 ];
 const OVERVIEW = {
   strength: [
@@ -84,6 +83,9 @@ const state = {
   thisScreen: true,
   sortKey: "score",
   sortDir: "desc",
+  panel: "screener",
+  experiment: "outlook",
+  screenerView: "overview",
   page: 0,
   pageSize: 25,
 };
@@ -536,7 +538,6 @@ function renderEvidenceControls() {
   const base = evidenceScope();
   const accepted = base.filter(passesEvidence);
   const available = accepted.filter(hasRequiredMetrics).length;
-  const cash = accepted.filter((symbol) => Number.isFinite(factor(symbol, "cash_conversion"))).length;
   const notApplicable = accepted.filter((symbol) =>
     currentMetrics().some(([key]) => notReported(symbol, key)),
   ).length;
@@ -558,13 +559,13 @@ function renderEvidenceControls() {
     .join("");
   select.value = state.evidenceStatus;
   $("evidence-hint").textContent = evidenceHint();
+  $("evidence-hint").hidden = state.view === "potential" || state.evidenceStatus === "default";
   $("coverage-note").textContent =
-    `This filter hides ${hidden} of ${base.length} names. ` +
     `Numbers on screen: ${currentMetrics().map(([, label]) => label).join(", ")}. ` +
-    `Available for ${available} of ${accepted.length} remaining names; ` +
-    `${state.requiredMetrics ? "filter removes" : "enabling the filter would remove"} ${accepted.length - available}. ` +
-    `Cash conversion available for ${cash} of ${accepted.length}.${naNote} ` +
-    `Availability means a finite value, not verified comparability.`;
+    `Available for ${available} of ${accepted.length}; ` +
+    `${state.requiredMetrics ? "filter removes" : "the filter would remove"} ${accepted.length - available}.` +
+    naNote;
+  $("coverage-note").hidden = state.view === "potential" || (hidden === 0 && !state.requiredMetrics && notApplicable === 0);
   $("required-metrics").checked = state.requiredMetrics;
 }
 
@@ -778,59 +779,89 @@ function rankedByPhrase(key) {
 }
 
 function inspectNote() {
-  if (state.view === "potential") return "Unranked research context. Review revenue, funding, dilution and milestones by selecting a company. Funding coverage is a constant-burn scenario, not a forecast. Missing evidence is unknown; statuses have no validated predictive value.";
+  if (state.view === "potential") return "No score. Funding coverage is a constant-burn scenario, not a forecast.";
   const list = screenLabel(state.screen);
-  const viewLabel = VIEWS.find(([id]) => id === state.view)?.[1] ?? state.view;
   const rankedBy = rankedByPhrase(state.screen);
   if (analystView()) {
     const dates = state.desk.setups.conviction?.analyst_dates;
     const collected = dates ? `Collected ${day(dates.first)}${day(dates.last) !== day(dates.first) ? `–${day(dates.last)}` : ""}; price reference ${day(state.desk.as_of)}.` : "No dated analyst capture is available for this price week.";
-    return `${list} rank stays ${rankedBy}. ${collected} Strong-buy share = Strong Buy / all ratings. Breadth = (up − down) / (up + down), for current-fiscal-year EPS over 30 days. Zero means no net revisions; n/a means missing. Inspect counts: one upward revision can have the same breadth as ten.`;
+    return `${list} rank stays ${rankedBy}. ${collected} One upward revision can have the same breadth as ten.`;
   }
-  if (state.view === "overview") {
-    const companion =
-      state.screen === "undervalued"
-        ? " OI / equity cap is the same operating income over the equity market only, so leverage is visible; it is not the rank. Operating margin matches that income. Leases and NCI are not in EV."
-        : state.screen === "growth"
-          ? " Revenue YoY is why the name is on the list, not the score. Six-month versus QQQ is the tape, not the rank."
-          : state.screen === "strength"
-            ? " OI / EV is whether the operating firm is cheap; it is not the Hot tape rank. Loss-makers and names without EV show n/a. Buying rank 1 is buying what already ran."
-            : "";
-    return (
-      `This list is ${list}: List rank is ${rankedBy}.` +
-      companion +
-      ` Inspect only changes which columns you see; it does not pick a different set of companies or a new rank.`
-    );
+  if (state.view === "overview" && state.screen === "growth") {
+    return "Six-month vs QQQ is the tape, not the rank.";
   }
-  if (
-    state.screen === "strength" &&
-    (state.view === "quality" || state.view === "revenue" || state.view === "valuation")
-  ) {
-    return (
-      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
-      `List rank is still the tape, not these ratios. Loss-making leaders are expected on a price list.`
-    );
+  if (state.view === "overview" && state.screen === "strength") {
+    return "This list is Hot tape. OI / EV is not the Hot tape rank. Inspect does not pick a different set of companies.";
+  }
+  if (state.view === "overview" && state.screen === "undervalued") {
+    return "Rank is operating income divided by EV. OI / equity cap is not the rank.";
+  }
+  if (state.screen === "strength" && state.view !== "overview" && state.view !== "price") {
+    return "Same Hot tape names. Rank is still the tape. Loss-making leaders are expected.";
   }
   if (state.screen === "undervalued" && state.view === "quality") {
-    return (
-      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
-      `List rank and score are still ${rankedBy}. ` +
-      `Operating margin matches that operating income. ` +
-      `Gross margin is omitted: most Cheap names never file a gross-profit line. ` +
-      `ROE is omitted here: it is net income over book, and leverage lifts it the same way it lifts the yield. It remains on Valuation.`
-    );
+    return "Same Cheap names. Gross margin is omitted: most Cheap names never file a gross-profit line. ROE is net income over book, so it stays on Valuation.";
   }
   if (state.screen === "undervalued" && state.view === "valuation") {
-    return (
-      `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
-      `List rank and score are still ${rankedBy}. ` +
-      `OI / equity cap is reading, not the rank. ROE on this tab is net income over book equity, not a Cheap quality grade.`
-    );
+    return "Same Cheap names. ROE here is net income over book, not a Cheap quality grade.";
   }
-  return (
-    `Same ${list} names, now showing ${viewLabel.toLowerCase()}. ` +
-    `List rank and score are still ${rankedBy}.`
-  );
+  if (state.view === "overview") return `This list is ${list}. Rank is ${rankedBy}.`;
+  return `Same ${list} names. Rank is still ${rankedBy}.`;
+}
+
+function markTab(id, on) {
+  const button = $(id);
+  button.classList.toggle("on", on);
+  if (typeof button.setAttribute === "function") button.setAttribute("aria-selected", on ? "true" : "false");
+}
+
+function applyPanels() {
+  const experiment = state.panel === "experiment";
+  const potential = experiment && state.experiment === "potential";
+  const outlook = experiment && !potential;
+  $("experiment-switch").hidden = !experiment;
+  $("outlook").hidden = !outlook;
+  $("screener-panel").hidden = outlook;
+  $("screener-tools").hidden = potential;
+  $("potential-tools").hidden = !potential;
+  markTab("show-screener", !experiment);
+  markTab("show-experiment", experiment);
+  markTab("show-outlook", outlook);
+  markTab("show-potential", potential);
+}
+
+function setResearchPanel(panel, experiment) {
+  if (panel === "experiment") {
+    state.panel = "experiment";
+    state.experiment = experiment === "potential" ? "potential" : (experiment || state.experiment || "outlook");
+    if (state.experiment === "potential" && state.view !== "potential") {
+      state.screenerView = state.view;
+      state.savedEvidence = state.evidenceStatus;
+      state.savedRequired = state.requiredMetrics;
+      state.savedThisScreen = state.thisScreen;
+      state.view = "potential";
+      state.thisScreen = false;
+      if (!state.potentialStatus) state.potentialStatus = "tracked";
+      state.requiredMetrics = false;
+      state.evidenceStatus = "all";
+      state.sortKey = "company";
+      state.sortDir = "asc";
+      state.page = 0;
+    }
+  } else {
+    state.panel = "screener";
+    if (state.view === "potential") {
+      state.view = state.screenerView && state.screenerView !== "potential" ? state.screenerView : "overview";
+      state.thisScreen = state.savedThisScreen !== false;
+      state.evidenceStatus = state.savedEvidence || "default";
+      state.requiredMetrics = Boolean(state.savedRequired);
+      state.potentialStatus = "";
+      state.sortKey = "score";
+      state.sortDir = "desc";
+      state.page = 0;
+    }
+  }
+  applyPanels();
 }
 
 function render() {
@@ -845,10 +876,14 @@ function render() {
   renderScreenGates();
   renderTrajectory();
   const potentialCount = Object.values(state.desk.companies).filter((company) => company.potential).length;
-  $("ranked-n").textContent = (state.view === "potential" ? potentialCount : setup.results.length).toLocaleString();
-  $("of-n").textContent = state.view === "potential"
+  const research = state.view === "potential";
+  $("ranked-n").textContent = (research ? potentialCount : setup.results.length).toLocaleString();
+  $("of-n").textContent = research
     ? `tracked research entries of ${state.desk.universe_count.toLocaleString()} liquid companies`
     : `of ${state.desk.universe_count.toLocaleString()} companies`;
+  $("potential-n").textContent = potentialCount.toLocaleString();
+  $("potential-of").textContent = ` of ${state.desk.universe_count.toLocaleString()} liquid companies`;
+  $("trajectory-note").hidden = research;
   $("this-screen").classList.toggle("on", state.thisScreen);
   $("all-liquid").classList.toggle("on", !state.thisScreen);
   for (const button of document.querySelectorAll("#tabs button")) {
@@ -870,10 +905,7 @@ function render() {
   const sortDirection = state.sortKey === "company"
     ? (state.sortDir === "asc" ? "A to Z" : "Z to A")
     : (state.sortDir === "desc" ? "High to low" : "Low to high");
-  const rankFixed = state.sortKey === "score"
-    ? `List rank is ${screenLabel(state.screen)}`
-    : `Rows are reordered; List rank is still ${screenLabel(state.screen)}`;
-  $("order").textContent = state.view === "potential" ? `Research view · sorted by ${sortLabel} · ${sortDirection} · no Potential score` : `Sorted by ${sortLabel} · ${sortDirection} · ${rankFixed}`;
+  $("order").textContent = `Sorted by ${sortLabel} · ${sortDirection}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
@@ -882,6 +914,7 @@ function render() {
   setSearchStatus(searchNotice(all));
   renderHead();
   renderBody(shown);
+  applyPanels();
 }
 
 function renderIndustries() {
@@ -923,14 +956,26 @@ function bind() {
     state.page = 0;
     render();
   });
-  $("reset-filters").addEventListener("click", () => {
+  const resetQuery = () => {
     state.query = "";
     state.sector = "";
+    state.page = 0;
+    $("query").value = "";
+  };
+  $("reset-filters").addEventListener("click", () => {
+    resetQuery();
     state.evidenceStatus = "default";
     state.requiredMetrics = false;
     state.potentialStatus = "";
-    state.page = 0;
-    $("query").value = "";
+    render();
+  });
+  $("reset-potential").addEventListener("click", () => {
+    resetQuery();
+    state.potentialStatus = "tracked";
+    state.requiredMetrics = false;
+    state.evidenceStatus = "all";
+    state.sortKey = "company";
+    state.sortDir = "asc";
     render();
   });
   // The column heading is rebuilt on sorting, paging and screen changes.
@@ -949,6 +994,7 @@ function bind() {
   select.addEventListener("change", () => {
     state.screen = select.value;
     state.view = "overview";
+    state.screenerView = "overview";
     state.sortKey = "score";
     state.sortDir = "desc";
     state.page = 0;
@@ -963,9 +1009,9 @@ function bind() {
     if (key === "overview") button.classList.add("on");
     button.addEventListener("click", () => {
       state.view = key;
-      if (key === "potential") { state.thisScreen = false; state.potentialStatus = "tracked"; state.requiredMetrics = false; state.evidenceStatus = "all"; }
-      state.sortKey = key === "potential" ? "company" : "score";
-      state.sortDir = key === "potential" ? "asc" : "desc";
+      state.screenerView = key;
+      state.sortKey = "score";
+      state.sortDir = "desc";
       state.page = 0;
       render();
     });
@@ -992,6 +1038,22 @@ function bind() {
   });
   $("next").addEventListener("click", () => {
     state.page += 1;
+    render();
+  });
+  $("show-screener").addEventListener("click", () => {
+    setResearchPanel("screener");
+    render();
+  });
+  $("show-experiment").addEventListener("click", () => {
+    setResearchPanel("experiment", state.experiment);
+    render();
+  });
+  $("show-outlook").addEventListener("click", () => {
+    setResearchPanel("experiment", "outlook");
+    render();
+  });
+  $("show-potential").addEventListener("click", () => {
+    setResearchPanel("experiment", "potential");
     render();
   });
   $("head").addEventListener("click", (event) => {

@@ -11,6 +11,8 @@
 .vix-reading span, .breadth-reading span { color: #718075; font-size: 11px; }
 .vix-change { min-height: 18px; margin: 13px 0 0; color: #546e5e; font-size: 12px; font-weight: 600; }
 .card-caption { margin: 17px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.tape-line { margin: 10px 0 0; color: #546e5e; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.conviction-card { margin: 14px 28px 0; }
 .breadth-track { width: 100%; height: 8px; margin: 22px 0 0; border-radius: 99px; background: #e8eee9; overflow: hidden; }
 .breadth-track span { display: block; height: 100%; border-radius: 99px; background: #629372; }
 .index-rows { display: grid; gap: 0; margin-top: 15px; }
@@ -73,7 +75,8 @@
 .overlap-badge { padding: 3px 6px; border-radius: 5px; background: #eef4ef; color: #50745c; font-size: 9px; white-space: nowrap; }
 .overlap-new { background: #e5f0dc; color: #45743a; }
 .report-method { margin-bottom: 0; }
+.conviction-note { margin: 10px 28px 16px; }
 @media (max-width: 1100px) { .mood-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.index-card { grid-column: 1 / -1; min-height: 0; }.index-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; } }
 @media (max-width: 1250px) { .extremes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 800px) { .extremes-grid { grid-template-columns: 1fr; } }
-@media (max-width: 620px) { .mood-grid { grid-template-columns: 1fr; margin: 12px 14px 25px; }.mood-card { min-height: 0; }.index-card { grid-column: auto; }.index-rows { grid-template-columns: 1fr; gap: 0; }.extremes-intro { align-items: flex-start; flex-direction: column; margin: 0 14px 14px; }.extremes-grid { margin: 0 14px; }.mood-method { margin: 16px 14px 30px; }.mood-status { margin: 12px 14px; }.weekly-stat-grid { grid-template-columns: 1fr; margin: 0 14px; gap: 8px; }.weekly-change { margin: 12px 14px; }.overlap-card { margin: 0 14px; }.overlap-heading { flex-direction: column; align-items: flex-start; }.overlap-group-heading { padding: 12px 14px 4px; flex-direction: column; align-items: flex-start; gap: 2px; }.overlap-chips { padding: 4px 14px 12px; }.overlap-list { grid-template-columns: 1fr; max-height: 410px; }.overlap-item:nth-child(odd) { border-right: 0; } }
+@media (max-width: 620px) { .mood-grid { grid-template-columns: 1fr; margin: 12px 14px 25px; }.mood-card { min-height: 0; }.index-card { grid-column: auto; }.index-rows { grid-template-columns: 1fr; gap: 0; }.extremes-intro { align-items: flex-start; flex-direction: column; margin: 0 14px 14px; }.extremes-grid { margin: 0 14px; }.mood-method { margin: 16px 14px 30px; }.mood-status { margin: 12px 14px; }.weekly-stat-grid { grid-template-columns: 1fr; margin: 0 14px; gap: 8px; }.weekly-change { margin: 12px 14px; }.overlap-card { margin: 0 14px; }.conviction-card { margin: 0 14px 8px; }.overlap-heading { flex-direction: column; align-items: flex-start; }.overlap-group-heading { padding: 12px 14px 4px; flex-direction: column; align-items: flex-start; gap: 2px; }.overlap-chips { padding: 4px 14px 12px; }.overlap-list { grid-template-columns: 1fr; max-height: 410px; }.overlap-item:nth-child(odd) { border-right: 0; } }

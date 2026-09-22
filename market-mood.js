@@ -28,6 +28,22 @@ function appendText(parent, tag, value, className) {
   return element;
 }
 
+function breadthYear(breadth) {
+  if (!breadth || !Number.isFinite(breadth.up_252)) return "";
+  const median = Number.isFinite(breadth.median_252) ? ` · median ${percent(breadth.median_252)}` : "";
+  return `252 sessions: ${(breadth.up_252 * 100).toFixed(0)}% up${median}`;
+}
+
+function indexSpread(indices) {
+  const spy = indices?.SPY?.return_63;
+  const qqq = indices?.QQQ?.return_63;
+  if (!Number.isFinite(spy) || !Number.isFinite(qqq)) return "";
+  const gap = (spy - qqq) * 100;
+  if (Math.abs(gap) < 0.05) return "SPY and QQQ moved together over 63 sessions.";
+  const behind = gap > 0 ? "QQQ is behind SPY" : "SPY is behind QQQ";
+  return `${behind} by ${Math.abs(gap).toFixed(1)} pp over 63 sessions.`;
+}
+
 function renderIndices(indices) {
   const target = $("index-rows");
   target.replaceChildren();
@@ -188,9 +204,33 @@ function renderScreenReport(report) {
     ? `${((multi / unique) * 100).toFixed(1)}% of ${unique.toLocaleString()} screened`
     : "";
   $("report-change").textContent = report?.previous_as_of
-    ? `Since ${day(report.previous_as_of)}: ${report.new_overlap_count} names entered the two-or-more-screen group and ${report.lost_overlap_count} left it. Net ${report.multi_count - report.previous_multi_count >= 0 ? "+" : ""}${report.multi_count - report.previous_multi_count}. Membership changes are not analyst upgrades.`
-    : "No prior weekly snapshot is available for an overlap comparison.";
+    ? `Since ${day(report.previous_as_of)}: ${report.new_overlap_count} entered, ${report.lost_overlap_count} left. Net ${report.multi_count - report.previous_multi_count >= 0 ? "+" : ""}${report.multi_count - report.previous_multi_count}.`
+    : "No prior Friday to compare.";
   renderOverlapCard(report);
+}
+
+function markTab(id, on) {
+  const button = $(id);
+  if (!button) return;
+  button.classList.toggle("on", on);
+  if (typeof button.setAttribute === "function") button.setAttribute("aria-selected", on ? "true" : "false");
+}
+
+function showMoodPanel(panel) {
+  const lists = panel === "lists";
+  $("tape-panel").hidden = lists;
+  $("lists-panel").hidden = !lists;
+  markTab("show-tape", !lists);
+  markTab("show-lists", lists);
+}
+
+function bindMoodPanels() {
+  const tape = $("show-tape");
+  const lists = $("show-lists");
+  if (!tape || tape.dataset.bound === "true") return;
+  tape.addEventListener("click", () => showMoodPanel("tape"));
+  lists.addEventListener("click", () => showMoodPanel("lists"));
+  tape.dataset.bound = "true";
 }
 
 function bindOverlapControls() {
@@ -218,13 +258,14 @@ function render(mood) {
   const share = mood.breadth?.up_63;
   $("breadth-up").textContent = Number.isFinite(share) ? `${(share * 100).toFixed(0)}%` : "—";
   $("breadth-fill").style.width = Number.isFinite(share) ? `${Math.max(0, Math.min(100, share * 100))}%` : "0%";
-  $("breadth-copy").textContent = `${mood.breadth?.n_63 ?? 0} complete names · median 63-session return ${percent(mood.breadth?.median_63)}. Breadth is a snapshot of this liquid universe, not all stocks.`;
+  $("breadth-copy").textContent = `63-session median ${percent(mood.breadth?.median_63)}`;
+  $("breadth-year").textContent = breadthYear(mood.breadth);
   renderIndices(mood.indices);
+  $("index-spread").textContent = indexSpread(mood.indices);
   renderScreenLeaders("conviction-body", mood.conviction_leaders, "score");
-  renderScreenLeaders("growth-body", mood.growth_leaders);
-  renderScreenLeaders("cheap-body", mood.cheap_leaders);
   renderScreenReport(mood.screen_report);
   bindOverlapControls();
+  bindMoodPanels();
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
 }
