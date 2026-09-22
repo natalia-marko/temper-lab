@@ -59,6 +59,11 @@ acceptance times. Empty means no qualifying trade in the window after a fetch.
 The page refuses to render unless `insights.json` matches `desk.json` and
 `release.json` on the same freeze. Conviction is not this list.
 
+Jev story is a fifth page, `jev-story.html`, last in the sidebar after Insights.
+It states the method: hard number gates, then a facts-only state, then typed
+Choice, Score, and Noul. The run itself is local `jev_approach`. The page does
+not call the model, and it does not write the weekly book.
+
 The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
 the share of liquid names up over 63 sessions against the 252-session share, and
 SPY versus QQQ. VIX is non-directional and does not rank individual stocks.
