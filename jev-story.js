@@ -169,11 +169,10 @@ function renderBook(book) {
       </tr></thead><tbody>${rows.map((name) => {
         const result = runPhase1(name, policy);
         const on = state.selected.has(name.ticker);
-        const can = result.status === "PASSED";
         const label = result.status === "PASSED" ? "Passed math" : result.status === "NOT_MEASURED" ? "Not measured" : reasonLabel(result.reason);
         const tone = result.status === "PASSED" ? "pass" : result.status === "REJECTED" ? "fail" : "gap";
         return `<tr data-ticker="${escapeText(name.ticker)}" class="${state.active === name.ticker ? "on" : ""} ${result.status === "REJECTED" ? "rejected" : ""}">
-          <td><button type="button" data-tick="${escapeText(name.ticker)}" ${can ? "" : "disabled"} aria-label="${on ? "Deselect" : "Select"} ${escapeText(name.ticker)}">${on ? "✓" : ""}</button></td>
+          <td><button type="button" data-tick="${escapeText(name.ticker)}" aria-label="${on ? "Deselect" : "Select"} ${escapeText(name.ticker)}">${on ? "✓" : ""}</button></td>
           <td><span class="ticker">${escapeText(name.ticker)}</span><span class="meta">${escapeText(name.name)}</span></td>
           <td>${formatPct(name.ttmMaxDrawdownPct)}</td>
           <td>${formatRatio(name.betaVsSpy)}</td>
@@ -239,19 +238,18 @@ function renderBook(book) {
   modeButton.addEventListener("click", () => {
     const policy = readPolicy(document);
     const rows = visibleNames(names, policy, state.query, state.filter);
-    const survivors = rows.filter((name) => runPhase1(name, policy).status === "PASSED");
     if (state.mode === "select") {
-      survivors.forEach((name) => state.selected.add(name.ticker));
+      rows.forEach((name) => state.selected.add(name.ticker));
       state.mode = "deselect";
     } else {
-      survivors.forEach((name) => state.selected.delete(name.ticker));
+      rows.forEach((name) => state.selected.delete(name.ticker));
       state.mode = "select";
     }
     paint();
   });
   list.addEventListener("click", (event) => {
     const tick = event.target.closest("[data-tick]");
-    if (tick && !tick.disabled) {
+    if (tick) {
       const ticker = tick.getAttribute("data-tick");
       if (state.selected.has(ticker)) state.selected.delete(ticker);
       else state.selected.add(ticker);
