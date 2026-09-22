@@ -39,6 +39,12 @@ function filteredInsights(events, filters) {
     if (!query) return true;
     const blob = [event.symbol, event.name, event.filer, event.filer_title, event.filer_kind, event.plain_reason].join(" ").toLowerCase();
     return blob.includes(query);
+  }).slice().sort((a, b) => {
+    const day = String(b.trade_date || "").localeCompare(String(a.trade_date || ""));
+    if (day) return day;
+    const usd = (Number(b.usd) || 0) - (Number(a.usd) || 0);
+    if (usd) return usd;
+    return String(a.symbol || "").localeCompare(String(b.symbol || ""));
   });
 }
 

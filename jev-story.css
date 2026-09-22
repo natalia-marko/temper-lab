@@ -26,6 +26,11 @@
 .jev-controls button.on { background: #214d36; color: #fff; border-color: #214d36; }
 .jev-ticked { margin-left: auto; color: #7a8a80; font-size: 12px; font-variant-numeric: tabular-nums; }
 #jev-mode { width: 36px; min-width: 36px; padding: 0; border: 1.5px solid #3d5246; background: #fff; }
+.jev-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 28px 14px; }
+#jev-classify { min-height: 36px; padding: 6px 14px; border: 0; border-radius: 8px; background: #214d36; color: #fff; font-size: 13px; font-weight: 650; }
+#jev-classify:disabled { opacity: 0.4; }
+#jev-clear { min-height: 36px; padding: 6px 14px; border: 1px solid #cddbd1; border-radius: 8px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 650; }
+#jev-batch { margin: 0; color: #526e5b; font-size: 13px; max-width: 720px; line-height: 1.45; word-break: break-word; }
 .jev-split { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.7fr); gap: 14px; margin: 0 28px 18px; align-items: start; }
 .jev-split .surface { margin: 0; }
 .jev-list { max-height: 70vh; overflow: auto; padding: 0 8px 12px; }

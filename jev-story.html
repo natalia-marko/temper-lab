@@ -8,7 +8,7 @@
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
     <link rel="stylesheet" href="./insights.css?v=0c11375a052a" />
-    <link rel="stylesheet" href="./jev-story.css?v=43a7f7dd69f7" />
+    <link rel="stylesheet" href="./jev-story.css?v=acc84cca35db" />
   </head>
   <body>
     <div class="desk">
@@ -60,6 +60,11 @@
             <label class="jev-check"><input id="jev-margin" type="checkbox" checked /> Positive operating margin</label>
           </div>
         </section>
+        <div class="jev-actions">
+          <button type="button" id="jev-classify" disabled>Classify selected (0)</button>
+          <button type="button" id="jev-clear">Clear results</button>
+          <p id="jev-batch"></p>
+        </div>
         <div class="jev-split">
           <section class="surface jev-book" aria-label="Book">
             <div class="jev-card-head jev-book-head">
@@ -75,16 +80,15 @@
               <button type="button" data-filter="read">Read</button>
               <span id="jev-ticked" class="jev-ticked"></span>
               <button type="button" id="jev-mode" aria-pressed="false" aria-label="Tick the names on screen"></button>
-              <button type="button" id="jev-reset">Reset</button>
             </div>
             <p id="jev-status" class="insights-count" role="status">Loading the book…</p>
             <div id="jev-list" class="jev-list"></div>
           </section>
           <section id="jev-detail" class="surface jev-detail" aria-label="Selected name" hidden></section>
         </div>
-        <p class="jev-note">The list is the US identity snapshot. Gates use Friday prices and filings already on disk. No catalyst means no sentence was written. A Jev answer is shown only when a finished live run in <code>jev_approach</code> wrote it into this file. This page does not call the model, and it does not write Saturday’s lists.</p>
+        <p class="jev-note">The list is the US identity snapshot. Gates use Friday prices and filings already on disk. No catalyst means no sentence was written. Classify downloads a pending file and copies a Mac command; <code>tools/run_jev_story_reads.py --live</code> writes the answer into this file via <code>jev_approach</code>. This page does not call the model, and it does not write Saturday’s lists.</p>
       </main>
     </div>
-    <script src="./jev-story.js?v=ac1654360c65"></script>
+    <script src="./jev-story.js?v=9f61f8de27d5"></script>
   </body>
 </html>

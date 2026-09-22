@@ -52,6 +52,31 @@ const SETUP_LABEL = {
   unclear: "Unclear",
 };
 
+function classifyBatch(names, policy, selected) {
+  return names.filter((name) => selected.has(name.ticker) && runPhase1(name, policy).status === "PASSED");
+}
+
+function classifyCommand(tickers, maxMddPct) {
+  const drawdown = Number(maxMddPct) / 100;
+  return `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/run_jev_story_reads.py --tickers ${tickers.join(" ")} --max-drawdown ${drawdown} --live`;
+}
+
+function downloadPending(tickers, maxMddPct) {
+  const payload = {
+    schema: "jev-story-pending-1",
+    tickers,
+    max_drawdown_pct: Number(maxMddPct),
+    created_at: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "jev-story-pending.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function savedRead(name) {
   const read = name && name.jev;
   if (!read || typeof read !== "object" || !READ_LABEL[read.status]) return null;
@@ -174,6 +199,7 @@ function renderBook(book) {
     filter: "all",
     mode: "select",
     selected: new Set(),
+    notice: "",
     active: names[0] ? names[0].ticker : "",
   };
   const status = document.querySelector("#jev-status");
@@ -202,6 +228,12 @@ function renderBook(book) {
       : `${rows.length.toLocaleString()} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
     const chip = document.querySelector("#jev-chip");
     if (chip) chip.textContent = book.as_of;
+    const batch = classifyBatch(names, policy, state.selected);
+    const classify = document.querySelector("#jev-classify");
+    classify.textContent = `Classify selected (${batch.length})`;
+    classify.disabled = batch.length === 0;
+    const batchLine = document.querySelector("#jev-batch");
+    batchLine.textContent = state.notice || (state.selected.size && !batch.length ? "A name that failed a gate is not classified." : "");
     modeButton.textContent = "";
     modeButton.setAttribute("aria-pressed", state.mode === "deselect" ? "true" : "false");
     modeButton.setAttribute("aria-label", state.mode === "select" ? "Tick the names on screen" : "Clear ticks on screen");
@@ -286,22 +318,49 @@ function renderBook(book) {
     document.querySelector(id).addEventListener("input", paint);
   });
   document.querySelector("#jev-margin").addEventListener("change", paint);
-  document.querySelector("#jev-reset").addEventListener("click", () => {
-    state.selected.clear();
-    state.query = "";
-    state.filter = "all";
-    state.mode = "select";
-    document.querySelector("#jev-query").value = "";
-    document.querySelector("#jev-mdd").value = "28";
-    document.querySelector("#jev-beta").value = "1.8";
-    document.querySelector("#jev-de").value = "1.5";
-    document.querySelector("#jev-margin").checked = true;
-    document.querySelectorAll("[data-filter]").forEach((item) => {
-      item.classList.toggle("on", item.getAttribute("data-filter") === "all");
-    });
+  document.querySelector("#jev-clear").addEventListener("click", () => {
+    state.notice = "";
+    paint();
+  });
+  document.querySelector("#jev-classify").addEventListener("click", () => {
+    const policy = readPolicy(document);
+    const batch = classifyBatch(names, policy, state.selected);
+    if (!batch.length) return;
+    const answered = batch.filter((name) => savedRead(name));
+    const ready = batch.filter((name) => name.catalyst && name.catalyst.source && name.catalyst.source.startsWith("https://"));
+    const noCatalyst = batch.filter((name) => !ready.includes(name) && !savedRead(name));
+    if (answered.length && answered.length === batch.length) {
+      state.filter = "read";
+      state.query = "";
+      document.querySelector("#jev-query").value = "";
+      document.querySelectorAll("[data-filter]").forEach((item) => {
+        item.classList.toggle("on", item.getAttribute("data-filter") === "read");
+      });
+      state.active = answered[0].ticker;
+      state.notice = `${answered.map((name) => name.ticker).join(", ")} already ${answered.length === 1 ? "has a saved answer" : "have saved answers"}.`;
+      paint();
+      return;
+    }
+    if (!ready.length) {
+      state.active = batch[0].ticker;
+      state.notice = noCatalyst.length
+        ? `${noCatalyst.map((name) => name.ticker).join(", ")} need a sourced catalyst before a Mac run.`
+        : `${batch.map((name) => name.ticker).join(", ")} passed math. No Jev answer is on file.`;
+      paint();
+      return;
+    }
+    const tickers = ready.map((name) => name.ticker);
+    const command = classifyCommand(tickers, policy.maxMddPct);
+    downloadPending(tickers, policy.maxMddPct);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(command).catch(() => {});
+    }
+    state.active = ready[0].ticker;
+    state.notice = `Mac next: ${command}${noCatalyst.length ? ` Skipped without catalyst: ${noCatalyst.map((name) => name.ticker).join(", ")}.` : ""}`;
     paint();
   });
   modeButton.addEventListener("click", () => {
+    state.notice = "";
     const policy = readPolicy(document);
     const rows = visibleNames(names, policy, state.query, state.filter);
     if (state.mode === "select") {
@@ -317,6 +376,7 @@ function renderBook(book) {
     const tick = event.target.closest("[data-tick]");
     if (tick) {
       const ticker = tick.getAttribute("data-tick");
+      state.notice = "";
       if (state.selected.has(ticker)) state.selected.delete(ticker);
       else state.selected.add(ticker);
       state.active = ticker;

@@ -64,7 +64,8 @@ The book is the US common-stock identity list. Drawdown and beta versus SPY
 come from the trailing year of prices. Operating margin and interest-bearing
 debt over book equity come from filings. A missing input is not a pass. A
 catalyst sentence is shown only when a source URL is already on file. A Jev
-answer is copied from a finished live run and is otherwise blank. The page
+answer is copied from a finished live Mac run
+(`tools/run_jev_story_reads.py --live`) and is otherwise blank. The page
 does not call the model, and it does not write the weekly book.
 
 The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
