@@ -50,7 +50,9 @@ names. The table shows the trade date, ticker, bought/sold, who (person vs insti
 director or officer title from the Form 4), trade dollars, dollars as a fraction
 of freeze Friday market cap (sells negative), and the stock’s price change over
 21 trading days ending that Friday, counted on the QQQ calendar. That window is
-not Hot tape’s 63 trading days. Open-market buys are Form 4 code P of at least $50,000 (dollars) and 13D
+not Hot tape’s 63 trading days. The page lists filings accepted over 21 QQQ
+sessions through yesterday. Tuesday and Friday email only the days since the
+previous run. A repeat is not a score. Open-market buys are Form 4 code P of at least $50,000 (dollars) and 13D
 filings with an open-market cash price near the freeze close. Warrant conversions
 and 13G 5% ownership levels are listed as other filings, not buys. Dates are SEC
 acceptance times. Empty means no qualifying trade in the window after a fetch.

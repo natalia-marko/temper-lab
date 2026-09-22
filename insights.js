@@ -121,6 +121,18 @@ function appendText(parent, tag, text, className) {
   return node;
 }
 
+function pageEvents(digest) {
+  const start = String((digest && digest.since) || "");
+  const until = String((digest && digest.until) || "");
+  return ((digest && digest.events) || []).filter((event) => {
+    const day = String(event.accepted_at || "").slice(0, 10);
+    if (day.length < 10) return !start;
+    if (start && day < start) return false;
+    if (until && day > until) return false;
+    return true;
+  });
+}
+
 function renderInsights() {
   const digest = insightsState.digest;
   const root = document.getElementById("insights-list");
@@ -135,8 +147,9 @@ function renderInsights() {
   if (coverage) {
     coverage.textContent = `${digest.universe_n} published Strength / Growth / Cheap names · filings ${digest.since} to ${digest.until}`;
   }
-  const rows = filteredInsights(digest.events, insightsState.filters);
-  const buys = (digest.counts && digest.counts.open_market_buy) || 0;
+  const events = pageEvents(digest);
+  const rows = filteredInsights(events, insightsState.filters);
+  const buys = events.filter((event) => event.event_type === "open_market_buy").length;
   if (count) {
     count.textContent = `${rows.length} shown · ${buys} open-market buys in this window. This is not a rank.`;
   }
