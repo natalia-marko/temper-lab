@@ -38,16 +38,27 @@ function reasonLabel(reason) {
   return REASON_LABEL[reason] || reason;
 }
 
+function matchRank(name, query) {
+  const ticker = name.ticker.toLowerCase();
+  if (ticker === query) return 0;
+  if (ticker.startsWith(query)) return 1;
+  const words = name.name.toLowerCase().split(/[^a-z0-9]+/);
+  if (words.some((word) => word.startsWith(query))) return 2;
+  return -1;
+}
+
 function visibleNames(names, policy, query, filter) {
   const q = (query || "").trim().toLowerCase();
-  return names.filter((name) => {
+  const rows = names.filter((name) => {
     const result = runPhase1(name, policy);
     if (filter === "survivors" && result.status !== "PASSED") return false;
     if (filter === "rejected" && result.status !== "REJECTED") return false;
     if (filter === "unmeasured" && result.status !== "NOT_MEASURED") return false;
     if (!q) return true;
-    return [name.ticker, name.name, name.industry].join(" ").toLowerCase().includes(q);
+    return matchRank(name, q) >= 0;
   });
+  if (!q) return rows;
+  return rows.sort((a, b) => matchRank(a, q) - matchRank(b, q) || a.ticker.localeCompare(b.ticker));
 }
 
 function formatPct(value) {
@@ -122,7 +133,6 @@ function renderBook(book) {
     active: names[0] ? names[0].ticker : "",
   };
   const status = document.querySelector("#jev-status");
-  const counts = document.querySelector("#jev-counts");
   const list = document.querySelector("#jev-list");
   const detail = document.querySelector("#jev-detail");
   const modeButton = document.querySelector("#jev-mode");
@@ -134,8 +144,13 @@ function renderBook(book) {
     const rejected = scored.filter((row) => row.result.status === "REJECTED").length;
     const unmeasured = scored.filter((row) => row.result.status === "NOT_MEASURED").length;
     const rows = visibleNames(names, policy, state.query, state.filter);
-    counts.textContent = `${names.length} names · ${rejected} rejected · ${passed} passed math · ${unmeasured} not measured`;
-    status.textContent = `${rows.length} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
+    document.querySelector("#jev-n-all").textContent = names.length.toLocaleString();
+    document.querySelector("#jev-n-rejected").textContent = rejected.toLocaleString();
+    document.querySelector("#jev-n-passed").textContent = passed.toLocaleString();
+    document.querySelector("#jev-n-gap").textContent = unmeasured.toLocaleString();
+    document.querySelector("#jev-shown").textContent = `${rows.length.toLocaleString()} of ${names.length.toLocaleString()}`;
+    document.querySelector("#jev-ticked").textContent = state.selected.size ? `${state.selected.size} ticked` : "";
+    status.textContent = `${rows.length.toLocaleString()} shown. Prices and filings through ${book.as_of}. Not Saturday’s lists.`;
     const chip = document.querySelector("#jev-chip");
     if (chip) chip.textContent = book.as_of;
     modeButton.textContent = state.mode === "select" ? "Select" : "Deselect";
@@ -159,7 +174,7 @@ function renderBook(book) {
           <td>${formatRatio(name.betaVsSpy)}</td>
           <td>${formatRatio(name.debtToEquity)}</td>
           <td>${formatMargin(name.operatingMargin)}</td>
-          <td class="${tone}">${label}</td>
+          <td><span class="jev-chip ${tone}">${label}</span></td>
         </tr>`;
       }).join("")}</tbody></table>`;
     }
@@ -179,11 +194,24 @@ function renderBook(book) {
     const catalyst = active.catalyst && active.catalyst.source
       ? `<p class="jev-catalyst">${escapeText(active.catalyst.text)}</p><p class="jev-tape"><a href="${escapeText(active.catalyst.source)}">${escapeText(active.catalyst.published_at)}</a></p>`
       : `<p class="jev-tape">No catalyst on file.</p>`;
+    const tone = result.status === "PASSED" ? "pass" : result.status === "REJECTED" ? "fail" : "gap";
+    const statusLabel = result.status === "PASSED" ? "Passed math" : result.status === "NOT_MEASURED" ? "Not measured" : reasonLabel(result.reason);
     detail.hidden = false;
-    detail.innerHTML = `<p class="jev-kicker">${escapeText(active.ticker)} · ${escapeText(active.name)}</p>
-      <p>${verdict}</p>
+    detail.innerHTML = `<div class="jev-inspector-top"><div>
+        <p class="jev-kicker">${escapeText(active.ticker)}</p>
+        <h2>${escapeText(active.name)}</h2>
+        <p class="jev-industry">${escapeText(active.industry || "Industry unavailable")}</p>
+      </div><span class="jev-chip ${tone}">${statusLabel}</span></div>
+      <p class="jev-verdict">${verdict}</p>
+      <dl class="jev-metrics">
+        <div><dt>MDD</dt><dd>${formatPct(active.ttmMaxDrawdownPct)}</dd></div>
+        <div><dt>Beta</dt><dd>${formatRatio(active.betaVsSpy)}</dd></div>
+        <div><dt>D/E</dt><dd>${formatRatio(active.debtToEquity)}</dd></div>
+        <div><dt>OM</dt><dd>${formatMargin(active.operatingMargin)}</dd></div>
+      </dl>
+      <p class="jev-kicker">Catalyst</p>
       ${catalyst}
-      <pre>${escapeText(JSON.stringify(factsOnly(active, book.as_of), null, 2))}</pre>`;
+      <details><summary>Facts</summary><pre>${escapeText(JSON.stringify(factsOnly(active, book.as_of), null, 2))}</pre></details>`;
   }
 
   document.querySelector("#jev-query").addEventListener("input", (event) => {
