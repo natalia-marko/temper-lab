@@ -30,6 +30,18 @@ function screenLabel(key) {
   return { strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" }[key] || key;
 }
 
+function wordStartsWith(text, query) {
+  const words = String(text || "").toLowerCase().match(/[a-z0-9]+/g) || [];
+  return words.some((word) => word.startsWith(query));
+}
+
+function matchesInsightQuery(event, query) {
+  const symbol = String(event.symbol || "").toLowerCase();
+  if (symbol === query || symbol.startsWith(query)) return true;
+  return [event.name, event.filer, event.filer_title, event.filer_kind, event.plain_reason]
+    .some((field) => wordStartsWith(field, query));
+}
+
 function filteredInsights(events, filters) {
   const query = (filters.query || "").trim().toLowerCase();
   return (events || []).filter(event => {
@@ -37,8 +49,7 @@ function filteredInsights(events, filters) {
     if (filters.kind === "open_market_sell" && event.event_type !== "open_market_sell") return false;
     if (filters.kind === "other" && (event.event_type === "open_market_buy" || event.event_type === "open_market_sell")) return false;
     if (!query) return true;
-    const blob = [event.symbol, event.name, event.filer, event.filer_title, event.filer_kind, event.plain_reason].join(" ").toLowerCase();
-    return blob.includes(query);
+    return matchesInsightQuery(event, query);
   }).slice().sort((a, b) => {
     const day = String(b.trade_date || "").localeCompare(String(a.trade_date || ""));
     if (day) return day;
