@@ -93,25 +93,57 @@ function sideLabel(type) {
 const ROLE_LABEL = {
   officer: "Officer",
   director: "Director",
-  "ten-percent holder": "10% holder",
+  "ten-percent holder": "10% owner",
   insider: "Insider",
   institution: "Institution",
 };
+// One Form 4 filer can be officer, director and 10% owner at once.
+const ROLE_ORDER = ["officer", "director", "ten-percent holder", "insider"];
+// Titles that name no office. "See Remarks" points at a footnote, not a job.
+const JUNK_TITLES = new Set(["", "see remarks", "see footnote", "see footnotes", "officer", "n/a", "none"]);
 const ENTITY_NAME = /\b(l\.?p\.?|llp|llc|inc\.?|ltd\.?|corp\.?|plc|partners|management|advisors?)\b/i;
+
+function cleanTitle(value) {
+  const text = String(value || "").trim();
+  return JUNK_TITLES.has(text.toLowerCase()) ? "" : text;
+}
+
+function eventRoles(event) {
+  const stored = (event.filer_roles || []).filter((role) => ROLE_ORDER.includes(role));
+  if (stored.length) return ROLE_ORDER.filter((role) => stored.includes(role));
+  return ROLE_ORDER.includes(event.filer_role) ? [event.filer_role] : [];
+}
+
+function filerWord(kind, roles) {
+  if (kind === "institution") return "Institution";
+  // An individual who is neither officer nor director just owns a lot of it.
+  if (roles.length && !roles.some((role) => role === "officer" || role === "director")) {
+    return "Private investor";
+  }
+  return "Person";
+}
 
 function whoLabel(event) {
   const form = String(event.form || "");
   const namedInstitution = ENTITY_NAME.test(event.filer || "");
   const kind = event.filer_kind
     || (form.startsWith("SC 13") || event.filer_role === "institution" || namedInstitution ? "institution" : "person");
-  let title = (event.filer_title || "").trim();
-  if (!title) {
-    if (event.event_type === "passive_holder") title = "13G";
-    else if (event.event_type === "exercise_or_convert") title = "Exercise";
-    else if (event.event_type === "ownership_disclosure") title = event.form || "13D";
-    else title = ROLE_LABEL[event.filer_role] || event.filer_role || "filer";
+  const roles = eventRoles(event);
+  const title = cleanTitle(event.filer_title);
+  const parts = title ? [title] : [];
+  for (const role of ROLE_ORDER) {
+    if (!roles.includes(role) || role === "insider") continue;
+    if (role === "officer" && title) continue;
+    parts.push(ROLE_LABEL[role]);
   }
-  return `${kind === "institution" ? "Institution" : "Person"} · ${title}`;
+  let label = parts.join(" · ");
+  if (!label) {
+    if (event.event_type === "passive_holder") label = "13G";
+    else if (event.event_type === "exercise_or_convert") label = "Exercise";
+    else if (event.event_type === "ownership_disclosure") label = event.form || "13D";
+    else label = ROLE_LABEL[event.filer_role] || event.filer_role || "filer";
+  }
+  return `${filerWord(kind, roles)} · ${label}`;
 }
 
 function overlayContext(event) {
