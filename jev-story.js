@@ -1,5 +1,5 @@
 const DEFAULT_POLICY = {
-  maxMddPct: 28,
+  maxMddPct: 35,
   maxBeta: 1.8,
   maxDebtToEquity: 1.5,
   requirePositiveMargin: true,
@@ -7,7 +7,7 @@ const DEFAULT_POLICY = {
 
 const REASON_LABEL = {
   max_drawdown: "Max drawdown",
-  beta: "Beta vs SPY",
+  beta: "Beta vs S&P 500",
   margin: "Operating margin",
   leverage: "Debt / equity",
   passed: "Passed math",
@@ -19,15 +19,22 @@ function known(value) {
 }
 
 function runPhase1(name, policy) {
+  if (name.intakeStatus) {
+    if (name.riskStatus === "REJECTED") return {ticker:name.ticker,status:"REJECTED",reason:(name.intakeReasons || [])[0] || "measured rule breach"};
+    if (name.riskStatus === "PASSED") return {ticker:name.ticker,status:"PASSED",reason:"passed"};
+    return {ticker:name.ticker,status:"NOT_MEASURED",reason:(name.intakeReasons || [])[0] || "not_measured"};
+  }
+  if (![policy.maxMddPct, policy.maxBeta, policy.maxDebtToEquity].every(Number.isFinite)) return {ticker:name.ticker,status:"NOT_MEASURED",reason:"policy unavailable"};
+  const betaValue = name.betaVsSpx ?? name.betaVsSpy;
   const breaches = [];
   if (known(name.ttmMaxDrawdownPct) && name.ttmMaxDrawdownPct >= policy.maxMddPct) breaches.push("max_drawdown");
-  if (known(name.betaVsSpy) && Math.abs(name.betaVsSpy) > policy.maxBeta) breaches.push("beta");
+  if (known(betaValue) && Math.abs(betaValue) >= policy.maxBeta) breaches.push("beta");
   if (policy.requirePositiveMargin && known(name.operatingMargin) && name.operatingMargin <= 0) breaches.push("margin");
-  if (name.nonpositiveBookEquity || (known(name.debtToEquity) && name.debtToEquity > policy.maxDebtToEquity)) breaches.push("leverage");
+  if (name.nonpositiveBookEquity || (known(name.debtToEquity) && name.debtToEquity >= policy.maxDebtToEquity)) breaches.push("leverage");
   if (breaches.length) return { ticker: name.ticker, status: "REJECTED", reason: breaches[0] };
   const gaps = [];
   if (!known(name.ttmMaxDrawdownPct)) gaps.push("max_drawdown");
-  if (!known(name.betaVsSpy)) gaps.push("beta");
+  if (!known(betaValue)) gaps.push("beta");
   if (!known(name.debtToEquity) && !name.nonpositiveBookEquity) gaps.push("leverage");
   if (policy.requirePositiveMargin && !known(name.operatingMargin)) gaps.push("margin");
   if (gaps.length) return { ticker: name.ticker, status: "NOT_MEASURED", reason: gaps[0] };
@@ -53,17 +60,18 @@ const SETUP_LABEL = {
 };
 
 function classifyBatch(names, policy, selected) {
-  return names.filter((name) => selected.has(name.ticker) && runPhase1(name, policy).status === "PASSED");
+  return names.filter((name) => selected.has(name.ticker) && (!name.intakeStatus || name.intakeStatus === "READY") && runPhase1(name, policy).status === "PASSED");
 }
 
 function classifyCommand(tickers, maxMddPct) {
   const drawdown = Number(maxMddPct) / 100;
-  return `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/run_jev_story_reads.py --tickers ${tickers.join(" ")} --max-drawdown ${drawdown} --live`;
+  return `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/run_jev_story_reads.py --tickers ${tickers.join(" ")} --max-drawdown ${drawdown} --max-calls ${tickers.length} --live`;
 }
 
 function downloadPending(tickers, maxMddPct) {
   const payload = {
-    schema: "jev-story-pending-1",
+    schema: "jev-story-pending-2",
+    ...(typeof window !== "undefined" ? window.jevIntake : {}),
     tickers,
     max_drawdown_pct: Number(maxMddPct),
     created_at: new Date().toISOString(),
@@ -88,11 +96,11 @@ function readBlock(name) {
   const read = savedRead(name);
   if (!read) return `<p class="jev-tape">No Jev answer on file.</p>`;
   const answers = read.answers;
-  const metrics = answers
+const metrics = answers
     ? `<dl class="jev-metrics">
         <div><dt>Setup</dt><dd>${escapeText(SETUP_LABEL[answers.setup] || answers.setup)}</dd></div>
-        <div><dt>Guidance</dt><dd>${formatRatio(answers.guidanceNoul)}</dd></div>
-        <div><dt>Disruption</dt><dd>${formatRatio(answers.disruptionScore)}</dd></div>
+        <div><dt>Guidance</dt><dd>${answers.guidanceStatus ? escapeText(answers.guidanceStatus.replaceAll('_', ' ')) : formatRatio(answers.guidanceNoul)}</dd></div>
+        ${answers.disruptionScore == null ? '' : `<div><dt>Disruption</dt><dd>${formatRatio(answers.disruptionScore)}</dd></div>`}
         <div><dt>Confidence</dt><dd>${formatRatio(answers.setupConfidence)}</dd></div>
       </dl>`
     : "";
@@ -149,13 +157,14 @@ function escapeText(value) {
 }
 
 function factsOnly(name, asOf) {
+  const betaValue = name.betaVsSpx ?? name.betaVsSpy;
   return {
     ticker: name.ticker,
     industry: name.industry,
     asOf,
-    beta_benchmark: "SPY",
+    beta_benchmark: Object.hasOwn(name, 'betaVsSpx') ? "^GSPC" : "SPY",
     ttm_max_drawdown_pct: name.ttmMaxDrawdownPct,
-    beta_vs_spy: name.betaVsSpy,
+    beta_vs_spx: betaValue,
     interest_bearing_debt_to_book_equity: name.debtToEquity,
     operating_margin: name.operatingMargin,
     catalyst: name.catalyst || null,
@@ -182,7 +191,7 @@ function startJev() {
       return response.json();
     })
     .then((book) => {
-      if (book.schema !== "jev-story-book-1" || book.kind !== "measured" || !Array.isArray(book.names) || book.names.length < 1000) {
+      if (!["jev-story-book-1", "jev-story-book-2"].includes(book.schema) || book.kind !== "measured" || !Array.isArray(book.names) || book.names.length < 1000) {
         throw new Error("book schema");
       }
       renderBook(book);
@@ -193,6 +202,16 @@ function startJev() {
 }
 
 function renderBook(book) {
+  const policy = book.schema === "jev-story-book-2" && book.policy ? book.policy.risk : {
+    max_drawdown: DEFAULT_POLICY.maxMddPct / 100, max_beta: DEFAULT_POLICY.maxBeta,
+    max_debt_to_equity: DEFAULT_POLICY.maxDebtToEquity,
+  };
+  for (const [id,value] of [["#jev-mdd",policy.max_drawdown*100],["#jev-beta",policy.max_beta],["#jev-de",policy.max_debt_to_equity]]) {
+    const input = document.querySelector(id); input.value = value; input.disabled = book.schema === "jev-story-book-2";
+  }
+  document.querySelector("#jev-margin").checked = true;
+  document.querySelector("#jev-margin").disabled = book.schema === "jev-story-book-2";
+  window.jevIntake = book.schema === "jev-story-book-2" ? {intake_id:book.intake_id, policy_sha256:book.policy_sha256} : {};
   const names = book.names;
   const state = {
     query: "",
@@ -248,14 +267,14 @@ function renderBook(book) {
         <th></th><th>Ticker</th><th>MDD</th><th>Beta</th><th>D/E</th><th>OM</th><th>Status</th><th>Read</th>
       </tr></thead><tbody>${rows.map((name) => {
         const result = runPhase1(name, policy);
-        const on = state.selected.has(name.ticker);
-        const label = result.status === "PASSED" ? "Passed math" : result.status === "NOT_MEASURED" ? "Not measured" : reasonLabel(result.reason);
+        const on = state.selected.has(name.ticker) && (!name.intakeStatus || name.intakeStatus === "READY");
+        const label = name.intakeStatus ? name.intakeStatus.replaceAll('_', ' ') : result.status === "PASSED" ? "Passed math" : result.status === "NOT_MEASURED" ? "Not measured" : reasonLabel(result.reason);
         const tone = result.status === "PASSED" ? "pass" : result.status === "REJECTED" ? "fail" : "gap";
         return `<tr data-ticker="${escapeText(name.ticker)}" class="${state.active === name.ticker ? "on" : ""} ${result.status === "REJECTED" ? "rejected" : ""}">
-          <td><button type="button" data-tick="${escapeText(name.ticker)}" aria-label="${on ? "Deselect" : "Select"} ${escapeText(name.ticker)}">${on ? "✓" : ""}</button></td>
+          <td><button type="button" data-tick="${escapeText(name.ticker)}" ${name.intakeStatus && name.intakeStatus !== 'READY' ? 'disabled' : ''} aria-label="${on ? "Deselect" : "Select"} ${escapeText(name.ticker)}">${on ? "✓" : ""}</button></td>
           <td><span class="ticker">${escapeText(name.ticker)}</span><span class="meta">${escapeText(name.name)}</span></td>
           <td>${formatPct(name.ttmMaxDrawdownPct)}</td>
-          <td>${formatRatio(name.betaVsSpy)}</td>
+          <td>${formatRatio(name.betaVsSpx ?? name.betaVsSpy)}</td>
           <td>${formatRatio(name.debtToEquity)}</td>
           <td>${formatMargin(name.operatingMargin)}</td>
           <td><span class="jev-chip ${tone}">${label}</span></td>
@@ -290,14 +309,14 @@ function renderBook(book) {
       <p class="jev-verdict">${verdict}</p>
       <dl class="jev-metrics">
         <div><dt>MDD</dt><dd>${formatPct(active.ttmMaxDrawdownPct)}</dd></div>
-        <div><dt>Beta</dt><dd>${formatRatio(active.betaVsSpy)}</dd></div>
+        <div><dt>Beta</dt><dd>${formatRatio(active.betaVsSpx ?? active.betaVsSpy)}</dd></div>
         <div><dt>D/E</dt><dd>${formatRatio(active.debtToEquity)}</dd></div>
         <div><dt>OM</dt><dd>${formatMargin(active.operatingMargin)}</dd></div>
       </dl>
       <p class="jev-kicker">Catalyst</p>
       ${catalyst}
       <p class="jev-kicker">Jev read</p>
-      ${readBlock(active)}
+      ${active.intakeStatus ? `<p><strong>${escapeText(active.intakeStatus)}</strong>: ${escapeText((active.intakeReasons || []).join("; ") || "Ready for classification")}</p>` : ""}${readBlock(active)}
       <details><summary>Facts</summary><pre>${escapeText(JSON.stringify(factsOnly(active, book.as_of), null, 2))}</pre></details>`;
   }
 
@@ -350,7 +369,7 @@ function renderBook(book) {
       return;
     }
     const tickers = ready.map((name) => name.ticker);
-    const command = classifyCommand(tickers, policy.maxMddPct);
+    const command = classifyCommand(tickers, policy.maxMddPct) + (book.intake_id ? ` --intake jev_approach/data/intakes/${book.intake_id}` : '');
     downloadPending(tickers, policy.maxMddPct);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(command).catch(() => {});
@@ -364,7 +383,7 @@ function renderBook(book) {
     const policy = readPolicy(document);
     const rows = visibleNames(names, policy, state.query, state.filter);
     if (state.mode === "select") {
-      rows.forEach((name) => state.selected.add(name.ticker));
+      rows.filter((name) => !name.intakeStatus || name.intakeStatus === 'READY').forEach((name) => state.selected.add(name.ticker));
       state.mode = "deselect";
     } else {
       rows.forEach((name) => state.selected.delete(name.ticker));
