@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-09-29T06:00:04+00:00",
+  "built_at": "2026-09-29T07:52:14+00:00",
   "counts": {
-    "open_market_buy": 37,
+    "open_market_buy": 36,
     "open_market_sell": 732
   },
   "events": [
@@ -179,35 +179,6 @@
       "trade_date": "2026-09-01",
       "usd": 8285850.44,
       "usd_frac_cap": 0.002755936130735334
-    },
-    {
-      "accepted_at": "2026-09-24T22:44:09.000Z",
-      "accession": "0001213900-26-103146",
-      "cik": "0001393818",
-      "event_type": "open_market_buy",
-      "filer": "Blackstone Holdings IV L.P.",
-      "filer_kind": "institution",
-      "filer_role": "ten-percent holder",
-      "filer_roles": [
-        "ten-percent holder"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 88889024625.44437,
-      "name": "Blackstone Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Ten-percent holder Blackstone Holdings IV L.P. bought $5,016,662 of common stock in the open market",
-      "price": 26.17,
-      "return_21": -0.16966028160773083,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1393818/000121390026103146/ownership.xml",
-      "shares": 191695.131,
-      "symbol": "BX",
-      "trade_date": "2026-09-23",
-      "usd": 5016661.58,
-      "usd_frac_cap": 5.643735659311068e-05
     },
     {
       "accepted_at": "2026-08-28T20:24:09.000Z",
@@ -22680,11 +22651,45 @@
       "usd_frac_cap": -4.406626967190659e-06
     }
   ],
+  "format_revision": "named-filers-yahoo-backup-1",
   "freeze_as_of": "2026-09-25",
   "freeze_run_id": "2026-09-25-5fc1c84bab67",
+  "mail_buys_below_minimum": [
+    {
+      "accession": "0001705859-26-000006",
+      "symbol": "RSI",
+      "usd": 29025.0
+    },
+    {
+      "accession": "0001437749-26-031186",
+      "symbol": "TPL",
+      "usd": 340.28
+    }
+  ],
   "mail_since": "2026-09-25",
   "schema": "ownership-digest-1",
+  "sec_coverage": {
+    "failed": 0,
+    "requested": 420
+  },
   "since": "2026-08-27",
   "universe_n": 420,
-  "until": "2026-09-28"
+  "until": "2026-09-28",
+  "yahoo_backup": {
+    "checked_at": "2026-09-29T07:52:14+00:00",
+    "date_basis": "trade_date",
+    "duplicates_suppressed": 0,
+    "empty": 5,
+    "failed": 0,
+    "failures": [],
+    "latest_trade_date": "2026-09-24",
+    "purchases": [],
+    "records_in_window": 0,
+    "requested": 420,
+    "since": "2026-09-25",
+    "source": "yahoo",
+    "status": "partial",
+    "until": "2026-09-28",
+    "with_data": 415
+  }
 }
