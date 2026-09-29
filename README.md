@@ -59,14 +59,13 @@ acceptance times. Empty means no qualifying trade in the window after a fetch.
 The page refuses to render unless `insights.json` matches `desk.json` and
 `release.json` on the same freeze. Conviction is not this list.
 
-Jev story is a fifth page, `jev-story.html`, last in the sidebar after Insights.
-The book is the US common-stock identity list. Drawdown and beta versus SPY
-come from the trailing year of prices. Operating margin and interest-bearing
-debt over book equity come from filings. A missing input is not a pass. A
-catalyst sentence is shown only when a source URL is already on file. A Jev
-answer is copied from a finished live Mac run
-(`tools/run_jev_story_reads.py --live`) and is otherwise blank. The page
-does not call the model, and it does not write the weekly book.
+Jev reads is the fifth page, `jev-reads.html`, last in the sidebar after Insights.
+It shows one published week of earnings releases (SEC 8-K Item 2.02) from companies in the
+screener universe, each read by Jev, an AI model, with a short verbatim quote, the SEC link, the
+3-day reaction versus SPY and the Python floor. Smaller companies are read but only counted.
+Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test) and
+`jev-reads/<Friday>.json` (one file per week, never rewritten), written by
+`python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 
 The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
 the share of liquid names up over 63 sessions against the 252-session share, and

@@ -1,0 +1,151 @@
+{
+ "schema": "jev-reads-index-1",
+ "generated_at": "2026-09-29T10:59:39+00:00",
+ "latest": "2026-09-25",
+ "weeks": [
+  {
+   "as_of": "2026-09-25",
+   "file": "jev-reads/2026-09-25.json",
+   "window": [
+    "2026-09-21",
+    "2026-09-25"
+   ],
+   "counts": {
+    "companies_checked": 4838,
+    "eightk_checked": 596,
+    "earnings_releases": 31,
+    "in_screener_universe": 15,
+    "smaller_companies_not_shown": 16,
+    "read_by_jev": 15,
+    "passed_floor": 14,
+    "short_list": 8
+   },
+   "short_list": [
+    {
+     "ticker": "BB",
+     "company": "BLACKBERRY Ltd",
+     "tier": "A",
+     "position": 1
+    },
+    {
+     "ticker": "CTAS",
+     "company": "CINTAS CORP",
+     "tier": "A",
+     "position": 2
+    },
+    {
+     "ticker": "PAYX",
+     "company": "PAYCHEX INC",
+     "tier": "A",
+     "position": 3
+    },
+    {
+     "ticker": "SNX",
+     "company": "TD SYNNEX CORP",
+     "tier": "C",
+     "position": 4
+    },
+    {
+     "ticker": "WOR",
+     "company": "WORTHINGTON ENTERPRISES, INC.",
+     "tier": "C",
+     "position": 5
+    },
+    {
+     "ticker": "COST",
+     "company": "COSTCO WHOLESALE CORP /NEW",
+     "tier": "C",
+     "position": 6
+    },
+    {
+     "ticker": "FUL",
+     "company": "FULLER H B CO",
+     "tier": "C",
+     "position": 7
+    },
+    {
+     "ticker": "AZO",
+     "company": "AUTOZONE INC",
+     "tier": "C",
+     "position": 8
+    }
+   ]
+  }
+ ],
+ "late_reactions": {
+  "2026-09-25": {}
+ },
+ "tracking": [
+  {
+   "week": "2026-09-25",
+   "group": "short list",
+   "releases": 8,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
+  {
+   "week": "2026-09-25",
+   "group": "other releases read",
+   "releases": 7,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  }
+ ],
+ "tracking_horizons_sessions": {
+  "3m": 63,
+  "6m": 126,
+  "12m": 252
+ },
+ "backtest": {
+  "run": "20260928T200548Z",
+  "evaluation": "evaluation-20260929T065507Z.json",
+  "releases": 440,
+  "period": "2023-01-19 to 2025-08-27",
+  "reaction_after_raised": {
+   "releases": 116,
+   "mean_pct": 1.4487207933015995,
+   "share_up": 0.5862068965517241
+  },
+  "reaction_after_lowered": {
+   "releases": 36,
+   "mean_pct": -3.528863456242278,
+   "share_up": 0.3333333333333333
+  },
+  "raised_minus_rest_6m": {
+   "difference_pp": -1.7283396385808059,
+   "ci_pp": [
+    -6.80064322887476,
+    3.8357241946298677
+   ],
+   "detectable_pp": 7.503905203520923
+  },
+  "raised_minus_rest_12m": {
+   "difference_pp": 0.33793425306990893,
+   "ci_pp": [
+    -8.944495109906686,
+    10.798613479913097
+   ],
+   "detectable_pp": 13.30572607115478
+  },
+  "market_disagreed_minus_agreed_6m": {
+   "difference_pp": 0.6662281617440174,
+   "ci_pp": [
+    -9.441484654368724,
+    10.886448077408431
+   ],
+   "releases": [
+    39,
+    61
+   ]
+  },
+  "note": "Intervals are 95% bootstrap intervals resampling whole filing months. Only companies still listed today are in the data, so all returns are optimistic."
+ }
+}

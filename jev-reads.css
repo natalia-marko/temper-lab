@@ -1,0 +1,65 @@
+.jev-status { margin: 18px 28px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--muted); }
+.jev-banner { margin: 0 28px 12px; padding: 12px 16px; border: 1px solid #e6d9b8; border-radius: 10px; background: #fbf7ea; color: #6b5a2a; font-size: 13px; }
+.jev-week-pick { display: grid; gap: 4px; justify-items: end; color: var(--muted); font-size: 11px; }
+.jev-week-pick select { min-height: 32px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
+
+.jev-funnel { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin: 6px 28px 0; padding: 0; list-style: none; }
+.jev-funnel li { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 14px; }
+.jev-funnel .k { color: #8a968c; font-size: 10px; letter-spacing: .08em; }
+.jev-funnel strong { display: block; margin: 8px 0 2px; font-size: 26px; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.jev-funnel span:last-child { color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+.jev-section { padding-bottom: 18px; }
+.jev-section-head { padding: 16px 22px 8px; }
+.jev-section-head h2 { margin: 0; font-size: 15px; }
+.jev-section-head p { margin: 4px 0 0; max-width: 760px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+.jev-cards { display: grid; gap: 12px; padding: 6px 22px 0; }
+.jev-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fcfdfb; }
+.jev-card-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; }
+.jev-ticker { font-weight: 700; color: #1f3a2c; }
+.jev-company { color: #3d5346; }
+.jev-tier { margin-left: auto; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 650; white-space: nowrap; color: #1e6547; background: #e7f3ec; }
+.jev-tier.tier-C { color: #4c5f53; background: #eef1ee; }
+.jev-meta, .jev-answers, .jev-reaction { margin: 6px 0 0; font-size: 12px; line-height: 1.5; }
+.jev-meta { color: #718075; }
+.jev-answers { color: #25402f; font-weight: 550; }
+.jev-reaction { color: #526e5b; }
+
+.jev-quotes { margin-top: 10px; }
+.jev-quote-label { margin: 10px 0 4px; color: #718075; font-size: 11px; font-weight: 650; }
+.jev-quote { margin: 0; padding: 8px 12px; border-left: 3px solid #cfe0d4; background: #f5f8f4; color: #2f4538; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.jev-quote.previous { border-left-color: #e3dcc6; background: #faf8f2; }
+.jev-link { display: inline-block; margin-top: 4px; color: #1e6547; font-size: 11px; }
+.jev-periods { margin: 8px 0 0; color: #8a968c; font-size: 11px; }
+
+.insights-controls .jev-check { display: flex; align-items: center; gap: 8px; min-height: 34px; color: #304b3b; font-size: 12px; }
+.insights-controls .jev-check input { width: auto; min-height: 0; margin: 0; padding: 0; }
+.jev-groups { padding: 4px 22px 0; }
+.jev-group h3 { margin: 16px 0 6px; color: #2b4b39; font-size: 13px; }
+.jev-row { border-bottom: 1px solid var(--line); }
+.jev-row summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 9px 2px; cursor: pointer; font-size: 13px; }
+.jev-row-meta { color: #718075; font-size: 11px; }
+.jev-row[open] { padding-bottom: 12px; }
+
+.jev-evidence { margin: 4px 22px 12px; padding-left: 18px; color: #304b3b; font-size: 12px; line-height: 1.6; }
+.jev-evidence li { margin-bottom: 4px; }
+.jev-table-wrap { overflow-x: auto; padding: 0 22px; }
+.jev-tracking td, .jev-tracking th { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.jev-method ol { margin: 4px 22px 10px; padding-left: 18px; color: #304b3b; font-size: 13px; line-height: 1.6; }
+.jev-method li { margin-bottom: 6px; }
+.jev-method > p { margin: 0 22px; color: #304b3b; font-size: 13px; line-height: 1.6; }
+.jev-note { margin: 0 28px 28px; color: #7a8a80; font-size: 12px; line-height: 1.55; }
+
+@media (max-width: 1100px) { .jev-funnel { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 620px) {
+  .jev-funnel { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 6px 14px 0; }
+  .jev-status, .jev-banner { margin-left: 14px; margin-right: 14px; }
+  .jev-cards, .jev-groups, .jev-table-wrap { padding-left: 14px; padding-right: 14px; }
+  .jev-section-head { padding-left: 14px; padding-right: 14px; }
+  .jev-evidence, .jev-method ol { margin-left: 14px; margin-right: 14px; }
+  .jev-method > p, .jev-note { margin-left: 14px; margin-right: 14px; }
+  .jev-tier { margin-left: 0; }
+  .jev-week-pick { justify-items: start; }
+}

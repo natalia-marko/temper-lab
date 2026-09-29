@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Temper Lab — Jev reads</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
+    <link rel="stylesheet" href="./insights.css?v=0c11375a052a" />
+    <link rel="stylesheet" href="./jev-reads.css?v=6fbb475fa5d5" />
+  </head>
+  <body>
+    <div class="desk">
+      <aside>
+        <a class="brand" href="./"><span>t</span>temper<span>lab</span></a>
+        <p class="aside-note">Read-only weekly snapshot. AI reads of SEC earnings releases, not advice.</p>
+        <nav class="site-nav" aria-label="Temper Lab pages">
+          <a href="./market-mood.html">Market mood</a>
+          <a href="./">Research</a>
+          <a href="./analyst-ratings.html">Analyst ratings</a>
+          <a href="./insights.html">Insights</a>
+          <a class="on" href="./jev-reads.html" aria-current="page">Jev reads</a>
+        </nav>
+        <div class="aside-foot"><span class="dot"></span>Weekly reads<small id="aside-week">Loading…</small></div>
+      </aside>
+      <main>
+        <header class="top"><span class="insights-label">Earnings releases / AI read</span><a class="top-page-link" href="./">Research →</a><span class="badge">Read-only snapshot</span></header>
+        <section class="heading">
+          <div>
+            <div class="eyebrow">JEV READS</div>
+            <h1>What companies said about their future this week</h1>
+            <p>Every earnings release filed this week by a company in the screener universe, read by Jev, an AI model. The quote and the SEC link let you check each read. Not a forecast, and not advice.</p>
+          </div>
+          <div class="snapshot-status">
+            <span id="jev-week-chip" class="week" role="status">Loading…</span>
+            <label class="jev-week-pick">Week<select id="jev-week" aria-label="Published week"></select></label>
+          </div>
+        </section>
+        <p id="jev-banner" class="jev-banner" role="status" hidden></p>
+        <p id="jev-status" class="jev-status" role="status">Loading the week…</p>
+
+        <ol id="jev-funnel" class="jev-funnel" aria-label="This week in numbers"></ol>
+
+        <section class="surface jev-section" aria-labelledby="jev-short-title">
+          <div class="jev-section-head">
+            <h2 id="jev-short-title">Short list</h2>
+            <p>Releases worth reading first: the company passes the floor and Jev read raised guidance, a growth setup, or both, each with a confidence of at least 0.5 (below that, past reads did not agree with the market's reaction). One row per company. A reading order, not a ranking of stocks.</p>
+          </div>
+          <div id="jev-short" class="jev-cards"></div>
+        </section>
+
+        <section class="surface jev-section" aria-labelledby="jev-all-title">
+          <div class="jev-section-head">
+            <h2 id="jev-all-title">All releases this week</h2>
+            <p>Grouped by what Jev read about forward guidance. Open a row for the quote.</p>
+          </div>
+          <div class="insights-controls">
+            <label>Find<input id="jev-query" type="search" placeholder="Ticker or name" autocomplete="off" /></label>
+            <label class="jev-check"><input id="jev-floor-only" type="checkbox" /> Passes the floor only</label>
+          </div>
+          <p id="jev-all-count" class="insights-count"></p>
+          <div id="jev-all" class="jev-groups"></div>
+        </section>
+
+        <section class="surface jev-section" aria-labelledby="jev-track-title">
+          <div class="jev-section-head">
+            <h2 id="jev-track-title">Track record</h2>
+            <p>How Jev's read did in a test on past releases, and how each published week's short list does as time passes.</p>
+          </div>
+          <ul id="jev-evidence" class="jev-evidence"></ul>
+          <div class="jev-table-wrap"><table id="jev-tracking" class="insights-table jev-tracking"></table></div>
+          <p id="jev-tracking-note" class="insights-note"></p>
+        </section>
+
+        <section class="surface jev-section jev-method" aria-labelledby="jev-method-title">
+          <div class="jev-section-head"><h2 id="jev-method-title">How it works</h2></div>
+          <ol>
+            <li><strong>Find.</strong> Each Saturday, Python lists the week's SEC 8-K filings for about 4,800 US companies and keeps earnings releases (Item 2.02). This page shows releases from companies in the screener universe: <span id="jev-universe-rule">market value at least $1 billion, average daily trading at least $10 million, and a share price of at least $5</span>. Smaller companies are read too and only counted here.</li>
+            <li><strong>Quote.</strong> Python copies passages from the press release word for word: the guidance section, the results, and the guidance from the same company's previous release. A previous passage is left out when it covers a different fiscal period, because comparing next year's guidance with last year's is not a raise.</li>
+            <li><strong>Read.</strong> Jev answers two questions from those passages: what the release establishes about forward guidance, and what the operating evidence shows. A release that also announces a product gets a third question about it.</li>
+            <li><strong>Check.</strong> The floor is Python arithmetic: diluted shares up at most 10% in a year, a positive operating or free-cash-flow margin, and less than a 60% fall from the 1-year high. A missing number fails.</li>
+          </ol>
+          <p><strong>"Raised" means raised against the company's own previous guidance, not against what analysts expected.</strong> A raise below expectations can still send the price down. The 3-day reaction is the stock minus SPY over the three sessions around the first session after the filing.</p>
+        </section>
+
+        <p class="jev-note">Jev is an AI model from TypeSafe. Its answers are generated by AI and can be wrong. Quotes are copied from SEC filings and may be shortened; tables lose their layout in plain text, so open the release for the original. Research, not advice.</p>
+      </main>
+    </div>
+    <script src="./jev-reads.js?v=d509790f0f09"></script>
+  </body>
+</html>
