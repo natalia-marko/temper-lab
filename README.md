@@ -44,20 +44,21 @@ count. The sortable dated Close column sits immediately before Target median
 and displays the frozen reference close used in implied upside. Its date follows
 the snapshot; unavailable closes display n/a and sort last in either direction.
 
-Insights is a fourth page, `insights.html`, not a rank. It overlays parsed SEC
-Form 4 / 13D / 13G events on this week’s published Strength, Growth, and Cheap
-names. The table shows the trade date, ticker, bought/sold, who (person vs institution, then
-director or officer title from the Form 4), trade dollars, dollars as a fraction
-of freeze Friday market cap (sells negative), and the stock’s price change over
-21 trading days ending that Friday, counted on the QQQ calendar. That window is
-not Hot tape’s 63 trading days. The page lists filings accepted over 21 QQQ
-sessions through yesterday. Tuesday and Friday email only the days since the
-previous run. A repeat is not a score. Open-market buys are Form 4 code P of at least $50,000 (dollars) and 13D
-filings with an open-market cash price near the freeze close. Warrant conversions
-and 13G 5% ownership levels are listed as other filings, not buys. Dates are SEC
-acceptance times. Empty means no qualifying trade in the window after a fetch.
-The page refuses to render unless `insights.json` matches `desk.json` and
-`release.json` on the same freeze. Conviction is not this list.
+Insights is a fourth page, `insights.html`, showing a company research queue
+across the full frozen eligible universe. It reads `insights-research.json`.
+Company cards show purchases and sales separately, reporting-owner groups,
+supported changes in disclosed holding accounts, and SEC source evidence.
+Small purchases are retained; no $50,000 minimum applies to this page.
+Code P/S does not establish open-market execution. Historical unusualness is
+unknown in v1; no return score or probability is implied. Ambiguous amendments
+and overlapping ownership reports remain visible for review, outside totals.
+
+The page covers 21 exchange sessions through the completed UTC filing cutoff.
+Trade dates, public acceptance times and research build time remain separate.
+The browser and publishing gate reject incomplete or mismatched research data.
+The older `insights.json` remains the legacy email digest with its existing
+screen-list scope and minimum. See the factory's
+`docs/design/ownership-insights-v1.md` for methodology and limits.
 
 Jev reads is the fifth page, `jev-reads.html`, last in the sidebar after Insights.
 It shows one published week of earnings releases (SEC 8-K Item 2.02) from companies in the
@@ -96,7 +97,8 @@ advance the underlying ranking date. Fundamentals retain their own filing period
 The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
 Ownership insights is a separate `com.temperlab.ownership` job, Tuesday and
-Friday at 08:00, overlaying parsed Form 4 / 13D trades on that freeze. SMTP for
+Friday at 08:00, refreshing the full-universe research queue and the legacy
+email digest against that freeze. SMTP for
 that mail lives in the factory file `config/digest.local.env`, not in `.zshrc`.
 After a current screener passes, the release writes `market-mood.json` for the
 same run. Cboe VIX history is fetched at export time; if it is unavailable, the

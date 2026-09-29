@@ -1,363 +1,168 @@
-const KIND_LABEL = {
-  open_market_buy: "Open-market buy",
-  open_market_sell: "Open-market sell",
-  passive_holder: "Passive 13G",
-  exercise_or_convert: "Exercise / convert",
-  ownership_disclosure: "Ownership filing",
-};
-const SIDE_LABEL = {
-  open_market_buy: "bought",
-  open_market_sell: "sold",
-  passive_holder: "13G",
-  exercise_or_convert: "exercise",
-  ownership_disclosure: "filed",
-};
-const VIEW_TITLE = {
-  open_market_buy: "Reported buys",
-  open_market_sell: "Reported sells",
-  other: "Other filings",
-  all: "All parsed trades",
-};
+/* Company-level ownership evidence. Deliberately no forecast or investment score. */
+const SCREEN_LABELS = { strength: "Strength", growth: "Growth", undervalued: "Cheap" };
+const insightsState = { data: null, filters: { query: "", kind: "purchases", context: "all", sort: "recent" }, limit: 30 };
 
-const insightsState = {
-  digest: null,
-  desk: null,
-  release: null,
-  filters: { query: "", kind: "open_market_buy" },
-};
-
-function kindClass(type) {
-  if (type === "open_market_buy") return "buy";
-  if (type === "open_market_sell") return "sell";
-  return "other";
+function money(value, precise = false) {
+  if (!Number.isFinite(value)) return "Unknown";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: precise || Math.abs(value) < 1 ? 2 : 0 }).format(value);
 }
-
-function screenLabel(key) {
-  return { strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" }[key] || key;
+function percent(value) {
+  return Number.isFinite(value) ? `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}%` : "Unknown";
 }
-
-function wordStartsWith(text, query) {
-  const words = String(text || "").toLowerCase().match(/[a-z0-9]+/g) || [];
-  return words.some((word) => word.startsWith(query));
+function ownerLabel(owner) {
+  const title = /^(see remarks|see footnotes?|officer|n\/a)$/i.test(owner.title || "") ? "" : owner.title;
+  const roles = (owner.roles || []).map(role => role === "officer" && title ? title : role);
+  return [owner.name || "Unnamed filer", roles.join(" · ")].filter(Boolean).join(" — ");
 }
-
-function matchesInsightQuery(event, query) {
-  const symbol = String(event.symbol || "").toLowerCase();
-  if (symbol === query || symbol.startsWith(query)) return true;
-  return [event.name, event.filer, event.filer_title, event.filer_kind, event.plain_reason]
-    .some((field) => wordStartsWith(field, query));
+function planLabel(flag) {
+  return flag === true ? "Plan-flagged filing" : flag === false ? "Plan box unchecked; discretion unverified" : "Plan status unavailable";
 }
-
-function filteredInsights(events, filters) {
-  const query = (filters.query || "").trim().toLowerCase();
-  return (events || []).filter(event => {
-    if (filters.kind === "open_market_buy" && event.event_type !== "open_market_buy") return false;
-    if (filters.kind === "open_market_sell" && event.event_type !== "open_market_sell") return false;
-    if (filters.kind === "other" && (event.event_type === "open_market_buy" || event.event_type === "open_market_sell")) return false;
-    if (!query) return true;
-    return matchesInsightQuery(event, query);
-  }).slice().sort((a, b) => {
-    const day = String(b.trade_date || "").localeCompare(String(a.trade_date || ""));
-    if (day) return day;
-    const usd = (Number(b.usd) || 0) - (Number(a.usd) || 0);
-    if (usd) return usd;
-    return String(a.symbol || "").localeCompare(String(b.symbol || ""));
+function holdingLabel(evidence) {
+  const change = evidence.holding_change || {};
+  if (change.status === "new_position") return "Disclosed account started from zero";
+  if (change.status === "calculated") {
+    const balances = ` (${change.shares_before.toLocaleString("en-US", {maximumFractionDigits: 4})} → ${change.shares_after.toLocaleString("en-US", {maximumFractionDigits: 4})} shares)`;
+    return (evidence.side === "purchase" ? `+${percent(change.change_pct)} in this holding account` : `${percent(change.change_pct)} of this holding account sold`) + balances;
+  }
+  return `Holding change unknown: ${change.reason || "insufficient evidence"}`;
+}
+function safeSecUrl(value) {
+  try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "www.sec.gov" ? url.href : null; }
+  catch { return null; }
+}
+function filteredCompanies(companies, filters) {
+  const query = String(filters.query || "").trim().toLowerCase();
+  return companies.filter(company => {
+    const cluster = (company.cluster_10d?.buyer_groups || 0) >= 2;
+    if (filters.kind === "purchases" && !company.purchase_rows) return false;
+    if (filters.kind === "clusters" && !cluster) return false;
+    if (filters.kind === "officers" && !company.officer_purchase_usd) return false;
+    if (filters.kind === "sales" && !company.sale_rows) return false;
+    if (filters.kind === "review" && !company.review_rows) return false;
+    if (filters.context === "outside" && company.screens.length) return false;
+    if (filters.context !== "all" && filters.context !== "outside" && !company.screens.includes(filters.context)) return false;
+    const words = [company.symbol, company.name, ...company.evidence.flatMap(e => e.owners.map(o => o.name || ""))]
+      .join(" ").toLowerCase().split(/[^a-z0-9]+/);
+    return !query || query.split(/\s+/).every(part => words.some(word => word.startsWith(part)));
+  }).sort((a, b) => {
+    if (filters.sort === "company") return a.symbol.localeCompare(b.symbol);
+    if (filters.sort === "buyers") {
+      const groups = (b.cluster_10d?.buyer_groups || 0) - (a.cluster_10d?.buyer_groups || 0);
+      if (groups) return groups;
+    }
+    const purchases = ["purchases", "clusters", "officers"].includes(filters.kind);
+    const at = purchases ? a.latest_purchase_public_at : a.latest_public_at;
+    const bt = purchases ? b.latest_purchase_public_at : b.latest_public_at;
+    return String(bt || "").localeCompare(String(at || "")) || a.symbol.localeCompare(b.symbol);
   });
 }
-
-function compactUsd(value) {
-  if (value == null || Number.isNaN(Number(value))) return "n/a";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(Number(value));
+function validateSnapshot(data, desk) {
+  if (data.schema !== "ownership-research-1" || !Array.isArray(data.companies)) throw new Error("Ownership research is unavailable: unsupported snapshot.");
+  if (data.freeze_run_id !== desk.run_id || data.freeze_as_of !== desk.as_of) throw new Error("Ownership research is awaiting a refresh for this week's eligible universe.");
+  if (data.coverage?.failed_requests !== 0 || data.coverage?.issuer_indexes_checked !== data.universe_n) throw new Error("Ownership source coverage is incomplete. No totals are shown.");
 }
-
-function formatFracCap(frac) {
-  if (frac == null || Number.isNaN(Number(frac))) return "n/a";
-  const pct = Number(frac) * 100;
-  const abs = Math.abs(pct);
-  const digits = abs >= 1 ? 2 : abs >= 0.01 ? 3 : 4;
-  return `${pct >= 0 ? "+" : ""}${pct.toFixed(digits)}%`;
-}
-
-function monthTape(return21) {
-  if (return21 == null || Number.isNaN(Number(return21))) return "";
-  const pct = Number(return21) * 100;
-  const digits = Math.abs(pct) >= 1 ? 0 : 1;
-  const shown = `${pct >= 0 ? "+" : ""}${pct.toFixed(digits)}%`;
-  const trend = return21 > 0 ? "trending up" : return21 < 0 ? "trending down" : "flat";
-  return `Price: ${shown} past month (${trend})`;
-}
-
-function sideLabel(type) {
-  return SIDE_LABEL[type] || KIND_LABEL[type] || type;
-}
-
-const ROLE_LABEL = {
-  officer: "Officer",
-  director: "Director",
-  "ten-percent holder": "10% owner",
-  insider: "Insider",
-  institution: "Institution",
-};
-// One Form 4 filer can be officer, director and 10% owner at once.
-const ROLE_ORDER = ["officer", "director", "ten-percent holder", "insider"];
-// Titles that name no office. "See Remarks" points at a footnote, not a job.
-const JUNK_TITLES = new Set(["", "see remarks", "see footnote", "see footnotes", "officer", "n/a", "none"]);
-const ENTITY_NAME = /\b(l\.?p\.?|llp|llc|inc\.?|ltd\.?|corp\.?|plc|partners|management|advisors?)\b/i;
-
-function cleanTitle(value) {
-  const text = String(value || "").trim();
-  return JUNK_TITLES.has(text.toLowerCase()) ? "" : text;
-}
-
-function eventRoles(event) {
-  const stored = (event.filer_roles || []).filter((role) => ROLE_ORDER.includes(role));
-  if (stored.length) return ROLE_ORDER.filter((role) => stored.includes(role));
-  return ROLE_ORDER.includes(event.filer_role) ? [event.filer_role] : [];
-}
-
-function filerWord(kind, roles) {
-  if (kind === "institution") return "Institution";
-  // An individual who is neither officer nor director just owns a lot of it.
-  if (roles.length && !roles.some((role) => role === "officer" || role === "director")) {
-    return "Private investor";
-  }
-  return "Person";
-}
-
-function whoLabel(event) {
-  const form = String(event.form || "");
-  const namedInstitution = ENTITY_NAME.test(event.filer || "");
-  const kind = event.filer_kind
-    || (form.startsWith("SC 13") || event.filer_role === "institution" || namedInstitution ? "institution" : "person");
-  const roles = eventRoles(event);
-  const title = cleanTitle(event.filer_title);
-  const parts = title ? [title] : [];
-  for (const role of ROLE_ORDER) {
-    if (!roles.includes(role) || role === "insider") continue;
-    if (role === "officer" && title) continue;
-    parts.push(ROLE_LABEL[role]);
-  }
-  let label = parts.join(" · ");
-  if (!label) {
-    if (event.event_type === "passive_holder") label = "13G";
-    else if (event.event_type === "exercise_or_convert") label = "Exercise";
-    else if (event.event_type === "ownership_disclosure") label = event.form || "13D";
-    else label = ROLE_LABEL[event.filer_role] || event.filer_role || "filer";
-  }
-  return `${filerWord(kind, roles)} · ${label}`;
-}
-
-function overlayContext(event) {
-  const company = insightsState.desk?.companies?.[event.symbol] || {};
-  const cap = event.market_cap ?? company.market_cap;
-  let frac = event.usd_frac_cap;
-  if (frac == null && cap > 0 && event.usd != null) {
-    frac = event.usd / cap;
-    if (event.event_type === "open_market_sell") frac = -frac;
-  }
-  return {
-    cap,
-    usd: event.usd,
-    frac,
-    return21: event.return_21,
-  };
-}
-
-function appendText(parent, tag, text, className) {
+function el(tag, text, className) {
   const node = document.createElement(tag);
+  if (text !== undefined && text !== null) node.textContent = text;
   if (className) node.className = className;
-  node.textContent = text;
-  parent.appendChild(node);
   return node;
 }
-
-function pageEvents(digest) {
-  const start = String((digest && digest.since) || "");
-  const until = String((digest && digest.until) || "");
-  return ((digest && digest.events) || []).filter((event) => {
-    const day = String(event.accepted_at || "").slice(0, 10);
-    if (day.length < 10) return !start;
-    if (start && day < start) return false;
-    if (until && day > until) return false;
-    return true;
-  });
+function metric(parent, label, value) {
+  const node = el("div", null, "ownership-metric");
+  node.append(el("span", label), el("strong", value)); parent.append(node);
 }
-
-function latestAcceptance(events) {
-  let latest = "";
-  for (const event of events) {
-    const day = String(event.accepted_at || "").slice(0, 10);
-    if (day.length === 10 && day > latest) latest = day;
+function evidenceView(company) {
+  const root = el("div", null, "ownership-evidence");
+  for (const evidence of company.evidence) {
+    const row = el("article", null, "ownership-record");
+    const held = evidence.status !== "included";
+    row.append(el("h4", `${held ? "Held for review · " : ""}${evidence.side === "purchase" ? "Purchase" : "Sale"} · ${money(evidence.usd, true)}`));
+    row.append(el("p", evidence.owners.map(ownerLabel).join("; "), "ownership-owner"));
+    const date = evidence.trade_since === evidence.trade_until ? evidence.trade_since : `${evidence.trade_since}–${evidence.trade_until}`;
+    row.append(el("p", `Traded ${date || "unknown"} · Public ${evidence.public_at.replace("T", " ")} · ${evidence.form}`, "ownership-meta"));
+    row.append(el("p", `${evidence.security_title || "Security not identified"} · ${evidence.ownership === "D" ? "Direct ownership" : evidence.ownership === "I" ? "Indirect ownership" : "Ownership form unknown"}${evidence.ownership_nature ? `: ${evidence.ownership_nature}` : ""}`, "ownership-meta"));
+    if (Number.isFinite(evidence.weighted_price)) row.append(el("p", `Average reported price: ${money(evidence.weighted_price, true)} · ${evidence.row_count} transaction row(s)`, "ownership-meta"));
+    row.append(el("p", holdingLabel(evidence), "ownership-holding"));
+    row.append(el("p", planLabel(evidence.plan_flag), "ownership-meta"));
+    if (held) row.append(el("p", evidence.issues.join(" · ").replaceAll("_", " "), "ownership-caution"));
+    const url = safeSecUrl(evidence.source_url);
+    if (url) { const link = el("a", "Read the SEC filing ↗"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; row.append(link); }
+    if (evidence.footnotes?.length) {
+      const notes = el("details", null, "ownership-footnotes");
+      notes.append(el("summary", "Filing footnotes"));
+      evidence.footnotes.forEach(note => notes.append(el("p", note)));
+      row.append(notes);
+    }
+    root.append(row);
   }
-  return latest;
+  return root;
 }
-
-function excludedSummary(digest) {
-  const excluded = (digest && digest.excluded) || {};
-  const held = (excluded.held_for_review || []).length;
-  const repeats = (excluded.duplicate_report || []).length;
-  const bits = [];
-  if (held) bits.push(`${held} filing${held === 1 ? "" : "s"} held for review`);
-  if (repeats) bits.push(`${repeats} repeat filing${repeats === 1 ? "" : "s"} shown once`);
-  return bits.join(", ");
+function companyCard(company) {
+  const card = el("article", null, "ownership-card");
+  const head = el("div", null, "ownership-card-head");
+  const name = el("div"); name.append(el("h2", company.symbol), el("span", company.name, "ownership-name")); head.append(name);
+  const badge = company.review_rows ? "Partial totals" : company.screens.length ? company.screens.map(s => SCREEN_LABELS[s]).join(" · ") : "Outside the three lists";
+  head.append(el("span", badge, `ownership-tag${company.review_rows ? " caution" : ""}`)); card.append(head);
+  const metrics = el("div", null, "ownership-metrics");
+  metric(metrics, "Reported purchases", money(company.purchases_usd));
+  metric(metrics, "Buyer groups", String(company.buyer_groups));
+  metric(metrics, "Reported sales", money(company.sales_usd));
+  const cluster = company.cluster_10d;
+  metric(metrics, "Most buyers / 10 sessions", cluster ? String(cluster.buyer_groups) : "—");
+  card.append(metrics);
+  const reasons = el("ul", null, "ownership-reasons"); company.reasons.forEach(reason => reasons.append(el("li", reason))); card.append(reasons);
+  if (cluster && cluster.buyer_groups >= 2) card.append(el("p", `Cluster trades: ${cluster.since}–${cluster.until} · ${money(cluster.purchase_usd)} · evidence public by ${cluster.public_at.slice(0, 10)}. Groups may be related.`, "ownership-meta"));
+  const latest = company.latest_purchase_public_at || company.latest_public_at;
+  card.append(el("p", `Latest ${company.latest_purchase_public_at ? "purchase " : ""}filing: ${latest.slice(0, 10)} · Historical unusualness: unknown`, "ownership-meta"));
+  const details = el("details", null, "ownership-details");
+  details.append(el("summary", `Who traded, holdings and source evidence (${company.evidence.length})`));
+  let populated = false;
+  details.addEventListener("toggle", () => { if (details.open && !populated) { details.append(evidenceView(company)); populated = true; } });
+  card.append(details);
+  const uncertainty = el("details", null, "ownership-details uncertainty");
+  uncertainty.append(el("summary", "What remains uncertain"));
+  company.uncertainties.forEach(text => uncertainty.append(el("p", text)));
+  card.append(uncertainty);
+  return card;
 }
-
 function renderInsights() {
-  const digest = insightsState.digest;
-  const root = document.getElementById("insights-list");
-  const count = document.getElementById("insights-count");
-  const chip = document.getElementById("week-chip");
-  const coverage = document.getElementById("insights-coverage");
-  const aside = document.getElementById("aside-week");
-  const title = document.getElementById("insights-title");
-  if (!digest) return;
-  const asOf = digest.freeze_as_of;
-  if (chip) {
-    chip.textContent = `Lists as of ${asOf}`;
-    chip.title = "Which Strength / Growth / Cheap names are checked. Trades and filings below are newer than this date.";
-  }
-  if (aside) aside.textContent = asOf;
-  const events = pageEvents(digest);
-  if (coverage) {
-    const window = digest.trade_window || { since: digest.since, until: digest.until };
-    const accepted = latestAcceptance(events) || digest.until;
-    coverage.textContent = `${digest.universe_n} names · trades ${window.since} to ${window.until} · latest filing accepted ${accepted}`;
-  }
-  if (title) title.textContent = VIEW_TITLE[insightsState.filters.kind] || VIEW_TITLE.all;
-  const rows = filteredInsights(events, insightsState.filters);
-  const buys = events.filter((event) => event.event_type === "open_market_buy").length;
-  const sells = events.filter((event) => event.event_type === "open_market_sell").length;
-  if (count) {
-    const bits = [`${rows.length} shown`, `${buys} open-market buy${buys === 1 ? "" : "s"}`, `${sells} open-market sell${sells === 1 ? "" : "s"} in this window`];
-    const hidden = excludedSummary(digest);
-    if (hidden) bits.push(hidden);
-    count.textContent = `${bits.join(" · ")}. This is not a rank.`;
-  }
-  if (!root) return;
-  root.replaceChildren();
-  if (!rows.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty";
-    empty.textContent = insightsState.filters.kind === "open_market_buy"
-      ? "No reported open-market buys in this window."
-      : "No filings match these filters.";
-    root.appendChild(empty);
-    return;
-  }
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  const table = document.createElement("table");
-  table.className = "insights-table";
-  const head = document.createElement("thead");
-  const headRow = document.createElement("tr");
-  for (const label of ["Date", "Ticker", "Side", "Who", "Amount", "% cap", "Price"]) {
-    appendText(headRow, "th", label);
-  }
-  head.appendChild(headRow);
-  table.appendChild(head);
-  const body = document.createElement("tbody");
-  for (const event of rows) {
-    const ctx = overlayContext(event);
-    const tr = document.createElement("tr");
-    appendText(tr, "td", event.trade_date || "", "deal");
-    const ticker = appendText(tr, "td", event.symbol, "ticker");
-    const name = document.createElement("span");
-    name.className = "meta";
-    name.textContent = event.name || event.symbol;
-    ticker.appendChild(name);
-    appendText(tr, "td", sideLabel(event.event_type), `side ${kindClass(event.event_type)}`);
-    const who = appendText(tr, "td", whoLabel(event), "who");
-    const filer = document.createElement("span");
-    filer.className = "meta";
-    filer.textContent = event.filer || "";
-    who.appendChild(filer);
-    if (event.trading_plan === true) {
-      const plan = document.createElement("span");
-      plan.className = "meta plan";
-      plan.textContent = "10b5-1 plan filing";
-      plan.title = "The Form 4 cover box says this filing reports trades under a Rule 10b5-1 plan. The flag is per filing, not per lot.";
-      who.appendChild(plan);
-    }
-    appendText(tr, "td", compactUsd(ctx.usd), "amount");
-    appendText(tr, "td", formatFracCap(ctx.frac), "frac");
-    const tape = monthTape(ctx.return21) || "n/a";
-    const price = appendText(
-      tr,
-      "td",
-      tape,
-      `tape${ctx.return21 > 0 ? " up" : ctx.return21 < 0 ? " down" : ""}`,
-    );
-    const reason = document.createElement("span");
-    reason.className = "meta";
-    const screens = (event.screens || []).map(screenLabel).join(" · ");
-    const bits = [event.plain_reason, event.form, screens].filter(Boolean);
-    reason.textContent = bits.join(" · ");
-    price.appendChild(reason);
-    if (event.sec_url) {
-      const link = document.createElement("a");
-      link.href = event.sec_url;
-      link.textContent = "SEC filing";
-      link.rel = "noopener noreferrer";
-      price.appendChild(link);
-    }
-    body.appendChild(tr);
-  }
-  table.appendChild(body);
-  wrap.appendChild(table);
-  root.appendChild(wrap);
+  const data = insightsState.data;
+  if (!data) return;
+  document.getElementById("week-chip").textContent = `Filings through ${data.public_cutoff}`;
+  document.getElementById("aside-week").textContent = `Eligible universe: ${data.freeze_as_of}`;
+  document.getElementById("insights-coverage").textContent = `${data.universe_n.toLocaleString()} eligible stocks checked · trades ${data.trade_window.since}–${data.trade_window.until}`;
+  const stats = document.getElementById("insights-stats"); stats.replaceChildren();
+  metric(stats, "Companies with purchases", String(data.counts.companies_with_purchases));
+  metric(stats, "Outside the three lists", String(data.counts.outside_screen_lists));
+  metric(stats, "Multiple buyers / 10 sessions", String(data.counts.companies_with_clusters));
+  const rows = filteredCompanies(data.companies, insightsState.filters);
+  const visible = rows.slice(0, insightsState.limit);
+  document.getElementById("insights-count").textContent = `${visible.length} of ${rows.length} companies shown · ${data.counts.review_rows} transaction rows held for review across this snapshot. Sorting describes activity, not expected returns.`;
+  const root = document.getElementById("insights-list"); root.replaceChildren();
+  if (!rows.length) root.append(el("p", "No companies match these filters. This does not prove there was no ownership activity.", "empty"));
+  visible.forEach(company => root.append(companyCard(company)));
+  const more = document.getElementById("insights-more"); more.hidden = visible.length >= rows.length;
+  document.getElementById("insights-build").textContent = `Research built ${data.built_at.replace("T", " ")}. Eligibility and screen context: ${data.freeze_as_of}. Filing availability and research build time are stored separately.`;
 }
-
 function bindInsights() {
-  const query = document.getElementById("insights-query");
-  const kind = document.getElementById("insights-kind");
-  const reset = document.getElementById("insights-reset");
-  if (query) query.addEventListener("input", () => {
-    insightsState.filters.query = query.value;
+  for (const [id, key, event] of [["insights-query", "query", "input"], ["insights-kind", "kind", "change"], ["insights-context", "context", "change"], ["insights-sort", "sort", "change"]]) {
+    const node = document.getElementById(id);
+    node.addEventListener(event, () => { insightsState.filters[key] = node.value; insightsState.limit = 30; renderInsights(); });
+  }
+  document.getElementById("insights-reset").addEventListener("click", () => {
+    insightsState.filters = { query: "", kind: "purchases", context: "all", sort: "recent" }; insightsState.limit = 30;
+    for (const key of ["query", "kind", "context", "sort"]) document.getElementById(`insights-${key}`).value = insightsState.filters[key];
     renderInsights();
   });
-  if (kind) kind.addEventListener("change", () => {
-    insightsState.filters.kind = kind.value;
-    renderInsights();
-  });
-  if (reset) reset.addEventListener("click", () => {
-    insightsState.filters = { query: "", kind: "open_market_buy" };
-    if (query) query.value = "";
-    if (kind) kind.value = "open_market_buy";
-    renderInsights();
-  });
+  document.getElementById("insights-more").addEventListener("click", () => { insightsState.limit += 30; renderInsights(); });
 }
-
-function startInsights() {
+async function startInsights() {
   bindInsights();
-  Promise.all([
-    fetch("./insights.json", { cache: "no-store" }).then(r => r.json()),
-    fetch("./desk.json", { cache: "no-store" }).then(r => r.json()),
-    fetch("./release.json", { cache: "no-store" }).then(r => r.json()),
-  ]).then(([digest, desk, release]) => {
-    const status = document.getElementById("insights-status");
-    if (digest.schema !== "ownership-digest-1") {
-      throw new Error("insights schema is not ownership-digest-1");
-    }
-    if (digest.freeze_run_id !== desk.run_id || digest.freeze_as_of !== desk.as_of) {
-      throw new Error("insights freeze does not match the public desk");
-    }
-    if (release.run_id && release.run_id !== desk.run_id) {
-      throw new Error("release pointer does not match the public desk");
-    }
-    insightsState.digest = digest;
-    insightsState.desk = desk;
-    insightsState.release = release;
-    if (status) status.hidden = true;
-    renderInsights();
-  }).catch(error => {
-    const status = document.getElementById("insights-status");
-    if (status) status.textContent = error.message || "Insights are unavailable.";
-  });
+  const status = document.getElementById("insights-status");
+  try {
+    const read = async path => { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error("Ownership research could not be loaded. Try again later."); return response.json(); };
+    const [data, desk] = await Promise.all([read("./insights-research.json"), read("./desk.json")]);
+    validateSnapshot(data, desk); insightsState.data = data; renderInsights(); status.hidden = true;
+  } catch (error) { status.textContent = error.message || "Ownership research is unavailable."; }
 }
-
 startInsights();

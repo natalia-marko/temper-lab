@@ -23,3 +23,41 @@
 .insights-table a { display: inline-block; margin-top: 4px; color: #7d8d80; font-size: 11px; }
 .insights-note { margin: 15px 22px 0; color: #708275; font-size: 11px; line-height: 1.7; }
 @media (max-width: 620px) { .insights-explanation { margin: 14px 14px 12px; }.insights-controls { padding: 0 14px 14px; }.insights-count { padding: 10px 14px; }.insights-list { padding: 12px 14px 0; }.insights-note { margin: 12px 14px 0; } }
+
+/* Ownership queue: preserve shared table rules used by Jev reads. */
+.ownership-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 22px 22px 0; }
+.ownership-metric { min-width: 0; display: grid; gap: 6px; }
+.ownership-metric span { color: #657568; font-size: 11px; }
+.ownership-metric strong { color: #264633; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ownership-stats .ownership-metric strong { font-size: 30px; }
+.insights-controls input { width: 195px; }
+.insights-list { display: grid; gap: 14px; }
+.ownership-card { border: 1px solid #d9e1d6; border-radius: 10px; padding: 18px 20px; background: #fcfdfb; }
+.ownership-card-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.ownership-card h2 { margin: 0 0 3px; color: #213f2e; font-size: 19px; }
+.ownership-name { color: #586c5c; font-size: 12px; }
+.ownership-tag { padding: 4px 8px; border-radius: 5px; background: #edf2e8; color: #4e6647; font-size: 11px; }
+.ownership-tag.caution, .ownership-caution { color: #806023; background: #fbf5e6; }
+.ownership-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; padding: 18px 0 12px; }
+.ownership-reasons { margin: 6px 0 10px; padding-left: 18px; color: #334f3d; font-size: 13px; line-height: 1.7; }
+.ownership-meta { margin: 5px 0; color: #687a6c; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.ownership-details { margin-top: 12px; border-top: 1px solid #e2e8de; padding-top: 10px; color: #3c5745; font-size: 12px; }
+.ownership-details summary, .ownership-method summary, .ownership-footnotes summary { cursor: pointer; line-height: 1.6; }
+.ownership-details p, .ownership-method p { line-height: 1.65; }
+.ownership-details.uncertainty { color: #776643; }
+.ownership-record { border-left: 2px solid #cad8c6; padding: 4px 0 8px 14px; margin-top: 16px; }
+.ownership-record h4 { margin: 0 0 8px; font-size: 13px; }
+.ownership-owner { color: #2d4937; font-weight: 550; }
+.ownership-holding { font-weight: 600; }
+.ownership-record a, .ownership-method a { color: #315f46; }
+.ownership-footnotes { margin-top: 12px; color: #718075; font-size: 11px; overflow-wrap: anywhere; }
+.ownership-more { margin: 18px 22px 0; padding: 10px 15px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; cursor: pointer; }
+.ownership-method { margin: 20px 22px 0; color: #607564; font-size: 12px; border-top: 1px solid #e2e8de; padding-top: 16px; }
+@media (max-width: 700px) {
+  .ownership-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ownership-stats { gap: 10px; padding: 16px 14px 0; }
+  .ownership-stats .ownership-metric strong { font-size: 24px; }
+  .ownership-card { padding: 15px 14px; }
+  .ownership-card-head { flex-wrap: wrap; }
+  .ownership-method { margin: 18px 14px 0; }
+}
