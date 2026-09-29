@@ -1,8 +1,8 @@
 {
-  "built_at": "2026-09-28T07:47:48+00:00",
+  "built_at": "2026-09-29T06:00:04+00:00",
   "counts": {
-    "open_market_buy": 38,
-    "open_market_sell": 759
+    "open_market_buy": 37,
+    "open_market_sell": 732
   },
   "events": [
     {
@@ -297,36 +297,6 @@
       "trade_date": "2026-09-10",
       "usd": 1277500.0,
       "usd_frac_cap": 0.0005513539071104365
-    },
-    {
-      "accepted_at": "2026-08-26T00:42:01.000Z",
-      "accession": "0001193125-26-365628",
-      "cik": "0001116942",
-      "event_type": "open_market_buy",
-      "filer": "Roks Edwin",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "President and CEO",
-      "form": "4",
-      "market_cap": 13607912569.980469,
-      "name": "TTM Technologies Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Roks Edwin bought $1,117,700 of common stock in the open market",
-      "price": 111.77,
-      "return_21": -0.09223180112485307,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1116942/000119312526365628/ownership.xml",
-      "shares": 10000.0,
-      "symbol": "TTMI",
-      "trade_date": "2026-08-25",
-      "usd": 1117700.0,
-      "usd_frac_cap": 8.213603624009793e-05
     },
     {
       "accepted_at": "2026-09-15T20:29:58.000Z",
@@ -1319,6 +1289,36 @@
       "usd_frac_cap": -0.05001732073413025
     },
     {
+      "accepted_at": "2026-09-26T01:30:06.000Z",
+      "accession": "0001778610-26-000024",
+      "cik": "0001535527",
+      "event_type": "open_market_sell",
+      "filer": "Podbere Burt W.",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer"
+      ],
+      "filer_title": "Chief Financial Officer",
+      "form": "4",
+      "market_cap": 258164696713.14185,
+      "name": "CrowdStrike Holdings Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Podbere Burt W. sold $125,491,386 of common stock in the open market",
+      "price": 261.440388,
+      "return_21": 0.4007444524121364,
+      "screens": [
+        "strength",
+        "growth"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1535527/000177861026000024/form4-09252026_090901.xml",
+      "shares": 480000.0,
+      "symbol": "CRWD",
+      "trade_date": "2026-09-24",
+      "usd": 125491386.38,
+      "usd_frac_cap": -0.00048609042203566277
+    },
+    {
       "accepted_at": "2026-09-22T23:17:46.000Z",
       "accession": "0001628280-26-063114",
       "cik": "0001640147",
@@ -1346,36 +1346,6 @@
       "trade_date": "2026-09-18",
       "usd": 100345541.19,
       "usd_frac_cap": -0.0008466575432899593
-    },
-    {
-      "accepted_at": "2026-08-26T00:47:15.000Z",
-      "accession": "0001193125-26-365658",
-      "cik": "0001175454",
-      "event_type": "open_market_sell",
-      "filer": "Clarke Ronald",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "CEO & Chairman of BOD",
-      "form": "4",
-      "market_cap": 26139741996.079468,
-      "name": "Corpay Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Clarke Ronald sold $88,514,435 of common stock in the open market",
-      "price": 413.889624,
-      "return_21": 0.11695188198463913,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1175454/000119312526365658/ownership.xml",
-      "shares": 213860.0,
-      "symbol": "CPAY",
-      "trade_date": "2026-08-24",
-      "usd": 88514435.0,
-      "usd_frac_cap": -0.0033862015552133494
     },
     {
       "accepted_at": "2026-08-27T23:35:51.000Z",
@@ -1584,35 +1554,6 @@
       "trade_date": "2026-09-17",
       "usd": 56330724.19,
       "usd_frac_cap": -0.0049133636724194435
-    },
-    {
-      "accepted_at": "2026-08-26T20:30:12.000Z",
-      "accession": "0001193125-26-368713",
-      "cik": "0001393818",
-      "event_type": "open_market_sell",
-      "filer": "Blackstone Holdings II L.P.",
-      "filer_kind": "institution",
-      "filer_role": "ten-percent holder",
-      "filer_roles": [
-        "ten-percent holder"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 88889024625.44437,
-      "name": "Blackstone Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Ten-percent holder Blackstone Holdings II L.P. sold $56,210,436 of common stock in the open market",
-      "price": 21.85,
-      "return_21": 0.09255581312164174,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1393818/000119312526368713/ownership.xml",
-      "shares": 2572560.0,
-      "symbol": "BX",
-      "trade_date": "2026-08-25",
-      "usd": 56210436.0,
-      "usd_frac_cap": -0.0006323664393535244
     },
     {
       "accepted_at": "2026-09-17T20:30:11.000Z",
@@ -2931,36 +2872,6 @@
       "usd_frac_cap": -5.867497715451201e-05
     },
     {
-      "accepted_at": "2026-08-26T23:37:42.000Z",
-      "accession": "0001296479-26-000011",
-      "cik": "0000316709",
-      "event_type": "open_market_sell",
-      "filer": "Bettinger Walter W",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Co-Chairman",
-      "form": "4",
-      "market_cap": 171256113646.4145,
-      "name": "Charles Schwab Corporation (The)",
-      "percent_of_class": null,
-      "plain_reason": "Officer Bettinger Walter W sold $19,997,368 of common stock in the open market",
-      "price": 113.486,
-      "return_21": 0.11779348476635221,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/316709/000129647926000011/wk-form4_1787787460.xml",
-      "shares": 176210.0,
-      "symbol": "SCHW",
-      "trade_date": "2026-08-24",
-      "usd": 19997368.06,
-      "usd_frac_cap": -0.00011676878351500927
-    },
-    {
       "accepted_at": "2026-09-09T01:02:05.000Z",
       "accession": "0001193125-26-385620",
       "cik": "0001571996",
@@ -4176,6 +4087,36 @@
       "usd_frac_cap": -0.002819671167172147
     },
     {
+      "accepted_at": "2026-09-25T20:50:15.000Z",
+      "accession": "0001517413-26-000298",
+      "cik": "0001517413",
+      "event_type": "open_market_sell",
+      "filer": "Bergman Artur",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Chief Technology Officer",
+      "form": "4",
+      "market_cap": 3976127854.156494,
+      "name": "Fastly Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Bergman Artur sold $11,447,909 of common stock in the open market",
+      "price": 30.157662,
+      "return_21": 0.29250213287967153,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1517413/000151741326000298/wk-form4_1790369412.xml",
+      "shares": 379602.0,
+      "symbol": "FSLY",
+      "trade_date": "2026-09-23",
+      "usd": 11447908.8,
+      "usd_frac_cap": -0.0028791601326483476
+    },
+    {
       "accepted_at": "2026-08-31T22:40:28.000Z",
       "accession": "0001249802-26-000008",
       "cik": "0000883241",
@@ -4235,6 +4176,37 @@
       "trade_date": "2026-09-21",
       "usd": 11034685.86,
       "usd_frac_cap": -0.0002628142555626758
+    },
+    {
+      "accepted_at": "2026-09-25T20:43:27.000Z",
+      "accession": "0001561550-26-000320",
+      "cik": "0001561550",
+      "event_type": "open_market_sell",
+      "filer": "Le-Quoc Alexis",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Chief Technology Officer",
+      "form": "4",
+      "market_cap": 95522118629.5166,
+      "name": "Datadog Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Le-Quoc Alexis sold $10,899,988 of common stock in the open market",
+      "price": 252.174434,
+      "return_21": 0.11392125053806534,
+      "screens": [
+        "strength",
+        "growth"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1561550/000156155026000320/wk-form4_1790369004.xml",
+      "shares": 43224.0,
+      "symbol": "DDOG",
+      "trade_date": "2026-09-23",
+      "usd": 10899987.76,
+      "usd_frac_cap": -0.00011410956871963551
     },
     {
       "accepted_at": "2026-09-10T20:30:22.000Z",
@@ -4324,37 +4296,6 @@
       "trade_date": "2026-08-25",
       "usd": 10068300.0,
       "usd_frac_cap": -0.0007202008037702237
-    },
-    {
-      "accepted_at": "2026-08-26T20:35:19.000Z",
-      "accession": "0001561550-26-000264",
-      "cik": "0001561550",
-      "event_type": "open_market_sell",
-      "filer": "Le-Quoc Alexis",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Chief Technology Officer",
-      "form": "4",
-      "market_cap": 95522118629.5166,
-      "name": "Datadog Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Le-Quoc Alexis sold $9,882,290 of common stock in the open market",
-      "price": 228.629689,
-      "return_21": -0.08543302392346452,
-      "screens": [
-        "strength",
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1561550/000156155026000264/wk-form4_1787776516.xml",
-      "shares": 43224.0,
-      "symbol": "DDOG",
-      "trade_date": "2026-08-24",
-      "usd": 9882289.67,
-      "usd_frac_cap": -0.00010345551178914435
     },
     {
       "accepted_at": "2026-09-16T22:15:32.000Z",
@@ -4924,36 +4865,6 @@
       "usd_frac_cap": -3.125902868495961e-05
     },
     {
-      "accepted_at": "2026-08-26T20:42:02.000Z",
-      "accession": "0000002488-26-000176",
-      "cik": "0000002488",
-      "event_type": "open_market_sell",
-      "filer": "Norrod Forrest Eugene",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "EVP & Gm Dsg",
-      "form": "4",
-      "market_cap": 1029487743707.5295,
-      "name": "Advanced Micro Devices Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Norrod Forrest Eugene sold $7,939,159 of common stock in the open market",
-      "price": 459.947778,
-      "return_21": -0.12491620017659788,
-      "screens": [
-        "strength",
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000176/wk-form4_1787776918.xml",
-      "shares": 17261.0,
-      "symbol": "AMD",
-      "trade_date": "2026-08-24",
-      "usd": 7939158.59,
-      "usd_frac_cap": -7.711756296785463e-06
-    },
-    {
       "accepted_at": "2026-09-08T22:46:52.000Z",
       "accession": "0001392941-26-000014",
       "cik": "0001375365",
@@ -5045,37 +4956,6 @@
       "trade_date": "2026-09-02",
       "usd": 7702151.28,
       "usd_frac_cap": -0.0008830238857326551
-    },
-    {
-      "accepted_at": "2026-08-26T20:10:22.000Z",
-      "accession": "0001832617-26-000009",
-      "cik": "0001792789",
-      "event_type": "open_market_sell",
-      "filer": "Xu Tony",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director",
-        "ten-percent holder"
-      ],
-      "filer_title": "Chief Executive Officer",
-      "form": "4",
-      "market_cap": 84000418265.15198,
-      "name": "DoorDash Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Xu Tony sold $7,666,938 of common stock in the open market",
-      "price": 230.003548,
-      "return_21": 0.3247353693092818,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1792789/000183261726000009/form4-08262026_040808.xml",
-      "shares": 33334.0,
-      "symbol": "DASH",
-      "trade_date": "2026-08-24",
-      "usd": 7666938.27,
-      "usd_frac_cap": -9.127262016480542e-05
     },
     {
       "accepted_at": "2026-09-16T21:07:47.000Z",
@@ -5374,35 +5254,6 @@
       "usd_frac_cap": -0.000363624758050842
     },
     {
-      "accepted_at": "2026-08-26T20:21:52.000Z",
-      "accession": "0001137789-26-000190",
-      "cik": "0001137789",
-      "event_type": "open_market_sell",
-      "filer": "Lee James CI",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "EVP & Clo",
-      "form": "4",
-      "market_cap": 207794497311.2594,
-      "name": "Seagate Technology Holdings PLC Ordinary Shares (Ireland)",
-      "percent_of_class": null,
-      "plain_reason": "Officer Lee James CI sold $7,163,926 of common stock in the open market",
-      "price": 794.84364,
-      "return_21": -0.06697266682885183,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1137789/000113778926000190/wk-form4_1787775708.xml",
-      "shares": 9013.0,
-      "symbol": "STX",
-      "trade_date": "2026-08-24",
-      "usd": 7163925.72,
-      "usd_frac_cap": -3.447601266008992e-05
-    },
-    {
       "accepted_at": "2026-09-01T20:15:51.000Z",
       "accession": "0001628280-26-059834",
       "cik": "0001820953",
@@ -5490,6 +5341,35 @@
       "trade_date": "2026-08-25",
       "usd": 7111160.31,
       "usd_frac_cap": -6.907474473071757e-06
+    },
+    {
+      "accepted_at": "2026-09-26T01:35:06.000Z",
+      "accession": "0001646649-26-000033",
+      "cik": "0001604821",
+      "event_type": "open_market_sell",
+      "filer": "Sheena Jonathan",
+      "filer_kind": "person",
+      "filer_role": "director",
+      "filer_roles": [
+        "director"
+      ],
+      "filer_title": null,
+      "form": "4",
+      "market_cap": 59468118423.28552,
+      "name": "Natera Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Director Sheena Jonathan sold $7,008,972 of common stock in the open market",
+      "price": 388.007774,
+      "return_21": 0.19245089432836981,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1604821/000164664926000033/form4-09252026_090901.xml",
+      "shares": 18064.0,
+      "symbol": "NTRA",
+      "trade_date": "2026-09-23",
+      "usd": 7008972.43,
+      "usd_frac_cap": -0.00011786100882007298
     },
     {
       "accepted_at": "2026-09-04T20:05:25.000Z",
@@ -5608,37 +5488,6 @@
       "trade_date": "2026-08-31",
       "usd": 6536514.94,
       "usd_frac_cap": -1.2050681009502448e-06
-    },
-    {
-      "accepted_at": "2026-08-26T20:15:19.000Z",
-      "accession": "0001104659-26-101500",
-      "cik": "0001860543",
-      "event_type": "open_market_sell",
-      "filer": "KANDERS WARREN B",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director",
-        "ten-percent holder"
-      ],
-      "filer_title": "CEO And Chairman",
-      "form": "4",
-      "market_cap": 1130039144.124298,
-      "name": "Cadre Holdings Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer KANDERS WARREN B sold $6,522,601 of common stock in the open market",
-      "price": 32.613004,
-      "return_21": 0.07545242028832644,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1860543/000110465926101500/tm2624042-1_4seq1.xml",
-      "shares": 200000.0,
-      "symbol": "CDRE",
-      "trade_date": "2026-08-24",
-      "usd": 6522600.75,
-      "usd_frac_cap": -0.005772013105842066
     },
     {
       "accepted_at": "2026-09-04T01:02:52.000Z",
@@ -5760,35 +5609,6 @@
       "trade_date": "2026-08-25",
       "usd": 6317759.52,
       "usd_frac_cap": -0.0005510571817246523
-    },
-    {
-      "accepted_at": "2026-08-26T21:24:21.000Z",
-      "accession": "0001214659-26-010926",
-      "cik": "0000831259",
-      "event_type": "open_market_sell",
-      "filer": "Currault Douglas N. II",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "EVP & General Counsel",
-      "form": "4",
-      "market_cap": 103838423582.22784,
-      "name": "Freeport-McMoRan Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Currault Douglas N. II sold $6,284,464 of common stock in the open market",
-      "price": 78.5558,
-      "return_21": 0.2740752886932667,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/831259/000121465926010926/marketforms-73898.xml",
-      "shares": 80000.0,
-      "symbol": "FCX",
-      "trade_date": "2026-08-25",
-      "usd": 6284464.0,
-      "usd_frac_cap": -6.0521565940602344e-05
     },
     {
       "accepted_at": "2026-09-17T21:09:17.000Z",
@@ -6056,36 +5876,6 @@
       "usd_frac_cap": -5.868774625637059e-05
     },
     {
-      "accepted_at": "2026-08-26T15:07:06.000Z",
-      "accession": "0001494489-26-000016",
-      "cik": "0001691303",
-      "event_type": "open_market_sell",
-      "filer": "SCHELLER WALTER J",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Chief Executive Officer",
-      "form": "4",
-      "market_cap": 4726314920.167427,
-      "name": "Warrior Met Coal Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer SCHELLER WALTER J sold $5,500,000 of common stock in the open market",
-      "price": 110.0,
-      "return_21": 0.33249413540551864,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1691303/000149448926000016/ownership.xml",
-      "shares": 50000.0,
-      "symbol": "HCC",
-      "trade_date": "2026-08-24",
-      "usd": 5500000.0,
-      "usd_frac_cap": -0.0011636973187146753
-    },
-    {
       "accepted_at": "2026-09-04T20:01:54.000Z",
       "accession": "0001437749-26-029693",
       "cik": "0000821483",
@@ -6178,33 +5968,34 @@
       "usd_frac_cap": -5.71537419639373e-05
     },
     {
-      "accepted_at": "2026-08-26T21:18:52.000Z",
-      "accession": "0002060757-26-000052",
-      "cik": "0001580560",
+      "accepted_at": "2026-09-25T20:03:56.000Z",
+      "accession": "0001628280-26-063555",
+      "cik": "0001807794",
       "event_type": "open_market_sell",
-      "filer": "Voss Capital, LP",
-      "filer_kind": "institution",
-      "filer_role": "ten-percent holder",
+      "filer": "Cheng Chi Fung",
+      "filer_kind": "person",
+      "filer_role": "officer",
       "filer_roles": [
-        "ten-percent holder"
+        "officer",
+        "director"
       ],
-      "filer_title": null,
+      "filer_title": "Chief Technology Officer",
       "form": "4",
-      "market_cap": 2115999111.409792,
-      "name": "Flywire Corporation Voting",
+      "market_cap": 39652216369.89349,
+      "name": "Credo Technology Group Holding Ltd",
       "percent_of_class": null,
-      "plain_reason": "Ten-percent holder Voss Capital, LP sold $5,294,256 of common stock in the open market",
-      "price": 19.302871,
-      "return_21": 0.2221522754374614,
+      "plain_reason": "Officer Cheng Chi Fung sold $5,310,760 of common stock in the open market",
+      "price": 193.118545,
+      "return_21": -0.1291047365992758,
       "screens": [
         "growth"
       ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1580560/000206075726000052/primary_doc.xml",
-      "shares": 274273.0,
-      "symbol": "FLYW",
-      "trade_date": "2026-08-24",
-      "usd": 5294256.45,
-      "usd_frac_cap": -0.002502012605512241
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1807794/000162828026063555/wk-form4_1790366633.xml",
+      "shares": 27500.0,
+      "symbol": "CRDO",
+      "trade_date": "2026-09-23",
+      "usd": 5310759.99,
+      "usd_frac_cap": -0.00013393349669180838
     },
     {
       "accepted_at": "2026-09-04T21:41:47.000Z",
@@ -6264,6 +6055,37 @@
       "trade_date": "2026-09-08",
       "usd": 5089881.9,
       "usd_frac_cap": -0.0001456706589637914
+    },
+    {
+      "accepted_at": "2026-09-25T00:00:06.000Z",
+      "accession": "0001778564-26-000171",
+      "cik": "0001535527",
+      "event_type": "open_market_sell",
+      "filer": "Kurtz George",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "President And CEO",
+      "form": "4",
+      "market_cap": 258164696713.14185,
+      "name": "CrowdStrike Holdings Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Kurtz George sold $5,063,403 of common stock in the open market",
+      "price": 253.170159,
+      "return_21": 0.3027350952551484,
+      "screens": [
+        "strength",
+        "growth"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1535527/000177856426000171/form4-09242026_080901.xml",
+      "shares": 20000.0,
+      "symbol": "CRWD",
+      "trade_date": "2026-09-22",
+      "usd": 5063403.19,
+      "usd_frac_cap": -1.9613073570729814e-05
     },
     {
       "accepted_at": "2026-09-16T22:00:47.000Z",
@@ -7461,36 +7283,6 @@
       "usd_frac_cap": -1.8682923375710303e-05
     },
     {
-      "accepted_at": "2026-08-26T01:10:22.000Z",
-      "accession": "0001193125-26-365668",
-      "cik": "0001411207",
-      "event_type": "open_market_sell",
-      "filer": "Graziosi David S.",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Chair, President and CEO",
-      "form": "4",
-      "market_cap": 9402335457.081635,
-      "name": "Allison Transmission Holdings Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Graziosi David S. sold $3,551,470 of common stock in the open market",
-      "price": 132.973998,
-      "return_21": 0.11609745834045437,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1411207/000119312526365668/ownership.xml",
-      "shares": 26708.0,
-      "symbol": "ALSN",
-      "trade_date": "2026-08-21",
-      "usd": 3551469.53,
-      "usd_frac_cap": -0.0003777220613124487
-    },
-    {
       "accepted_at": "2026-09-04T20:37:36.000Z",
       "accession": "0001561550-26-000299",
       "cik": "0001561550",
@@ -7783,35 +7575,6 @@
       "trade_date": "2026-08-26",
       "usd": 3270169.36,
       "usd_frac_cap": -0.00026056661866740723
-    },
-    {
-      "accepted_at": "2026-08-26T23:34:18.000Z",
-      "accession": "0000354190-26-000199",
-      "cik": "0000354190",
-      "event_type": "open_market_sell",
-      "filer": "Bay Walter D.",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "General Counsel",
-      "form": "4",
-      "market_cap": 59230931564.331055,
-      "name": "Arthur J. Gallagher & Co.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Bay Walter D. sold $3,240,972 of common stock in the open market",
-      "price": 270.081,
-      "return_21": 0.09775187199918989,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/354190/000035419026000199/form4.xml",
-      "shares": 12000.0,
-      "symbol": "AJG",
-      "trade_date": "2026-08-24",
-      "usd": 3240972.0,
-      "usd_frac_cap": -5.4717559126686395e-05
     },
     {
       "accepted_at": "2026-09-19T00:17:25.000Z",
@@ -8645,35 +8408,6 @@
       "usd_frac_cap": -1.016672049237515e-05
     },
     {
-      "accepted_at": "2026-08-26T21:08:29.000Z",
-      "accession": "0001764843-26-000007",
-      "cik": "0000027419",
-      "event_type": "open_market_sell",
-      "filer": "Kremer Melissa K",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Executive Officer",
-      "form": "4",
-      "market_cap": 71529019696.79639,
-      "name": "Target Corporation",
-      "percent_of_class": null,
-      "plain_reason": "Officer Kremer Melissa K sold $2,634,318 of common stock in the open market",
-      "price": 169.956,
-      "return_21": 0.25160102003937834,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/27419/000176484326000007/wk-form4_1787778507.xml",
-      "shares": 15500.0,
-      "symbol": "TGT",
-      "trade_date": "2026-08-24",
-      "usd": 2634318.0,
-      "usd_frac_cap": -3.682866074729646e-05
-    },
-    {
       "accepted_at": "2026-09-15T00:00:05.000Z",
       "accession": "0001193125-26-391004",
       "cik": "0000070318",
@@ -8999,6 +8733,36 @@
       "usd_frac_cap": -1.5296294879546644e-05
     },
     {
+      "accepted_at": "2026-09-25T20:09:43.000Z",
+      "accession": "0001628280-26-063572",
+      "cik": "0000730272",
+      "event_type": "open_market_sell",
+      "filer": "Loeillot Olivier",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Chief Executive Officer",
+      "form": "4",
+      "market_cap": 10704708177.933167,
+      "name": "Repligen Corporation",
+      "percent_of_class": null,
+      "plain_reason": "Officer Loeillot Olivier sold $2,459,740 of common stock in the open market",
+      "price": 190.0,
+      "return_21": 0.04931471921779318,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/730272/000162828026063572/wk-form4_1790366980.xml",
+      "shares": 12946.0,
+      "symbol": "RGEN",
+      "trade_date": "2026-09-24",
+      "usd": 2459740.0,
+      "usd_frac_cap": -0.00022978113546995538
+    },
+    {
       "accepted_at": "2026-09-11T20:46:47.000Z",
       "accession": "0001137789-26-000222",
       "cik": "0001137789",
@@ -9027,35 +8791,6 @@
       "trade_date": "2026-09-10",
       "usd": 2456436.29,
       "usd_frac_cap": -1.182146939300542e-05
-    },
-    {
-      "accepted_at": "2026-08-26T20:25:39.000Z",
-      "accession": "0001702981-26-000003",
-      "cik": "0000889900",
-      "event_type": "open_market_sell",
-      "filer": "STEWART JAMES CARL",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 4160908917.1452866,
-      "name": "Patterson-UTI Energy Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director STEWART JAMES CARL sold $2,388,780 of common stock in the open market",
-      "price": 11.54,
-      "return_21": 0.22422959232561968,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/889900/000170298126000003/wk-form4_1787775937.xml",
-      "shares": 207000.0,
-      "symbol": "PTEN",
-      "trade_date": "2026-08-25",
-      "usd": 2388780.0,
-      "usd_frac_cap": -0.0005741005264875859
     },
     {
       "accepted_at": "2026-09-04T20:37:08.000Z",
@@ -9175,35 +8910,6 @@
       "trade_date": "2026-09-11",
       "usd": 2285150.61,
       "usd_frac_cap": -0.00029897090597495436
-    },
-    {
-      "accepted_at": "2026-08-26T20:10:06.000Z",
-      "accession": "0001832614-26-000030",
-      "cik": "0001792789",
-      "event_type": "open_market_sell",
-      "filer": "Tang Stanley",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 84000418265.15198,
-      "name": "DoorDash Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director Tang Stanley sold $2,280,150 of common stock in the open market",
-      "price": 225.0,
-      "return_21": 0.3247353693092818,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1792789/000183261426000030/form4-08262026_040801.xml",
-      "shares": 10134.0,
-      "symbol": "DASH",
-      "trade_date": "2026-08-24",
-      "usd": 2280150.0,
-      "usd_frac_cap": -2.7144507695218612e-05
     },
     {
       "accepted_at": "2026-08-28T17:27:36.000Z",
@@ -10150,35 +9856,6 @@
       "usd_frac_cap": -0.0006889433768706704
     },
     {
-      "accepted_at": "2026-08-26T20:15:05.000Z",
-      "accession": "0001214659-26-010911",
-      "cik": "0000921582",
-      "event_type": "open_market_sell",
-      "filer": "WELTON MARK",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "President IMAX Global Theatres",
-      "form": "4",
-      "market_cap": 3073900447.8587875,
-      "name": "Imax Corporation",
-      "percent_of_class": null,
-      "plain_reason": "Officer WELTON MARK sold $1,634,208 of common stock in the open market",
-      "price": 54.4736,
-      "return_21": 0.19485703384163267,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/921582/000121465926010911/marketforms-73897.xml",
-      "shares": 30000.0,
-      "symbol": "IMAX",
-      "trade_date": "2026-08-25",
-      "usd": 1634208.0,
-      "usd_frac_cap": -0.0005316398587788859
-    },
-    {
       "accepted_at": "2026-09-15T23:00:26.000Z",
       "accession": "0000899140-26-001064",
       "cik": "0000820318",
@@ -10266,35 +9943,6 @@
       "trade_date": "2026-09-21",
       "usd": 1595160.0,
       "usd_frac_cap": -9.707795978531853e-05
-    },
-    {
-      "accepted_at": "2026-08-26T00:50:10.000Z",
-      "accession": "0001193125-26-365660",
-      "cik": "0001175454",
-      "event_type": "open_market_sell",
-      "filer": "King Alan",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "GroupPresident IntlVehiclePmts",
-      "form": "4",
-      "market_cap": 26139741996.079468,
-      "name": "Corpay Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer King Alan sold $1,585,195 of common stock in the open market",
-      "price": 416.6085,
-      "return_21": 0.14344851655955115,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1175454/000119312526365660/ownership.xml",
-      "shares": 3805.0,
-      "symbol": "CPAY",
-      "trade_date": "2026-08-21",
-      "usd": 1585195.34,
-      "usd_frac_cap": -6.0643113472112825e-05
     },
     {
       "accepted_at": "2026-09-16T23:41:47.000Z",
@@ -11060,6 +10708,35 @@
       "usd_frac_cap": -2.1696440060087678e-05
     },
     {
+      "accepted_at": "2026-09-25T19:18:05.000Z",
+      "accession": "0001251445-26-000004",
+      "cik": "0000936395",
+      "event_type": "open_market_sell",
+      "filer": "NEVENS THOMAS MICHAEL",
+      "filer_kind": "person",
+      "filer_role": "director",
+      "filer_roles": [
+        "director"
+      ],
+      "filer_title": null,
+      "form": "4",
+      "market_cap": 50612881177.06833,
+      "name": "Ciena Corporation",
+      "percent_of_class": null,
+      "plain_reason": "Director NEVENS THOMAS MICHAEL sold $1,342,092 of common stock in the open market",
+      "price": 359.04,
+      "return_21": -0.04312409737465972,
+      "screens": [
+        "growth"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/936395/000125144526000004/edgardoc.xml",
+      "shares": 3738.0,
+      "symbol": "CIEN",
+      "trade_date": "2026-09-23",
+      "usd": 1342091.52,
+      "usd_frac_cap": -2.6516797478980006e-05
+    },
+    {
       "accepted_at": "2026-09-15T23:09:08.000Z",
       "accession": "0001489550-26-000011",
       "cik": "0001633978",
@@ -11146,35 +10823,6 @@
       "trade_date": "2026-09-02",
       "usd": 1297250.0,
       "usd_frac_cap": -1.5358249349739388e-05
-    },
-    {
-      "accepted_at": "2026-08-26T23:33:07.000Z",
-      "accession": "0001489550-26-000005",
-      "cik": "0001633978",
-      "event_type": "open_market_sell",
-      "filer": "Wupen Yuen",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "President, Global Bus. Units",
-      "form": "4",
-      "market_cap": 84466007189.9414,
-      "name": "Lumentum Holdings Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Wupen Yuen sold $1,281,518 of common stock in the open market",
-      "price": 854.345,
-      "return_21": 0.08804832767877446,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1633978/000148955026000005/form4-08262026_110800.xml",
-      "shares": 1500.0,
-      "symbol": "LITE",
-      "trade_date": "2026-08-24",
-      "usd": 1281517.5,
-      "usd_frac_cap": -1.517199098944278e-05
     },
     {
       "accepted_at": "2026-09-16T20:58:44.000Z",
@@ -11561,36 +11209,6 @@
       "usd_frac_cap": -4.930935552977221e-05
     },
     {
-      "accepted_at": "2026-08-26T20:46:04.000Z",
-      "accession": "0001610717-26-000392",
-      "cik": "0001770787",
-      "event_type": "open_market_sell",
-      "filer": "Saxonov Serge",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Chief Executive Officer",
-      "form": "4",
-      "market_cap": 11140943005.985939,
-      "name": "10x Genomics Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Saxonov Serge sold $1,168,775 of common stock in the open market",
-      "price": 63.0237,
-      "return_21": 0.37886316416397414,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1770787/000161071726000392/form4.xml",
-      "shares": 18545.0,
-      "symbol": "TXG",
-      "trade_date": "2026-08-24",
-      "usd": 1168774.52,
-      "usd_frac_cap": -0.00010490804228798468
-    },
-    {
       "accepted_at": "2026-09-11T20:46:55.000Z",
       "accession": "0001137789-26-000223",
       "cik": "0001137789",
@@ -11918,35 +11536,6 @@
       "usd_frac_cap": -4.858588530239362e-05
     },
     {
-      "accepted_at": "2026-08-26T20:05:18.000Z",
-      "accession": "0001214659-26-010908",
-      "cik": "0000921582",
-      "event_type": "open_market_sell",
-      "filer": "Fernandes Natasha",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Financial Officer & EVP",
-      "form": "4",
-      "market_cap": 3073900447.8587875,
-      "name": "Imax Corporation",
-      "percent_of_class": null,
-      "plain_reason": "Officer Fernandes Natasha sold $1,092,554 of common stock in the open market",
-      "price": 54.6277,
-      "return_21": 0.263024425229869,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/921582/000121465926010908/marketforms-73887.xml",
-      "shares": 20000.0,
-      "symbol": "IMAX",
-      "trade_date": "2026-08-24",
-      "usd": 1092554.0,
-      "usd_frac_cap": -0.000355429207462151
-    },
-    {
       "accepted_at": "2026-09-14T21:22:06.000Z",
       "accession": "0000821189-26-000174",
       "cik": "0000821189",
@@ -12004,35 +11593,6 @@
       "trade_date": "2026-08-28",
       "usd": 1082886.0,
       "usd_frac_cap": -7.722154311211393e-06
-    },
-    {
-      "accepted_at": "2026-08-26T20:44:46.000Z",
-      "accession": "0001610717-26-000391",
-      "cik": "0001770787",
-      "event_type": "open_market_sell",
-      "filer": "Taich Adam",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Financial Officer",
-      "form": "4",
-      "market_cap": 11140943005.985939,
-      "name": "10x Genomics Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Taich Adam sold $1,081,853 of common stock in the open market",
-      "price": 63.023,
-      "return_21": 0.37886316416397414,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1770787/000161071726000391/form4.xml",
-      "shares": 17166.0,
-      "symbol": "TXG",
-      "trade_date": "2026-08-24",
-      "usd": 1081852.82,
-      "usd_frac_cap": -9.710603666303016e-05
     },
     {
       "accepted_at": "2026-09-23T22:14:54.000Z",
@@ -12444,6 +12004,35 @@
       "usd_frac_cap": -1.0629386937469546e-05
     },
     {
+      "accepted_at": "2026-09-25T20:30:08.000Z",
+      "accession": "0001193125-26-402898",
+      "cik": "0001571996",
+      "event_type": "open_market_sell",
+      "filer": "Durban Egon",
+      "filer_kind": "person",
+      "filer_role": "director",
+      "filer_roles": [
+        "director"
+      ],
+      "filer_title": null,
+      "form": "4",
+      "market_cap": 360249609375.0,
+      "name": "Dell Technologies Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Director Durban Egon sold $1,014,540 of common stock in the open market",
+      "price": 548.4,
+      "return_21": 0.2692583254254912,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1571996/000119312526402898/ownership.xml",
+      "shares": 1850.0,
+      "symbol": "DELL",
+      "trade_date": "2026-09-23",
+      "usd": 1014540.0,
+      "usd_frac_cap": -2.8162140182750893e-06
+    },
+    {
       "accepted_at": "2026-08-27T20:27:59.000Z",
       "accession": "0002009110-26-000005",
       "cik": "0000006281",
@@ -12559,6 +12148,36 @@
       "trade_date": "2026-08-25",
       "usd": 1000000.0,
       "usd_frac_cap": -0.00017509073718181606
+    },
+    {
+      "accepted_at": "2026-09-26T01:57:29.000Z",
+      "accession": "0002045034-26-000009",
+      "cik": "0001857816",
+      "event_type": "open_market_sell",
+      "filer": "Bernes Marshall",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Head of Brand Center",
+      "form": "4",
+      "market_cap": 1971964793.3372536,
+      "name": "GigaCloud Technology Inc Class A",
+      "percent_of_class": null,
+      "plain_reason": "Officer Bernes Marshall sold $990,402 of common stock in the open market",
+      "price": 54.129178,
+      "return_21": 0.03236305222526448,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1857816/000204503426000009/wk-form4_1790387845.xml",
+      "shares": 18297.0,
+      "symbol": "GCT",
+      "trade_date": "2026-09-24",
+      "usd": 990401.57,
+      "usd_frac_cap": -0.0005022410001163836
     },
     {
       "accepted_at": "2026-09-04T00:00:07.000Z",
@@ -12973,6 +12592,35 @@
       "usd_frac_cap": -6.385254577303656e-07
     },
     {
+      "accepted_at": "2026-09-26T00:57:30.000Z",
+      "accession": "0001489550-26-000014",
+      "cik": "0001633978",
+      "event_type": "open_market_sell",
+      "filer": "Wupen Yuen",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer"
+      ],
+      "filer_title": "President, Global Bus. Units",
+      "form": "4",
+      "market_cap": 84466007189.9414,
+      "name": "Lumentum Holdings Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Wupen Yuen sold $928,410 of common stock in the open market",
+      "price": 928.41,
+      "return_21": 0.049092924252970294,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1633978/000148955026000014/form4-09262026_120926.xml",
+      "shares": 1000.0,
+      "symbol": "LITE",
+      "trade_date": "2026-09-24",
+      "usd": 928410.0,
+      "usd_frac_cap": -1.0991522280818303e-05
+    },
+    {
       "accepted_at": "2026-09-21T21:15:16.000Z",
       "accession": "0001797672-26-000006",
       "cik": "0001490978",
@@ -13087,6 +12735,36 @@
       "trade_date": "2026-09-21",
       "usd": 925000.0,
       "usd_frac_cap": -2.3327825899344163e-05
+    },
+    {
+      "accepted_at": "2026-09-25T20:05:16.000Z",
+      "accession": "0001214659-26-011980",
+      "cik": "0001581280",
+      "event_type": "open_market_sell",
+      "filer": "Leproust Emily M.",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Chief Executive Officer",
+      "form": "4",
+      "market_cap": 11464798444.740723,
+      "name": "Twist Bioscience Corporation",
+      "percent_of_class": null,
+      "plain_reason": "Officer Leproust Emily M. sold $922,907 of common stock in the open market",
+      "price": 177.379693,
+      "return_21": 0.2153612534981495,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1581280/000121465926011980/marketforms-74041.xml",
+      "shares": 5203.0,
+      "symbol": "TWST",
+      "trade_date": "2026-09-24",
+      "usd": 922906.54,
+      "usd_frac_cap": -8.04991508964004e-05
     },
     {
       "accepted_at": "2026-09-11T20:02:11.000Z",
@@ -13237,35 +12915,6 @@
       "usd_frac_cap": -7.6213449045768324e-06
     },
     {
-      "accepted_at": "2026-08-26T20:09:48.000Z",
-      "accession": "0001662205-26-000011",
-      "cik": "0001571996",
-      "event_type": "open_market_sell",
-      "filer": "Radakovich Lynn Vojvodich",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 360249609375.0,
-      "name": "Dell Technologies Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director Radakovich Lynn Vojvodich sold $886,061 of common stock in the open market",
-      "price": 438.21,
-      "return_21": -0.009851422991071446,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1571996/000166220526000011/wk-form4_1787774986.xml",
-      "shares": 2022.0,
-      "symbol": "DELL",
-      "trade_date": "2026-08-24",
-      "usd": 886060.62,
-      "usd_frac_cap": -2.459574131217613e-06
-    },
-    {
       "accepted_at": "2026-09-18T20:25:35.000Z",
       "accession": "0001517413-26-000288",
       "cik": "0001517413",
@@ -13353,37 +13002,6 @@
       "usd_frac_cap": -7.808987748812276e-05
     },
     {
-      "accepted_at": "2026-08-26T20:43:52.000Z",
-      "accession": "0001610717-26-000390",
-      "cik": "0001770787",
-      "event_type": "open_market_sell",
-      "filer": "Hindson Benjamin J.",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "President",
-      "form": "4",
-      "market_cap": 11140943005.985939,
-      "name": "10x Genomics Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Hindson Benjamin J. sold $870,860 of common stock in the open market",
-      "price": 63.0236,
-      "return_21": 0.37886316416397414,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1770787/000161071726000390/form4.xml",
-      "shares": 13818.0,
-      "symbol": "TXG",
-      "title_source": "yahoo-roster",
-      "trade_date": "2026-08-24",
-      "usd": 870860.1,
-      "usd_frac_cap": -7.816753927671058e-05
-    },
-    {
       "accepted_at": "2026-09-09T23:16:22.000Z",
       "accession": "0000849399-26-000050",
       "cik": "0000849399",
@@ -13469,35 +13087,6 @@
       "trade_date": "2026-08-28",
       "usd": 840846.01,
       "usd_frac_cap": -0.0003973754078940909
-    },
-    {
-      "accepted_at": "2026-08-26T20:16:51.000Z",
-      "accession": "0001628280-26-059091",
-      "cik": "0001447362",
-      "event_type": "open_market_sell",
-      "filer": "Oelschlager Kristen M",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Operating Officer",
-      "form": "4",
-      "market_cap": 1093977887.6233635,
-      "name": "Castle Biosciences Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Oelschlager Kristen M sold $837,865 of common stock in the open market",
-      "price": 34.056768,
-      "return_21": 0.3558842189517286,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1447362/000162828026059091/wk-form4_1787775408.xml",
-      "shares": 24602.0,
-      "symbol": "CSTL",
-      "trade_date": "2026-08-24",
-      "usd": 837864.61,
-      "usd_frac_cap": -0.0007658880672809919
     },
     {
       "accepted_at": "2026-09-18T20:25:29.000Z",
@@ -14528,35 +14117,6 @@
       "trade_date": "2026-09-11",
       "usd": 658699.68,
       "usd_frac_cap": -0.00028816038744634945
-    },
-    {
-      "accepted_at": "2026-08-26T22:01:13.000Z",
-      "accession": "0001872886-26-000009",
-      "cik": "0001782170",
-      "event_type": "open_market_sell",
-      "filer": "Mehta Vikas D",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Financial Officer",
-      "form": "4",
-      "market_cap": 4521571522.641693,
-      "name": "Remitly Global Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Mehta Vikas D sold $653,750 of common stock in the open market",
-      "price": 26.15,
-      "return_21": 0.157105008381055,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1782170/000187288626000009/wk-form4_1787781670.xml",
-      "shares": 25000.0,
-      "symbol": "RELY",
-      "trade_date": "2026-08-25",
-      "usd": 653750.0,
-      "usd_frac_cap": -0.00014458468625927023
     },
     {
       "accepted_at": "2026-09-09T10:03:22.000Z",
@@ -15769,35 +15329,6 @@
       "usd_frac_cap": -4.736447238841512e-05
     },
     {
-      "accepted_at": "2026-08-26T20:10:11.000Z",
-      "accession": "0001899688-26-000016",
-      "cik": "0001792789",
-      "event_type": "open_market_sell",
-      "filer": "Sherringham Tia",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "General Counsel And Secretary",
-      "form": "4",
-      "market_cap": 84000418265.15198,
-      "name": "DoorDash Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Sherringham Tia sold $515,607 of common stock in the open market",
-      "price": 227.641148,
-      "return_21": 0.3247353693092818,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1792789/000189968826000016/form4-08262026_040804.xml",
-      "shares": 2265.0,
-      "symbol": "DASH",
-      "trade_date": "2026-08-24",
-      "usd": 515607.2,
-      "usd_frac_cap": -6.13815038839994e-06
-    },
-    {
       "accepted_at": "2026-09-03T21:57:49.000Z",
       "accession": "0001835040-26-000029",
       "cik": "0001793659",
@@ -15946,35 +15477,6 @@
       "usd_frac_cap": -4.703598562714071e-05
     },
     {
-      "accepted_at": "2026-08-26T20:20:29.000Z",
-      "accession": "0000099780-26-000121",
-      "cik": "0000099780",
-      "event_type": "open_market_sell",
-      "filer": "Poet Kevin",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "EVP Operations & Support Svcs",
-      "form": "4",
-      "market_cap": 2223575342.103401,
-      "name": "Trinity Industries Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Poet Kevin sold $502,350 of common stock in the open market",
-      "price": 29.55,
-      "return_21": -0.2024258390946232,
-      "screens": [
-        "undervalued"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/99780/000009978026000121/wk-form4_1787775627.xml",
-      "shares": 17000.0,
-      "symbol": "TRN",
-      "trade_date": "2026-08-25",
-      "usd": 502350.0,
-      "usd_frac_cap": -0.00022591993645909014
-    },
-    {
       "accepted_at": "2026-09-11T20:47:02.000Z",
       "accession": "0001137789-26-000224",
       "cik": "0001137789",
@@ -16002,35 +15504,6 @@
       "trade_date": "2026-09-10",
       "usd": 493354.54,
       "usd_frac_cap": -2.374242563608384e-06
-    },
-    {
-      "accepted_at": "2026-08-26T20:10:17.000Z",
-      "accession": "0001635648-26-000014",
-      "cik": "0001792789",
-      "event_type": "open_market_sell",
-      "filer": "Lee Gordon S",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Accounting Officer",
-      "form": "4",
-      "market_cap": 84000418265.15198,
-      "name": "DoorDash Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Lee Gordon S sold $489,354 of common stock in the open market",
-      "price": 222.03,
-      "return_21": 0.3247353693092818,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1792789/000163564826000014/form4-08262026_040806.xml",
-      "shares": 2204.0,
-      "symbol": "DASH",
-      "trade_date": "2026-08-24",
-      "usd": 489354.12,
-      "usd_frac_cap": -5.825615277954052e-06
     },
     {
       "accepted_at": "2026-09-14T21:29:52.000Z",
@@ -16120,35 +15593,6 @@
       "usd_frac_cap": -2.736822341891094e-05
     },
     {
-      "accepted_at": "2026-08-26T20:45:01.000Z",
-      "accession": "0001193125-26-368796",
-      "cik": "0000703351",
-      "event_type": "open_market_sell",
-      "filer": "Fuller Daniel S",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "SVP, Chief Legal Officer",
-      "form": "4",
-      "market_cap": 8653709944.543304,
-      "name": "Brinker International Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Fuller Daniel S sold $484,008 of common stock in the open market",
-      "price": 253.54,
-      "return_21": 0.27251327180475005,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/703351/000119312526368796/ownership.xml",
-      "shares": 1909.0,
-      "symbol": "EAT",
-      "trade_date": "2026-08-25",
-      "usd": 484007.86,
-      "usd_frac_cap": -5.593067748997026e-05
-    },
-    {
       "accepted_at": "2026-08-28T01:57:43.000Z",
       "accession": "0001489550-26-000007",
       "cik": "0001633978",
@@ -16206,6 +15650,35 @@
       "trade_date": "2026-09-01",
       "usd": 477486.0,
       "usd_frac_cap": -3.7318214096508055e-06
+    },
+    {
+      "accepted_at": "2026-09-25T20:11:09.000Z",
+      "accession": "0001628280-26-063573",
+      "cik": "0001443669",
+      "event_type": "open_market_sell",
+      "filer": "Schumacher Daniel",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer"
+      ],
+      "filer_title": "Chief Financial Officer",
+      "form": "4",
+      "market_cap": 2302482586.25,
+      "name": "Proto Labs Inc. Common stock",
+      "percent_of_class": null,
+      "plain_reason": "Officer Schumacher Daniel sold $476,604 of common stock in the open market",
+      "price": 95.3209,
+      "return_21": 0.19806704959804589,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1443669/000162828026063573/wk-form4_1790367067.xml",
+      "shares": 5000.0,
+      "symbol": "PRLB",
+      "trade_date": "2026-09-24",
+      "usd": 476604.5,
+      "usd_frac_cap": -0.00020699591946805326
     },
     {
       "accepted_at": "2026-09-22T20:15:07.000Z",
@@ -16413,35 +15886,6 @@
       "usd_frac_cap": -4.170812558239798e-05
     },
     {
-      "accepted_at": "2026-08-26T10:50:10.000Z",
-      "accession": "0001861996-26-000006",
-      "cik": "0001323885",
-      "event_type": "open_market_sell",
-      "filer": "Dahlquist Karl S.",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Legal Officer",
-      "form": "4",
-      "market_cap": 2969574298.0510635,
-      "name": "AtriCure Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Dahlquist Karl S. sold $458,099 of common stock in the open market",
-      "price": 48.89,
-      "return_21": 0.40639262248019326,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1323885/000186199626000006/wk-form4_1787741408.xml",
-      "shares": 9370.0,
-      "symbol": "ATRC",
-      "trade_date": "2026-08-24",
-      "usd": 458099.3,
-      "usd_frac_cap": -0.0001542642998697326
-    },
-    {
       "accepted_at": "2026-09-10T00:27:55.000Z",
       "accession": "0001508550-26-000011",
       "cik": "0001694426",
@@ -16588,35 +16032,6 @@
       "usd_frac_cap": -0.0003872751527450346
     },
     {
-      "accepted_at": "2026-08-26T22:07:15.000Z",
-      "accession": "0001238040-26-000011",
-      "cik": "0001782170",
-      "event_type": "open_market_sell",
-      "filer": "MORRIS NIGEL W",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 4521571522.641693,
-      "name": "Remitly Global Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director MORRIS NIGEL W sold $444,907 of common stock in the open market",
-      "price": 26.56,
-      "return_21": 0.1802041430184651,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1782170/000123804026000011/wk-form4_1787782032.xml",
-      "shares": 16751.0,
-      "symbol": "RELY",
-      "trade_date": "2026-08-24",
-      "usd": 444906.56,
-      "usd_frac_cap": -9.839644419470928e-05
-    },
-    {
       "accepted_at": "2026-09-11T21:38:35.000Z",
       "accession": "0001989421-26-000012",
       "cik": "0000040211",
@@ -16702,35 +16117,6 @@
       "trade_date": "2026-09-17",
       "usd": 438459.84,
       "usd_frac_cap": -5.219734009132874e-06
-    },
-    {
-      "accepted_at": "2026-08-26T20:10:08.000Z",
-      "accession": "0001214659-26-010909",
-      "cik": "0000921582",
-      "event_type": "open_market_sell",
-      "filer": "Weissman Kenneth Ian",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Deputy GC, Corp. Sec. & CCO",
-      "form": "4",
-      "market_cap": 3073900447.8587875,
-      "name": "Imax Corporation",
-      "percent_of_class": null,
-      "plain_reason": "Officer Weissman Kenneth Ian sold $436,294 of common stock in the open market",
-      "price": 54.5367,
-      "return_21": 0.19485703384163267,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/921582/000121465926010909/marketforms-73896.xml",
-      "shares": 8000.0,
-      "symbol": "IMAX",
-      "trade_date": "2026-08-25",
-      "usd": 436293.6,
-      "usd_frac_cap": -0.0001419348503312502
     },
     {
       "accepted_at": "2026-09-09T01:32:59.000Z",
@@ -17201,37 +16587,6 @@
       "usd_frac_cap": -9.800118799688676e-05
     },
     {
-      "accepted_at": "2026-08-26T22:15:10.000Z",
-      "accession": "0001822629-26-000014",
-      "cik": "0001023024",
-      "event_type": "open_market_sell",
-      "filer": "Lalwani Nikhil",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "President & CEO",
-      "form": "4",
-      "market_cap": 1565692000.0,
-      "name": "ANI Pharmaceuticals Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Lalwani Nikhil sold $401,220 of common stock in the open market",
-      "price": 74.3,
-      "return_21": -0.034707172711203604,
-      "screens": [
-        "growth",
-        "undervalued"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1023024/000182262926000014/wk-form4_1787782508.xml",
-      "shares": 5400.0,
-      "symbol": "ANIP",
-      "trade_date": "2026-08-25",
-      "usd": 401220.0,
-      "usd_frac_cap": -0.0002562572970929148
-    },
-    {
       "accepted_at": "2026-09-11T21:30:16.000Z",
       "accession": "0001177609-26-000038",
       "cik": "0001177609",
@@ -17290,33 +16645,33 @@
       "usd_frac_cap": -9.627756197863349e-07
     },
     {
-      "accepted_at": "2026-08-26T22:51:36.000Z",
-      "accession": "0001695434-26-000011",
-      "cik": "0001069258",
+      "accepted_at": "2026-09-25T20:53:42.000Z",
+      "accession": "0001678505-26-000010",
+      "cik": "0000874499",
       "event_type": "open_market_sell",
-      "filer": "Fendley Steven S.",
+      "filer": "Cutt Timothy J.",
       "filer_kind": "person",
-      "filer_role": "officer",
+      "filer_role": "director",
       "filer_roles": [
-        "officer"
+        "director"
       ],
-      "filer_title": "President, US Division",
+      "filer_title": null,
       "form": "4",
-      "market_cap": 8563846737.231991,
-      "name": "Kratos Defense & Security Solutions Inc.",
+      "market_cap": 2734279274.572998,
+      "name": "Gulfport Energy Corporation Common Shares",
       "percent_of_class": null,
-      "plain_reason": "Officer Fendley Steven S. sold $393,120 of common stock in the open market",
-      "price": 56.16,
-      "return_21": 0.12080256399225364,
+      "plain_reason": "Director Cutt Timothy J. sold $397,450 of common stock in the open market",
+      "price": 158.98,
+      "return_21": -0.06128242304763709,
       "screens": [
-        "growth"
+        "undervalued"
       ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1069258/000169543426000011/primary_doc.xml",
-      "shares": 7000.0,
-      "symbol": "KTOS",
-      "trade_date": "2026-08-24",
-      "usd": 393120.0,
-      "usd_frac_cap": -4.590460479528203e-05
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/874499/000167850526000010/wk-form4_1790369619.xml",
+      "shares": 2500.0,
+      "symbol": "GPOR",
+      "trade_date": "2026-09-24",
+      "usd": 397450.0,
+      "usd_frac_cap": -0.00014535823158081328
     },
     {
       "accepted_at": "2026-09-17T20:20:49.000Z",
@@ -18436,64 +17791,6 @@
       "usd_frac_cap": -7.1449282943970335e-06
     },
     {
-      "accepted_at": "2026-08-26T23:22:36.000Z",
-      "accession": "0001452681-26-000041",
-      "cik": "0000827054",
-      "event_type": "open_market_sell",
-      "filer": "Bjornholt James Eric",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Senior Corporate VP And CFO",
-      "form": "4",
-      "market_cap": 42729355220.49481,
-      "name": "Microchip Technology Incorporated",
-      "percent_of_class": null,
-      "plain_reason": "Officer Bjornholt James Eric sold $309,716 of common stock in the open market",
-      "price": 75.32,
-      "return_21": -0.05080602929519795,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/827054/000145268126000041/wk-form4_1787786553.xml",
-      "shares": 4112.0,
-      "symbol": "MCHP",
-      "trade_date": "2026-08-25",
-      "usd": 309715.84,
-      "usd_frac_cap": -7.248315318632451e-06
-    },
-    {
-      "accepted_at": "2026-08-26T20:30:14.000Z",
-      "accession": "0001493152-26-040244",
-      "cik": "0002064124",
-      "event_type": "open_market_sell",
-      "filer": "Kgil Minchung",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Financial Officer",
-      "form": "4",
-      "market_cap": 7066304075.799025,
-      "name": "Figure Technology Solutions Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Kgil Minchung sold $309,509 of common stock in the open market",
-      "price": 38.688625,
-      "return_21": 0.4005074003605642,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/2064124/000149315226040244/ownership.xml",
-      "shares": 8000.0,
-      "symbol": "FIGR",
-      "trade_date": "2026-08-24",
-      "usd": 309509.0,
-      "usd_frac_cap": -4.380069081091761e-05
-    },
-    {
       "accepted_at": "2026-09-23T20:14:52.000Z",
       "accession": "0001193125-26-399422",
       "cik": "0000797721",
@@ -18638,6 +17935,35 @@
       "trade_date": "2026-09-02",
       "usd": 298137.6,
       "usd_frac_cap": -1.4257051571896494e-05
+    },
+    {
+      "accepted_at": "2026-09-25T01:35:53.000Z",
+      "accession": "0001140361-26-037594",
+      "cik": "0000810136",
+      "event_type": "open_market_sell",
+      "filer": "Lee Kang Jyh",
+      "filer_kind": "person",
+      "filer_role": "director",
+      "filer_roles": [
+        "director"
+      ],
+      "filer_title": null,
+      "form": "4",
+      "market_cap": 1793513854.2943668,
+      "name": "Photronics Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Director Lee Kang Jyh sold $297,000 of common stock in the open market",
+      "price": 29.7,
+      "return_21": -0.0029498574864871285,
+      "screens": [
+        "undervalued"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/810136/000114036126037594/form4.xml",
+      "shares": 10000.0,
+      "symbol": "PLAB",
+      "trade_date": "2026-09-22",
+      "usd": 297000.0,
+      "usd_frac_cap": -0.00016559671356252252
     },
     {
       "accepted_at": "2026-09-16T20:30:13.000Z",
@@ -18932,6 +18258,36 @@
       "trade_date": "2026-09-15",
       "usd": 281848.46,
       "usd_frac_cap": -5.391943596540025e-06
+    },
+    {
+      "accepted_at": "2026-09-25T20:04:28.000Z",
+      "accession": "0001825803-26-000010",
+      "cik": "0001802974",
+      "event_type": "open_market_sell",
+      "filer": "Barnard Stephen J",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer",
+        "director"
+      ],
+      "filer_title": "Executive Chairman",
+      "form": "4",
+      "market_cap": 1152094258.6619911,
+      "name": "Mission Produce Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer Barnard Stephen J sold $281,398 of common stock in the open market",
+      "price": 13.0,
+      "return_21": -0.0053721946476400495,
+      "screens": [
+        "growth"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1802974/000182580326000010/wk-form4_1790366666.xml",
+      "shares": 21646.0,
+      "symbol": "AVO",
+      "trade_date": "2026-09-24",
+      "usd": 281398.0,
+      "usd_frac_cap": -0.0002442491123311451
     },
     {
       "accepted_at": "2026-09-15T22:19:49.000Z",
@@ -19846,36 +19202,6 @@
       "usd_frac_cap": -2.6404293332890865e-05
     },
     {
-      "accepted_at": "2026-08-26T18:42:23.000Z",
-      "accession": "0001193125-26-367204",
-      "cik": "0000016040",
-      "event_type": "open_market_sell",
-      "filer": "Keohane Sean D",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "President and CEO",
-      "form": "4",
-      "market_cap": 4066458221.6157303,
-      "name": "Cabot Corporation",
-      "percent_of_class": null,
-      "plain_reason": "Officer Keohane Sean D sold $237,604 of common stock in the open market",
-      "price": 85.5,
-      "return_21": -0.06955078786399493,
-      "screens": [
-        "undervalued"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/16040/000119312526367204/ownership.xml",
-      "shares": 2779.0,
-      "symbol": "CBT",
-      "trade_date": "2026-08-24",
-      "usd": 237604.5,
-      "usd_frac_cap": -5.843033102786738e-05
-    },
-    {
       "accepted_at": "2026-09-23T20:05:03.000Z",
       "accession": "0001193125-26-399376",
       "cik": "0000031791",
@@ -20465,35 +19791,6 @@
       "usd_frac_cap": -0.00011886356350350582
     },
     {
-      "accepted_at": "2026-08-26T23:15:50.000Z",
-      "accession": "0001855880-26-000016",
-      "cik": "0001616533",
-      "event_type": "open_market_sell",
-      "filer": "Kuykendall Anne",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "SVP and Chief Legal Officer",
-      "form": "4",
-      "market_cap": 2880864600.332123,
-      "name": "Penguin Solutions Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Kuykendall Anne sold $202,301 of common stock in the open market",
-      "price": 50.5753,
-      "return_21": -0.05886719143490282,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1616533/000185588026000016/wk-form4_1787786148.xml",
-      "shares": 4000.0,
-      "symbol": "PENG",
-      "trade_date": "2026-08-24",
-      "usd": 202301.2,
-      "usd_frac_cap": -7.022239086719922e-05
-    },
-    {
       "accepted_at": "2026-09-22T20:18:09.000Z",
       "accession": "0001753662-26-000016",
       "cik": "0001627475",
@@ -20904,36 +20201,6 @@
       "usd_frac_cap": -2.928851139073948e-05
     },
     {
-      "accepted_at": "2026-08-26T20:01:35.000Z",
-      "accession": "0001216055-26-000012",
-      "cik": "0000097745",
-      "event_type": "open_market_sell",
-      "filer": "CASPER MARC N",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer",
-        "director"
-      ],
-      "filer_title": "Chairman & CEO",
-      "form": "4",
-      "market_cap": 249579418050.0,
-      "name": "Thermo Fisher Scientific Inc",
-      "percent_of_class": null,
-      "plain_reason": "Officer CASPER MARC N sold $172,439 of common stock in the open market",
-      "price": 627.049273,
-      "return_21": 0.10643011397855862,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/97745/000121605526000012/wk-form4_1787774492.xml",
-      "shares": 275.0,
-      "symbol": "TMO",
-      "trade_date": "2026-08-24",
-      "usd": 172438.55,
-      "usd_frac_cap": -6.909165481163762e-07
-    },
-    {
       "accepted_at": "2026-09-04T20:44:35.000Z",
       "accession": "0001238040-26-000013",
       "cik": "0001782170",
@@ -21048,35 +20315,6 @@
       "trade_date": "2026-09-08",
       "usd": 164494.48,
       "usd_frac_cap": -2.1521147664520463e-05
-    },
-    {
-      "accepted_at": "2026-08-26T00:04:23.000Z",
-      "accession": "0001877346-26-000021",
-      "cik": "0001837240",
-      "event_type": "open_market_sell",
-      "filer": "Kuffner James",
-      "filer_kind": "person",
-      "filer_role": "officer",
-      "filer_roles": [
-        "officer"
-      ],
-      "filer_title": "Chief Technology Officer",
-      "form": "4",
-      "market_cap": 26249967860.798645,
-      "name": "Symbotic Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Officer Kuffner James sold $160,422 of common stock in the open market",
-      "price": 40.5926,
-      "return_21": -0.002988860324318665,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1837240/000187734626000021/wk-form4_1787702660.xml",
-      "shares": 3952.0,
-      "symbol": "SYM",
-      "trade_date": "2026-08-24",
-      "usd": 160421.96,
-      "usd_frac_cap": -6.111320244302928e-06
     },
     {
       "accepted_at": "2026-09-02T15:28:41.000Z",
@@ -21457,35 +20695,6 @@
       "usd_frac_cap": -1.653146464542727e-05
     },
     {
-      "accepted_at": "2026-08-26T00:58:48.000Z",
-      "accession": "0001350103-26-000005",
-      "cik": "0001694426",
-      "event_type": "open_market_sell",
-      "filer": "Marcogliese Richard J",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 4153990459.9210815,
-      "name": "Delek US Holdings Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director Marcogliese Richard J sold $142,100 of common stock in the open market",
-      "price": 71.05,
-      "return_21": 0.10743353010341017,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1694426/000135010326000005/wk-form4_1787705926.xml",
-      "shares": 2000.0,
-      "symbol": "DK",
-      "trade_date": "2026-08-21",
-      "usd": 142100.0,
-      "usd_frac_cap": -3.420807085885788e-05
-    },
-    {
       "accepted_at": "2026-08-28T00:19:34.000Z",
       "accession": "0002087126-26-000009",
       "cik": "0002070849",
@@ -21513,35 +20722,6 @@
       "trade_date": "2026-08-25",
       "usd": 141700.0,
       "usd_frac_cap": -2.4810357458663335e-05
-    },
-    {
-      "accepted_at": "2026-08-26T20:42:00.000Z",
-      "accession": "0001610717-26-000389",
-      "cik": "0001770787",
-      "event_type": "open_market_sell",
-      "filer": "SULIMAN SHEHNAAZ",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 11140943005.985939,
-      "name": "10x Genomics Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director SULIMAN SHEHNAAZ sold $140,478 of common stock in the open market",
-      "price": 63.651076,
-      "return_21": 0.37886316416397414,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1770787/000161071726000389/form4.xml",
-      "shares": 2207.0,
-      "symbol": "TXG",
-      "trade_date": "2026-08-24",
-      "usd": 140477.92,
-      "usd_frac_cap": -1.2609158840909819e-05
     },
     {
       "accepted_at": "2026-09-18T15:38:37.000Z",
@@ -21894,35 +21074,6 @@
       "trade_date": "2026-08-27",
       "usd": 125920.0,
       "usd_frac_cap": -3.35721942445842e-05
-    },
-    {
-      "accepted_at": "2026-08-26T20:30:28.000Z",
-      "accession": "0001213900-26-093998",
-      "cik": "0000029989",
-      "event_type": "open_market_sell",
-      "filer": "RICE LINDA JOHNSON",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 21703222260.284943,
-      "name": "Omnicom Group Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director RICE LINDA JOHNSON sold $122,891 of common stock in the open market",
-      "price": 88.73,
-      "return_21": 0.11649499149727749,
-      "screens": [
-        "growth"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/29989/000121390026093998/ownership.xml",
-      "shares": 1385.0,
-      "symbol": "OMC",
-      "trade_date": "2026-08-24",
-      "usd": 122891.05,
-      "usd_frac_cap": -5.662341219482427e-06
     },
     {
       "accepted_at": "2026-09-03T23:36:47.000Z",
@@ -22451,35 +21602,6 @@
       "usd_frac_cap": -1.8455989275800298e-05
     },
     {
-      "accepted_at": "2026-08-26T00:36:45.000Z",
-      "accession": "0001283661-26-000014",
-      "cik": "0001694426",
-      "event_type": "open_market_sell",
-      "filer": "FINNERTY WILLIAM J",
-      "filer_kind": "person",
-      "filer_role": "director",
-      "filer_roles": [
-        "director"
-      ],
-      "filer_title": null,
-      "form": "4",
-      "market_cap": 4153990459.9210815,
-      "name": "Delek US Holdings Inc.",
-      "percent_of_class": null,
-      "plain_reason": "Director FINNERTY WILLIAM J sold $94,268 of common stock in the open market",
-      "price": 64.7,
-      "return_21": 0.10743353010341017,
-      "screens": [
-        "strength"
-      ],
-      "sec_url": "https://www.sec.gov/Archives/edgar/data/1694426/000128366126000014/wk-form4_1787704602.xml",
-      "shares": 1457.0,
-      "symbol": "DK",
-      "trade_date": "2026-08-21",
-      "usd": 94267.9,
-      "usd_frac_cap": -2.269333569961808e-05
-    },
-    {
       "accepted_at": "2026-09-17T23:21:12.000Z",
       "accession": "0002074298-26-000017",
       "cik": "0001642896",
@@ -22710,6 +21832,35 @@
       "trade_date": "2026-08-31",
       "usd": 87000.0,
       "usd_frac_cap": -5.052893837912804e-07
+    },
+    {
+      "accepted_at": "2026-09-25T20:05:09.000Z",
+      "accession": "0001628280-26-063558",
+      "cik": "0000088941",
+      "event_type": "open_market_sell",
+      "filer": "Walsh Paul V Jr",
+      "filer_kind": "person",
+      "filer_role": "director",
+      "filer_roles": [
+        "director"
+      ],
+      "filer_title": null,
+      "form": "4",
+      "market_cap": 16981458210.674805,
+      "name": "Semtech Corporation",
+      "percent_of_class": null,
+      "plain_reason": "Director Walsh Paul V Jr sold $86,305 of common stock in the open market",
+      "price": 172.61,
+      "return_21": 0.40046312713924026,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/88941/000162828026063558/wk-form4_1790366702.xml",
+      "shares": 500.0,
+      "symbol": "SMTC",
+      "trade_date": "2026-09-23",
+      "usd": 86305.0,
+      "usd_frac_cap": -5.082307946071873e-06
     },
     {
       "accepted_at": "2026-09-03T23:37:17.000Z",
@@ -23031,6 +22182,35 @@
       "trade_date": "2026-08-27",
       "usd": 71025.0,
       "usd_frac_cap": -3.626949913225579e-05
+    },
+    {
+      "accepted_at": "2026-09-25T10:06:23.000Z",
+      "accession": "0001987126-26-000004",
+      "cik": "0001601046",
+      "event_type": "open_market_sell",
+      "filer": "POOLE LISA M.",
+      "filer_kind": "person",
+      "filer_role": "officer",
+      "filer_roles": [
+        "officer"
+      ],
+      "filer_title": "VP and Controller",
+      "form": "4",
+      "market_cap": 61654133362.65854,
+      "name": "Keysight Technologies Inc.",
+      "percent_of_class": null,
+      "plain_reason": "Officer POOLE LISA M. sold $69,602 of common stock in the open market",
+      "price": 348.01,
+      "return_21": 0.13744924092608946,
+      "screens": [
+        "strength"
+      ],
+      "sec_url": "https://www.sec.gov/Archives/edgar/data/1601046/000198712626000004/wk-form4_1790330780.xml",
+      "shares": 200.0,
+      "symbol": "KEYS",
+      "trade_date": "2026-09-23",
+      "usd": 69602.0,
+      "usd_frac_cap": -1.1289105239804598e-06
     },
     {
       "accepted_at": "2026-09-01T20:36:49.000Z",
@@ -23504,7 +22684,7 @@
   "freeze_run_id": "2026-09-25-5fc1c84bab67",
   "mail_since": "2026-09-25",
   "schema": "ownership-digest-1",
-  "since": "2026-08-26",
+  "since": "2026-08-27",
   "universe_n": 420,
-  "until": "2026-09-24"
+  "until": "2026-09-28"
 }
