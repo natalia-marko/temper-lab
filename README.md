@@ -46,8 +46,8 @@ the snapshot; unavailable closes display n/a and sort last in either direction.
 
 Insights is a fourth page, `insights.html`, showing a company research queue
 across the full frozen eligible universe. It reads `insights-research.json`.
-It is one compact table per view — Buying (default), Several insiders,
-Officers buying, Selling, Needs review and All activity — with one row per
+It is one compact table per view — All activity, Buying (default), Several
+insiders, Officers buying, Selling and Needs review — with one row per
 company, only the columns and top numbers that fit that view, and sortable
 headers. Clicking a company opens its filings, holding changes and
 company-specific uncertainty. One caveat line sits under the title; the rest

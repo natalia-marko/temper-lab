@@ -37,6 +37,7 @@
 .own-table .own-why { min-width: 180px; max-width: 280px; color: #3d5346; font-size: 12px; }
 .own-table .empty button { margin-left: 6px; padding: 3px 8px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; font-size: 12px; cursor: pointer; }
 .chip.caution { background: #fbf5e6; color: #806023; }
+.own-table .empty .own-quiet { margin: 8px 0 0; color: #526e5b; }
 .ownership-more { margin: 18px 22px 0; padding: 10px 15px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; cursor: pointer; }
 .ownership-method { margin: 20px 22px 0; color: #607564; font-size: 12px; border-top: 1px solid #e2e8de; padding-top: 16px; }
 .ownership-method summary, .ownership-footnotes summary { cursor: pointer; line-height: 1.6; }

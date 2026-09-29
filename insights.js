@@ -15,7 +15,7 @@ const PAGE_CAVEATS = [/open-market versus private/i, /historical coverage/i];
 const PAGE_SIZE = 50;
 const DEFAULT_FILTERS = { query: "", view: "buying", list: "all" };
 const DEFAULT_SORT = { key: "filed", dir: "desc" };
-const insightsState = { data: null, filters: { ...DEFAULT_FILTERS }, sort: null, limit: PAGE_SIZE };
+const insightsState = { data: null, universe: null, filters: { ...DEFAULT_FILTERS }, sort: null, limit: PAGE_SIZE };
 
 function money(value, precise = false) {
   if (!Number.isFinite(value)) return "Unknown";
@@ -124,6 +124,13 @@ function safeSecUrl(value) {
 
 // Each view shows only the columns and top numbers that describe it.
 const VIEWS = {
+  all: {
+    label: "All activity", title: "Every company with a reported insider purchase or sale", side: null,
+    match: () => true,
+    filed: c => c.latest_public_at,
+    columns: ["company", "bought", "sold", "filed", "tags"],
+    stats: rows => [["Companies", rows.length], ["With insider buying", rows.filter(c => c.purchase_rows > 0).length], ["With insider selling", rows.filter(c => c.sale_rows > 0).length]],
+  },
   buying: {
     label: "Buying", title: "Companies where insiders reported buying shares", side: "purchase",
     match: c => c.purchase_rows > 0,
@@ -158,13 +165,6 @@ const VIEWS = {
     filed: c => latest(heldForReview(c).map(e => e.public_at)),
     columns: ["company", "reviewRows", "reviewWhy", "filed", "tags"],
     stats: rows => [["Companies", rows.length], ["Transactions to check", sum(rows, c => c.review_rows)], ["Filings to check", sum(rows, c => new Set(heldForReview(c).map(e => e.accession)).size)]],
-  },
-  all: {
-    label: "All activity", title: "Every company with a reported insider purchase or sale", side: null,
-    match: () => true,
-    filed: c => c.latest_public_at,
-    columns: ["company", "bought", "sold", "filed", "tags"],
-    stats: rows => [["Companies", rows.length], ["With insider buying", rows.filter(c => c.purchase_rows > 0).length], ["With insider selling", rows.filter(c => c.sale_rows > 0).length]],
   },
 };
 
@@ -227,17 +227,35 @@ const COLUMNS = {
   tags: { label: "Tags", cell: tagsCell },
 };
 
+function searchText(filters) {
+  return String(filters.query || "").trim().toLowerCase();
+}
+function matchesSearch(query, texts) {
+  const words = texts.join(" ").toLowerCase().split(/[^a-z0-9]+/);
+  return !query || query.split(/\s+/).every(part => words.some(word => word.startsWith(part)));
+}
 function filteredCompanies(companies, filters) {
   const view = VIEWS[filters.view] || VIEWS.buying;
-  const query = String(filters.query || "").trim().toLowerCase();
+  const query = searchText(filters);
   return companies.filter(company => {
     if (!view.match(company)) return false;
     if (filters.list === "outside" && company.screens.length) return false;
     if (filters.list && filters.list !== "all" && filters.list !== "outside" && !company.screens.includes(filters.list)) return false;
-    const words = [company.symbol, company.name, ...company.evidence.flatMap(e => e.owners.map(o => o.name || ""))]
-      .join(" ").toLowerCase().split(/[^a-z0-9]+/);
-    return !query || query.split(/\s+/).every(part => words.some(word => word.startsWith(part)));
+    return matchesSearch(query, [company.symbol, company.name, ...company.evidence.flatMap(e => e.owners.map(o => o.name || ""))]);
   });
+}
+// Every eligible stock was checked, but only those with a reported buy or sell are listed.
+// Claim "checked" only when the published universe is the one the research covered.
+function checkedUniverse(desk, data) {
+  const companies = Object.entries(desk.companies || {});
+  return companies.length === data.universe_n ? companies.map(([symbol, company]) => ({ symbol, name: company.name || symbol })) : null;
+}
+function quietMatches(filters) {
+  const query = searchText(filters);
+  const { data, universe } = insightsState;
+  if (!query || !universe) return [];
+  const active = new Set(data.companies.map(company => company.symbol));
+  return universe.filter(company => !active.has(company.symbol) && matchesSearch(query, [company.symbol, company.name]));
 }
 function currentSort(viewKey, sort) {
   return sort && VIEWS[viewKey].columns.includes(sort.key) ? sort : DEFAULT_SORT;
@@ -386,6 +404,12 @@ function emptyRow(viewKey) {
       td.append(button);
     });
   }
+  const quiet = quietMatches(filters);
+  if (quiet.length) {
+    const names = quiet.length === 1 ? `${quiet[0].symbol} (${quiet[0].name})`
+      : `${quiet.slice(0, 5).map(company => company.symbol).join(", ")}${quiet.length > 5 ? ` and ${quiet.length - 5} more` : ""}`;
+    td.append(el("p", `${names}: checked, no insider buys or sells ${dayRange(data.trade_window.since, data.trade_window.until)}.`, "own-quiet"));
+  }
   const row = el("tr"); row.append(td); return row;
 }
 function renderInsights() {
@@ -433,7 +457,7 @@ async function startInsights() {
   try {
     const read = async path => { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error("Ownership research could not be loaded. Try again later."); return response.json(); };
     const [data, desk] = await Promise.all([read("./insights-research.json"), read("./desk.json")]);
-    validateSnapshot(data, desk); insightsState.data = data; renderInsights(); status.hidden = true;
+    validateSnapshot(data, desk); insightsState.data = data; insightsState.universe = checkedUniverse(desk, data); renderInsights(); status.hidden = true;
   } catch (error) { status.textContent = error.message || "Ownership research is unavailable."; }
 }
 startInsights();
