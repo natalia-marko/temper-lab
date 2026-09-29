@@ -7,7 +7,7 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./insights.css?v=8ce5e42b0078" />
+    <link rel="stylesheet" href="./insights.css?v=e7d2886a6000" />
   </head>
   <body>
     <div class="desk">
@@ -29,7 +29,7 @@
           <div>
             <div class="eyebrow">OWNERSHIP INSIGHTS</div>
             <h1 id="insights-title">Ownership worth a closer look</h1>
-            <p>Who bought, how their disclosed holdings changed, and whether other buyers joined. All eligible stocks; 21 trading days.</p>
+            <p>What insiders reported buying and selling on SEC Form 4 — a starting point for research, not a forecast.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status">Loading…</span>
@@ -38,48 +38,49 @@
         </section>
         <p id="insights-status" class="mood-status" role="status">Loading ownership research…</p>
         <section class="surface insights-surface" aria-label="Company ownership research">
-          <div id="insights-stats" class="ownership-stats" aria-label="Research coverage"></div>
-          <p class="insights-explanation">A research queue, not a return forecast. Purchases include small transactions. <strong>Code P can mean an open-market or private purchase.</strong> Buyer groups may be related; a plan flag alone does not establish motivation.</p>
+          <div id="insights-views" class="tabs" role="group" aria-label="What to show"></div>
+          <div id="insights-stats" class="ownership-stats" aria-label="Numbers for this view"></div>
           <div class="insights-controls">
-            <label>Find a company or filer<input id="insights-query" type="search" placeholder="Ticker, company, or name" autocomplete="off" /></label>
-            <label>Activity<select id="insights-kind">
-              <option value="purchases">Companies with purchases</option>
-              <option value="clusters">Multiple buyers / 10 sessions</option>
-              <option value="officers">Officer purchases</option>
-              <option value="sales">Companies with sales</option>
-              <option value="review">Needs source review</option>
-              <option value="all">All reported activity</option>
-            </select></label>
-            <label>Screen context<select id="insights-context">
-              <option value="all">All eligible stocks</option>
-              <option value="outside">Outside the three lists</option>
+            <label>Find a company or insider<input id="insights-query" type="search" placeholder="Ticker, company or name" autocomplete="off" /></label>
+            <label>List<select id="insights-lists">
+              <option value="all">All companies</option>
+              <option value="outside">Not on any list</option>
               <option value="strength">Strength</option>
               <option value="growth">Growth</option>
               <option value="undervalued">Cheap</option>
             </select></label>
-            <label>Sort by<select id="insights-sort">
-              <option value="recent">Latest public filing</option>
-              <option value="buyers">Buyer groups / 10 sessions</option>
-              <option value="company">Ticker A–Z</option>
-            </select></label>
             <button type="button" id="insights-reset">Reset</button>
           </div>
           <p id="insights-count" class="insights-count" role="status"></p>
-          <div id="insights-list" class="insights-list"></div>
-          <button type="button" id="insights-more" class="ownership-more" hidden>Show 30 more companies</button>
+          <div class="table-wrap">
+            <table class="own-table">
+              <thead id="insights-head"></thead>
+              <tbody id="insights-body"></tbody>
+            </table>
+          </div>
+          <button type="button" id="insights-more" class="ownership-more" hidden>Show 50 more companies</button>
           <noscript><p class="empty">Enable JavaScript to load ownership research.</p></noscript>
           <details class="ownership-method">
-            <summary>How to read this research</summary>
-            <p>Purchases and sales are separate totals of included Form 4 common or ordinary share transactions. Grants, exercises and tax withholding are excluded. Ambiguous amendments, ownership overlaps and security classes stay out of totals and appear for review. Partial totals are labelled.</p>
-            <p>Holdings percentages describe one disclosed account within one filing. Multiple lots are reconciled before calculating a percentage. An account starting from zero is shown separately; this is not a measure of personal wealth. A blank or unchecked plan box does not prove discretion.</p>
-            <p>The cluster view requires at least two reporting-owner groups within ten exchange sessions. Joint filers count once. This threshold is a descriptive filter, not a tested investment rule. Historical routine-versus-unusual behavior is not yet established.</p>
-            <p>Coverage is the current frozen eligible US stock universe and Form 4/4-A filings listed in its SEC issuer submissions. This is not all US securities or a historical backtest. Schedule 13D/13G catalysts and Form 144 intent are not included in these purchase/sale totals.</p>
-            <p><a href="https://www.sec.gov/edgar/searchedgar/ownershipformcodes.html">SEC transaction definitions</a> · <a href="https://www.sec.gov/files/form4.pdf">Form 4 instructions</a></p>
+            <summary>How to read this</summary>
+            <p><strong>What counts.</strong> Purchases and sales of common or ordinary shares reported on Form 4 or 4/A (SEC codes P and S), including small ones. Code P can mean an open-market or private purchase. Grants, option exercises and tax withholding are left out. Purchases and sales are totalled separately; there is no net score.</p>
+            <p><strong>Insiders.</strong> Officers, directors and 10% owners who file Form 4. Joint filers count once. Related insiders, such as a fund and its partners, may still count separately.</p>
+            <p><strong>Biggest holding change.</strong> The largest change in one disclosed holding account within one filing, not the person's total holdings or wealth. "New holding" means that account started from zero. It stays unknown when the reported balances do not add up.</p>
+            <p><strong>Several insiders.</strong> At least two insiders bought within 10 trading days. This describes activity; it is not a tested investment rule.</p>
+            <p><strong>Trading plan.</strong> Whether the filing's Rule 10b5-1 plan box was checked. It applies to the whole filing, not each trade, and an unchecked box does not prove a trade was discretionary.</p>
+            <p><strong>Needs review.</strong> Amended filings, possible double reports and unclear share classes stay out of totals until checked. Totals for those companies are tagged Partial.</p>
+            <p><strong>Not yet known.</strong> Whether an insider's activity is unusual for them is not yet established; that needs a longer filing history.</p>
+            <p><strong>Coverage.</strong> This week's frozen eligible US stock universe and the Form 4/4-A filings in each company's SEC submissions, over the last 21 trading days. It is not all US securities and not a backtest. Schedule 13D/13G and Form 144 are not included.</p>
+            <p><a href="https://www.sec.gov/edgar/searchedgar/ownershipformcodes.html">SEC transaction codes</a> · <a href="https://www.sec.gov/files/form4.pdf">Form 4 instructions</a></p>
             <p id="insights-build"></p>
           </details>
         </section>
       </main>
     </div>
-    <script src="./insights.js?v=a3784b43e5da"></script>
+    <dialog id="insights-evidence" aria-labelledby="insights-evidence-title">
+      <form method="dialog"><button class="close-evidence" aria-label="Close company filings">Close</button></form>
+      <h2 id="insights-evidence-title"></h2>
+      <div id="insights-evidence-body"></div>
+    </dialog>
+    <script src="./insights.js?v=3d8392b23cd3"></script>
   </body>
 </html>

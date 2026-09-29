@@ -46,12 +46,16 @@ the snapshot; unavailable closes display n/a and sort last in either direction.
 
 Insights is a fourth page, `insights.html`, showing a company research queue
 across the full frozen eligible universe. It reads `insights-research.json`.
-Company cards show purchases and sales separately, reporting-owner groups,
-supported changes in disclosed holding accounts, and SEC source evidence.
-Small purchases are retained; no $50,000 minimum applies to this page.
-Code P/S does not establish open-market execution. Historical unusualness is
-unknown in v1; no return score or probability is implied. Ambiguous amendments
-and overlapping ownership reports remain visible for review, outside totals.
+It is one compact table per view — Buying (default), Several insiders,
+Officers buying, Selling, Needs review and All activity — with one row per
+company, only the columns and top numbers that fit that view, and sortable
+headers. Clicking a company opens its filings, holding changes and
+company-specific uncertainty. One caveat line sits under the title; the rest
+is in the "How to read this" footer. Small purchases are retained; no $50,000
+minimum applies. Code P/S does not establish open-market execution. Whether
+activity is unusual for an insider is not computed in v1; no return score or
+probability is implied. Ambiguous amendments and overlapping ownership reports
+stay visible under Needs review, outside totals, and tag affected totals Partial.
 
 The page covers 21 exchange sessions through the completed UTC filing cutoff.
 Trade dates, public acceptance times and research build time remain separate.
