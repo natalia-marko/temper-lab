@@ -7,7 +7,7 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./insights.css?v=0c11375a052a" />
+    <link rel="stylesheet" href="./insights.css?v=f8e3c5fa70e6" />
   </head>
   <body>
     <div class="desk">
@@ -28,8 +28,8 @@
         <section class="heading">
           <div>
             <div class="eyebrow">OWNERSHIP INSIGHTS</div>
-            <h1>Reported buys</h1>
-            <p>Parsed buys over 21 trading days on this week’s Strength, Growth, and Cheap names. Not a rank, and not Conviction.</p>
+            <h1 id="insights-title">Reported buys</h1>
+            <p>Parsed Form 4 trades over 21 trading days on this week’s Strength, Growth, and Cheap names. Not a rank, and not Conviction.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status">Loading…</span>
@@ -38,7 +38,7 @@
         </section>
         <p id="insights-status" class="mood-status" role="status">Loading reported trades…</p>
         <section class="surface insights-surface" aria-label="Reported ownership trades">
-          <p class="insights-explanation"><strong>Buy</strong> means Form 4 code P of at least $50,000, or a 13D that states an open-market cash purchase near Friday’s close. Warrant conversions and 13G stakes are not buys. <strong>Amount</strong> is dollars. <strong>Who</strong> is institution, private investor, or person, then every office and relationship the filing marks. <strong>% cap</strong> uses Friday’s market cap; sells are negative. <strong>Past month</strong> is the 21 trading days ending on that row’s trade date, so each trade carries its own price context.</p>
+          <p class="insights-explanation"><strong>Buy</strong> means Form 4 code P of at least $50,000, or a 13D that states an open-market cash purchase near Friday’s close. Warrant conversions and 13G stakes are not buys. <strong>Amount</strong> is dollars. <strong>Who</strong> is institution, private investor, or person, then every office and relationship the filing marks. <strong>% cap</strong> uses Friday’s market cap; sells are negative. <strong>Past month</strong> is the 21 trading days ending on that row’s trade date, so each trade carries its own price context. <strong>10b5-1 plan filing</strong> means the Form 4 cover box marks a pre-arranged trading plan; routine, low-signal. The flag is per filing, not per lot.</p>
           <div class="insights-controls">
             <label>Find a company<input id="insights-query" type="search" placeholder="Ticker, filer, or company" autocomplete="off" /></label>
             <label>Show<select id="insights-kind">
@@ -52,10 +52,10 @@
           <p id="insights-count" class="insights-count" role="status"></p>
           <div id="insights-list" class="insights-list"></div>
           <noscript><p class="empty">Enable JavaScript to load reported trades.</p></noscript>
-          <p class="insights-note">Date is the trade day. The list is filings accepted over 21 trading days through yesterday. Empty means no qualifying trade in that window. The filing is the source.</p>
+          <p class="insights-note">Date is the trade day. Rows are trades dated inside the 21-trading-day window shown above, from filings accepted by the run’s cutoff; “latest filing accepted” is the newest one actually received. Amendments and the originals they touch are held back until reviewed; an identical repeat filing is shown once. Empty means no qualifying trade in that window. The filing is the source.</p>
         </section>
       </main>
     </div>
-    <script src="./insights.js?v=dca9924723f9"></script>
+    <script src="./insights.js?v=2af46af89945"></script>
   </body>
 </html>

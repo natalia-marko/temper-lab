@@ -19,6 +19,7 @@
 .insights-table .tape.up { color: #1e6547; }
 .insights-table .tape.down { color: #8a4b3a; }
 .insights-table .meta { display: block; margin-top: 4px; color: #7d8d80; font-size: 11px; font-weight: 400; }
+.insights-table .meta.plan { color: #8a6d3a; }
 .insights-table a { display: inline-block; margin-top: 4px; color: #7d8d80; font-size: 11px; }
 .insights-note { margin: 15px 22px 0; color: #708275; font-size: 11px; line-height: 1.7; }
 @media (max-width: 620px) { .insights-explanation { margin: 14px 14px 12px; }.insights-controls { padding: 0 14px 14px; }.insights-count { padding: 10px 14px; }.insights-list { padding: 12px 14px 0; }.insights-note { margin: 12px 14px 0; } }

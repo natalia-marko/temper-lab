@@ -12,6 +12,12 @@ const SIDE_LABEL = {
   exercise_or_convert: "exercise",
   ownership_disclosure: "filed",
 };
+const VIEW_TITLE = {
+  open_market_buy: "Reported buys",
+  open_market_sell: "Reported sells",
+  other: "Other filings",
+  all: "All parsed trades",
+};
 
 const insightsState = {
   digest: null,
@@ -182,6 +188,25 @@ function pageEvents(digest) {
   });
 }
 
+function latestAcceptance(events) {
+  let latest = "";
+  for (const event of events) {
+    const day = String(event.accepted_at || "").slice(0, 10);
+    if (day.length === 10 && day > latest) latest = day;
+  }
+  return latest;
+}
+
+function excludedSummary(digest) {
+  const excluded = (digest && digest.excluded) || {};
+  const held = (excluded.held_for_review || []).length;
+  const repeats = (excluded.duplicate_report || []).length;
+  const bits = [];
+  if (held) bits.push(`${held} filing${held === 1 ? "" : "s"} held for review`);
+  if (repeats) bits.push(`${repeats} repeat filing${repeats === 1 ? "" : "s"} shown once`);
+  return bits.join(", ");
+}
+
 function renderInsights() {
   const digest = insightsState.digest;
   const root = document.getElementById("insights-list");
@@ -189,18 +214,29 @@ function renderInsights() {
   const chip = document.getElementById("week-chip");
   const coverage = document.getElementById("insights-coverage");
   const aside = document.getElementById("aside-week");
+  const title = document.getElementById("insights-title");
   if (!digest) return;
   const asOf = digest.freeze_as_of;
-  if (chip) chip.textContent = `Data as of ${asOf}`;
-  if (aside) aside.textContent = asOf;
-  if (coverage) {
-    coverage.textContent = `${digest.universe_n} published Strength / Growth / Cheap names · filings ${digest.since} to ${digest.until}`;
+  if (chip) {
+    chip.textContent = `Lists as of ${asOf}`;
+    chip.title = "Which Strength / Growth / Cheap names are checked. Trades and filings below are newer than this date.";
   }
+  if (aside) aside.textContent = asOf;
   const events = pageEvents(digest);
+  if (coverage) {
+    const window = digest.trade_window || { since: digest.since, until: digest.until };
+    const accepted = latestAcceptance(events) || digest.until;
+    coverage.textContent = `${digest.universe_n} names · trades ${window.since} to ${window.until} · latest filing accepted ${accepted}`;
+  }
+  if (title) title.textContent = VIEW_TITLE[insightsState.filters.kind] || VIEW_TITLE.all;
   const rows = filteredInsights(events, insightsState.filters);
   const buys = events.filter((event) => event.event_type === "open_market_buy").length;
+  const sells = events.filter((event) => event.event_type === "open_market_sell").length;
   if (count) {
-    count.textContent = `${rows.length} shown · ${buys} open-market buys in this window. This is not a rank.`;
+    const bits = [`${rows.length} shown`, `${buys} open-market buy${buys === 1 ? "" : "s"}`, `${sells} open-market sell${sells === 1 ? "" : "s"} in this window`];
+    const hidden = excludedSummary(digest);
+    if (hidden) bits.push(hidden);
+    count.textContent = `${bits.join(" · ")}. This is not a rank.`;
   }
   if (!root) return;
   root.replaceChildren();
@@ -240,6 +276,13 @@ function renderInsights() {
     filer.className = "meta";
     filer.textContent = event.filer || "";
     who.appendChild(filer);
+    if (event.trading_plan === true) {
+      const plan = document.createElement("span");
+      plan.className = "meta plan";
+      plan.textContent = "10b5-1 plan filing";
+      plan.title = "The Form 4 cover box says this filing reports trades under a Rule 10b5-1 plan. The flag is per filing, not per lot.";
+      who.appendChild(plan);
+    }
     appendText(tr, "td", compactUsd(ctx.usd), "amount");
     appendText(tr, "td", formatFracCap(ctx.frac), "frac");
     const tape = monthTape(ctx.return21) || "n/a";
