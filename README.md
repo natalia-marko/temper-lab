@@ -46,16 +46,19 @@ the snapshot; unavailable closes display n/a and sort last in either direction.
 
 Insights is a fourth page, `insights.html`, showing a company research queue
 across the full frozen eligible universe. It reads `insights-research.json`.
-It is one compact table per view — All activity, Buying (default), Several
-insiders, Officers buying, Selling and Needs review — with one row per
-company, only the columns and top numbers that fit that view, and sortable
-headers. Clicking a company opens its filings, holding changes and
-company-specific uncertainty. One caveat line sits under the title; the rest
-is in the "How to read this" footer. Small purchases are retained; no $50,000
-minimum applies. Code P/S does not establish open-market execution. Whether
-activity is unusual for an insider is not computed in v1; no return score or
-probability is implied. Ambiguous amendments and overlapping ownership reports
-stay visible under Needs review, outside totals, and tag affected totals Partial.
+It has three tabs — All activity, Buying (default) and Selling — each one
+compact table with one row per company and only the columns that fit it,
+including Who: each insider's highest role (CEO or CFO, other officer, 10%
+owner, director), with joint filers counted once. A row of filter chips with
+counts (who traded, several insiders within 10 trading days, list membership)
+replaces the old stat tiles and sub-tabs. Clicking a company opens its filings
+grouped by insider. Filing dates are New York time. One caveat line sits under
+the title; the rest is in the "How to read this" footer. Small purchases are
+retained; no $50,000 minimum applies. Code P/S does not establish open-market
+execution. Whether activity is unusual for an insider is not computed in v1; no
+return score or probability is implied. Ambiguous amendments and overlapping
+ownership reports stay out of totals, tagged Partial; a link beside the company
+count opens the Needs review list.
 
 The page covers 21 exchange sessions through the completed UTC filing cutoff.
 Trade dates, public acceptance times and research build time remain separate.

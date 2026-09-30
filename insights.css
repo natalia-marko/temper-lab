@@ -23,30 +23,60 @@
 
 
 /* Ownership table: the master table's look from desk.css, plus a few numeric details. */
-.insights-surface .tabs { margin-bottom: 4px; }
+.own-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; padding-right: 22px; border-bottom: 1px solid #dce3d3; }
+.own-bar .tabs { flex: 1 1 auto; border-bottom: 0; }
 .insights-surface .tabs button { white-space: nowrap; }
+.own-search { margin-left: auto; }
+.own-search input { width: 250px; min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
+.own-facets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 22px; }
+.own-facet-label { margin: 0 2px 0 10px; color: #718075; font-size: 11px; }
+.own-facet-label:first-child { margin-left: 0; }
+.own-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid #d4e0d2; border-radius: 999px; background: #fff; color: #31553c; font-size: 12px; cursor: pointer; }
+.own-chip b { color: #214d36; font-weight: 650; font-variant-numeric: tabular-nums; }
+.own-chip.on { border-color: #214d36; background: #214d36; color: #fff; }
+.own-chip.on b { color: #fff; }
+.own-chip:disabled { opacity: .45; cursor: default; }
+.own-clear, .own-review-link { padding: 0; border: 0; background: none; font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.own-clear { margin-left: 8px; color: #315f46; font-size: 12px; }
+.own-review-link { color: #806023; }
 .own-table td { padding-top: 8px; padding-bottom: 8px; }
-.ownership-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px 22px 14px; }
-.ownership-metric { min-width: 0; display: grid; gap: 4px; }
-.ownership-metric span { color: #657568; font-size: 11px; }
-.ownership-metric strong { color: #264633; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.insights-controls input { width: 195px; }
+.own-table th.num, .own-table td.num { text-align: right; }
+.own-table th.num { white-space: normal; }
+.own-table .name { max-width: 190px; }
 .own-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .own-table td.lead { color: #215637; font-weight: 650; }
 .own-table .own-sub { display: block; margin-top: 2px; color: #7d8d80; font-size: 11px; font-weight: 400; }
-.own-table .own-why { min-width: 180px; max-width: 280px; color: #3d5346; font-size: 12px; }
+.own-table td.own-who { min-width: 140px; max-width: 190px; color: #304b3b; font-size: 12px; }
+.own-table td.own-who .own-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.own-table td.own-why { min-width: 180px; max-width: 280px; color: #3d5346; font-size: 12px; }
+/* The company stays in view while the other columns scroll sideways on a narrow screen. */
+.own-table th.own-company, .own-table td.own-company { position: sticky; left: 0; z-index: 1; background: #fff; }
 .own-table .empty button { margin-left: 6px; padding: 3px 8px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; font-size: 12px; cursor: pointer; }
-.chip.caution { background: #fbf5e6; color: #806023; }
 .own-table .empty .own-quiet { margin: 8px 0 0; color: #526e5b; }
+.chip.caution { background: #fbf5e6; color: #806023; }
 .ownership-more { margin: 18px 22px 0; padding: 10px 15px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; cursor: pointer; }
 .ownership-method { margin: 20px 22px 0; color: #607564; font-size: 12px; border-top: 1px solid #e2e8de; padding-top: 16px; }
 .ownership-method summary, .ownership-footnotes summary { cursor: pointer; line-height: 1.6; }
 .ownership-method p { line-height: 1.65; }
 .ownership-method strong { color: #3c5745; }
+@media (max-width: 620px) {
+  .own-bar { padding-right: 0; }
+  .own-search { width: 100%; padding: 8px 14px 10px; }
+  .own-search input { width: 100%; }
+  .own-facets { padding: 10px 14px; }
+  .own-table .name { max-width: 120px; }
+  .own-table th.own-company, .own-table td.own-company { box-shadow: 1px 0 0 #eef2ee; }
+  .ownership-method, .ownership-more { margin-left: 14px; margin-right: 14px; }
+}
 
-/* Filings pop-up. */
-#insights-evidence h3 { margin: 20px 0 4px; font-size: 14px; }
-.ownership-record { border-left: 2px solid #cad8c6; padding: 4px 0 8px 14px; margin-top: 14px; }
+/* Filings pop-up: one block per insider, their filings underneath. */
+#insights-evidence h3 { margin: 22px 0 6px; font-size: 14px; }
+.own-insider { border-top: 1px solid #e2e8de; padding: 8px 0; }
+.own-insider summary { color: var(--ink); font-weight: 400; line-height: 1.5; }
+.own-insider-name { color: #2d4937; font-weight: 600; }
+.own-insider-role { margin-left: 8px; color: #687a6c; font-size: 12px; }
+.own-insider-sum { display: block; margin: 2px 0 0 16px; color: #3c5745; font-size: 12px; }
+.ownership-record { border-left: 2px solid #cad8c6; padding: 4px 0 8px 14px; margin: 10px 0 0 4px; }
 .ownership-record h4 { margin: 0 0 6px; font-size: 13px; }
 .ownership-record p { margin: 3px 0; }
 dialog .ownership-owner { color: #2d4937; font-weight: 550; }
@@ -55,8 +85,3 @@ dialog .ownership-caution { color: #806023; }
 .ownership-meta { color: #687a6c; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .ownership-record a, .ownership-method a { color: #315f46; }
 .ownership-footnotes { margin-top: 8px; color: #718075; font-size: 11px; overflow-wrap: anywhere; }
-@media (max-width: 700px) {
-  .ownership-stats { gap: 10px; padding: 14px 14px 12px; }
-  .ownership-metric strong { font-size: 20px; }
-  .ownership-method, .ownership-more { margin-left: 14px; margin-right: 14px; }
-}

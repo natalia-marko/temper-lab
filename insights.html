@@ -7,7 +7,7 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./insights.css?v=e386533e8d33" />
+    <link rel="stylesheet" href="./insights.css?v=b93b2e6f5f9b" />
   </head>
   <body>
     <div class="desk">
@@ -38,19 +38,11 @@
         </section>
         <p id="insights-status" class="mood-status" role="status">Loading ownership research…</p>
         <section class="surface insights-surface" aria-label="Company ownership research">
-          <div id="insights-views" class="tabs" role="group" aria-label="What to show"></div>
-          <div id="insights-stats" class="ownership-stats" aria-label="Numbers for this view"></div>
-          <div class="insights-controls">
-            <label>Find a company or insider<input id="insights-query" type="search" placeholder="Ticker, company or name" autocomplete="off" /></label>
-            <label>List<select id="insights-lists">
-              <option value="all">All companies</option>
-              <option value="outside">Not on any list</option>
-              <option value="strength">Strength</option>
-              <option value="growth">Growth</option>
-              <option value="undervalued">Cheap</option>
-            </select></label>
-            <button type="button" id="insights-reset">Reset</button>
+          <div class="own-bar">
+            <div id="insights-views" class="tabs" role="group" aria-label="What to show"></div>
+            <label class="own-search"><input id="insights-query" type="search" placeholder="Find a ticker, company or insider" aria-label="Find a ticker, company or insider" autocomplete="off" /></label>
           </div>
+          <div id="insights-facets" class="own-facets" aria-label="Filters"></div>
           <p id="insights-count" class="insights-count" role="status"></p>
           <div class="table-wrap">
             <table class="own-table">
@@ -63,13 +55,13 @@
           <details class="ownership-method">
             <summary>How to read this</summary>
             <p><strong>What counts.</strong> Purchases and sales of common or ordinary shares reported on Form 4 or 4/A (SEC codes P and S), including small ones. Code P can mean an open-market or private purchase. Grants, option exercises and tax withholding are left out. Purchases and sales are totalled separately; there is no net score.</p>
-            <p><strong>Insiders.</strong> Officers, directors and 10% owners who file Form 4. Joint filers count once. Related insiders, such as a fund and its partners, may still count separately.</p>
+            <p><strong>Who.</strong> Officers, directors and 10% owners who file Form 4, each shown by their highest role: CEO or CFO, other officer, 10% owner, then director. Joint filers, such as a fund and its manager, count once. Related insiders who file separately may still count separately.</p>
             <p><strong>Biggest holding change.</strong> The largest change in one disclosed holding account within one filing, not the person's total holdings or wealth. "New holding" means that account started from zero. It stays unknown when the reported balances do not add up.</p>
             <p><strong>Several insiders.</strong> At least two insiders bought within 10 trading days. This describes activity; it is not a tested investment rule.</p>
             <p><strong>Trading plan.</strong> Whether the filing's Rule 10b5-1 plan box was checked. It applies to the whole filing, not each trade, and an unchecked box does not prove a trade was discretionary.</p>
-            <p><strong>Needs review.</strong> Amended filings, possible double reports and unclear share classes stay out of totals until checked. Totals for those companies are tagged Partial.</p>
+            <p><strong>Needs review.</strong> Amended filings, possible double reports and unclear share classes stay out of totals until checked. Totals for those companies are tagged Partial; the link beside the company count lists them.</p>
             <p><strong>Not yet known.</strong> Whether an insider's activity is unusual for them is not yet established; that needs a longer filing history.</p>
-            <p><strong>Coverage.</strong> This week's frozen eligible US stock universe and the Form 4/4-A filings in each company's SEC submissions, over the last 21 trading days. It is not all US securities and not a backtest. Schedule 13D/13G and Form 144 are not included.</p>
+            <p><strong>Coverage.</strong> This week's frozen eligible US stock universe and the Form 4/4-A filings in each company's SEC submissions, over the last 21 trading days. Filing dates and times are New York time, as on EDGAR. It is not all US securities and not a backtest. Schedule 13D/13G and Form 144 are not included.</p>
             <p><a href="https://www.sec.gov/edgar/searchedgar/ownershipformcodes.html">SEC transaction codes</a> · <a href="https://www.sec.gov/files/form4.pdf">Form 4 instructions</a></p>
             <p id="insights-build"></p>
           </details>
@@ -81,6 +73,6 @@
       <h2 id="insights-evidence-title"></h2>
       <div id="insights-evidence-body"></div>
     </dialog>
-    <script src="./insights.js?v=3736f119bff7"></script>
+    <script src="./insights.js?v=c900bc0c3a37"></script>
   </body>
 </html>
