@@ -4,7 +4,7 @@
 .insights-controls label { display: grid; gap: 5px; color: #718075; font-size: 10px; }
 .insights-controls input, .insights-controls select, .insights-controls button { min-height: 34px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
 .insights-controls input { width: 155px; }
-.insights-count { margin: 0; padding: 10px 22px; border-top: 1px solid var(--line); color: #526e5b; font-size: 11px; }
+.insights-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; margin: 0; padding: 10px 22px; border-top: 1px solid var(--line); color: #526e5b; font-size: 12px; line-height: 1.6; }
 .insights-table { width: 100%; border-collapse: collapse; }
 .insights-table th { text-align: left; color: #718075; font-size: 10px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; padding: 0 10px 8px; border-bottom: 1px solid var(--line); }
 .insights-table td { padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: #304b3b; font-size: 13px; }
@@ -23,34 +23,44 @@
 
 
 /* Ownership table: the master table's look from desk.css, plus a few numeric details. */
-.own-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; padding-right: 22px; border-bottom: 1px solid #dce3d3; }
+.own-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 22px 0 0; border-bottom: 1px solid #dce3d3; }
 .own-bar .tabs { flex: 1 1 auto; border-bottom: 0; }
 .insights-surface .tabs button { white-space: nowrap; }
-.own-search { margin-left: auto; }
-.own-search input { width: 250px; min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
-.own-facets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 22px; }
-.own-facet-label { margin: 0 2px 0 10px; color: #718075; font-size: 11px; }
-.own-facet-label:first-child { margin-left: 0; }
-.own-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid #d4e0d2; border-radius: 999px; background: #fff; color: #31553c; font-size: 12px; cursor: pointer; }
+.own-search { margin: 0 0 8px auto; }
+.own-search input { width: 280px; min-height: 38px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); font-size: 13px; }
+.own-facets { display: flex; flex-wrap: wrap; align-items: start; gap: 12px 24px; padding: 16px 22px; background: #fafbf7; }
+.own-facet-group { display: grid; gap: 6px; min-width: 0; }
+.own-facet-list { flex-basis: 100%; }
+.own-facet-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.own-facet-label { color: #425b49; font-size: 12px; font-weight: 600; }
+.own-chip { display: inline-flex; align-items: baseline; gap: 12px; min-height: 34px; padding: 6px 12px; border: 1px solid #d4e0d2; border-radius: 9px; background: #fff; color: #31553c; font-size: 12px; cursor: pointer; }
 .own-chip b { color: #214d36; font-weight: 650; font-variant-numeric: tabular-nums; }
 .own-chip.on { border-color: #214d36; background: #214d36; color: #fff; }
 .own-chip.on b { color: #fff; }
 .own-chip:disabled { opacity: .45; cursor: default; }
 .own-clear, .own-review-link { padding: 0; border: 0; background: none; font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
-.own-clear { margin-left: 8px; color: #315f46; font-size: 12px; }
+.own-clear { color: #315f46; font-size: 12px; }
 .own-review-link { color: #806023; }
-.own-table td { padding-top: 8px; padding-bottom: 8px; }
+.own-table th { padding-top: 12px; padding-bottom: 12px; background: #f5f7f0; color: #425b49; font-size: 12px; }
+.own-table td { height: 62px; padding-top: 12px; padding-bottom: 12px; }
+.own-table tbody tr:hover td, .own-table tbody tr:focus-within td { background: #f5f8f1; }
+.own-table .company-button { max-width: 100%; }
+.own-table .company-button .ticker { font-size: 16px; text-decoration: none; }
+.own-table .company-button:hover .ticker { text-decoration: underline; }
+.insights-surface button:focus-visible, .own-search input:focus-visible { outline: 2px solid #315f46; outline-offset: 3px; }
 .own-table th.num, .own-table td.num { text-align: right; }
 .own-table th.num { white-space: normal; }
-.own-table .name { max-width: 190px; }
+.own-table .name { max-width: 190px; margin-top: 3px; font-size: 12px; }
 .own-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.own-table td.lead { color: #215637; font-weight: 650; }
+.own-table td.lead { color: #215637; font-size: 15px; font-weight: 650; }
 .own-table .own-sub { display: block; margin-top: 2px; color: #7d8d80; font-size: 11px; font-weight: 400; }
 .own-table td.own-who { min-width: 140px; max-width: 190px; color: #304b3b; font-size: 12px; }
 .own-table td.own-who .own-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .own-table td.own-why { min-width: 180px; max-width: 280px; color: #3d5346; font-size: 12px; }
 /* The company stays in view while the other columns scroll sideways on a narrow screen. */
 .own-table th.own-company, .own-table td.own-company { position: sticky; left: 0; z-index: 1; background: #fff; }
+.own-table th.own-company { background: #f5f7f0; }
+.own-table tbody tr:hover td.own-company, .own-table tbody tr:focus-within td.own-company { background: #f5f8f1; }
 .own-table .empty button { margin-left: 6px; padding: 3px 8px; border: 1px solid #cbd8c7; border-radius: 6px; background: #f4f7f0; color: #31553c; font-size: 12px; cursor: pointer; }
 .own-table .empty .own-quiet { margin: 8px 0 0; color: #526e5b; }
 .chip.caution { background: #fbf5e6; color: #806023; }
@@ -61,9 +71,12 @@
 .ownership-method strong { color: #3c5745; }
 @media (max-width: 620px) {
   .own-bar { padding-right: 0; }
-  .own-search { width: 100%; padding: 8px 14px 10px; }
+  .own-bar .tabs { min-width: 0; padding-right: 14px; padding-left: 14px; }
+  .own-search { width: 100%; margin-bottom: 0; padding: 0 14px 12px; }
   .own-search input { width: 100%; }
-  .own-facets { padding: 10px 14px; }
+  .own-facets { padding: 12px 14px; }
+  .own-chip { min-height: 40px; }
+  .own-clear, .own-review-link { min-height: 32px; text-align: left; }
   .own-table .name { max-width: 120px; }
   .own-table th.own-company, .own-table td.own-company { box-shadow: 1px 0 0 #eef2ee; }
   .ownership-method, .ownership-more { margin-left: 14px; margin-right: 14px; }

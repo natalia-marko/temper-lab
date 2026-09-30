@@ -481,14 +481,18 @@ function renderFacets(viewKey) {
   const view = VIEWS[viewKey];
   const root = document.getElementById("insights-facets"); root.replaceChildren();
   const groups = {
-    role: [view.side === "purchase" ? "Who bought" : view.side === "sale" ? "Who sold" : "Who traded",
+    role: ["Role",
       Object.entries(ROLE_FILTERS).map(([value, [label]]) => [value, label, null])],
-    several: [null, [[true, "Several insiders", "At least two insiders bought within 10 trading days"]]],
-    list: ["List", Object.entries(LIST_FILTERS).map(([value, label]) => [value, label, null])],
+    several: ["Participation", [[true, "Several insiders", "At least two insiders bought within 10 trading days"]]],
+    list: ["On screener", Object.entries(LIST_FILTERS).map(([value, label]) => [value, label, null])],
   };
   for (const key of view.facets) {
     const [label, options] = groups[key];
-    if (label) root.append(el("span", label, "own-facet-label"));
+    const group = el("div", null, `own-facet-group own-facet-${key}`);
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", label);
+    group.append(el("span", label, "own-facet-label"));
+    const choices = el("div", null, "own-facet-choices");
     for (const [value, text, title] of options) {
       const on = filters[key] === value;
       const count = filteredCompanies(data.companies, { ...filters, [key]: value }).length;
@@ -498,8 +502,10 @@ function renderFacets(viewKey) {
       if (title) chip.title = title;
       chip.disabled = !on && count === 0;
       chip.addEventListener("click", () => setFilter(key, on ? DEFAULT_FILTERS[key] : value));
-      root.append(chip);
+      choices.append(chip);
     }
+    group.append(choices);
+    root.append(group);
   }
   if (filters.query || view.facets.some(key => filters[key] !== DEFAULT_FILTERS[key])) {
     const clear = el("button", "Clear filters", "own-clear"); clear.type = "button";
@@ -571,7 +577,8 @@ function renderCount(viewKey, rows, visible) {
   count.replaceChildren(el("span", `${text} · ${sortDescription(viewKey, insightsState.sort)}`));
   const reviewCompanies = data.companies.filter(VIEWS.review.match).length;
   if (viewKey !== "review" && reviewCompanies) {
-    const link = el("button", `${plural(reviewCompanies, "company", "companies")} with transactions to check →`, "own-review-link"); link.type = "button";
+    const link = el("button", `${plural(reviewCompanies, "company", "companies")} ${reviewCompanies === 1 ? "needs" : "need"} data review →`, "own-review-link"); link.type = "button";
+    link.title = "Unresolved transactions excluded from totals";
     link.addEventListener("click", () => switchView("review"));
     count.append(el("span", " · "), link);
   }

@@ -50,7 +50,7 @@ It has three tabs — All activity, Buying (default) and Selling — each one
 compact table with one row per company and only the columns that fit it,
 including Who: each insider's highest role (CEO or CFO, other officer, 10%
 owner, director), with joint filers counted once. A row of filter chips with
-counts (who traded, several insiders within 10 trading days, list membership)
+counts, grouped under Role, Participation, and On screener,
 replaces the old stat tiles and sub-tabs. Clicking a company opens its filings
 grouped by insider. Filing dates are New York time. One caveat line sits under
 the title; the rest is in the "How to read this" footer. Small purchases are
