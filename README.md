@@ -24,7 +24,7 @@ five quality-and-momentum candidates, model return ranges, conditional valuation
 scenarios and disclosed validation results. The model is not promoted to the
 selection rule and no win probability is claimed. `outlook.json` must identify
 the same run and snapshot hash as `desk.json` and `release.json`; mismatches
-hide the estimates. See `research_engine/docs/outlook-12m.md` in the factory
+hide the estimates. See `research_engine/docs/outlook-12m.md` in the product
 repository for methodology, limitations, dependencies and verification.
 
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
@@ -72,7 +72,7 @@ The page covers 21 exchange sessions through the completed UTC filing cutoff.
 Trade dates, public acceptance times and research build time remain separate.
 The browser and publishing gate reject incomplete or mismatched research data.
 The older `insights.json` remains the legacy email digest with its existing
-screen-list scope and minimum. See the factory's
+screen-list scope and minimum. See the product's
 `docs/design/ownership-insights-v1.md` for methodology and limits.
 
 Jev reads is the fifth page, `jev-reads.html`, last in the sidebar after Insights.
@@ -91,7 +91,7 @@ SPY versus QQQ. VIX is non-directional and does not rank individual stocks.
 the prior Friday, then Conviction’s first ten. That score is not a probability
 and does not enter the overlap. Growth and Cheap ranks stay on the Screener.
 
-This is a static snapshot of the research desk. It does not run the Python factory, download prices, or save ideas.
+This is a static snapshot of the research desk. It does not run the Python product, download prices, or save ideas.
 
 Industry has its own column beside Company in every screener view. Use the
 dropdown in its heading to filter, or choose All industries to reset it. Search
@@ -114,13 +114,13 @@ in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
 Ownership insights is a separate `com.temperlab.ownership` job, Tuesday and
 Friday at 08:00, refreshing the full-universe research queue and the legacy
 email digest against that freeze. SMTP for
-that mail lives in the factory file `config/digest.local.env`, not in `.zshrc`.
+that mail lives in the product file `config/digest.local.env`, not in `.zshrc`.
 After a current screener passes, the release writes `market-mood.json` for the
 same run. Cboe VIX history is fetched at export time; if it is unavailable, the
 page leaves the VIX reading blank. If the mood export itself fails, the page
 detects a stale run ID and waits for a matching refresh.
 It stages and publishes the current screener only after its own checks pass.
-Here, release promotion means writing the validated files to the factory's
+Here, release promotion means writing the validated files to the product's
 local `share/` folder. Updating this website still requires the separate
 `tools/publish_public_site.sh` upload; a successful local job is not a deployment.
 The weekly and release gates require QQQ, SPY, market features, growth rankings,
@@ -133,10 +133,9 @@ validation status in `release.json`.
 For this weekly screener, one successful refresh and publication each week is
 the intended routine; a midweek rebuild still uses the latest completed week.
 
-The separate `com.temperlab.refresh` job checks every 15 minutes for a due
-Tuesday–Saturday 06:30 Copenhagen refresh. That job covers the ten-stock trial,
-not this full-universe website. These are Mac jobs, so they need the logged-in
-machine and connectivity; GitHub Pages only serves the published snapshot.
+The old ten-stock SQLite refresh job has been retired. The full-universe
+Saturday job is the active data refresh; it needs the logged-in machine and
+connectivity, while GitHub Pages only serves the published snapshot.
 
 ## Address
 
@@ -145,12 +144,12 @@ https://temper-lab.com
 ## Hosting
 
 The public address is `https://temper-lab.com`, recorded in `CNAME`. GitHub
-Pages serves the separately published site. Keep this file when publishing;
-the local dashboard and temporary preview tunnels are separate from that host.
+Pages serves the separately published site. Keep this file when publishing.
+Preview these files locally with `./run_site_preview.sh` in the product repo.
 
 ## Update the snapshot
 
-From the Temper Lab factory, after a weekly freeze, use the staged release
+From the Temper Lab product, after a weekly freeze, use the staged release
 command so the prior public snapshot remains available if a current check
 fails:
 
@@ -159,7 +158,7 @@ python tools/release_weekly.py
 # then copy share/ into this repository and push with the public-site workflow
 ```
 
-After an interrupted weekly run, rerun `./run_weekly.sh` in the factory on the
+After an interrupted weekly run, rerun `./run_weekly.sh` in the product on the
 same day. Completed stock and SEC batches are reused. Benchmark `--resume`
 reuses an identical completed request and replaces the yearly benchmark files
 when a new week must be saved, including recovery from a partially saved run.
@@ -172,14 +171,14 @@ The Market mood page uses the same 12-character hashes for `desk.css`,
 `market-mood.css`, and `market-mood.js`; the Analyst ratings page does the same
 for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 
-Public-page logic and markup regression checks (from the factory repository):
+Public-page logic and markup regression checks (from the product repository):
 
 ```bash
-node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs
+node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs tools/tests/insights.test.cjs tools/tests/jev_reads.test.cjs
 ```
 
 These use Node's built-in test runner; no extra DOM package is needed. They
-do not replace browser layout testing. The factory's `short_commands.md`
+do not replace browser layout testing. The product's `short_commands.md`
 contains the complete release gate and publication commands.
 
 ## Potential research
