@@ -245,6 +245,113 @@ function el(tag, text, className) {
   if (className) node.className = className;
   return node;
 }
+
+// Use included company totals once, never the raw filings or review amounts.
+// The overview describes the whole window; table filters do not change its denominator.
+function activityOverview(companies) {
+  if (companies.some(c => [c.purchases_usd, c.sales_usd].some(value => !Number.isFinite(value) || value < 0))) {
+    throw new Error("Ownership dollar totals are incomplete. No overview is shown.");
+  }
+  const bought = sum(companies, c => c.purchases_usd);
+  const sold = sum(companies, c => c.sales_usd);
+  const total = bought + sold;
+  return {
+    bought, sold, buyPct: total > 0 ? bought / total * 100 : null,
+    sellPct: total > 0 ? sold / total * 100 : null,
+    clusters: filteredCompanies(companies, { ...DEFAULT_FILTERS, several: true }).length,
+    executives: filteredCompanies(companies, { ...DEFAULT_FILTERS, role: "ceo_cfo" }).length,
+    review: companies.filter(VIEWS.review.match).length,
+  };
+}
+function dollarShare(value) {
+  if (value === null) return "No activity";
+  if (value > 0 && value < 0.1) return "<0.1%";
+  if (value < 100 && value > 99.9) return ">99.9%";
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
+}
+function openOverviewFilter(filters) {
+  insightsState.filters = { ...DEFAULT_FILTERS, ...filters };
+  insightsState.sort = null; insightsState.limit = PAGE_SIZE;
+  document.getElementById("insights-query").value = "";
+  renderInsights();
+  const active = [...document.getElementById("insights-views").children].find(b => b.value === insightsState.filters.view);
+  active?.focus?.();
+}
+function renderOverview() {
+  const root = document.getElementById("insights-overview");
+  const data = insightsState.data;
+  const totals = activityOverview(data.companies);
+  const scope = el("p", `Entire eligible universe · ${dayRange(data.trade_window.since, data.trade_window.until)} · unchanged by table filters`, "own-overview-scope");
+  const grid = el("div", null, "own-overview-grid");
+  const flow = el("article", null, "own-metric own-flow");
+  flow.append(el("h2", "Buying vs selling"));
+  const amounts = el("p", null, "own-flow-amounts");
+  amounts.append(el("span", `${shortMoney(totals.bought) || money(totals.bought)} bought`, "own-buy-text"),
+    el("span", `${shortMoney(totals.sold) || money(totals.sold)} sold`, "own-sell-text"));
+  flow.append(amounts);
+  if (totals.buyPct !== null) {
+    const bar = el("div", null, "own-flow-bar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", `Share of reported dollars: ${dollarShare(totals.buyPct)} bought, ${dollarShare(totals.sellPct)} sold`);
+    for (const [side, pct] of [["buy", totals.buyPct], ["sell", totals.sellPct]]) {
+      const segment = el("span", null, `own-flow-${side}`);
+      segment.setAttribute("style", `width: ${pct}%;`);
+      bar.append(segment);
+    }
+    const labels = el("p", null, "own-flow-labels");
+    labels.append(el("span", `${dollarShare(totals.buyPct)} bought`, "own-buy-text"), el("span", `${dollarShare(totals.sellPct)} sold`, "own-sell-text"));
+    flow.append(bar, labels);
+  } else flow.append(el("p", "No included purchases or sales", "own-metric-note"));
+  flow.append(el("p", "Share of reported dollars", "own-metric-note"));
+  grid.append(flow);
+  for (const [label, count, note, action, filters] of [
+    ["Several insiders buying", totals.clusters, "2+ insiders within 10 trading days", "See companies →", { several: true }],
+    ["CEO / CFO buying", totals.executives, "Companies with a reported CEO or CFO purchase", "See companies →", { role: "ceo_cfo" }],
+    ["Data review", totals.review, "Unresolved transactions excluded from totals", "Review records →", { view: "review" }],
+  ]) {
+    const card = el("article", null, "own-metric");
+    card.append(el("h2", label), el("p", plural(count, "company", "companies"), "own-metric-value"), el("p", note, "own-metric-note"));
+    const button = el("button", action, "own-metric-action"); button.type = "button";
+    button.disabled = count === 0;
+    button.setAttribute("aria-label", `${action.replace(" →", "")}: ${label.toLowerCase()}`);
+    button.addEventListener("click", () => openOverviewFilter(filters));
+    card.append(button); grid.append(card);
+  }
+  const note = totals.review ? `Reported dollars only · ${plural(totals.review, "company", "companies")} with unresolved transactions; totals exclude those records.` : "Reported dollars only · no unresolved transactions in this window.";
+  root.replaceChildren(scope, grid, el("p", note, "own-overview-note"));
+  root.hidden = false;
+}
+function largestCompanies(rows, viewKey) {
+  if (viewKey !== "buying" && viewKey !== "selling") return [];
+  const key = viewKey === "buying" ? "bought" : "sold";
+  return sortCompanies(rows.filter(c => COLUMNS[key].sort(c) > 0), viewKey, { key, dir: "desc" }).slice(0, 3);
+}
+function renderHighlights(rows, viewKey) {
+  const root = document.getElementById("insights-highlights");
+  const companies = largestCompanies(rows, viewKey);
+  root.replaceChildren(); root.hidden = companies.length === 0;
+  if (!companies.length) return;
+  const buying = viewKey === "buying";
+  const title = el("h2", `Largest reported ${buying ? "purchases" : "sales"}`); title.id = "insights-highlights-title";
+  const heading = el("div", null, "own-highlights-heading");
+  heading.append(title, el("p", "Company totals · current filters · ordered by dollars"));
+  const grid = el("div", null, "own-highlight-grid");
+  for (const company of companies) {
+    const card = el("button", null, `own-highlight${buying ? "" : " own-highlight-sale"}`); card.type = "button";
+    card.setAttribute("aria-label", `Show ${company.symbol} ${buying ? "purchase" : "sale"} filings`);
+    const identity = el("span", null, "own-highlight-company");
+    identity.append(el("strong", company.symbol), el("span", company.name));
+    const amount = el("span", shortMoney(buying ? company.purchases_usd : company.sales_usd), "own-highlight-value");
+    amount.title = money(buying ? company.purchases_usd : company.sales_usd);
+    const groups = insiderGroups(company, VIEWS[viewKey].side);
+    const who = el("span", groups.length ? `${displayName(groups[0].lead.name)}${groups.length > 1 ? ` + ${plural(groups.length - 1, "other")}` : ""}` : "Insider not identified", "own-highlight-who");
+    const meta = el("span", `${whoLabel(groups) || "Role unknown"} · filed ${filedDay(VIEWS[viewKey].filed(company)) || "date unknown"}`, "own-highlight-meta");
+    card.append(identity, amount, who, meta, tagsCell(company, viewKey));
+    card.addEventListener("click", () => showFilings(company, viewKey));
+    grid.append(card);
+  }
+  root.append(heading, grid);
+}
 function moneyCell(value) {
   const text = shortMoney(value);
   if (!text) return null;
@@ -593,6 +700,7 @@ function renderInsights() {
   renderViews(); renderFacets(viewKey); renderHead(viewKey);
   const rows = sortCompanies(filteredCompanies(data.companies, insightsState.filters), viewKey, insightsState.sort);
   const visible = rows.slice(0, insightsState.limit);
+  renderHighlights(rows, viewKey);
   renderCount(viewKey, rows, visible);
   const body = document.getElementById("insights-body");
   body.replaceChildren(...(rows.length ? visible.map(company => companyRow(company, viewKey)) : [emptyRow(viewKey)]));
@@ -627,7 +735,7 @@ async function startInsights() {
   try {
     const read = async path => { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error("Ownership research could not be loaded. Try again later."); return response.json(); };
     const [data, desk] = await Promise.all([read("./insights-research.json"), read("./desk.json")]);
-    validateSnapshot(data, desk); insightsState.data = data; insightsState.universe = checkedUniverse(desk, data); renderInsights(); status.hidden = true;
+    validateSnapshot(data, desk); insightsState.data = data; insightsState.universe = checkedUniverse(desk, data); renderOverview(); renderInsights(); status.hidden = true;
   } catch (error) { status.textContent = error.message || "Ownership research is unavailable."; }
 }
 startInsights();

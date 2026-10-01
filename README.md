@@ -50,8 +50,16 @@ It has three tabs — All activity, Buying (default) and Selling — each one
 compact table with one row per company and only the columns that fit it,
 including Who: each insider's highest role (CEO or CFO, other officer, 10%
 owner, director), with joint filers counted once. A row of filter chips with
-counts, grouped under Role, Participation, and On screener,
-replaces the old stat tiles and sub-tabs. Clicking a company opens its filings
+counts is grouped under Role, Participation, and On screener.
+The overview shows buying versus selling as shares of included dollar totals
+across the whole eligible universe and trade window, independent of filters.
+Its other cards open companies with several insiders buying, CEO/CFO purchases,
+or unresolved records. Counts are companies, not filings. Unresolved amounts
+are excluded; zero total activity has no percentage. Buying and Selling also
+show up to three companies with the largest dollar totals in the current filters,
+each opening the underlying filings. These are descriptive totals, not signal
+rankings or claims of discretionary/open-market activity.
+Clicking a company opens its filings
 grouped by insider. Filing dates are New York time. One caveat line sits under
 the title; the rest is in the "How to read this" footer. Small purchases are
 retained; no $50,000 minimum applies. Code P/S does not establish open-market
