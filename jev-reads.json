@@ -1,8 +1,64 @@
 {
  "schema": "jev-reads-index-1",
- "generated_at": "2026-09-29T10:59:39+00:00",
- "latest": "2026-09-25",
+ "generated_at": "2026-10-05T17:15:28+00:00",
+ "latest": "2026-10-02",
  "weeks": [
+  {
+   "as_of": "2026-10-02",
+   "file": "jev-reads/2026-10-02.json",
+   "window": [
+    "2026-09-28",
+    "2026-10-02"
+   ],
+   "counts": {
+    "companies_checked": 4837,
+    "eightk_checked": 719,
+    "earnings_releases": 43,
+    "in_screener_universe": 21,
+    "smaller_companies_not_shown": 22,
+    "read_by_jev": 21,
+    "passed_floor": 18,
+    "short_list": 6
+   },
+   "short_list": [
+    {
+     "ticker": "ACN",
+     "company": "Accenture plc",
+     "tier": "A",
+     "position": 1
+    },
+    {
+     "ticker": "PRGS",
+     "company": "PROGRESS SOFTWARE CORP /MA",
+     "tier": "B",
+     "position": 2
+    },
+    {
+     "ticker": "CCL",
+     "company": "Carnival Corp Ltd.",
+     "tier": "B",
+     "position": 3
+    },
+    {
+     "ticker": "MU",
+     "company": "MICRON TECHNOLOGY INC",
+     "tier": "C",
+     "position": 4
+    },
+    {
+     "ticker": "JBL",
+     "company": "JABIL INC",
+     "tier": "C",
+     "position": 5
+    },
+    {
+     "ticker": "MGY",
+     "company": "Magnolia Oil & Gas Corp",
+     "tier": "C",
+     "position": 6
+    }
+   ]
+  },
   {
    "as_of": "2026-09-25",
    "file": "jev-reads/2026-09-25.json",
@@ -73,9 +129,76 @@
   }
  ],
  "late_reactions": {
-  "2026-09-25": {}
+  "2026-10-02": {
+   "0000320187-0000320187-26-000184": {
+    "excess_return_3d": -0.08408279059901724,
+    "window": [
+     "2026-10-01",
+     "2026-10-05"
+    ]
+   },
+   "0000831259-0000831259-26-000043": {
+    "excess_return_3d": 0.015978511263196715,
+    "window": [
+     "2026-10-01",
+     "2026-10-05"
+    ]
+   },
+   "0001318605-0001628280-26-064366": {
+    "excess_return_3d": 0.04469435497279961,
+    "window": [
+     "2026-10-01",
+     "2026-10-05"
+    ]
+   }
+  },
+  "2026-09-25": {
+   "0000909832-0000909832-26-000084": {
+    "excess_return_3d": 0.02300454813466901,
+    "window": [
+     "2026-09-24",
+     "2026-09-28"
+    ]
+   },
+   "0001362004-0001437749-26-031146": {
+    "excess_return_3d": -0.005260890543683505,
+    "window": [
+     "2026-09-24",
+     "2026-09-28"
+    ]
+   },
+   "0000108516-0001193125-26-402803": {
+    "excess_return_3d": -0.0025801681960512246,
+    "window": [
+     "2026-09-25",
+     "2026-09-29"
+    ]
+   }
+  }
  },
  "tracking": [
+  {
+   "week": "2026-10-02",
+   "group": "short list",
+   "releases": 6,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
+  {
+   "week": "2026-10-02",
+   "group": "other releases read",
+   "releases": 15,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
   {
    "week": "2026-09-25",
    "group": "short list",

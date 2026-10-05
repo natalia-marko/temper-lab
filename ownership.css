@@ -1,0 +1,52 @@
+.ownership-page h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; color: #244530; }
+.os-status { margin: 0 28px 12px; color: #607164; font-size: 13px; }
+.os-status.error { color: #984d35; }
+.os-surface { padding-bottom: 22px; }
+.os-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.os-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #3f5047; }
+.os-search { margin-left: auto; }
+.os-search input { width: 240px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; }
+.os-count, .os-excluded { margin: 10px 20px; color: #607164; font-size: 12px; }
+.os-head, .os-row { display: grid; grid-template-columns: 210px minmax(0, 1fr) 110px 76px 16px; column-gap: 18px; align-items: start; }
+.os-head { padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5d7263; }
+.os-row { width: 100%; padding: 14px 20px; border: 0; border-bottom: 1px solid #eef1ee; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.os-row:hover, .os-row:focus-visible { background: #f5f8f5; }
+.os-co { display: flex; flex-direction: column; min-width: 0; }
+.os-tk { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.os-tk strong { font-size: 16px; }
+.os-chip { max-width: 130px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 1px 7px; border-radius: 999px; background: #e8f0ea; color: #1e6547; font-size: 11px; font-weight: 600; }
+.os-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #5d7263; font-size: 12.5px; }
+.os-meta { color: #7b8c81; font-size: 12px; }
+.os-what { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.os-headline { font-size: 15px; font-weight: 600; line-height: 20px; }
+.os-detail-line { color: #4c5d53; font-size: 13px; line-height: 18px; }
+.os-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.os-tag { padding: 2px 8px; border-radius: 6px; background: #eef4f0; color: #1e6547; font-size: 11.5px; }
+.os-tag.warn { background: #fbf3e6; color: #8a5310; }
+.os-tag.muted { background: #f1f3f1; color: #5d7263; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.os-amount { font-size: 16px; font-weight: 600; }
+.os-filed { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; color: #5d7263; font-size: 13px; }
+.os-new { padding: 1px 6px; border-radius: 999px; background: #27332e; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+.os-chev { color: #93a89b; }
+.os-more { margin: 14px 20px 0; min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #1e6547; font-weight: 600; }
+#os-detail { width: min(560px, 100vw); max-height: 100vh; height: 100vh; margin: 0 0 0 auto; border: 0; border-left: 1px solid var(--line); padding: 26px; }
+.os-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.os-tile { padding: 10px 12px; border: 1px solid #e6ece8; border-radius: 10px; }
+.os-tile b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.os-tile span { color: #5d7263; font-size: 12px; }
+.os-people { width: 100%; border-collapse: collapse; font-size: 13px; }
+.os-people th, .os-people td { padding: 7px 6px; border-top: 1px solid #eef1ee; text-align: left; vertical-align: top; }
+.os-people th { font-size: 11px; color: #5d7263; text-transform: uppercase; letter-spacing: .05em; }
+.os-section { margin-top: 18px; }
+.os-section h3 { margin: 0 0 6px; font-size: 13px; }
+.os-filings a { display: inline-block; margin: 0 10px 4px 0; font-size: 12px; }
+@media (max-width: 860px) {
+  .os-bar .tabs { flex-wrap: wrap; }
+  .os-head { display: none; }
+  .os-row { grid-template-columns: 1fr auto; row-gap: 6px; }
+  .os-what { grid-column: 1 / -1; }
+  .os-chev { display: none; }
+  .os-search { margin-left: 0; width: 100%; }
+  .os-search input { width: 100%; }
+}

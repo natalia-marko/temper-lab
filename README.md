@@ -24,7 +24,7 @@ five quality-and-momentum candidates, model return ranges, conditional valuation
 scenarios and disclosed validation results. The model is not promoted to the
 selection rule and no win probability is claimed. `outlook.json` must identify
 the same run and snapshot hash as `desk.json` and `release.json`; mismatches
-hide the estimates. See `research_engine/docs/outlook-12m.md` in the product
+hide the estimates. See `pipeline/docs/outlook-12m.md` in the product
 repository for methodology, limitations, dependencies and verification.
 
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar

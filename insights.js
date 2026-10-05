@@ -733,7 +733,7 @@ async function startInsights() {
   bindInsights();
   const status = document.getElementById("insights-status");
   try {
-    const read = async path => { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error("Ownership research could not be loaded. Try again later."); return response.json(); };
+    const read = async path => { const response = await fetch(path, { cache: "no-cache" }); if (!response.ok) throw new Error("Ownership research could not be loaded. Try again later."); return response.json(); };
     const [data, desk] = await Promise.all([read("./insights-research.json"), read("./desk.json")]);
     validateSnapshot(data, desk); insightsState.data = data; insightsState.universe = checkedUniverse(desk, data); renderOverview(); renderInsights(); status.hidden = true;
   } catch (error) { status.textContent = error.message || "Ownership research is unavailable."; }
