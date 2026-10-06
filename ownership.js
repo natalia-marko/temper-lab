@@ -359,8 +359,19 @@ function reasons(company, sig) {
     out.push([`Checks ${dots}`, ""]);
   }
   if (sig.kind === "discretionary" && f.officers_sold_without_plan >= 2) out.push([`${f.officers_sold_without_plan} officers, no plan`, "warn"]);
+  if (company.short && company.short.rank) out.push([`${company.short.rank} shorted`, "muted"]);
   if (f.rows_to_check) out.push([`${plural(f.rows_to_check, "row")} to check`, "muted"]);
   return out;
+}
+// FINRA short interest as context (Leg D, 6 Oct 2026); not coloured: a rise in shorts is not "good".
+function shortLine(company, data) {
+  const s = company.short;
+  const when = (data.short_interest || {}).date;
+  if (!s || !when) return "";
+  const parts = [`${Number(s.days_to_cover).toFixed(1)} days to cover`];
+  if (s.change_pct !== null && s.change_pct !== undefined) parts.push(`${pct(s.change_pct / 100, 0)} shares short since the previous report`);
+  if (s.rank) parts.push(`${s.rank} shorted: ${s.rank === "lightly" ? "bottom" : "top"} 10% of eligible stocks of similar size`);
+  return `Short interest (FINRA, ${longDay(when)}): ${parts.join(" · ")}.`;
 }
 function monthYear(iso) {
   const [y, m] = String(iso || "").split("-");
@@ -738,6 +749,8 @@ function overview(company, data, sig) {
   parts.push(chart(company, data, sig));
   const paidLine = priceLine(company, sig);
   if (paidLine) parts.push(withSigns("os-detail-line os-tabular", paidLine));
+  const shortText = shortLine(company, data);
+  if (shortText) parts.push(el("p", "os-detail-line os-tabular", shortText));
   if (people.length) {
     const section = el("div", "os-section");
     section.append(el("h3", "", sig.insiders === false ? "Holders involved" : "Insiders involved"));
@@ -815,6 +828,8 @@ function stakeOverview(company, data, sig) {
     parts.push(section);
   }
   parts.push(chart(company, data, sig));
+  const shortText = shortLine(company, data);
+  if (shortText) parts.push(el("p", "os-detail-line os-tabular", shortText));
   parts.push(stakesSection(company));
   const limits = el("div", "os-section os-limits");
   limits.append(el("h3", "", "What we can't tell yet"));
