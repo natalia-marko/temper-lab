@@ -1095,6 +1095,12 @@ async function start() {
     $("snapshot-built").textContent = `${state.desk.universe_count.toLocaleString()} liquid names${state.desk.recorded_at ? ` · Snapshot built ${day(state.desk.recorded_at)}` : ""}`;
     $("aside-week").textContent = asOf;
     if (!controlsBound) {
+      // Insights links here as ./?q=TICKER; an exact ticker shows that company.
+      const linked = new URLSearchParams(location.search).get("q");
+      if (linked && /^[A-Za-z][A-Za-z0-9.-]{0,9}$/.test(linked)) {
+        state.query = linked.toUpperCase();
+        $("query").value = state.query;
+      }
       bind();
       controlsBound = true;
     }

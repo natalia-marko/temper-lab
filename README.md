@@ -44,36 +44,39 @@ count. The sortable dated Close column sits immediately before Target median
 and displays the frozen reference close used in implied upside. Its date follows
 the snapshot; unavailable closes display n/a and sort last in either direction.
 
-Insights is a fourth page, `insights.html`, showing a company research queue
-across the full frozen eligible universe. It reads `insights-research.json`.
-It has three tabs — All activity, Buying (default) and Selling — each one
-compact table with one row per company and only the columns that fit it,
-including Who: each insider's highest role (CEO or CFO, other officer, 10%
-owner, director), with joint filers counted once. A row of filter chips with
-counts is grouped under Role, Participation, and On screener.
-The overview shows buying versus selling as shares of included dollar totals
-across the whole eligible universe and trade window, independent of filters.
-Its other cards open companies with several insiders buying, CEO/CFO purchases,
-or unresolved records. Counts are companies, not filings. Unresolved amounts
-are excluded; zero total activity has no percentage. Buying and Selling also
-show up to three companies with the largest dollar totals in the current filters,
-each opening the underlying filings. These are descriptive totals, not signal
-rankings or claims of discretionary/open-market activity.
-Clicking a company opens its filings
-grouped by insider. Filing dates are New York time. One caveat line sits under
-the title; the rest is in the "How to read this" footer. Small purchases are
-retained; no $50,000 minimum applies. Code P/S does not establish open-market
-execution. Whether activity is unusual for an insider is not computed in v1; no
-return score or probability is implied. Ambiguous amendments and overlapping
-ownership reports stay out of totals, tagged Partial; a link beside the company
-count opens the Needs review list.
+Insights is a fourth page, `insights.html` (with `ownership.js` and
+`ownership.css`). It reads only `ownership-signals.json` (Ownership Signals):
+SEC Form 4 and Form 5 trades for every issuer in the security mapping over the
+last 21 trading days by New York filing day, with "Eligible stocks only" on by
+default, an "On my lists" filter, "New this week" and search. Five tabs — 5%+ stakes (Schedule 13D/13G: stake %, holder, new or amendment, 5%-or-less exits, the holder's stated purpose), All
+(by signal type — buy clusters, single buys, sales without a plan, big holders,
+then planned or routine sales — and newest filing within each), Buys (by evidence, then amount), Sells (sales without a
+10b5-1 plan first, then by amount) and Big holders (10% owners and funds, by
+amount). Each row has the ticker with its list rank, price and market cap; a
+signal label (Executive buy cluster, Buy cluster, Executive or Director buy,
+Discretionary sell, Planned / routine, Big holder buying or selling); a "why it
+matters" line in the filings' terms (who, amount, days, median holding change,
+plan status, plan adoption date when a footnote states it) with the evidence
+labels; one comparable dollar amount with a short holding change; and the
+filing date with NEW (hidden while "New this week" is on). Planned / routine
+rows are lighter. Transfers,
+private trades and awards, exercises, gifts or tax withholding sit in a "Not
+counted" box with a link to see them. Evidence is how many of three facts hold
+(several insiders within 10 sessions; CEO or CFO; a holding up 5%+ or new on
+$50K+), not a score.
 
-The page covers 21 exchange sessions through the completed UTC filing cutoff.
-Trade dates, public acceptance times and research build time remain separate.
-The browser and publishing gate reject incomplete or mismatched research data.
-The older `insights.json` remains the legacy email digest with its existing
-screen-list scope and minimum. See the product's
-`docs/design/ownership-insights-v1.md` for methodology and limits.
+Clicking a row opens a panel (beside the list on screens 1,600px wide or more,
+showing the first row on load; over the list below that) with Overview, Filings and Insiders
+tabs: the signal card with tiles, why it is listed, a 3-month price line against
+QQQ with the first filing and trade dates marked, the change since the first
+filing (trading days that have passed only), the prices reported, who traded,
+screener membership, what the filings cannot tell, "Open in Research" for
+eligible stocks (Research reads `?q=TICKER`) and SEC links. Codes P and S do not
+prove an open-market trade. Joint filers and restating amendments are counted
+once; partial amendments, identical trades by unrelated filers, other share
+classes and implausible prices stay out of totals until checked. Names appear as
+filed. Values are set as text and links go only to sec.gov or this site. See
+the product's `docs/ownership-signals-v1.md` for methodology and limits.
 
 Jev reads is the fifth page, `jev-reads.html`, last in the sidebar after Insights.
 It shows one published week of earnings releases (SEC 8-K Item 2.02) from companies in the
@@ -111,9 +114,9 @@ advance the underlying ranking date. Fundamentals retain their own filing period
 
 The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
-Ownership insights is a separate `com.temperlab.ownership` job, Tuesday and
-Friday at 08:00, refreshing the full-universe research queue and the legacy
-email digest against that freeze. SMTP for
+Insights is a separate `com.temperlab.ownership` job, Tuesday and Friday at
+08:00, refreshing `ownership-signals.json` and emailing the new filings; the
+Saturday release rebuilds it from saved SEC files on the new freeze. SMTP for
 that mail lives in the product file `config/digest.local.env`, not in `.zshrc`.
 After a current screener passes, the release writes `market-mood.json` for the
 same run. Cboe VIX history is fetched at export time; if it is unavailable, the
@@ -174,7 +177,7 @@ for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 Public-page logic and markup regression checks (from the product repository):
 
 ```bash
-node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs tools/tests/insights.test.cjs tools/tests/jev_reads.test.cjs
+node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs tools/tests/ownership.test.cjs tools/tests/jev_reads.test.cjs
 ```
 
 These use Node's built-in test runner; no extra DOM package is needed. They

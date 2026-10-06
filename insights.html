@@ -7,13 +7,13 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./insights.css?v=c1656a5e2090" />
+    <link rel="stylesheet" href="./ownership.css?v=88791b144f88" />
   </head>
-  <body class="insights-page">
+  <body class="ownership-page">
     <div class="desk">
       <aside>
         <a class="brand" href="./"><span>t</span>temper<span>lab</span></a>
-        <p class="aside-note">Ownership activity across the eligible universe. Follow the evidence to a company worth researching.</p>
+        <p class="aside-note">Who bought and sold each company's shares, by whom, and whether under a trading plan. From SEC Form 4.</p>
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a href="./market-mood.html">Market mood</a>
           <a href="./">Research</a>
@@ -21,62 +21,67 @@
           <a class="on" href="./insights.html" aria-current="page">Insights</a>
           <a href="./jev-reads.html">Jev reads</a>
         </nav>
-        <div class="aside-foot"><span class="dot"></span>Shared snapshot<small id="aside-week">Loading…</small></div>
+        <div class="aside-foot"><span class="dot"></span>Shared snapshot<small id="os-built">Loading…</small></div>
       </aside>
       <main>
-        <header class="top"><span class="insights-label">Ownership / research queue</span><a class="top-page-link" href="./">Research →</a><a class="top-page-link" href="./analyst-ratings.html">Analyst ratings →</a><span class="badge">Read-only snapshot</span></header>
+        <header class="top"><span class="insights-label">Ownership / insider trades</span><a class="top-page-link" href="./">Research →</a><a class="top-page-link" href="./analyst-ratings.html">Analyst ratings →</a><span class="badge">Read-only snapshot</span></header>
         <section class="heading">
           <div>
             <div class="eyebrow">OWNERSHIP INSIGHTS</div>
-            <h1 id="insights-title">Ownership worth a closer look</h1>
-            <p>What insiders reported buying and selling on SEC Form 4 — a starting point for research, not a forecast.</p>
+            <h1>Research-worthy ownership events</h1>
+            <p>Insider and ownership activity that may point to opportunities or risks. A starting point for research, not a forecast.</p>
           </div>
           <div class="snapshot-status">
-            <span id="week-chip" class="week" role="status">Loading…</span>
-            <small id="insights-coverage">Loading…</small>
+            <span id="os-data" class="week" role="status">Loading…</span>
+            <small><a href="#how">How it works →</a></small>
           </div>
         </section>
-        <p id="insights-status" class="mood-status" role="status">Loading ownership research…</p>
-        <section id="insights-overview" class="own-overview" aria-label="Ownership activity across the entire eligible universe" hidden></section>
-        <section class="surface insights-surface" aria-label="Company ownership research">
-          <div class="own-bar">
-            <div id="insights-views" class="tabs" role="group" aria-label="What to show"></div>
-            <label class="own-search"><input id="insights-query" type="search" placeholder="Find a ticker, company or insider" aria-label="Find a ticker, company or insider" autocomplete="off" /></label>
+        <p id="os-status" class="os-status" role="status">Loading insights…</p>
+        <section class="surface os-surface" aria-label="Companies with insider and ownership activity">
+          <div class="os-bar os-controls">
+            <div id="os-tabs" class="os-seg" role="group" aria-label="What to show"></div>
+            <label class="os-select">Sort <select id="os-sort" aria-label="Sort"></select></label>
+            <label class="os-toggle"><input id="os-fresh" type="checkbox" /> New this week</label>
+            <label class="os-search"><input id="os-query" type="search" placeholder="Ticker, company or insider" aria-label="Search ticker, company or insider" autocomplete="off" /></label>
           </div>
-          <div id="insights-facets" class="own-facets" aria-label="Filters"></div>
-          <section id="insights-highlights" class="own-highlights" aria-labelledby="insights-highlights-title" hidden></section>
-          <p id="insights-count" class="insights-count" role="status"></p>
-          <div class="table-wrap">
-            <table class="own-table">
-              <thead id="insights-head"></thead>
-              <tbody id="insights-body"></tbody>
-            </table>
+          <div class="os-bar os-filters">
+            <label class="os-toggle"><input id="os-eligible" type="checkbox" checked /><span>Eligible stocks only (<span id="os-eligible-count"></span>)</span></label>
+            <label class="os-toggle"><input id="os-lists" type="checkbox" /> On my lists</label>
+            <span id="os-count" class="os-count" role="status"></span>
           </div>
-          <button type="button" id="insights-more" class="ownership-more" hidden>Show 50 more companies</button>
-          <noscript><p class="empty">Enable JavaScript to load ownership research.</p></noscript>
-          <details class="ownership-method">
-            <summary>How to read this</summary>
-            <p><strong>What counts.</strong> Purchases and sales of common or ordinary shares reported on Form 4 or 4/A (SEC codes P and S), including small ones. Code P can mean an open-market or private purchase. Grants, option exercises and tax withholding are left out. Purchases and sales are totalled separately; there is no net score.</p>
-            <p><strong>Buying versus selling.</strong> The overview uses the entire eligible universe and the displayed trade window, independent of table filters. Buying share is dollars bought divided by dollars bought plus dollars sold; selling share uses the same denominator. These are shares of reported dollars, not trade counts, holding percentages or a sentiment score. Unresolved transactions are excluded, so totals may be partial. No percentage is shown when there are no included dollars.</p>
-            <p><strong>Largest reported purchases or sales.</strong> These cards show up to three companies with the largest included dollar totals in the current table filters. They are company totals across insiders, not individual trades or a ranking of investment merit. Open a card to see the underlying filings.</p>
-            <p><strong>Who.</strong> Officers, directors and 10% owners who file Form 4, each shown by their highest role: CEO or CFO, other officer, 10% owner, then director. Joint filers, such as a fund and its manager, count once. Related insiders who file separately may still count separately.</p>
-            <p><strong>Biggest holding change.</strong> The largest change in one disclosed holding account within one filing, not the person's total holdings or wealth. "New holding" means that account started from zero. It stays unknown when the reported balances do not add up.</p>
-            <p><strong>Several insiders.</strong> At least two insiders bought within 10 trading days. This describes activity; it is not a tested investment rule.</p>
-            <p><strong>Trading plan.</strong> Whether the filing's Rule 10b5-1 plan box was checked. It applies to the whole filing, not each trade, and an unchecked box does not prove a trade was discretionary.</p>
-            <p><strong>Needs review.</strong> Amended filings, possible double reports and unclear share classes stay out of totals until checked. Totals for those companies are tagged Partial; the link beside the company count lists them.</p>
-            <p><strong>Not yet known.</strong> Whether an insider's activity is unusual for them is not yet established; that needs a longer filing history.</p>
-            <p><strong>Coverage.</strong> This week's frozen eligible US stock universe and the Form 4/4-A filings in each company's SEC submissions, over the last 21 trading days. Filing dates and times are New York time, as on EDGAR. It is not all US securities and not a backtest. Schedule 13D/13G and Form 144 are not included.</p>
-            <p><a href="https://www.sec.gov/edgar/searchedgar/ownershipformcodes.html">SEC transaction codes</a> · <a href="https://www.sec.gov/files/form4.pdf">Form 4 instructions</a></p>
-            <p id="insights-build"></p>
+          <p id="os-tab-note" class="os-tab-note" hidden></p>
+          <p id="os-other-banner" class="os-banner" hidden>Showing what is not counted as buying or selling: transfers between related holders, private trades, and awards, exercises, gifts or tax withholding. <button type="button" id="os-back" class="os-link">Back to All</button></p>
+          <div class="os-head" aria-hidden="true"><span>Ticker</span><span>Signal</span><span>Why it matters</span><span id="os-amount-head" class="num">Amount</span><span>Filed</span></div>
+          <div id="os-rows" class="os-rows"></div>
+          <button type="button" id="os-more" class="os-more" hidden>Show more</button>
+          <div id="os-excluded" class="os-excluded" hidden>
+            <div class="os-excluded-head"><strong>Not counted above</strong> <button type="button" id="os-show-other" class="os-link">Show them</button></div>
+            <ul id="os-excluded-list"></ul>
+          </div>
+          <noscript><p class="empty">Enable JavaScript to load insights.</p></noscript>
+          <details class="method-info" id="how">
+            <summary>How it works</summary>
+            <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible stocks only" shows the frozen eligible universe; "On my lists" the Strength, Growth and Cheap lists. Not a forecast and not advice.</p>
+            <p><strong>Signal.</strong> A label from the filings, not a score: Group buy, incl. officer (two or more insiders bought within 10 sessions, at least one an officer such as the CEO or CFO), Group buy, directors, Officer buy, Director buy, Sale, no plan (no 10b5-1 trading plan), Plan or tax sale (under a 10b5-1 plan or to cover tax), Fund/10% owner buy or sale. On the 5%+ ownership reports tab: New stake, active (13D), Switched to active (13D), Stake change (13D or 13G), New stake, passive (13G), Below 5%. Evidence ●●○ shows the three checks below in order: several insiders within 10 sessions; the CEO or CFO bought; a holding up 5% or more (or new) on $50K or more.</p>
+            <p><strong>Ranking.</strong> Buys are sorted by evidence, then amount. Evidence is how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Big holders by amount, with sales without a plan first. On screens 1,600px wide or more the company panel stays open beside the list.</p>
+            <p><strong>Purpose and plan.</strong> From the SEC transaction code, the filing's 10b5-1 box and the footnotes attached to each trade. Codes P and S can be open-market or private; a trade is called private only when its footnote says so. The plan adoption date is shown when a footnote states it.</p>
+            <p><strong>Who.</strong> Officers and directors are kept apart from 10% owners and funds. A fund's joint filing with its board representative counts as the fund's. Names appear as filed.</p>
+            <p><strong>Counted once.</strong> Joint filers and amendments that restate their original. A same-day purchase and sale of the same shares at the same price, such as a sale to one's own family trust, is one holding moving, not buying or selling.</p>
+            <p><strong>Held back to check.</strong> Amendments that change only part of a filing, identical trades by unrelated filers, other share classes, and trades whose price is far from the stock's close or larger than the company.</p>
+            <p><strong>Holding change.</strong> One disclosed account within one filing, not total wealth; unknown when balances do not reconcile.</p>
+            <p><strong>Prices.</strong> Close, 3-month move and chart come from the weekly price data (adjusted closes) against QQQ. "Since the first filing" counts only trading days that have passed. No chart when days are missing or the series shows a split mix-up.</p>
+            <p><strong>History.</strong> Each person's open-market buys and sales (codes P and S) in the SEC Insider Transactions Data Sets, from the filing dates shown in the History tab, before their first trade in this window; the page itself still covers one month. "No buy …" means none in those filings. Routine or opportunistic follows Cohen, Malloy &amp; Pomorski (2012): someone with a trade in each of the three previous calendar years is routine if they traded in the same calendar month in all three, otherwise opportunistic. In their study the opportunistic trades carried the information and the routine ones about none. In the row sentence: "no yearly trading pattern" (opportunistic) or "trades in the same month every year" (routine), only when the data covers those three years. "First buy since …" says when the saved filings start, and "(data to …)" when they end before the window.</p>
+            <p><strong>5%+ ownership reports.</strong> Schedule 13D and 13G filed in the window, joined by the company named inside the filing. A 13G is the short form for passive holders (Rule 13d-1(b) institutions, (c) passive investors under 20%, (d) exempt holders); a 13D is the full form for holders who do not claim to be passive, which on its own does not mean an activist campaign. The stake is the largest percent any member of the filing group reports, as of the event date. "Below 5%": the 13G box says the holder no longer owns more than 5%, or an amendment reports under 5%. The purpose text is the holder's own (13D Item 4), shortened to 2,000 characters. "Item 4 mentions" lists specific words found in it (nominating directors, board seats, strategic alternatives, a sale or take-private, an agreement with the company), not a summary; generic ones such as "merger" are left out because the standard list of possible actions names them in many filings.</p>
+            <p><strong>Colours.</strong> Green and red mark rising and falling percentages; on labels, green is buying and amber is selling.</p>
+            <p id="os-build"></p>
           </details>
         </section>
       </main>
     </div>
-    <dialog id="insights-evidence" aria-labelledby="insights-evidence-title">
-      <form method="dialog"><button class="close-evidence" aria-label="Close company filings">Close</button></form>
-      <h2 id="insights-evidence-title"></h2>
-      <div id="insights-evidence-body"></div>
+    <dialog id="os-detail" aria-labelledby="os-detail-title">
+      <form method="dialog"><button class="os-close" aria-label="Close company details">✕</button></form>
+      <div id="os-detail-body"></div>
     </dialog>
-    <script src="./insights.js?v=e5b4627cc5f5"></script>
+    <script src="./ownership.js?v=4d4b8c5c917d"></script>
   </body>
 </html>
