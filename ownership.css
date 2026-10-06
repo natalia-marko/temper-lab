@@ -15,7 +15,7 @@
 .os-seg button.on { background: #e8f0ea; color: #1e6547; font-weight: 650; }
 .cnt { padding: 1px 7px; border-radius: 999px; background: #eef2ee; color: #5d7263; font-size: 11px; font-weight: 600; }
 .os-seg button.on .cnt { background: #d7e7dc; color: #1e6547; }
-.os-select { display: inline-flex; align-items: center; gap: 6px; color: #5d7263; font-size: 12px; }
+.os-select { display: none; align-items: center; gap: 6px; color: #5d7263; font-size: 12px; }
 .os-select select { min-height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); font: inherit; font-size: 13px; }
 .os-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; font-size: 13px; color: #3f5047; }
 .os-search { margin-left: auto; }
@@ -25,6 +25,13 @@
 .os-banner { margin: 12px 20px 0; padding: 10px 12px; border-radius: 8px; background: #f3f5f2; color: #3f5047; font-size: 13px; }
 .os-head, .os-row { display: grid; grid-template-columns: 180px 148px minmax(0, 1fr) 128px 72px; column-gap: 16px; align-items: start; }
 .os-head { padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5d7263; }
+/* Column names sort the list (the Sort menu is for phones, where this row is hidden). */
+.os-sorter { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-align: left; cursor: pointer; }
+.os-sorter.num { text-align: right; }
+.os-sorter:not(:disabled):hover, .os-sorter.on { color: var(--ink); }
+.os-sorter.on::after { content: " \25BE"; }
+.os-sorter:disabled { cursor: default; }
+.os-sorter:focus-visible { outline: 2px solid #1e6547; outline-offset: 2px; border-radius: 4px; }
 .os-row { width: 100%; padding: 13px 20px; border: 0; border-bottom: 1px solid #eef1ee; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .os-row:hover, .os-row:focus-visible { background: #f5f8f5; }
 .os-row.on { background: #eef4f0; box-shadow: inset 3px 0 0 #1e6547; }
@@ -124,7 +131,7 @@
 /* The list follows its own width, so a narrow window and the panel beside it use the same layout. */
 @container (max-width: 1000px) {
   .os-head, .os-row { grid-template-columns: 160px minmax(0, 1fr) 112px 64px; }
-  .os-head span:nth-child(2) { display: none; }
+  .os-head > :nth-child(2) { display: none; }
   .os-row .os-signal { grid-column: 2; grid-row: 1; }
   .os-row .os-what { grid-column: 2; grid-row: 2; }
   .os-row .os-co { grid-row: 1 / span 2; }
@@ -136,6 +143,7 @@
 .neg, .os-sub.neg { color: #b3261e; }
 @media (max-width: 860px) {
   .os-head { display: none; }
+  .os-select { display: inline-flex; }
   .os-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 5px; column-gap: 12px; padding: 14px; }
   .os-row .os-co { grid-column: 1; grid-row: 1; }
   .os-row .os-metric { grid-column: 2; grid-row: 1; }

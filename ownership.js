@@ -537,6 +537,12 @@ function render() {
   $("os-tab-note").textContent = view.note || "";
   $("os-tab-note").hidden = !view.note;
   $("os-sort").value = state.sort;
+  for (const b of document.querySelectorAll(".os-sorter")) {
+    const on = b.dataset.sort === state.sort;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+    if (b.dataset.sort === "evidence") b.disabled = state.view !== "buy"; // Checks exist only for buys
+  }
   $("os-sort").querySelector('option[value="evidence"]').disabled = state.view !== "buy";
   const scope = state.eligible ? data.universe.eligible : data.universe.issuers;
   $("os-data").textContent = `Data through ${longDay(data.window.until)} (${data.window.sessions} trading days) · ${Number(scope).toLocaleString()} stocks`;
@@ -981,6 +987,9 @@ function setup(data) {
     sort.append(option);
   }
   sort.addEventListener("change", (e) => { state.sort = e.target.value; state.shown = PAGE; render(); });
+  for (const b of document.querySelectorAll(".os-sorter")) {
+    b.addEventListener("click", () => { if (b.disabled) return; state.sort = b.dataset.sort; state.shown = PAGE; render(); });
+  }
   $("os-eligible").addEventListener("change", (e) => { state.eligible = e.target.checked; state.shown = PAGE; render(); });
   $("os-lists").addEventListener("change", (e) => { state.lists = e.target.checked; state.shown = PAGE; render(); });
   $("os-fresh").addEventListener("change", (e) => { state.fresh = e.target.checked; state.shown = PAGE; render(); });

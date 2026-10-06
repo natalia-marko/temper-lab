@@ -7,7 +7,7 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
-    <link rel="stylesheet" href="./ownership.css?v=88791b144f88" />
+    <link rel="stylesheet" href="./ownership.css?v=07723f106620" />
   </head>
   <body class="ownership-page">
     <div class="desk">
@@ -51,7 +51,7 @@
           </div>
           <p id="os-tab-note" class="os-tab-note" hidden></p>
           <p id="os-other-banner" class="os-banner" hidden>Showing what is not counted as buying or selling: transfers between related holders, private trades, and awards, exercises, gifts or tax withholding. <button type="button" id="os-back" class="os-link">Back to All</button></p>
-          <div class="os-head" aria-hidden="true"><span>Ticker</span><span>Signal</span><span>Why it matters</span><span id="os-amount-head" class="num">Amount</span><span>Filed</span></div>
+          <div class="os-head" role="group" aria-label="Sort by column"><span>Ticker</span><button type="button" class="os-sorter" data-sort="signal" title="Sort by signal type, then newest">Signal</button><button type="button" class="os-sorter" data-sort="evidence" title="Buys: sort by checks met, 3 to 0">Why it matters</button><button type="button" id="os-amount-head" class="os-sorter num" data-sort="amount" title="Sort by amount, largest first">Amount</button><button type="button" class="os-sorter" data-sort="newest" title="Sort by newest filing">Filed</button></div>
           <div id="os-rows" class="os-rows"></div>
           <button type="button" id="os-more" class="os-more" hidden>Show more</button>
           <div id="os-excluded" class="os-excluded" hidden>
@@ -63,7 +63,7 @@
             <summary>How it works</summary>
             <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible stocks only" shows the frozen eligible universe; "On my lists" the Strength, Growth and Cheap lists. Not a forecast and not advice.</p>
             <p><strong>Signal.</strong> A label from the filings, not a score: Group buy, incl. officer (two or more insiders bought within 10 sessions, at least one an officer such as the CEO or CFO), Group buy, directors, Officer buy, Director buy, Sale, no plan (no 10b5-1 trading plan), Plan or tax sale (under a 10b5-1 plan or to cover tax), Fund/10% owner buy or sale. On the 5%+ ownership reports tab: New stake, active (13D), Switched to active (13D), Stake change (13D or 13G), New stake, passive (13G), Below 5%. Checks ●●○ shows the three checks below in order: several insiders within 10 sessions; the CEO or CFO bought; a holding up 5% or more (or new) on $50K or more.</p>
-            <p><strong>Ranking.</strong> Buys are sorted by checks met, then amount. Checks counts how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Big holders by amount, with sales without a plan first. On screens 1,600px wide or more the company panel stays open beside the list.</p>
+            <p><strong>Ranking.</strong> Buys are sorted by checks met, then amount. Checks counts how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Fund &amp; 10% owner trades by amount, with sales without a plan first. Click a column name to sort: Signal, Amount or Filed; on Buys, Why it matters sorts by Checks. On phones, use the Sort menu. On screens 1,600px wide or more the company panel stays open beside the list.</p>
             <p><strong>Tested (Leg D, 6 Oct 2026).</strong> In eligible stocks, 3,122 insider purchases filed Jan 2023 – Jun 2026 did not beat the average eligible stock over the next 1, 3 or 6 months; groups of insiders and CEO or CFO buys did not either. Use this page as research context — who traded, how much, and whether it is unusual — not as a buy signal. Limits: only companies listed today, one 3.5-year period.</p>
             <p><strong>Short interest.</strong> From FINRA's twice-monthly files: shares sold short and days to cover (shares short ÷ average daily volume), from the latest report public by the data date (FINRA publishes 7 business days after each settlement date). "Lightly shorted" or "heavily shorted": the bottom or top 10% of eligible stocks of similar size (market-cap thirds) by days to cover. Tested (Leg D, 6 Oct 2026, eligible stocks, reports Jan 2023 – Sep 2026): six months later the lightly shorted group was about 3.5% ahead of the average eligible stock and the heavily shorted group about 2.4% behind, each a little over two standard errors after allowing for overlapping periods; after one month the gap was small, and short interest as a share of shares outstanding showed nothing. Published studies agree in direction (Hong, Li, Ni, Scheinkman &amp; Yan; Boehmer, Huszar &amp; Jordan). One period, companies listed today only, many numbers tested: context, not a forecast.</p>
             <p><strong>Purpose and plan.</strong> From the SEC transaction code, the filing's 10b5-1 box and the footnotes attached to each trade. Codes P and S can be open-market or private; a trade is called private only when its footnote says so. The plan adoption date is shown when a footnote states it.</p>
@@ -84,6 +84,6 @@
       <form method="dialog"><button class="os-close" aria-label="Close company details">✕</button></form>
       <div id="os-detail-body"></div>
     </dialog>
-    <script src="./ownership.js?v=438c4cf6143a"></script>
+    <script src="./ownership.js?v=894af35cf916"></script>
   </body>
 </html>
