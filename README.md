@@ -86,9 +86,17 @@ Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test
 `jev-reads/<Friday>.json` (one file per week, never rewritten), written by
 `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 
-The separate Market mood page uses the same frozen Friday. **Tape** shows Cboe VIX,
-the share of liquid names up over 63 sessions against the 252-session share, and
-SPY versus QQQ. VIX is non-directional and does not rank individual stocks.
+The separate Market mood page uses the same frozen Friday. **Market desk** shows
+SPY/QQQ adjusted-return paths, positive-return participation, return bands and
+sector medians. The 63/252-session controls update every chart together. The
+date slider and pointer inspection show saved index observations. Stock returns
+come from frozen company factors; index paths come from the saved benchmark
+prices. Sector medians use individual stock returns and the same `sectors.js`
+industry map as Research and Analyst ratings. Missing daily prices remain gaps;
+missing observations are never filled. Cboe VIX and cross-screen changes sit
+in a compact summary below the page heading, visible in both Market desk and
+Lists. This weekly context stays above the return-window controls. VIX is
+non-directional and does not rank individual stocks.
 
 **Lists** shows who sits on more than one of Hot Tape, Growth, and Cheap versus
 the prior Friday, then Conviction’s first ten. That score is not a probability
@@ -171,7 +179,7 @@ the first 12 characters of the file's SHA-256 hash. GitHub Pages caches assets
 separately; versioned URLs prevent new HTML from loading a cached, incompatible
 script. The source tests enforce these versions.
 The Market mood page uses the same 12-character hashes for `desk.css`,
-`market-mood.css`, and `market-mood.js`; the Analyst ratings page does the same
+`market-mood.css`, `sectors.js`, and `market-mood.js`; the Analyst ratings page does the same
 for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 
 Public-page logic and markup regression checks (from the product repository):

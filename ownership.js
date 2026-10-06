@@ -23,7 +23,7 @@ const VIEWS = [
   { key: "all", label: "All", head: "Amount", sort: "signal",
     note: "Form 4 buying and selling by insiders and big holders, most informative first." },
   { key: "buy", label: "Buys", head: "Bought", sort: "evidence",
-    note: "Officers and directors buying their company's shares (Form 4), most evidence first." },
+    note: "Officers and directors buying their company's shares (Form 4), most checks met first." },
   { key: "sell", label: "Sells", head: "Sold", sort: "amount",
     note: "Officers and directors selling (Form 4): sales without a 10b5-1 plan first, then plan or tax sales." },
   { key: "holders", label: "Fund & 10% owner trades", head: "Traded", sort: "amount",
@@ -33,7 +33,7 @@ const VIEWS = [
 ];
 const HISTORY_KEYS = ["buy", "buy_plan", "sell_no_plan", "sell_plan"];
 const OTHER = { key: "other", label: "Not counted", head: "Moved", sort: "amount" };
-const SORTS = { signal: "Signal type", evidence: "Evidence 3 → 0", amount: "Amount", newest: "Newest filing" };
+const SORTS = { signal: "Signal type", evidence: "Checks 3 → 0", amount: "Amount", newest: "Newest filing" };
 // "Signal type" lists the most informative kind first: insider buys (clusters, then single
 // buys), sales without a plan, big holders, then planned or routine sales. A fixed order, not a score.
 const SIGNAL_RANK = { "Group buy, incl. officer": 0, "Group buy, directors": 1, "Officer buy": 2, "Director buy": 3,
@@ -277,7 +277,8 @@ function headline(company, sig) {
   const n = people.length;
   const lead = people[0];
   const { first, last } = tradeSpan(people, sig.keys);
-  const when = first && last && first !== last ? ` in ${plural(daysBetween(first, last) + 1, "day")}` : first ? ` on ${day(first)}` : "";
+  // Dates, not "in N days": the totals cover the whole window; the dates show how close together the trades were.
+  const when = first && last && first !== last ? `, ${span(first, last)}` : first ? ` on ${day(first)}` : "";
   const hold = lead ? holdingChange(lead) : null;
   if (sig.kind === "buy") {
     if (n >= 2) return `${n} insiders bought ${value}${when}`;
@@ -355,7 +356,7 @@ function reasons(company, sig) {
   if (sig.kind === "buy") {
     // The three checks behind the Buys ranking, in a fixed order; spelled out in the panel.
     const dots = [f.buyers_within_10_sessions >= 2, f.ceo_or_cfo_bought, f.holding_up_5pct_on_50k].map((on) => (on ? "●" : "○")).join("");
-    out.push([`Evidence ${dots}`, ""]);
+    out.push([`Checks ${dots}`, ""]);
   }
   if (sig.kind === "discretionary" && f.officers_sold_without_plan >= 2) out.push([`${f.officers_sold_without_plan} officers, no plan`, "warn"]);
   if (f.rows_to_check) out.push([`${plural(f.rows_to_check, "row")} to check`, "muted"]);
@@ -706,7 +707,7 @@ function overview(company, data, sig) {
   const card = el("div", "os-card");
   const top = el("div", "os-card-top");
   top.append(el("span", `os-signal ${sig.side}`, sig.text));
-  if (sig.kind === "buy") top.append(el("span", "os-evidence", `Evidence ${evidence(company)} of 3`));
+  if (sig.kind === "buy") top.append(el("span", "os-evidence", `Checks ${evidence(company)} of 3`));
   card.append(top, el("p", "os-d-head", headline(company, sig)));
   const line = explanation(company, sig);
   if (line) card.append(el("p", "os-detail-line", line));
