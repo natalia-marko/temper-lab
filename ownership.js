@@ -440,8 +440,53 @@ function matches(company, query) {
     ...(company.stakes || []).flatMap((s) => (s.holders || []).map((h) => h.name))]
     .some((text) => String(text || "").toLowerCase().includes(query));
 }
+// An exact ticker search shows that company even when "Eligible stocks only" or "On my lists"
+// would hide it; the row then carries an "outside eligible set" badge. The boxes stay as set.
+function exactTicker(company, query) {
+  const q = String(query || "").trim().toUpperCase();
+  return Boolean(q) && String(company.symbol || "").toUpperCase() === q;
+}
 function base(companies, filters) {
-  return companies.filter((c) => (!filters.eligible || c.eligible) && (!filters.lists || (c.lists || []).length));
+  return companies.filter((c) => exactTicker(c, filters.query)
+    || ((!filters.eligible || c.eligible) && (!filters.lists || (c.lists || []).length)));
+}
+// Every issuer whose SEC feed was read (ownership-signals.json "checked"), by any of its tickers.
+function checkedRow(data, ticker) {
+  const checked = data && data.checked;
+  if (!checked || !Array.isArray(checked.rows)) return null;
+  const f = Object.fromEntries((checked.fields || []).map((name, i) => [name, i]));
+  const hit = checked.rows.find((r) => (r[f.symbols] || []).some((s) => String(s).toUpperCase() === ticker));
+  return hit ? { symbol: hit[f.symbol], name: hit[f.name], eligible: hit[f.eligible], insider: hit[f.last_insider], stake: hit[f.last_stake],
+    insiderVia: f.insider_via === undefined ? null : hit[f.insider_via], stakeVia: f.stake_via === undefined ? null : hit[f.stake_via] } : null;
+}
+// What to say about an exact ticker search: outside the eligible set, hidden by a filter,
+// checked with nothing filed in the window, or not in the universe at all.
+function matchNote(data, filters, list) {
+  const q = String(filters.query || "").trim().toUpperCase();
+  if (!q || !/^[A-Z0-9][A-Z0-9.-]{0,9}$/.test(q)) return null;
+  const company = data.companies.find((c) => String(c.symbol).toUpperCase() === q);
+  if (company) {
+    if (list.includes(company)) {
+      return !company.eligible && filters.eligible
+        ? { text: `${company.symbol} is outside the eligible set (not among this week's ${Number(data.universe?.eligible || 0).toLocaleString("en-US")} Research stocks), shown because you searched its ticker.` }
+        : null;
+    }
+    const why = [];
+    if (!inView(company, filters.view)) why.push(`it has nothing under ${(VIEWS.find((v) => v.key === filters.view) || OTHER).label}`);
+    if (filters.fresh && !isNew(company, data.window.until, filters.view)) why.push("\"New this week\" is ticked");
+    return { text: `${company.symbol} has filings in this window but is hidden here: ${why.join("; ") || "a filter excludes it"}.`, company };
+  }
+  if (!data.checked) return null; // an older snapshot without the checked list: say nothing rather than guess
+  const row = checkedRow(data, q);
+  if (row) {
+    // A date found under a predecessor SEC number (company reorganised) says so.
+    const via = (name) => (name ? `, under the predecessor ${name}` : "");
+    const insider = row.insider ? `${longDay(row.insider)}${via(row.insiderVia)}` : "none in at least 12 months";
+    const stake = row.stake ? `${longDay(row.stake)}${via(row.stakeVia)}` : "none in at least 12 months";
+    return { text: `${row.symbol} · ${row.name}: checked through ${longDay(data.checked.through)} — no insider or 5%+ filings in the last ${data.window.sessions} trading days. `
+      + `Last insider filing (Form 3/4/5): ${insider}. Last 5%+ report (13D/13G): ${stake}.${row.eligible ? "" : " Outside the eligible set."}` };
+  }
+  return list.length ? null : { text: `${q} is not in our universe (US-listed companies in the security mapping), so it was not checked.` };
 }
 function fresh(company, view, filters) {
   return !filters.fresh || isNew(company, state.data ? state.data.window.until : filters.until, view);
@@ -496,6 +541,7 @@ function row(company, view, until) {
   const tk = el("span", "os-tk");
   tk.append(el("strong", "", company.symbol));
   if ((company.lists || []).length) tk.append(el("span", "os-chip", company.lists.join(" · ")));
+  if (state.eligible && !company.eligible) tk.append(el("span", "os-chip muted", "outside eligible set"));
   co.append(tk, el("span", "os-name", company.name));
   const close = (company.prices || {}).close;
   const meta = [close ? price(close.value) : company.price ? price(company.price) : "", company.market_cap ? money(company.market_cap) : ""]
@@ -535,7 +581,19 @@ function render() {
   const counts = viewCounts(data.companies, state);
   $("os-amount-head").textContent = view.head;
   $("os-rows").replaceChildren(...list.slice(0, state.shown).map((c) => starred(c, row(c, view.key, data.window.until))));
-  if (!list.length) $("os-rows").append(el("p", "empty", state.query.trim()
+  const note = matchNote(data, state, list);
+  $("os-match-note").hidden = !note;
+  if (note) {
+    const parts = [note.text];
+    if (note.company) {
+      const open = el("button", "os-link", `Open ${note.company.symbol}`);
+      open.type = "button";
+      open.addEventListener("click", () => openDetail(note.company, state.view === "other" ? "other" : "all", open));
+      parts.push(" ", open);
+    }
+    $("os-match-note").replaceChildren(...parts);
+  }
+  if (!list.length && !note) $("os-rows").append(el("p", "empty", state.query.trim()
     ? `No ownership filings match "${state.query.trim()}" in the last ${data.window.sessions} trading days`
       + (state.eligible ? " among eligible stocks. Untick \"Eligible stocks only\" to search every company." : ".")
     : "No company matches these filters."));

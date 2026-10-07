@@ -22,6 +22,7 @@
 .os-search input { width: 250px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; box-sizing: border-box; }
 .os-count { margin-left: auto; color: #607164; font-size: 12px; }
 .os-tab-note { margin: 10px 20px 0; color: #4c5d53; font-size: 13px; }
+.os-match-note { padding: 8px 12px; border-radius: 8px; background: #f6f2df; color: #4a3f12; }
 .os-banner { margin: 12px 20px 0; padding: 10px 12px; border-radius: 8px; background: #f3f5f2; color: #3f5047; font-size: 13px; }
 .os-head, .os-row { display: grid; grid-template-columns: 180px 148px minmax(0, 1fr) 128px 72px; column-gap: 16px; align-items: start; }
 .os-head { padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5d7263; }
