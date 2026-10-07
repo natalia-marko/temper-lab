@@ -78,13 +78,24 @@ classes and implausible prices stay out of totals until checked. Names appear as
 filed. Values are set as text and links go only to sec.gov or this site. See
 the product's `docs/ownership-signals-v1.md` for methodology and limits.
 
-Jev reads is the fifth page, `jev-reads.html`, last in the sidebar after Insights.
+Jev reads is the fifth page, `jev-reads.html`, after Insights in the sidebar.
 It shows one published week of earnings releases (SEC 8-K Item 2.02) from companies in the
 screener universe, each read by Jev, an AI model, with a short verbatim quote, the SEC link, the
 3-day reaction versus SPY and the Python floor. Smaller companies are read but only counted.
 Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test) and
 `jev-reads/<Friday>.json` (one file per week, never rewritten), written by
 `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
+
+Watchlist is the sixth page, `watchlist.html`, last in the sidebar. `watchlist.js` (loaded first on
+every page) puts a star next to each ticker; starred names are kept in the browser's localStorage
+(key `temperlab.watchlist.v1`), so each browser and site address has its own list and nothing is
+sent anywhere. `watchlist-page.js` lists them with the Research snapshot price and the next results
+date, and exports or imports a JSON copy.
+
+The Market desk panel "Results in the next 4 weeks" (`earnings-ahead.js`) reads
+`earnings-calendar.json`, written by `tools/build_earnings_calendar.py` in the Tue/Fri job: Yahoo's
+earnings calendar, company-page dates for the gaps; dates where the two differ are marked with ~.
+For planning, not a signal (Leg D found no drift after results).
 
 The separate Market mood page uses the same frozen Friday. **Market desk** shows
 SPY/QQQ adjusted-return paths, positive-return participation, return bands and

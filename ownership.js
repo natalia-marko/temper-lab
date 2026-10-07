@@ -86,6 +86,11 @@ function span(first, last) {
   const [, m2, d2] = last.split("-");
   return m1 === m2 ? `${Number(first.split("-")[2])}–${Number(d2)} ${MONTHS[Number(m2) - 1]}` : `${day(first)}–${day(last)}`;
 }
+function addDays(iso, n) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
 function daysBetween(a, b) {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
 }
@@ -449,7 +454,8 @@ function visible(companies, filters) {
   const value = (c) => amount(c, signal(c, view));
   const group = (c) => (view === "sell" && signal(c, view).kind === "planned" ? 1 : 0);
   const rank = (c) => signalRank(signal(c, view));
-  return rows.sort((a, b) => group(a) - group(b)
+  const hit = (c) => (!query ? 0 : String(c.symbol).toLowerCase() === query ? 0 : String(c.symbol).toLowerCase().startsWith(query) ? 1 : 2);
+  return rows.sort((a, b) => hit(a) - hit(b) || group(a) - group(b)
     || (sort === "signal" ? rank(a) - rank(b) : 0)
     || (sort === "evidence" ? evidence(b) - evidence(a) : 0)
     || (sort === "newest" || sort === "signal" ? rowDay(b, view).localeCompare(rowDay(a, view)) : 0)
@@ -458,7 +464,8 @@ function visible(companies, filters) {
     || String(a.symbol).localeCompare(String(b.symbol)));
 }
 function viewCounts(companies, filters) {
-  const shown = base(companies, filters);
+  const query = String(filters.query || "").trim().toLowerCase();
+  const shown = base(companies, filters).filter((c) => matches(c, query));
   return Object.fromEntries([...VIEWS, OTHER].map((v) => [v.key, shown.filter((c) => inView(c, v.key) && fresh(c, v.key, filters)).length]));
 }
 function notCounted(data, filters) {
@@ -510,10 +517,16 @@ function row(company, view, until) {
   metric.append(el("span", "os-amount num", sig.kind === "stake" ? pctText(sig.chain && sig.chain.last.pct) : value ? money(value) : "—"));
   for (const text of keyMetric(company, sig)) metric.append(el("span", `os-sub num ${signCls(text)}`.trim(), text));
   const filed = el("span", "os-filed", day(rowDay(company, view)));
-  // With "New this week" on, every row is new, so the badge would say nothing.
-  if (!state.fresh && isNew(company, until, view)) filed.append(el("span", "os-new", "NEW"));
+  if (isNew(company, until, view)) filed.append(el("span", "os-new", "NEW"));
   button.append(co, kind, why, metric, filed);
   return button;
+}
+// A watchlist star (watchlist.js) beside a row; a button cannot sit inside the row button.
+function starred(company, button) {
+  if (!globalThis.TLWatch) return button;
+  const wrap = el("div", "os-row-wrap");
+  wrap.append(globalThis.TLWatch.button(company.symbol, company.name), button);
+  return wrap;
 }
 function render() {
   const data = state.data;
@@ -521,8 +534,12 @@ function render() {
   const list = visible(data.companies, state);
   const counts = viewCounts(data.companies, state);
   $("os-amount-head").textContent = view.head;
-  $("os-rows").replaceChildren(...list.slice(0, state.shown).map((c) => row(c, view.key, data.window.until)));
-  if (!list.length) $("os-rows").append(el("p", "empty", "No company matches these filters."));
+  $("os-rows").replaceChildren(...list.slice(0, state.shown).map((c) => starred(c, row(c, view.key, data.window.until))));
+  if (!list.length) $("os-rows").append(el("p", "empty", state.query.trim()
+    ? `No ownership filings match "${state.query.trim()}" in the last ${data.window.sessions} trading days`
+      + (state.eligible ? " among eligible stocks. Untick \"Eligible stocks only\" to search every company." : ".")
+    : "No company matches these filters."));
+  $("os-fresh-label").textContent = `New this week (${span(addDays(data.window.until, -6), data.window.until)})`;
   $("os-count").textContent = `${list.length.toLocaleString()} companies · sorted by ${SORTS[state.sort].toLowerCase()}`
     + (state.sort === "signal" ? ", then newest" : "") + (view.key === "sell" ? " · sales without a plan first" : "");
   $("os-more").hidden = list.length <= state.shown;
@@ -993,7 +1010,12 @@ function setup(data) {
   $("os-eligible").addEventListener("change", (e) => { state.eligible = e.target.checked; state.shown = PAGE; render(); });
   $("os-lists").addEventListener("change", (e) => { state.lists = e.target.checked; state.shown = PAGE; render(); });
   $("os-fresh").addEventListener("change", (e) => { state.fresh = e.target.checked; state.shown = PAGE; render(); });
-  $("os-query").addEventListener("input", (e) => { state.query = e.target.value; state.shown = PAGE; render(); });
+  $("os-query").addEventListener("input", (e) => {
+    const started = !state.query.trim() && e.target.value.trim();
+    state.query = e.target.value;
+    state.shown = PAGE;
+    if (started && state.view !== "all") setView("all"); else render();
+  });
   $("os-more").addEventListener("click", () => { state.shown += PAGE; render(); });
   $("os-show-other").addEventListener("click", () => { setView("other"); $("os-tabs").scrollIntoView({ block: "start" }); });
   $("os-back").addEventListener("click", () => setView("all"));

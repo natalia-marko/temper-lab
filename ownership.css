@@ -35,6 +35,10 @@
 .os-row { width: 100%; padding: 13px 20px; border: 0; border-bottom: 1px solid #eef1ee; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .os-row:hover, .os-row:focus-visible { background: #f5f8f5; }
 .os-row.on { background: #eef4f0; box-shadow: inset 3px 0 0 #1e6547; }
+/* Watchlist star over the row's left edge (watchlist.js). */
+.os-row-wrap { position: relative; }
+.os-row-wrap > .tl-star { position: absolute; top: 10px; left: 14px; z-index: 1; }
+.os-row-wrap .os-co, .os-head > :first-child { padding-left: 26px; }
 .os-row.quiet .os-headline { font-weight: 500; color: #4c5d53; }
 .os-row.quiet .os-amount { font-weight: 500; color: #7b8c81; }
 .os-co { display: flex; flex-direction: column; min-width: 0; }

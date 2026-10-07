@@ -312,7 +312,9 @@ function renderScreenLeaders(id, rows, format = "share") {
   for (const item of rows) {
     const tr = appendText(target, "tr", "");
     const company = appendText(tr, "td", "");
-    const identity = appendText(company, "div", "", "extreme-identity");
+    const holder = appendText(company, "div", "", "tl-with-star");
+    if (globalThis.TLWatch) holder.append(globalThis.TLWatch.button(item.symbol, item.name));
+    const identity = appendText(holder, "div", "", "extreme-identity");
     appendText(identity, "strong", item.symbol);
     appendText(identity, "small", item.name || item.symbol);
     const metric = format === "score" ? scoreText(item.metric) : levelPercent(item.metric);
@@ -368,7 +370,9 @@ function doublesCounts(rows) {
 
 function renderOverlapRow(target, row) {
   const item = appendText(target, "div", "", "overlap-item");
-  const identity = appendText(item, "div", "", "overlap-identity");
+  const holder = appendText(item, "div", "", "tl-with-star");
+  if (globalThis.TLWatch) holder.append(globalThis.TLWatch.button(row.symbol, row.name));
+  const identity = appendText(holder, "div", "", "overlap-identity");
   appendText(identity, "strong", row.symbol);
   appendText(identity, "small", row.name || row.symbol);
   const badges = appendText(item, "div", "", "overlap-badges");

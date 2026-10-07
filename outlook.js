@@ -19,7 +19,7 @@ function outlookScenarios(row) {
 function outlookCard(row) {
   const f = row.inputs;
   return `<article class="outlook-card">
-    <div class="outlook-card-top"><span class="outlook-rank">${row.rank}</span><strong>${outlookEscape(row.symbol)}</strong><span>${outlookEscape(row.sector.replaceAll("_", " "))}</span></div>
+    <div class="outlook-card-top"><span class="outlook-rank">${row.rank}</span>${globalThis.TLWatch ? globalThis.TLWatch.html(row.symbol, row.name) : ""}<strong>${outlookEscape(row.symbol)}</strong><span>${outlookEscape(row.sector.replaceAll("_", " "))}</span></div>
     <h3>${outlookEscape(row.name)}</h3>
     <div class="outlook-estimate ${row.total_median < 0 ? "outlook-negative" : ""}">${outlookPercent(row.total_median)}</div>
     <p class="outlook-label">12-month return, model midpoint</p>

@@ -188,6 +188,7 @@ function quoteBlock(release) {
 function card(release, late) {
   const node = el("article", "jev-card");
   const head = el("div", "jev-card-head");
+  if (release.ticker && globalThis.TLWatch) head.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
   head.appendChild(el("strong", "jev-ticker", release.ticker || ""));
   head.appendChild(el("span", "jev-company", release.company || ""));
   if (release.tier) head.appendChild(el("span", `jev-tier tier-${release.tier}`, `Tier ${release.tier}: ${TIER_LABEL[release.tier] || ""}`));
@@ -202,6 +203,7 @@ function card(release, late) {
 function row(release, late) {
   const details = el("details", "jev-row");
   const summary = el("summary");
+  if (release.ticker && globalThis.TLWatch) summary.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
   summary.appendChild(el("strong", "jev-ticker", release.ticker || ""));
   summary.appendChild(el("span", "jev-company", release.company || ""));
   summary.appendChild(el("span", "jev-row-meta",

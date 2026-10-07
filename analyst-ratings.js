@@ -185,6 +185,7 @@ function renderAnalystResults() {
   for (const row of rows) {
     const tr = analystText(target, "tr", "");
     const company = analystText(tr, "td", "");
+    if (globalThis.TLWatch) company.append(Object.assign(globalThis.TLWatch.button(row.symbol, row.name), { className: "tl-star lead" }));
     analystText(company, "strong", row.symbol);
     analystText(company, "small", row.name || row.symbol);
     analystText(tr, "td", (row.screens || []).map((key) => ({ strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" }[key] || key)).join(" · "), "analyst-screens");

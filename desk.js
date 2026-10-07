@@ -702,6 +702,9 @@ function lossmakingChip(symbol) {
     : "";
 }
 
+// Watchlist star (watchlist.js); empty if that script is missing.
+const starHtml = (symbol, name) => (globalThis.TLWatch ? globalThis.TLWatch.html(symbol, name) : "");
+
 function companyCell(symbol) {
   const company = state.desk.companies[symbol];
   const status = trustStatus(symbol);
@@ -710,7 +713,7 @@ function companyCell(symbol) {
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
       : "") + lossmakingChip(symbol);
   const researchChip = company?.potential ? `<span class="flag">${escapeHtml(company.potential.status)}</span>` : "";
-  return `<td><button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}${researchChip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></td>`;
+  return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}${researchChip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></div></td>`;
 }
 
 function industryCell(symbol) {

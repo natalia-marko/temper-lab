@@ -1,0 +1,25 @@
+/* Market desk: "Results in the next 4 weeks" (earnings-ahead.js). */
+.earnings-panel { margin: 0 28px 16px; }
+.ea-week { border-top: 1px solid #eef1ee; }
+.ea-week:first-child { border-top: 0; }
+.ea-week > summary { display: grid; grid-template-columns: 110px 120px minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding: 10px 2px; cursor: pointer; font-size: 13px; list-style-position: outside; }
+.ea-week > summary:hover, .ea-week > summary:focus-visible { background: #f5f8f5; }
+.ea-toggle { color: #245e42; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.ea-toggle::before { content: "Show all ▾"; }
+.ea-week[open] .ea-toggle::before { content: "Hide ▴"; }
+.ea-when { color: #253e30; }
+.ea-count { color: #253e30; font-variant-numeric: tabular-nums; }
+.ea-names { display: flex; flex-wrap: wrap; gap: 4px 12px; color: #64766b; }
+.ea-starred { color: #7a5a00; font-weight: 600; }
+.ea-days { display: grid; gap: 12px; padding: 4px 2px 14px; }
+.ea-day h3 { margin: 0 0 4px; color: #2b4b39; font-size: 12px; font-weight: 600; }
+.ea-line { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 12px; align-items: start; }
+.ea-label { padding-top: 4px; color: #64766b; font-size: 12px; }
+.ea-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ea-chip { display: inline-flex; align-items: center; padding-right: 7px; border: 1px solid #e3e8e3; border-radius: 6px; background: #fafbf9; font-size: 12px; }
+.ea-chip .tl-star { width: 22px; height: 22px; font-size: 15px; }
+.ea-sym { color: #253e30; font-weight: 600; }
+@media (max-width: 860px) {
+  .earnings-panel { margin: 0 10px 16px; }
+  .ea-week > summary, .ea-line { grid-template-columns: minmax(0, 1fr); }
+}

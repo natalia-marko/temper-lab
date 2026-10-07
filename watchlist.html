@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Temper Lab — Watchlist</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
+    <link rel="stylesheet" href="./watchlist.css?v=ec5c260348f8" />
+  </head>
+  <body class="watchlist-page">
+    <div class="desk">
+      <aside>
+        <a class="brand" href="./"><span>t</span>temper<span>lab</span></a>
+        <p class="aside-note">Companies you starred on any page. Kept in this browser only.</p>
+        <nav class="site-nav" aria-label="Temper Lab pages">
+          <a href="./market-mood.html">Market mood</a>
+          <a href="./">Research</a>
+          <a href="./analyst-ratings.html">Analyst ratings</a>
+          <a href="./insights.html">Insights</a>
+          <a href="./jev-reads.html">Jev reads</a>
+          <a class="on" href="./watchlist.html" aria-current="page">Watchlist<span class="tl-watch-count"></span></a>
+        </nav>
+      </aside>
+      <main>
+        <header class="top"><span class="insights-label">Your starred companies</span><a class="top-page-link" href="./">Research →</a><span class="badge">Saved in this browser</span></header>
+        <section class="heading">
+          <div>
+            <div class="eyebrow">WATCHLIST</div>
+            <h1>Companies you starred</h1>
+            <p>Press ☆ next to any ticker on any page to add it here. Press ★ to remove it.</p>
+          </div>
+        </section>
+        <section class="surface" aria-label="Starred companies">
+          <div class="wl-tools">
+            <button type="button" id="wl-export">Export a copy</button>
+            <label class="wl-file">Import a copy<input id="wl-import" type="file" accept="application/json,.json" /></label>
+            <span id="wl-count" class="wl-count" role="status"></span>
+          </div>
+          <p id="wl-status" class="wl-note" role="status" aria-live="polite"></p>
+          <p id="wl-storage" class="wl-note warn" hidden>This browser is not keeping site data, so stars last only until you close the page. Export a copy to keep them.</p>
+          <p id="wl-empty" class="wl-empty" hidden>No stars yet. Press ☆ next to any ticker on Research, Analyst ratings, Insights, Jev reads or Market mood.</p>
+          <div class="wl-table-wrap">
+            <table id="wl-table" class="wl-table" hidden>
+              <thead><tr><th scope="col"><span class="visually-hidden">Star</span></th><th scope="col">Company</th><th scope="col" class="num">Price</th><th scope="col" class="num">Market value</th><th scope="col">Next results</th><th scope="col">Added</th></tr></thead>
+              <tbody id="wl-rows"></tbody>
+            </table>
+          </div>
+          <p id="wl-source" class="wl-note"></p>
+          <p class="wl-note">Stars are kept in this browser only: the live site and the local preview have separate lists, and other devices don't see them. Clearing site data deletes them. Export a copy to keep them; Import adds the names from a copy.</p>
+        </section>
+      </main>
+    </div>
+    <script src="./watchlist.js?v=3958af7c86b5"></script>
+    <script src="./watchlist-page.js?v=3a4993ff5c0c"></script>
+  </body>
+</html>
