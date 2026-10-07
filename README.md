@@ -86,11 +86,22 @@ Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test
 `jev-reads/<Friday>.json` (one file per week, never rewritten), written by
 `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 
+The Research table has an F-Score column on every view (`fscore.css`, data `fscore.json`, written by
+`tools/build_fscore.py` in the weekly job): Piotroski's nine financial-health checks from the latest
+10-K known on the snapshot date, on the standard 0-9 scale (a check that cannot be computed counts as
+not passed and the score gets a *), with each check in the company panel. Context, not a signal (Leg D found no reliable return edge). The page ignores an
+`fscore.json` whose date differs from `desk.json`.
+
 Watchlist is the sixth page, `watchlist.html`, last in the sidebar. `watchlist.js` (loaded first on
 every page) puts a star next to each ticker; starred names are kept in the browser's localStorage
 (key `temperlab.watchlist.v1`), so each browser and site address has its own list and nothing is
 sent anywhere. `watchlist-page.js` lists them with the Research snapshot price and the next results
 date, and exports or imports a JSON copy.
+Watchlist edits re-read the saved list before changing it, so an older tab keeps
+names added in another tab. Saves are checked by reading them back. If storage
+fails, the current list stays available in the page and a warning offers an
+immediate export; unreadable saved data is not replaced. Clearing site data
+still removes browser-local lists, so keep an exported copy as a backup.
 
 The Market desk panel "Results in the next 4 weeks" (`earnings-ahead.js`) reads
 `earnings-calendar.json`, written by `tools/build_earnings_calendar.py` in the Tue/Fri job: Yahoo's

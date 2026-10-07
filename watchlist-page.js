@@ -55,13 +55,7 @@
 
   function setup() {
     $("wl-export").addEventListener("click", () => {
-      const link = el("a");
-      link.href = URL.createObjectURL(new Blob([W.exportText()], { type: "application/json" }));
-      link.download = `temperlab-watchlist-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      W.exportFile();
       say("Saved a copy to your downloads.");
     });
     $("wl-import").addEventListener("change", async (event) => {

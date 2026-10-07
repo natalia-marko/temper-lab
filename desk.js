@@ -402,6 +402,9 @@ function rows() {
       } else if (state.sortKey === "price") {
         va = state.desk.companies[a]?.price;
         vb = state.desk.companies[b]?.price;
+      } else if (state.sortKey === "fscore") {
+        va = fscoreValue(a);
+        vb = fscoreValue(b);
       } else if (state.sortKey === "market_cap") {
         va = state.desk.companies[a]?.market_cap;
         vb = state.desk.companies[b]?.market_cap;
@@ -597,6 +600,7 @@ function showEvidence(symbol) {
     ${potentialEvidence(company.potential)}
     <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : notReported(symbol, key) ? "Not reported by this filer" : "Unavailable"}</dd>`).join("")}</dl>
     ${notes.length ? `<h3>What stands out</h3><ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul><p>These are prompts to look further, not conclusions, and they change nothing about the rank or score.</p>` : ""}
+    ${fscoreSection(symbol)}
     <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
       const row = rankedMap(key).get(symbol);
       const moved = movementLabel(key, symbol);
@@ -667,6 +671,62 @@ function alsoOn(symbol) {
   );
 }
 
+// Piotroski F-Score as a financial-health checklist (share/fscore.json, built weekly by
+// tools/build_fscore.py). Context, not a signal: Leg D 2021-26 found no reliable return edge.
+const FSCORE_CHECKS = [
+  ["roa_positive", "Net income positive"],
+  ["cfo_positive", "Operating cash flow positive"],
+  ["roa_up", "Return on assets up on the year before"],
+  ["cfo_above_income", "Operating cash flow above net income"],
+  ["leverage_not_up", "Long-term debt / assets not up"],
+  ["current_ratio_up", "Current ratio up"],
+  ["no_new_shares", "No more shares outstanding than a year before"],
+  ["gross_margin_up", "Gross margin up"],
+  ["turnover_up", "Asset turnover (revenue / assets) up"],
+];
+function fscoreOf(symbol) {
+  return state.fscore?.companies?.[symbol] || null;
+}
+// The standard 0-9 scale: a check that cannot be computed counts as not passed, so 7 of 7
+// computable reads 7/9* and sorts below 8/9. Ties: more checks available first.
+function fscoreValue(symbol) {
+  const f = fscoreOf(symbol);
+  return f?.scored ? f.passed + f.computed / 100 : null;
+}
+function fscoreBand(f) {
+  if (!f?.scored) return "";
+  return f.passed >= 8 ? "high" : f.passed <= 2 ? "low" : "";
+}
+function fscoreMissing(f) {
+  return FSCORE_CHECKS.filter(([key]) => f.checks?.[key] == null).map(([, label]) => label);
+}
+function fscoreCell(symbol) {
+  const f = fscoreOf(symbol);
+  if (!f) return `<td class="fscore-cell"><span class="fscore none" title="No F-Score: no 10-K in the last 15 months in this snapshot">—</span></td>`;
+  if (!f.scored) return `<td class="fscore-cell"><span class="fscore none" title="Only ${f.computed} of 9 checks can be computed (needs 7); open the company for the checks">—</span></td>`;
+  const band = fscoreBand(f);
+  const missing = fscoreMissing(f);
+  const title = `${f.passed} of 9 financial-health checks passed (Piotroski), 10-K for the year ending ${day(f.fy_end)}.`
+    + (f.computed < 9 ? ` * Not available: ${missing.length ? missing.join(", ") : `${9 - f.computed} checks`}.` : "") + " Context, not a signal.";
+  return `<td class="fscore-cell"><span class="fscore ${band}" title="${escapeHtml(title)}">${f.passed}/9${f.computed < 9 ? "*" : ""}</span></td>`;
+}
+function fscoreSection(symbol) {
+  const f = fscoreOf(symbol);
+  if (!state.fscore) return "";
+  if (!f) return "<h3>Financial-health checklist (Piotroski F-Score)</h3><p>No 10-K for a fiscal year ending in the last 15 months in this snapshot.</p>";
+  const mark = (v) => (v === true ? "✓" : v === false ? "✗" : "—");
+  const head = f.scored
+    ? `<strong>${f.passed} of 9</strong> checks passed${f.computed < 9 ? ` (${9 - f.computed} not available, counted as not passed)` : ""}`
+    : `Not scored: only ${f.computed} of 9 checks can be computed (needs 7)`;
+  return `<h3>Financial-health checklist (Piotroski F-Score)</h3>
+    <p>${head}. From the 10-K for the year ending ${escapeHtml(day(f.fy_end))} (filed ${escapeHtml(day(f.filed))}), compared with the year before.</p>
+    <ul class="fscore-checks">${FSCORE_CHECKS.map(([key, label]) => {
+      const v = f.checks?.[key];
+      return `<li class="${v === true ? "pass" : v === false ? "fail" : "na"}"><span aria-hidden="true">${mark(v)}</span> ${label}${v == null ? " <em>not available</em>" : ""}</li>`;
+    }).join("")}</ul>
+    <p>Context, not a signal: in our Leg D tests (eligible stocks, 2021–26) high scores did no better than average after 6 or 12 months, among all, cheap, expensive or momentum stocks.</p>`;
+}
+
 function sortHeader(key, label) {
   const sorted = state.sortKey === key ? " sorted" : "";
   const direction = state.sortDir === "asc" ? "ascending" : "descending";
@@ -675,7 +735,7 @@ function sortHeader(key, label) {
 
 function renderHead() {
   const metrics = currentMetrics();
-  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>`;
+  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>${sortHeader("fscore", "F-Score")}`;
   if (state.view === "overview") {
     for (const [key, label] of metrics) html += sortHeader(key, label);
     html += `${sortHeader("score", "Score")}<th>Also on</th>${sortHeader("price", "Price")}${sortHeader("market_cap", "Market cap")}`;
@@ -734,7 +794,7 @@ function renderBody(pageRows) {
   const ranked = rankedMap(state.screen);
   const metrics = currentMetrics();
   if (!pageRows.length) {
-    const columnCount = 3 + metrics.length + (state.view === "overview" ? 4 : state.view === "potential" ? 0 : 1);
+    const columnCount = 4 + metrics.length + (state.view === "overview" ? 4 : state.view === "potential" ? 0 : 1);
     const message = searchNotice([])
       || (state.screen === "conviction" && state.thisScreen && !ranked.size
         ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
@@ -745,7 +805,7 @@ function renderBody(pageRows) {
   $("body").innerHTML = pageRows
     .map((symbol) => {
       const idea = ranked.get(symbol);
-      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
+      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}${fscoreCell(symbol)}`;
       if (state.view === "overview") {
         for (const [key, , kind] of metrics) {
           cells += metricTd(symbol, key, kind);
@@ -904,7 +964,7 @@ function render() {
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
-  const sortLabel = { score: "Score", company: "Company", price: "Price", market_cap: "Market cap" }[state.sortKey] || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
+  const sortLabel = { score: "Score", company: "Company", price: "Price", market_cap: "Market cap", fscore: "F-Score (checks passed)" }[state.sortKey] || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
   const sortDirection = state.sortKey === "company"
     ? (state.sortDir === "asc" ? "A to Z" : "Z to A")
     : (state.sortDir === "desc" ? "High to low" : "Low to high");
@@ -1081,6 +1141,16 @@ async function start() {
     const response = await fetch("./desk.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
+    try {
+      // Optional: the F-Score checklist column; the page works without it.
+      const fscoreResponse = await fetch("./fscore.json", { cache: "no-store" });
+      if (fscoreResponse.ok) {
+        const fscore = await fscoreResponse.json();
+        if (fscore.schema === "fscore-1" && fscore.as_of === state.desk.as_of) state.fscore = fscore;
+      }
+    } catch (fscoreError) {
+      console.warn("Temper Lab F-Score checklist is unavailable:", fscoreError);
+    }
     try {
       const releaseResponse = await fetch("./release.json", { cache: "no-store" });
       if (releaseResponse.ok) {
