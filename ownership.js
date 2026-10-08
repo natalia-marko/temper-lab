@@ -1019,6 +1019,9 @@ function openDetail(company, view, from) {
     r.href = `./?q=${encodeURIComponent(company.symbol)}`;
     links.append(r);
   }
+  const t = el("a", "os-button", `${company.symbol} ticker page →`);
+  t.href = `./ticker.html?t=${encodeURIComponent(company.symbol)}`;
+  links.append(t);
   const all = secUrl(`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(company.cik)}&type=4&dateb=&owner=include&count=40`);
   if (all) { const a = el("a", "os-button", "All Form 4 filings on SEC ↗"); a.href = all; a.target = "_blank"; a.rel = "noopener noreferrer"; links.append(a); }
   body.replaceChildren(top, tabs, pane, links);

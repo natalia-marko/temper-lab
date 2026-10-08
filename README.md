@@ -92,6 +92,23 @@ The Research table has an F-Score column on every view (`fscore.css`, data `fsco
 not passed and the score gets a *), with each check in the company panel. Context, not a signal (Leg D found no reliable return edge). The page ignores an
 `fscore.json` whose date differs from `desk.json`.
 
+Ticker is a page of its own, `ticker.html?t=UBER` (`ticker.js`, `ticker.css`), right after Research in the
+sidebar: one company with every saved fact and its date. It only reads files other pages already publish —
+`desk.json` (price, lists, analysts, Research figures; Research stocks only), `fscore.json` (hidden when its
+date differs from `desk.json`), `earnings-calendar.json`, `ownership-signals.json` (Form 4 trades with plan
+status, 13D/13G stakes, FINRA short interest for every issuer) — plus `ticker-volume.json`, written by
+`tools/build_ticker_volume.py` in the weekly job: last week's and last month's average volume against the
+63 sessions before the last 21, and the share of volume traded on up days (above 50% = OBV rose), cut at the
+freeze Friday because a later bar can be a partial day. Fund holdings come from `ticker-funds.json`, written
+by hand each quarter with `tools/build_ticker_funds.py` once SEC posts a new 13F data set: per stock, the
+13F managers that filed for both of the last two quarters — how many hold it, shares and value, how many
+are new, added, cut or sold out, and the five largest increases and decreases by shares. Same CUSIP links
+as the 13F Gate 2 research; the latest restatement in each data set; managers whose table in SEC's data
+set is incomplete (fewer rows than 90% of the entries the filing declares) are not compared; positions
+whose reported value does not match their shares, or whose shares were restated for a split after the
+quarter, are left out and counted. Facts, not a buy or sell call (Gate 2 found no return edge in holder counts). Insights rows and
+Watchlist names link to the page.
+
 Watchlist is the sixth page, `watchlist.html`, last in the sidebar. `watchlist.js` (loaded first on
 every page) puts a star next to each ticker; starred names are kept in the browser's localStorage
 (key `temperlab.watchlist.v1`), so each browser and site address has its own list and nothing is

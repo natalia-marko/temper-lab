@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Temper Lab — Ticker</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
+    <link rel="stylesheet" href="./ticker.css?v=0adf43d76a3f" />
+    <link rel="stylesheet" href="./watchlist.css?v=8a2a6df73761" />
+  </head>
+  <body class="ticker-page">
+    <div class="desk">
+      <aside>
+        <a class="brand" href="./"><span>t</span>temper<span>lab</span></a>
+        <p class="aside-note">One company, everything saved about it, each fact with its date. Facts, not a buy or sell call.</p>
+        <nav class="site-nav" aria-label="Temper Lab pages">
+          <a href="./market-mood.html">Market mood</a>
+          <a href="./">Research</a>
+          <a class="on" href="./ticker.html" aria-current="page">Ticker</a>
+          <a href="./analyst-ratings.html">Analyst ratings</a>
+          <a href="./insights.html">Insights</a>
+          <a href="./jev-reads.html">Jev reads</a>
+          <a href="./watchlist.html">Watchlist<span class="tl-watch-count"></span></a>
+        </nav>
+        <div class="aside-foot"><span class="dot"></span>Shared snapshot<small id="tk-built">Loading…</small></div>
+      </aside>
+      <main>
+        <header class="top">
+          <form id="tk-form" class="tk-form" role="search">
+            <label for="tk-query" class="visually-hidden">Ticker</label>
+            <input id="tk-query" list="tk-symbols" autocomplete="off" spellcheck="false" placeholder="Ticker, e.g. UBER" />
+            <datalist id="tk-symbols"></datalist>
+            <button type="submit">Show</button>
+          </form>
+          <span class="badge">Read-only snapshot</span>
+        </header>
+        <p id="tk-status" class="tk-note" role="status">Loading…</p>
+        <div id="tk-out" aria-live="polite"></div>
+      </main>
+    </div>
+    <script src="./watchlist.js?v=e093c6cc2765"></script>
+    <script src="./ticker.js?v=e9ce7ca395e8"></script>
+  </body>
+</html>

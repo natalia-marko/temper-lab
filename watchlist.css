@@ -24,6 +24,8 @@
 .wl-table td { padding: 10px 12px; border-bottom: 1px solid #eef1ee; vertical-align: top; }
 .wl-table td.wl-star { width: 28px; padding-right: 0; }
 .wl-table td strong, .wl-table td small { display: block; }
+.wl-table td strong a { color: #245e42; text-decoration: none; }
+.wl-table td strong a:hover, .wl-table td strong a:focus-visible { text-decoration: underline; }
 .wl-table td small { color: #6d7d72; font-size: 11px; }
 .wl-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 860px) {

@@ -36,7 +36,11 @@
     const star = el("td", "wl-star");
     star.append(W.button(item.symbol, item.name || c.name || ""));
     const co = el("td");
-    co.append(el("strong", "", item.symbol), el("small", "", c.name || item.name || "Not in this week's Research snapshot"));
+    const name = el("strong");
+    const link = el("a", "", item.symbol);
+    link.href = `./ticker.html?t=${encodeURIComponent(item.symbol)}`;
+    name.append(link);
+    co.append(name, el("small", "", c.name || item.name || "Not in this week's Research snapshot"));
     const from = W.PAGES[item.page];
     tr.append(star, co, el("td", "num", price(c.price)), el("td", "num", money(c.market_cap)),
       el("td", "", resultsText(earnings[item.symbol])), el("td", "", `${longDay(item.added)}${from ? ` · ${from}` : ""}`));

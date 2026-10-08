@@ -8,8 +8,8 @@
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=bcf703cab06e" />
     <link rel="stylesheet" href="./market-mood.css?v=4b169a6269a7" />
-    <link rel="stylesheet" href="./earnings-ahead.css?v=76d2338b6e1a" />
-    <link rel="stylesheet" href="./watchlist.css?v=ec5c260348f8" />
+    <link rel="stylesheet" href="./earnings-ahead.css?v=964f9c0a68ef" />
+    <link rel="stylesheet" href="./watchlist.css?v=8a2a6df73761" />
   </head>
   <body>
     <div class="desk">
@@ -19,6 +19,7 @@
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a class="on" href="./market-mood.html" aria-current="page">Market mood</a>
           <a href="./">Research</a>
+          <a href="./ticker.html">Ticker</a>
           <a href="./analyst-ratings.html">Analyst ratings</a>
           <a href="./insights.html">Insights</a>
           <a href="./jev-reads.html">Jev reads</a>
@@ -35,6 +36,7 @@
         <p id="mood-status" class="mood-status" role="status">Loading the Friday snapshot…</p>
         <div id="mood-content" hidden>
           <div class="desk-context-strip" role="region" aria-label="Weekly snapshot context"><section class="desk-volatility"><span>Implied volatility · Cboe VIX</span><strong id="vix-close">—</strong><small id="vix-week"></small></section><section class="desk-overlap"><span id="desk-overlap-title">Names on multiple screens</span><strong id="desk-overlap-value">—</strong><small id="desk-overlap-change"></small><button type="button" id="desk-open-lists">Explore names →</button></section></div>
+          <section id="earnings-ahead" class="desk-panel earnings-panel" aria-labelledby="earnings-title" hidden><div class="desk-panel-heading"><div><h2 id="earnings-title">Earnings in the next 4 weeks</h2><p id="earnings-summary"></p></div><span id="earnings-built" class="chart-caption"></span></div><div class="ea-filter" role="group" aria-label="Which companies"><button type="button" id="ea-all" class="on" aria-pressed="true">All</button><button type="button" id="ea-mine" aria-pressed="false">★ My watchlist</button></div><div id="earnings-weeks"></div><p id="earnings-note" class="chart-caption" hidden></p></section>
           <div class="page-switch" role="tablist" aria-label="Market mood">
             <button type="button" id="show-tape" class="on" role="tab" aria-selected="true" aria-controls="tape-panel">Market desk</button>
             <button type="button" id="show-lists" role="tab" aria-selected="false" aria-controls="lists-panel">Lists</button>
@@ -50,8 +52,7 @@
               <section class="desk-panel" aria-labelledby="distribution-title"><div class="desk-panel-heading"><div><h2 id="distribution-title">Where stock returns fell</h2><p>Return bands · counts of eligible stocks</p></div></div><div id="return-distribution"></div><p id="distribution-caption" class="chart-caption"></p></section>
               <section class="desk-panel" aria-labelledby="sectors-title"><div class="desk-panel-heading"><div><h2 id="sectors-title">Which sectors led?</h2><p>Median stock return · highest to lowest</p></div></div><div class="sector-table-wrap"><table class="sector-table"><thead><tr><th scope="col">Sector</th><th scope="col">Median return</th><th scope="col">Up</th><th scope="col">Stocks</th></tr></thead><tbody id="sector-body"></tbody></table></div><p class="chart-caption">Up = share with a positive return. Sectors use the shared Nasdaq industry map.</p></section>
             </div>
-            <section id="earnings-ahead" class="desk-panel earnings-panel" aria-labelledby="earnings-title" hidden><div class="desk-panel-heading"><div><h2 id="earnings-title">Results in the next 4 weeks</h2><p>Eligible stocks · open a week for every company by day · ★ your watchlist</p></div><span id="earnings-built" class="chart-caption"></span></div><div id="earnings-weeks"></div><p id="earnings-note" class="chart-caption"></p></section>
-            <details class="desk-method"><summary>What these charts measure</summary><p>Returns use adjusted closes over 63 or 252 trading sessions. Each stock has equal weight in participation, the distribution and sector medians; index funds have their own weights. The median is the middle stock return. The comparison uses the current eligible universe, not historical market membership. Stocks missing either return window are excluded from both windows.</p><p>Prices: saved Yahoo Finance captures (<a href="https://finance.yahoo.com/quote/SPY/history/" target="_blank" rel="noopener noreferrer">SPY</a> · <a href="https://finance.yahoo.com/quote/QQQ/history/" target="_blank" rel="noopener noreferrer">QQQ</a>). Volatility: <a href="https://www.cboe.com/tradable-products/vix/vix-historical-data" target="_blank" rel="noopener noreferrer">Cboe VIX history</a>. VIX measures expected 30-day S&amp;P 500 volatility in index points. Cross-screen names appear on at least two of Hot tape, Growth and Cheap; they are not a combined ranking. This page describes saved observations, not a forecast.</p></details>
+            <details class="desk-method"><summary>What these charts measure</summary><p>Returns use adjusted closes over 63 or 252 trading sessions. Each stock has equal weight in participation, the distribution and sector medians; index funds have their own weights. The median is the middle stock return. The comparison uses the current eligible universe, not historical market membership. Stocks missing either return window are excluded from both windows.</p><p>Prices: saved Yahoo Finance captures (<a href="https://finance.yahoo.com/quote/SPY/history/" target="_blank" rel="noopener noreferrer">SPY</a> · <a href="https://finance.yahoo.com/quote/QQQ/history/" target="_blank" rel="noopener noreferrer">QQQ</a>). Volatility: <a href="https://www.cboe.com/tradable-products/vix/vix-historical-data" target="_blank" rel="noopener noreferrer">Cboe VIX history</a>. VIX measures expected 30-day S&amp;P 500 volatility in index points. Cross-screen names appear on at least two of Hot tape, Growth and Cheap; they are not a combined ranking. Earnings dates: Yahoo Finance's earnings calendar (company pages fill gaps), refreshed Tuesday and Friday; a date can move until the company confirms it. For planning, not a signal: our test found no price drift after results. This page describes saved observations, not a forecast.</p></details>
           </div>
           <div id="lists-panel" role="tabpanel" aria-labelledby="show-lists" hidden>
           <section class="weekly-report" aria-labelledby="weekly-report-title">
@@ -88,6 +89,6 @@
     <script src="./watchlist.js?v=e093c6cc2765"></script>
     <script src="./sectors.js?v=1cdbdb7f59aa"></script>
     <script src="./market-mood.js?v=a4c2b958f0cc"></script>
-    <script src="./earnings-ahead.js?v=9902e35fff0d"></script>
+    <script src="./earnings-ahead.js?v=2d522be857e3"></script>
   </body>
 </html>
