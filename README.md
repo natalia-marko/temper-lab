@@ -99,7 +99,13 @@ date differs from `desk.json`), `earnings-calendar.json`, `ownership-signals.jso
 status, 13D/13G stakes, FINRA short interest for every issuer) — plus `ticker-volume.json`, written by
 `tools/build_ticker_volume.py` in the weekly job: last week's and last month's average volume against the
 63 sessions before the last 21, and the share of volume traded on up days (above 50% = OBV rose), cut at the
-freeze Friday because a later bar can be a partial day. Fund holdings come from `ticker-funds.json`, written
+freeze Friday because a later bar can be a partial day. The same file carries the 3-month price chart: QQQ's
+last 64 sessions to the freeze Friday as the date axis, QQQ's and each stock's adjusted closes on it (Insights
+rules: four significant digits; no line with fewer than half the days or a one-day move beyond 3x). The page
+reads top-down: header (next results date, list ranks against last week), a summary strip with one dated line
+per section, then price and trading, the business (Research stocks only; price / earnings and EV / operating
+income are the only ratios worked out on the page, from one Research record, and not shown for a loss), and
+who owns and trades it; method notes sit in "About the data". Fund holdings come from `ticker-funds.json`, written
 by hand each quarter with `tools/build_ticker_funds.py` once SEC posts a new 13F data set: per stock, the
 13F managers that filed for both of the last two quarters — how many hold it, shares and value, how many
 are new, added, cut or sold out, and the five largest increases and decreases by shares. Same CUSIP links
