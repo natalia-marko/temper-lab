@@ -75,6 +75,8 @@ const share = (value) => (num(value) ? `${Math.round(Number(value) * 100)}%` : "
 const points = (value) => (num(value) ? `${Number(value) > 0 ? "+" : Number(value) < 0 ? "−" : ""}${Math.abs(Number(value) * 100).toFixed(1)} pts` : "n/a");
 const times = (value) => (num(value) ? `${Number(value).toFixed(Number(value) < 10 ? 1 : 0)}×` : "n/a");
 const whole = (value) => Number(value).toLocaleString("en-US");
+// Share prices on the analyst target range: always two decimals, like the header close.
+const dollars = (value) => (num(value) ? `$${Number(value).toFixed(2)}` : "n/a");
 function day(iso) {
   const [, m, d] = String(iso || "").slice(0, 10).split("-");
   return m && d ? `${Number(d)} ${MONTHS[Number(m) - 1]}` : "";
@@ -773,6 +775,83 @@ function fscoreBox(c) {
     open.length ? list : note("All nine checks passed."), more("All nine checks", all),
     f.computed < 9 ? note(`${f.computed} of 9 could be computed; * = a missing check counts as not passed.`) : null);
 }
+// Yahoo-style low→high range, Temper colours. Close is the freeze Friday price,
+// never Yahoo's live "current". Average prefers mean, else median.
+function priceTargetsRange(f, close, when) {
+  const low = num(f.target_low) ? Number(f.target_low) : null;
+  const high = num(f.target_high) ? Number(f.target_high) : null;
+  if (low === null || high === null || high < low) return null;
+  when = when || f.targets_retrieved_at || null;
+  const mean = num(f.target_mean) ? Number(f.target_mean) : null;
+  const median = num(f.target_median) ? Number(f.target_median) : null;
+  const avg = mean !== null ? mean : median;
+  const avgLabel = mean !== null ? "Average" : median !== null ? "Median" : null;
+  const closePx = num(close) ? Number(close) : null;
+  const points = [low, high];
+  if (avg !== null) points.push(avg);
+  if (closePx !== null) points.push(closePx);
+  const lo = Math.min(...points);
+  const hi = Math.max(...points);
+  const span = hi - lo || 1;
+  const pct = (v) => `${((v - lo) / span) * 100}%`;
+
+  const wrap = el("div", "tk-mrow tk-targets");
+  const head = el("div", "tk-mtop");
+  head.append(el("span", "", "Price targets"));
+  if (avg !== null && avgLabel && closePx !== null) {
+    const gap = (avg - closePx) / closePx;
+    head.append(el("b", "", `${gap >= 0 ? "+" : "−"}${Math.abs(gap * 100).toFixed(0)}% ${avgLabel.toLowerCase()} vs close`));
+  }
+  wrap.append(head);
+
+  const chart = el("div", "tk-trange");
+  chart.setAttribute("role", "img");
+  const parts = [`low ${dollars(low)}`, `high ${dollars(high)}`];
+  if (avg !== null) parts.push(`${avgLabel.toLowerCase()} ${dollars(avg)}`);
+  if (closePx !== null) parts.push(`close ${dollars(closePx)}`);
+  chart.setAttribute("aria-label", parts.join(", "));
+
+  if (avg !== null && avgLabel) {
+    const call = el("div", "tk-tcall up");
+    call.style.left = pct(avg);
+    call.append(el("b", "", dollars(avg)), el("span", "", avgLabel));
+    chart.append(call);
+  }
+  const track = el("div", "tk-ttrack");
+  track.append(el("i", "end", null), el("i", "end right", null));
+  if (avg !== null) {
+    const mark = el("i", "mark avg");
+    mark.style.left = pct(avg);
+    track.append(mark);
+  }
+  if (closePx !== null) {
+    const mark = el("i", "mark close");
+    mark.style.left = pct(closePx);
+    track.append(mark);
+  }
+  chart.append(track);
+  if (closePx !== null) {
+    const band = el("div", "tk-tband");
+    const call = el("div", "tk-tcall down");
+    call.style.left = pct(closePx);
+    call.append(el("b", "", dollars(closePx)), el("span", "", "Close"));
+    band.append(call);
+    chart.append(band);
+  }
+  const ends = el("div", "tk-tends");
+  const left = el("div");
+  left.append(el("b", "", dollars(low)), el("span", "", "Low"));
+  const right = el("div");
+  right.append(el("b", "", dollars(high)), el("span", "", "High"));
+  ends.append(left, right);
+  chart.append(ends);
+  wrap.append(chart);
+  const note = when
+    ? `Yahoo targets, retrieved ${longDay(when)} · close is the freeze Friday price, not a live quote`
+    : "Yahoo targets · close is the freeze Friday price, not a live quote";
+  wrap.append(el("small", "", note));
+  return wrap;
+}
 function analystsBox(c) {
   const f = c.research.factors;
   const a = c.research.analyst;
@@ -796,7 +875,8 @@ function analystsBox(c) {
   sbTop.append(el("span", "", "Strong buy"), el("b", "", num(f.analyst_total)
     ? `${num(f.strong_buy_count) ? f.strong_buy_count : "n/a"} of ${f.analyst_total} ratings${num(f.strong_buy) ? ` (${share(f.strong_buy)})` : ""}` : "n/a"));
   sb.append(...[sbTop, num(f.strong_buy) ? meter(f.strong_buy, 1, null, "soft") : null].filter(Boolean));
-  return section("Analysts", a.retrieved_at ? `Yahoo, retrieved ${longDay(a.retrieved_at)}` : "", rev, sb);
+  const targets = priceTargetsRange(f, c.research.price, f.targets_retrieved_at || null);
+  return section("Analysts", a.retrieved_at ? `Yahoo, retrieved ${longDay(a.retrieved_at)}` : "", rev, sb, targets);
 }
 function insidersBox(c) {
   const i = c.insiders;

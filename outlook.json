@@ -535,7 +535,7 @@
   ],
   "selection": "60% six-month relative-strength percentile + 40% ROE percentile inside the quality cohort; maximum two per sector, one per industry, trailing daily correlation <= 0.80 with >=126 paired observations. Fewer than five if constraints prevent filling slots. Experimental model estimates do not determine this ranking.",
   "selection_method": "composite_60_40",
-  "snapshot_sha256": "03cd8909b5f82f780595afb4e17d60a0873d7a11ca32da38604df95383095a8b",
+  "snapshot_sha256": "02391af08b928ee92bba1d27923d0d35ed25cc75ee6af857e5676a6dbfb9b324",
   "training_months": 49,
   "training_rows": 6262,
   "universe": "Liquid US stocks, cap >= $2B, revenue growth >=5%, positive operating/net income, cash/profit >=0.7, ROE 5\u201380%, equity/assets >=5%, operating margin >=5%, liabilities/assets <=80%, annualised volatility <=65%, fresh reconciled accounts. Financials, REITs and unknown sectors excluded.",

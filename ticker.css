@@ -117,6 +117,29 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-split i.up { background: var(--tk-up); }
 .tk-split i.down { background: var(--tk-down); }
 
+/* Analyst price-target range: low–high track, Average above, Close below. */
+.tk-targets { margin-top: 4px; }
+.tk-trange { position: relative; padding: 48px 10px 0; }
+.tk-ttrack { position: relative; height: 8px; border-radius: 4px; background: #d7e0d8; }
+.tk-ttrack i.end { position: absolute; top: 50%; left: 0; width: 8px; height: 8px; margin: -4px 0 0 -2px; border-radius: 50%; background: #9aab9d; }
+.tk-ttrack i.end.right { left: auto; right: 0; margin: -4px -2px 0 0; }
+.tk-ttrack i.mark { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; box-sizing: border-box; }
+.tk-ttrack i.mark.avg { background: #fff; border: 2px solid var(--tk-up); }
+.tk-ttrack i.mark.close { background: var(--ink); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--ink); }
+.tk-tcall { position: absolute; transform: translateX(-50%); min-width: 62px; max-width: 46%; padding: 4px 7px; border-radius: 6px; background: #fff; text-align: center; font-variant-numeric: tabular-nums; z-index: 1; }
+.tk-tcall b { display: block; font-size: 12px; line-height: 1.2; }
+.tk-tcall span { display: block; color: var(--tk-faint); font-size: 10px; line-height: 1.2; }
+.tk-tcall.up { top: 0; border: 1px solid var(--tk-up); }
+.tk-tcall.up::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 8px; background: var(--tk-up); transform: translateX(-50%); }
+.tk-tband { position: relative; height: 44px; margin-top: 8px; }
+.tk-tcall.down { top: 0; border: 1px solid var(--ink); }
+.tk-tcall.down::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: 1px; height: 8px; background: var(--ink); transform: translateX(-50%); }
+.tk-tends { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tk-tends div { display: grid; gap: 1px; }
+.tk-tends b { font-size: 12px; }
+.tk-tends span { color: var(--tk-faint); font-size: 10px; }
+.tk-tends div:last-child { text-align: right; }
+
 /* business */
 .tk-fin { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tk-fin th { padding: 12px 0 4px; color: var(--tk-faint); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-align: left; text-transform: uppercase; }
