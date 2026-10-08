@@ -446,6 +446,50 @@ function sparkline(p) {
   return s;
 }
 
+// The address a recipient can open. A local preview still copies the public page.
+function cardLink(symbol, coarse) {
+  return { url: `https://temper-lab.com/ticker.html?t=${encodeURIComponent(symbol)}`, share: Boolean(coarse) };
+}
+function copyCard(url) {
+  if (navigator.clipboard && window.isSecureContext && navigator.clipboard.writeText) return navigator.clipboard.writeText(url);
+  const field = document.createElement("textarea");
+  field.value = url;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.left = "-9999px";
+  document.body.append(field);
+  field.select();
+  const ok = document.execCommand("copy");
+  field.remove();
+  return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
+}
+// Phone: the system share sheet. A computer copies the link. Dismissing the sheet is not a failure.
+function sendCard(symbol, coarse) {
+  const link = cardLink(symbol, coarse);
+  if (link.share && navigator.share) {
+    return navigator.share({ title: `${symbol} — Temper Lab`, url: link.url }).then(() => "shared").catch((error) => {
+      if (error && error.name === "AbortError") return "dismissed";
+      return copyCard(link.url).then(() => "copied");
+    });
+  }
+  return copyCard(link.url).then(() => "copied");
+}
+function shareButton(symbol) {
+  const button = el("button", "tk-link", "Copy link");
+  button.type = "button";
+  button.addEventListener("click", () => {
+    const coarse = window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : false;
+    sendCard(symbol, coarse).then((result) => {
+      if (result !== "copied") return;
+      button.textContent = "Link copied";
+      setTimeout(() => { button.textContent = "Copy link"; }, 2000);
+    }).catch(() => {
+      button.textContent = "Copy failed";
+      setTimeout(() => { button.textContent = "Copy link"; }, 2000);
+    });
+  });
+  return button;
+}
 function headerBox(c) {
   const box = el("section", "tk-title");
   const left = el("div");
@@ -471,6 +515,7 @@ function headerBox(c) {
   if (c.eligible) chips.append(link(`Open ${c.symbol} in Research →`, `./?q=${encodeURIComponent(c.symbol)}`));
   const sec = secUrl(`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(c.cik || c.filer || c.symbol)}&owner=include&count=40`);
   if (sec) chips.append(link("SEC filings ↗", sec, true));
+  chips.append(shareButton(c.symbol));
   left.append(chips);
   left.append(note(c.eligible
     ? `In Research, week of ${longDay(c.research.as_of)}${c.research.lists.length ? "" : "; not on a published list"}.`

@@ -34,6 +34,7 @@
 .tk-sub { margin: 4px 0 0; color: #3d5346; }
 .tk-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
 .tk-chip, .tk-link { display: inline-flex; align-items: center; padding: 6px 10px; border: 1px solid #d0dfd2; border-radius: 7px; background: #eef5ed; color: #245e42; font-size: 12px; font-weight: 600; text-decoration: none; }
+button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-chip.event { border-color: #ecd3a8; background: #fff8ec; color: #7a4a06; }
 .tk-chip.quiet { border-color: var(--line); background: #fff; color: var(--muted); font-weight: 500; }
 .tk-link:hover, .tk-link:focus-visible { border-color: #9bbda2; background: #e2eee3; }
