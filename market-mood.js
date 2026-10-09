@@ -283,27 +283,57 @@ function renderDistribution(breakdown, lists) {
   $('distribution-caption').textContent = `${lists.count ? 'Share of each group · same percentage scale for both.' : 'List return observations are unavailable.'} Lower bound included, upper excluded; zero belongs to 0% to +10%.`;
 }
 
+function sectorScale(sectors) {
+  const values = sectors.map(row => row.median).filter(Number.isFinite);
+  const low = Math.min(0, ...values) * 100, high = Math.max(0, ...values) * 100;
+  const rough = Math.max(high - low, 1) / 4;
+  const unit = 10 ** Math.floor(Math.log10(rough));
+  const step = [1, 2, 5, 10].find(value => value * unit >= rough) * unit;
+  const minimum = Math.floor(low / step) * step;
+  const maximum = Math.max(minimum + step, Math.ceil(high / step) * step);
+  const position = value => (value * 100 - minimum) / (maximum - minimum) * 100;
+  const ticks = Array.from({length: Math.round((maximum - minimum) / step) + 1},
+    (_, index) => minimum + index * step);
+  return {minimum, maximum, ticks, position, zero: position(0)};
+}
+
 function renderSectors(breakdown, lists) {
   const target = $('sector-body'); target.replaceChildren();
+  const axis = $('sector-scale'); axis.replaceChildren();
   if (!breakdown.sectors.length) {
-    appendText(appendText(target, 'tr', ''), 'td', 'Sector observations are unavailable.', 'empty').colSpan = 3;
+    appendText(target, 'p', 'Sector observations are unavailable.', 'chart-empty');
     return;
   }
   const listedSectors = new Map(lists.sectors.map(row => [row.key, row]));
-  const maximum = Math.max(...[...breakdown.sectors, ...lists.sectors].map(row => Math.abs(row.median)), 0.001);
+  const scale = sectorScale([...breakdown.sectors, ...lists.sectors]);
+  for (const tick of scale.ticks) {
+    const position = scale.position(tick / 100);
+    const crowded = tick !== 0 && Math.abs(position - scale.zero) < 35;
+    const label = appendText(axis, 'span', `${tick > 0 ? '+' : ''}${Number(tick.toFixed(4))}%`,
+      `${tick === 0 || tick === scale.minimum || tick === scale.maximum ? 'axis-key' : ''}${crowded ? ' axis-crowded' : ''}`);
+    label.style.left = `${position}%`;
+  }
   for (const row of breakdown.sectors) {
-    const tr = appendText(target, 'tr', '');
-    appendText(tr, 'th', row.label).scope = 'row';
-    for (const [cohort, className] of [[row, 'eligible'], [listedSectors.get(row.key), 'listed']]) {
-      const value = appendText(tr, 'td', '', `sector-return ${className}`);
+    const group = appendText(target, 'div', '', 'sector-group');
+    group.setAttribute('role', 'listitem');
+    appendText(group, 'span', row.label, 'sector-name');
+    const pair = appendText(group, 'div', '', 'sector-pair');
+    for (const [label, cohort, className] of [['Eligible', row, 'eligible'], ['On lists', listedSectors.get(row.key), 'listed']]) {
+      const series = appendText(pair, 'div', '', `sector-series ${className}`);
+      const description = `${row.label}, ${label}: ${percent(cohort?.median)}, ${cohort?.count || 0} stocks`;
+      series.setAttribute('aria-label', description);
+      series.setAttribute('title', description);
+      const track = appendText(series, 'div', '', 'sector-bar-track');
+      appendText(track, 'span', '', 'sector-zero').style.left = `${scale.zero}%`;
       if (cohort) {
-        const track = appendText(value, 'div', '', 'sector-track');
-        const bar = appendText(track, 'span', '', cohort.median < 0 ? 'loss' : 'gain');
-        const length = Math.abs(cohort.median) / maximum * 50;
-        bar.style.width = `${length}%`; bar.style.left = `${cohort.median < 0 ? 50 - length : 50}%`;
+        const bar = appendText(track, 'span', '', 'sector-bar');
+        const endpoint = scale.position(cohort.median);
+        bar.style.width = `${Math.abs(endpoint - scale.zero)}%`;
+        bar.style.left = `${Math.min(endpoint, scale.zero)}%`;
       }
+      const value = appendText(series, 'div', '', 'sector-value');
       appendText(value, 'strong', percent(cohort?.median));
-      appendText(value, 'small', `${cohort?.count || 0} stock${cohort?.count === 1 ? '' : 's'}`);
+      appendText(value, 'small', `n=${cohort?.count || 0}`);
     }
   }
 }

@@ -135,8 +135,9 @@ The separate Market mood page uses the same frozen Friday. **Market desk** shows
 SPY/QQQ adjusted-return paths, positive-return participation, return bands and
 sector medians. Participation, return bands and sector medians compare eligible stocks
 with the distinct union of Hot Tape, Growth and Cheap names. Return-band bars use
-percentages of each group on one scale; sector columns show medians and sample
-sizes on a shared bar scale, sorted by the eligible median. Today's list
+percentages of each group on one scale; sector grouped horizontal bars show
+medians on one return axis with a zero baseline and sample sizes beside the values,
+sorted by the eligible median. Today's list
 membership describes selected past returns, not a tracked portfolio result.
 The 63/252-session controls update every chart together. The
 date slider and pointer inspection show saved index observations. Stock returns
