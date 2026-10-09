@@ -115,6 +115,25 @@
     refresh();
     return has(symbol);
   }
+  // Change the displayed names together, preserving unrelated edits in other tabs.
+  function setSelected(rows, selected) {
+    const targets = clean(rows);
+    sync();
+    const next = new Map(items.map((item) => [item.symbol, item]));
+    for (const item of targets) {
+      if (selected) {
+        const saved = next.get(item.symbol) || item;
+        next.set(item.symbol, saved);
+        pending.set(item.symbol, saved);
+      } else {
+        next.delete(item.symbol);
+        pending.set(item.symbol, null);
+      }
+    }
+    items = [...next.values()];
+    save();
+    refresh();
+  }
   // A star as a DOM button (pages that build elements) ...
   function button(symbol, name) {
     const b = document.createElement("button");
@@ -178,6 +197,6 @@
     refresh();
   }
 
-  globalThis.TLWatch = { KEY, SCHEMA, PAGES, button, html, has, toggle, clean, exportText, exportFile, importText,
+  globalThis.TLWatch = { KEY, SCHEMA, PAGES, button, html, has, toggle, setSelected, clean, exportText, exportFile, importText,
     list: () => items.slice(), stored: () => stored, onChange: (fn) => listeners.push(fn) };
 })();

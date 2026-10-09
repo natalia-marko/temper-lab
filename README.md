@@ -126,7 +126,9 @@ Watchlist is the sixth page, `watchlist.html`, last in the sidebar. `watchlist.j
 every page) puts a star next to each ticker; starred names are kept in the browser's localStorage
 (key `temperlab.watchlist.v1`), so each browser and site address has its own list and nothing is
 sent anywhere. `watchlist-page.js` lists them with the Research snapshot price and the next results
-date, and exports or imports a JSON copy.
+date, and exports or imports a JSON copy. A small Select all / Unselect all button
+changes the displayed stars together; bulk-unselected rows stay visible until
+leaving the page so they can be selected again, with their original added dates.
 Watchlist edits re-read the saved list before changing it, so an older tab keeps
 names added in another tab. Saves are checked by reading them back. If storage
 fails, the current list stays available in the page and a warning offers an

@@ -30,6 +30,8 @@
 
   let desk = {};
   let earnings = {};
+  let bulkRows = []; // Keep bulk-unselected rows here so Select all can restore them this visit.
+  let displayed = [];
   function row(item) {
     const c = desk[item.symbol] || {};
     const tr = el("tr");
@@ -47,10 +49,15 @@
     return tr;
   }
   function render(items) {
-    const sorted = items.slice().sort((a, b) => b.added.localeCompare(a.added) || a.symbol.localeCompare(b.symbol));
-    $("wl-count").textContent = items.length ? `${items.length} ${items.length === 1 ? "company" : "companies"}` : "";
-    $("wl-empty").hidden = items.length > 0;
-    $("wl-table").hidden = items.length === 0;
+    if (bulkRows.every((item) => W.has(item.symbol))) bulkRows = [];
+    displayed = W.clean([...items, ...bulkRows]);
+    const sorted = displayed.slice().sort((a, b) => b.added.localeCompare(a.added) || a.symbol.localeCompare(b.symbol));
+    const allSelected = displayed.length > 0 && displayed.every((item) => W.has(item.symbol));
+    $("wl-select-all").textContent = allSelected ? "Unselect all" : "Select all";
+    $("wl-select-all").disabled = displayed.length === 0;
+    $("wl-count").textContent = bulkRows.length ? `${items.length} of ${displayed.length} starred` : items.length ? `${items.length} ${items.length === 1 ? "company" : "companies"}` : "";
+    $("wl-empty").hidden = displayed.length > 0;
+    $("wl-table").hidden = displayed.length === 0;
     $("wl-export").disabled = items.length === 0;
     $("wl-storage").hidden = W.stored();
     $("wl-rows").replaceChildren(...sorted.map(row));
@@ -58,6 +65,13 @@
   const say = (text) => { $("wl-status").textContent = text; };
 
   function setup() {
+    $("wl-select-all").addEventListener("click", () => {
+      const selected = !displayed.every((item) => W.has(item.symbol));
+      const targets = displayed.slice();
+      if (!selected) bulkRows = targets;
+      W.setSelected(targets, selected);
+      say(selected ? "All shown companies are starred." : "All shown companies are unstarred. Select all to restore them before leaving this page.");
+    });
     $("wl-export").addEventListener("click", () => {
       W.exportFile();
       say("Saved a copy to your downloads.");
