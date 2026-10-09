@@ -46,8 +46,6 @@ main { margin-left: 215px; }
 }
 .search-status { margin: 0; max-width: 520px; font-size: 12px; line-height: 1.4; color: #6a4a2e; }
 .search-status[hidden] { display: none; }
-.top-page-link { display: inline-flex; align-items: center; white-space: nowrap; padding: 8px 11px; border: 1px solid #d0dfd2; border-radius: 7px; color: #245e42; background: #eef5ed; font-size: 12px; font-weight: 650; text-decoration: none; }
-.top-page-link:hover, .top-page-link:focus-visible { border-color: #9bbda2; background: #e2eee3; }
 .badge {
   padding: 6px 10px; border-radius: 999px; background: #eef2ea; color: #355544;
   font-size: 11px; font-weight: 600; white-space: nowrap;
@@ -230,4 +228,41 @@ dialog dd { margin: 0; overflow-wrap: anywhere; }
   .toolbar { padding: 16px 12px 12px; }
   .tabs { gap: 18px; }
   .tabs button { white-space: nowrap; }
+}
+
+/* One site menu, with a remembered desktop preference and a mobile drawer. */
+.sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sidebar-head .brand { padding: 0; font-size: 21px; letter-spacing: -.8px; }
+.sidebar-head .brand span:first-child { flex-shrink: 0; width: 30px; height: 30px; margin-right: 8px; }
+.nav-close { flex-shrink: 0; width: 30px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 23px; line-height: 1; }
+.nav-close:hover { background: var(--chip); color: var(--green); }
+.nav-ready #site-sidebar { z-index: 30; overflow-y: auto; transition: transform 180ms ease, visibility 180ms; }
+.nav-ready[data-navigation="closed"] #site-sidebar { transform: translateX(-100%); visibility: hidden; }
+.nav-ready[data-navigation="closed"] main { margin-left: 0; }
+.nav-open { position: fixed; z-index: 20; top: 17px; left: 14px; display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: #fcfcfaf2; color: #355544; box-shadow: 0 2px 8px #203c2c0a; font-size: 12px; }
+.nav-open:hover { background: var(--chip); }
+.nav-open span { font-size: 14px; }
+.nav-ready[data-navigation="closed"] main > .heading:first-child { padding-left: 110px; }
+.nav-ready[data-navigation="closed"] main > .top:first-child { padding-left: 110px; }
+.nav-backdrop { position: fixed; inset: 0; z-index: 25; border: 0; background: #172d2466; cursor: default; }
+.nav-drawer-open { overflow: hidden; }
+.site-credit { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin: 30px 28px 0; padding: 18px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.site-credit strong { color: var(--ink); font-weight: 500; }
+.site-credit a { color: var(--green); text-underline-offset: 3px; }
+.site-credit nav { display: flex; align-items: center; gap: 18px; }
+.site-credit nav a { display: inline-flex; align-items: center; min-height: 32px; }
+@media (max-width: 860px) {
+  .nav-ready #site-sidebar { position: fixed; inset: 0 auto 0 0; width: min(280px, calc(100% - 56px)); height: 100dvh; padding: 24px 20px; border-right: 1px solid var(--line); border-bottom: 0; box-shadow: 6px 0 30px #172d2414; }
+  .nav-ready main { margin-left: 0; }
+  .nav-ready .aside-note { margin-bottom: 24px; }
+  .nav-close { width: 40px; height: 40px; }
+  .nav-ready .site-nav a { min-height: 44px; display: flex; align-items: center; }
+  .nav-open { position: sticky; top: 0; left: 0; width: 100%; min-height: 56px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: #fcfcfa; box-shadow: none; }
+  .nav-ready[data-navigation="open"] .nav-open[hidden] { display: inline-flex !important; visibility: hidden; }
+  .nav-ready main > .heading:first-child, .nav-ready[data-navigation="closed"] main > .heading:first-child { padding: 20px 14px 8px; }
+  .nav-ready[data-navigation="closed"] main > .top:first-child { padding-left: 14px; }
+  .site-credit { margin-left: 14px; margin-right: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-ready #site-sidebar { transition: none; }
 }

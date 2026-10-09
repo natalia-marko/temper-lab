@@ -1,5 +1,12 @@
 # Temper Lab — Opportunities snapshot
 
+All pages share one sidebar menu. Hide it to expand the workspace; the desktop
+choice is remembered in this browser. On phones it opens as a drawer, closes
+with Escape or the backdrop, and keeps keyboard focus inside while open.
+Research and Ticker keep their search controls; duplicate top navigation is
+removed. The footer credits Natalia Marko with author-supplied Email and
+LinkedIn links.
+
 Read-only weekly lists: Strength, Growth, Cheap on operating profit, and Conviction.
 
 **Conviction** ranks the shared eligible universe with at least five analyst
