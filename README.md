@@ -156,9 +156,15 @@ in a compact summary below the page heading, visible in both Market desk and
 Lists. This weekly context stays above the return-window controls. VIX is
 non-directional and does not rank individual stocks.
 
-**Lists** shows who sits on more than one of Hot Tape, Growth, and Cheap versus
-the prior Friday, then Conviction’s first ten. That score is not a probability
-and does not enter the overlap. Growth and Cheap ranks stay on the Screener.
+**Lists** opens with the distinct union and overlap counts, plus entries, exits
+and net change since the prior Friday. Names on all three screens form the
+shared core; the two-screen table shows membership in three aligned columns.
+Pair filters and ticker/company search work together, with 12 names initially
+and Show more for the rest. Stars save names; ticker links open the saved company
+page. Conviction's first ten sit in a separate analyst panel (beside the overlap
+on wide screens). Its score is not a probability and does not enter the overlap.
+The calendar and tape context stay inside Market desk, so Lists begins immediately
+below the tab selector. Growth and Cheap ranks stay on the Screener.
 
 This is a static snapshot of the research desk. It does not run the Python product, download prices, or save ideas.
 

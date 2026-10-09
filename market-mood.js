@@ -429,7 +429,7 @@ function renderScreenLeaders(id, rows, format = "share") {
     const holder = appendText(company, "div", "", "tl-with-star");
     if (globalThis.TLWatch) holder.append(globalThis.TLWatch.button(item.symbol, item.name));
     const identity = appendText(holder, "div", "", "extreme-identity");
-    appendText(identity, "strong", item.symbol);
+    appendText(identity, "a", item.symbol).href = `./ticker.html?t=${encodeURIComponent(item.symbol)}`;
     appendText(identity, "small", item.name || item.symbol);
     const metric = format === "score" ? scoreText(item.metric) : levelPercent(item.metric);
     appendText(tr, "td", metric, "extreme-return");
@@ -445,7 +445,7 @@ const OVERLAP_PAIR_LABELS = {
   strength_undervalued: "Hot Tape · Cheap",
 };
 
-const overlapState = { doublesFilter: "all", triples: [], doubles: [] };
+const overlapState = { doublesFilter: "all", query: "", visible: 12, triples: [], doubles: [] };
 
 function splitOverlap(rows) {
   const triples = [];
@@ -472,6 +472,12 @@ function filterDoubles(rows, key) {
   return rows.filter((row) => overlapPairKey(row) === key);
 }
 
+function findDoubles(rows, key, query) {
+  const term = String(query || "").trim().toLowerCase();
+  return filterDoubles(rows, key).filter(row =>
+    !term || `${row.symbol} ${row.name || ""}`.toLowerCase().includes(term));
+}
+
 function doublesCounts(rows) {
   const totals = { all: rows.length, strength_growth: 0, growth_undervalued: 0, strength_undervalued: 0, new: 0 };
   for (const row of rows) {
@@ -482,27 +488,32 @@ function doublesCounts(rows) {
   return totals;
 }
 
-function renderOverlapRow(target, row) {
-  const item = appendText(target, "div", "", "overlap-item");
-  const holder = appendText(item, "div", "", "tl-with-star");
+function renderOverlapRow(target, row, triple = false) {
+  const item = appendText(target, triple ? "div" : "tr", "", triple ? "triple-item" : "pair-row");
+  const company = triple ? item : appendText(item, "td", "");
+  const holder = appendText(company, "div", "", "tl-with-star");
   if (globalThis.TLWatch) holder.append(globalThis.TLWatch.button(row.symbol, row.name));
   const identity = appendText(holder, "div", "", "overlap-identity");
-  appendText(identity, "strong", row.symbol);
+  const title = appendText(identity, "div", "", "overlap-symbol");
+  appendText(title, "a", row.symbol).href = `./ticker.html?t=${encodeURIComponent(row.symbol)}`;
+  if (row.new_overlap === true) appendText(title, "span", "New", "overlap-new");
   appendText(identity, "small", row.name || row.symbol);
-  const badges = appendText(item, "div", "", "overlap-badges");
-  for (const key of row.screens || []) appendText(badges, "span", SCREEN_NAMES[key] || key, "overlap-badge");
-  if (row.new_overlap === true) appendText(badges, "span", "New overlap", "overlap-badge overlap-new");
+  if (!triple) for (const key of ["strength", "growth", "undervalued"]) {
+    const present = (row.screens || []).includes(key);
+    const cell = appendText(item, "td", present ? "●" : "—", present ? "pair-present" : "pair-absent");
+    cell.setAttribute("aria-label", `${SCREEN_NAMES[key]}: ${present ? "on list" : "not on list"}`);
+  }
 }
 
 function renderTriples(rows) {
   const target = $("triples-list");
   target.replaceChildren();
-  $("triples-count").textContent = `${rows.length} name${rows.length === 1 ? "" : "s"} · alphabetical`;
+  $("triples-count").textContent = `${rows.length} name${rows.length === 1 ? "" : "s"}`;
   if (!rows.length) {
     appendText(target, "div", "No name is on all three screens this Friday.", "overlap-empty");
     return;
   }
-  for (const row of rows) renderOverlapRow(target, row);
+  for (const row of rows) renderOverlapRow(target, row, true);
 }
 
 function renderDoublesChips(counts) {
@@ -529,14 +540,16 @@ function renderDoublesChips(counts) {
 function renderDoubles() {
   const target = $("doubles-list");
   target.replaceChildren();
-  const filtered = filterDoubles(overlapState.doubles, overlapState.doublesFilter);
-  const doubleCount = overlapState.doubles.length;
-  $("doubles-count").textContent = `${filtered.length} of ${doubleCount} · alphabetical within the filter`;
+  const filtered = findDoubles(overlapState.doubles, overlapState.doublesFilter, overlapState.query);
+  const shown = filtered.slice(0, overlapState.visible);
+  $("doubles-count").textContent = `${shown.length} of ${filtered.length} matching names · A–Z`;
+  $("overlap-more").hidden = shown.length >= filtered.length;
+  $("overlap-more").textContent = `Show ${Math.min(12, filtered.length - shown.length)} more`;
   if (!filtered.length) {
-    appendText(target, "div", "No name matches this pair for the current Friday.", "overlap-empty");
+    appendText(appendText(target, "tr", ""), "td", "No two-screen names match. Try another pair or search.", "overlap-empty").colSpan = 4;
     return;
   }
-  for (const row of filtered) renderOverlapRow(target, row);
+  for (const row of shown) renderOverlapRow(target, row);
 }
 
 function renderOverlapCard(report) {
@@ -544,7 +557,7 @@ function renderOverlapCard(report) {
   const { triples, doubles } = splitOverlap(rows);
   overlapState.triples = triples;
   overlapState.doubles = doubles;
-  $("overlap-count").textContent = `${rows.length} names · triples first, then two-screen names`;
+  $("overlap-count").textContent = `${doubles.length} names`;
   renderTriples(triples);
   renderDoublesChips(doublesCounts(doubles));
   renderDoubles();
@@ -559,9 +572,12 @@ function renderScreenReport(report) {
   $("report-multi-share").textContent = unique && multi != null
     ? `${((multi / unique) * 100).toFixed(1)}% of ${unique.toLocaleString()} screened`
     : "";
-  $("report-change").textContent = report?.previous_as_of
-    ? `Since ${day(report.previous_as_of)}: ${report.new_overlap_count} entered, ${report.lost_overlap_count} left. Net ${report.multi_count - report.previous_multi_count >= 0 ? "+" : ""}${report.multi_count - report.previous_multi_count}.`
-    : "No prior Friday to compare.";
+  const comparison = !!report?.previous_as_of;
+  $("report-change").textContent = comparison ? `Since ${day(report.previous_as_of)}` : "No prior Friday to compare";
+  $("report-entered").textContent = comparison ? String(report.new_overlap_count) : "—";
+  $("report-left").textContent = comparison ? String(report.lost_overlap_count) : "—";
+  const net = report?.multi_count - report?.previous_multi_count;
+  $("report-net").textContent = comparison ? `${net >= 0 ? "+" : ""}${net}` : "—";
   renderOverlapCard(report);
 }
 
@@ -597,9 +613,20 @@ function bindOverlapControls() {
     const button = event.target.closest("[data-doubles-filter]");
     if (!button || button.disabled) return;
     overlapState.doublesFilter = button.dataset.doublesFilter;
+    overlapState.visible = 12;
     renderDoublesChips(doublesCounts(overlapState.doubles));
     renderDoubles();
     chips.querySelector(`[data-doubles-filter="${overlapState.doublesFilter}"]`)?.focus();
+  });
+  $("overlap-query").addEventListener("input", event => {
+    overlapState.query = event.target.value;
+    overlapState.visible = 12;
+    renderDoubles();
+  });
+  $("overlap-more").addEventListener("click", () => {
+    overlapState.visible += 12;
+    renderDoubles();
+    if ($("overlap-more").hidden) $("overlap-query").focus();
   });
   chips.dataset.bound = "true";
 }
