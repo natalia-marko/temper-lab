@@ -21,6 +21,13 @@
 .wl-table-wrap { overflow-x: auto; }
 .wl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .wl-table th { padding: 10px 12px; border-bottom: 1px solid var(--line, #e3e8e3); color: #5d7263; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.wl-company { display: inline-flex; align-items: center; gap: 8px; letter-spacing: .06em; }
+.wl-table th .wl-select-all { box-sizing: border-box; position: relative; flex: none; width: 14px; height: 14px; margin: 0; padding: 0; border: 1.5px solid #6d7d72; border-radius: 3px; background: #fff; letter-spacing: 0; cursor: pointer; }
+.wl-table th .wl-select-all[aria-pressed="true"] { background: #1e6547; border-color: #1e6547; }
+.wl-table th .wl-select-all[aria-pressed="true"]::after { content: ""; position: absolute; left: 4px; top: 1px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+.wl-table th .wl-select-all:hover:not(:disabled) { border-color: #1e6547; }
+.wl-table th .wl-select-all:disabled { opacity: .35; cursor: default; }
+.wl-table th .wl-select-all:focus-visible { outline: 2px solid #1e6547; outline-offset: 2px; }
 .wl-table td { padding: 10px 12px; border-bottom: 1px solid #eef1ee; vertical-align: top; }
 .wl-table td.wl-star { width: 28px; padding-right: 0; }
 .wl-table td strong, .wl-table td small { display: block; }

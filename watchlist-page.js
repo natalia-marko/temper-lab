@@ -53,7 +53,8 @@
     displayed = W.clean([...items, ...bulkRows]);
     const sorted = displayed.slice().sort((a, b) => b.added.localeCompare(a.added) || a.symbol.localeCompare(b.symbol));
     const allSelected = displayed.length > 0 && displayed.every((item) => W.has(item.symbol));
-    $("wl-select-all").textContent = allSelected ? "Unselect all" : "Select all";
+    $("wl-select-all").setAttribute("aria-pressed", allSelected ? "true" : "false");
+    $("wl-select-all").setAttribute("aria-label", allSelected ? "Unselect all" : "Select all");
     $("wl-select-all").disabled = displayed.length === 0;
     $("wl-count").textContent = bulkRows.length ? `${items.length} of ${displayed.length} starred` : items.length ? `${items.length} ${items.length === 1 ? "company" : "companies"}` : "";
     $("wl-empty").hidden = displayed.length > 0;
@@ -70,7 +71,7 @@
       const targets = displayed.slice();
       if (!selected) bulkRows = targets;
       W.setSelected(targets, selected);
-      say(selected ? "All shown companies are starred." : "All shown companies are unstarred. Select all to restore them before leaving this page.");
+      say(selected ? "All shown companies are starred." : "All shown companies are unstarred. Press the box beside Company to restore them before leaving this page.");
     });
     $("wl-export").addEventListener("click", () => {
       W.exportFile();
