@@ -1,4 +1,4 @@
-/* Market mood: "Earnings in the next 4 weeks" above the Market desk / Lists tabs (earnings-ahead.js). */
+/* Market mood: "Earnings in the next 4 weeks" below the Market desk return charts (earnings-ahead.js). */
 .earnings-panel { margin: 0 28px 16px; }
 .ea-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
 .ea-filter button { padding: 3px 11px; border: 1px solid #d9e2da; border-radius: 999px; background: #fff; color: #245e42; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }

@@ -153,10 +153,14 @@ date slider and pointer inspection show saved index observations. Stock returns
 come from frozen company factors; index paths come from the saved benchmark
 prices. Sector medians use individual stock returns and the same `sectors.js`
 industry map as Research and Analyst ratings. Missing daily prices remain gaps;
-missing observations are never filled. Cboe VIX and cross-screen changes sit
-in a compact summary below the page heading, visible in both Market desk and
-Lists. This weekly context stays above the return-window controls. VIX is
-non-directional and does not rank individual stocks.
+missing observations are never filled. Cboe VIX sits quietly beside the Friday
+date; it is non-directional and does not rank individual stocks. Market desk's
+compact list strip shows nested membership: eligible → on any list → on two or
+more → on all three (the shared core). The bar uses the full eligible count as
+its denominator throughout, with an exact-position marker for the tiny all-three
+subset. These membership counts stay fixed when changing return windows.
+The participation chart separately states the smaller complete-return coverage.
+The Lists tab previews the two-or-more count; Explore names opens the full board.
 
 **Lists** opens with the distinct union and overlap counts, plus entries, exits
 and net change since the prior Friday. Names on all three screens form the
@@ -165,8 +169,8 @@ Pair filters and ticker/company search work together, with 12 names initially
 and Show more for the rest. Stars save names; ticker links open the saved company
 page. Conviction's first ten sit in a separate analyst panel (beside the overlap
 on wide screens). Its score is not a probability and does not enter the overlap.
-The calendar and tape context stay inside Market desk, so Lists begins immediately
-below the tab selector. Growth and Cheap ranks stay on the Screener.
+The calendar sits below the return charts inside Market desk, so Lists begins
+immediately below the tab selector. Growth and Cheap ranks stay on the Screener.
 
 This is a static snapshot of the research desk. It does not run the Python product, download prices, or save ideas.
 
