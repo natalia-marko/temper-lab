@@ -20,36 +20,6 @@ function vixPoints(value) {
   return `${value > 0 ? "+" : ""}${value.toFixed(2)} pts`;
 }
 
-function listLens(mood) {
-  const counts = [mood.universe_count, mood.screen_report?.unique_count,
-    mood.screen_report?.multi_count, mood.screen_report?.triple_count];
-  if (!counts.every(value => Number.isInteger(value) && value >= 0)
-      || counts.some((value, index) => index > 0 && value > counts[index - 1])) return null;
-  const [eligible, listed, overlap, core] = counts;
-  const share = value => eligible ? value / eligible * 100 : 0;
-  return { counts, listedShare: share(listed), overlapShare: share(overlap), coreShare: share(core) };
-}
-
-function renderListLens(mood) {
-  const lens = listLens(mood);
-  const ids = ['lens-eligible', 'lens-listed', 'lens-overlap', 'lens-core'];
-  ids.forEach((id, index) => { $(id).textContent = lens ? lens.counts[index].toLocaleString('en-US') : '—'; });
-  const track = $('lens-track');
-  track.hidden = !lens;
-  if (lens) {
-    $('lens-listed-fill').style.width = `${lens.listedShare}%`;
-    $('lens-overlap-fill').style.width = `${lens.overlapShare}%`;
-    $('lens-core-marker').style.left = `${lens.coreShare}%`;
-    $('lens-core-marker').hidden = lens.counts[3] === 0;
-    track.setAttribute('aria-label', `${lens.counts[0]} eligible companies; ${lens.counts[1]} on any list; ${lens.counts[2]} on two or more; ${lens.counts[3]} on all three. All widths use the eligible universe.`);
-  }
-  $('lens-caption').textContent = lens
-    ? `${lens.listedShare.toFixed(1)}% of eligible on lists · Hot tape / Growth / Cheap`
-    : 'List membership counts are unavailable in this snapshot.';
-  $('lists-tab-count').hidden = !lens;
-  $('lists-tab-count').textContent = lens ? `· ${lens.counts[2]} on 2+` : '';
-}
-
 function appendText(parent, tag, value, className) {
   const element = document.createElement(tag);
   element.textContent = value;
@@ -665,13 +635,15 @@ function render(mood) {
   moodState.mood = mood;
   $("week-chip").textContent = `Data as of ${day(mood.as_of)}`;
   $("aside-week").textContent = day(mood.as_of);
-  const listReturns = listBreadthOf(mood);
-  $("coverage-date").textContent = `Return coverage: ${mood.price_history_count.toLocaleString('en-US')} eligible / ${Number.isInteger(listReturns?.n_63) ? listReturns.n_63.toLocaleString('en-US') : '—'} on lists · both windows complete.`;
+  $("coverage-date").textContent = `${mood.price_history_count.toLocaleString()} complete price histories · ${mood.universe_count.toLocaleString()} liquid names`;
   $("vix-close").textContent = Number.isFinite(mood.vix?.close) ? mood.vix.close.toFixed(2) : "—";
   $("vix-week").textContent = mood.vix
-    ? `(${vixPoints(mood.vix.change_points_week)} / week)`
-    : '· unavailable';
-  renderListLens(mood);
+    ? `${vixPoints(mood.vix.change_points_week)} over 5 trading sessions`
+    : "The matching Cboe close is unavailable in this snapshot.";
+  const report = mood.screen_report;
+  $('desk-overlap-value').textContent = Number.isInteger(report?.multi_count) ? String(report.multi_count) : '—';
+  $('desk-overlap-change').textContent = report?.previous_as_of
+    ? `${report.new_overlap_count} entered · ${report.lost_overlap_count} left · ${report.triple_count} on all three` : 'No prior Friday to compare.';
   renderScreenLeaders("conviction-body", mood.conviction_leaders, "score");
   renderScreenReport(mood.screen_report);
   bindOverlapControls();
