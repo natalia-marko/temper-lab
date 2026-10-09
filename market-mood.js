@@ -73,9 +73,10 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function marketBreakdown(details, period) {
+function marketBreakdown(details, period, onLists = false) {
   const rows = (details?.stock_returns || []).filter(row =>
-    Number.isFinite(row.return_63) && Number.isFinite(row.return_252));
+    (!onLists || row.on_lists === true)
+    && Number.isFinite(row.return_63) && Number.isFinite(row.return_252));
   const values = rows.map(row => row[`return_${period}`]);
   const bins = RETURN_BANDS.map(band => ({ label: band.label, count: 0 }));
   const bySector = new Map();
@@ -111,12 +112,39 @@ function indexPaths(details, period) {
   }).filter(Boolean);
 }
 
+function listBreadthOf(mood) {
+  if (mood?.list_breadth) return mood.list_breadth;
+  const rows = (mood?.market_details?.stock_returns || []).filter((row) => row.on_lists
+    && Number.isFinite(row.return_63) && Number.isFinite(row.return_252));
+  if (!rows.length) return null;
+  const values63 = rows.map((row) => row.return_63);
+  const values252 = rows.map((row) => row.return_252);
+  return {
+    n_63: rows.length,
+    up_63: values63.filter((value) => value > 0).length / rows.length,
+    median_63: median(values63),
+    n_252: rows.length,
+    up_252: values252.filter((value) => value > 0).length / rows.length,
+    median_252: median(values252),
+  };
+}
+
 function tapeHeadline(mood, period) {
   const spy = mood.indices?.SPY?.[`return_${period}`];
   const qqq = mood.indices?.QQQ?.[`return_${period}`];
   const up = mood.breadth?.[`up_${period}`];
   const middle = mood.breadth?.[`median_${period}`];
+  const lists = listBreadthOf(mood);
+  const listUp = lists?.[`up_${period}`];
+  const listMiddle = lists?.[`median_${period}`];
   if (![spy, qqq, up, middle].every(Number.isFinite)) return 'The Friday market snapshot';
+  if (Number.isFinite(listUp) && Number.isFinite(listMiddle)
+      && spy > 0 && qqq > 0 && up < 0.5 && listUp > 0.5) {
+    return 'Indices rose. Most eligible stocks did not — list names did.';
+  }
+  if (Number.isFinite(listMiddle) && spy > 0 && qqq > 0 && middle < 0 && listMiddle > 0) {
+    return 'Indices rose. Eligible median fell; list names held up.';
+  }
   if (up === 0.5) return 'Half of eligible stocks rose.';
   if (spy > 0 && qqq > 0 && up < 0.5) return 'Indices rose. Most eligible stocks did not.';
   if (spy < 0 && qqq < 0 && up > 0.5) return 'Indices fell. Most eligible stocks rose.';
@@ -216,67 +244,123 @@ function renderIndexChart() {
   inspect(points.length - 1);
 }
 
-function renderDistribution(breakdown) {
+function renderDistribution(breakdown, lists) {
   const target = $('return-distribution');
   target.replaceChildren();
+  const legend = $('distribution-cohorts'); legend.replaceChildren();
+  for (const [label, cohort, className] of [['Eligible', breakdown, 'eligible'], ['On lists', lists, 'listed']]) {
+    appendText(legend, 'span', `${label} · ${cohort.count.toLocaleString()} stocks`, className);
+  }
   if (!breakdown.count) {
     appendText(target, 'p', 'Stock return observations are unavailable in this snapshot.', 'chart-empty');
     $('distribution-caption').textContent = '';
+    $('distribution-scale').textContent = '';
     return;
   }
-  const maximum = Math.max(...breakdown.bins.map(band => band.count), 1);
+  const share = (cohort, index) => cohort.count ? cohort.bins[index].count / cohort.count : null;
+  const maximum = Math.max(0.1, Math.ceil(Math.max(...breakdown.bins.map((_, index) =>
+    Math.max(share(breakdown, index), share(lists, index) || 0))) * 10) / 10);
+  const scale = $('distribution-scale'); scale.replaceChildren();
+  appendText(scale, 'span', '0%'); appendText(scale, 'span', `${(maximum * 100).toFixed(0)}%`);
   breakdown.bins.forEach((band, index) => {
-    const row = appendText(target, 'div', '', `distribution-row ${index < 4 ? 'loss' : 'gain'}`);
-    appendText(row, 'span', band.label);
-    const track = appendText(row, 'div', '', 'distribution-track');
-    const fill = appendText(track, 'span', '');
-    fill.style.width = `${band.count / maximum * 100}%`;
-    appendText(row, 'strong', band.count.toLocaleString());
-    appendText(row, 'small', `${(band.count / breakdown.count * 100).toFixed(1)}%`);
+    const row = appendText(target, 'div', '', 'distribution-row');
+    appendText(row, 'span', band.label, 'distribution-band');
+    const pair = appendText(row, 'div', '', 'distribution-pair');
+    for (const [label, cohort, className] of [['Eligible', breakdown, 'eligible'], ['On lists', lists, 'listed']]) {
+      const value = share(cohort, index);
+      const series = appendText(pair, 'div', '', `distribution-series ${className}`);
+      const description = Number.isFinite(value)
+        ? `${label}: ${levelPercent(value)} · ${cohort.bins[index].count} of ${cohort.count} stocks`
+        : `${label}: unavailable`;
+      series.setAttribute('aria-label', description);
+      series.setAttribute('title', description);
+      const track = appendText(series, 'div', '', 'distribution-track');
+      const fill = appendText(track, 'span', '');
+      fill.style.width = Number.isFinite(value) ? `${value / maximum * 100}%` : '0%';
+      appendText(series, 'strong', levelPercent(value));
+    }
   });
-  $('distribution-caption').textContent = `${breakdown.count.toLocaleString()} stocks · lower bound included, upper excluded · zero belongs to 0% to +10%`;
+  $('distribution-caption').textContent = `${lists.count ? 'Share of each group · same percentage scale for both.' : 'List return observations are unavailable.'} Lower bound included, upper excluded; zero belongs to 0% to +10%.`;
 }
 
-function renderSectors(breakdown) {
+function renderSectors(breakdown, lists) {
   const target = $('sector-body'); target.replaceChildren();
   if (!breakdown.sectors.length) {
-    appendText(appendText(target, 'tr', ''), 'td', 'Sector observations are unavailable.', 'empty').colSpan = 4;
+    appendText(appendText(target, 'tr', ''), 'td', 'Sector observations are unavailable.', 'empty').colSpan = 3;
     return;
   }
-  const maximum = Math.max(...breakdown.sectors.map(row => Math.abs(row.median)), 0.001);
+  const listedSectors = new Map(lists.sectors.map(row => [row.key, row]));
+  const maximum = Math.max(...[...breakdown.sectors, ...lists.sectors].map(row => Math.abs(row.median)), 0.001);
   for (const row of breakdown.sectors) {
     const tr = appendText(target, 'tr', '');
     appendText(tr, 'th', row.label).scope = 'row';
-    const value = appendText(tr, 'td', '', 'sector-return');
-    const track = appendText(value, 'div', '', 'sector-track');
-    const bar = appendText(track, 'span', '', row.median < 0 ? 'loss' : 'gain');
-    const length = Math.abs(row.median) / maximum * 50;
-    bar.style.width = `${length}%`; bar.style.left = `${row.median < 0 ? 50 - length : 50}%`;
-    appendText(value, 'strong', percent(row.median));
-    appendText(tr, 'td', levelPercent(row.up));
-    appendText(tr, 'td', row.count.toLocaleString());
+    for (const [cohort, className] of [[row, 'eligible'], [listedSectors.get(row.key), 'listed']]) {
+      const value = appendText(tr, 'td', '', `sector-return ${className}`);
+      if (cohort) {
+        const track = appendText(value, 'div', '', 'sector-track');
+        const bar = appendText(track, 'span', '', cohort.median < 0 ? 'loss' : 'gain');
+        const length = Math.abs(cohort.median) / maximum * 50;
+        bar.style.width = `${length}%`; bar.style.left = `${cohort.median < 0 ? 50 - length : 50}%`;
+      }
+      appendText(value, 'strong', percent(cohort?.median));
+      appendText(value, 'small', `${cohort?.count || 0} stock${cohort?.count === 1 ? '' : 's'}`);
+    }
   }
+}
+
+function fillParticipation(ids, share, middle, count, label) {
+  const up = $(ids.up), fill = $(ids.fill), track = $(ids.track), down = $(ids.down), copy = $(ids.copy);
+  if (up) up.textContent = levelPercent(share);
+  if (fill) fill.style.width = Number.isFinite(share) ? `${Math.max(0, Math.min(100, share * 100))}%` : '0%';
+  if (track) {
+    track.setAttribute('aria-label', Number.isFinite(share)
+      ? `Positive returns: ${levelPercent(share)} of ${label}`
+      : `${label} participation unavailable`);
+  }
+  if (down) {
+    down.textContent = Number.isFinite(share)
+      ? `${levelPercent(1 - share)} flat or down${Number.isFinite(count) ? ` · ${count.toLocaleString()} names` : ''}`
+      : 'Participation is unavailable.';
+  }
+  if (copy) copy.textContent = percent(middle);
 }
 
 function renderMarketDesk() {
   const mood = moodState.mood, period = moodState.period;
   const share = mood.breadth?.[`up_${period}`], middle = mood.breadth?.[`median_${period}`];
+  const lists = listBreadthOf(mood);
+  const listShare = lists?.[`up_${period}`], listMiddle = lists?.[`median_${period}`];
+  const listCount = lists?.[`n_${period}`];
   $('tape-headline').textContent = tapeHeadline(mood, period);
-  $('tape-summary').textContent = `${period} trading sessions · SPY ${percent(mood.indices?.SPY?.[`return_${period}`])} · QQQ ${percent(mood.indices?.QQQ?.[`return_${period}`])} · median eligible stock ${percent(middle)}`;
-  $('breadth-up').textContent = levelPercent(share);
-  $('breadth-fill').style.width = Number.isFinite(share) ? `${Math.max(0, Math.min(100, share * 100))}%` : '0%';
-  $('breadth-track').setAttribute('aria-label', `Positive returns: ${levelPercent(share)} of eligible stocks`);
-  $('breadth-down').textContent = Number.isFinite(share) ? `${levelPercent(1 - share)} flat or down` : 'Participation is unavailable.';
-  $('breadth-copy').textContent = percent(middle);
+  const listBit = Number.isFinite(listMiddle)
+    ? ` · median on lists ${percent(listMiddle)}`
+    : '';
+  $('tape-summary').textContent = `${period} trading sessions · SPY ${percent(mood.indices?.SPY?.[`return_${period}`])} · QQQ ${percent(mood.indices?.QQQ?.[`return_${period}`])} · median eligible ${percent(middle)}${listBit}`;
+  fillParticipation(
+    { up: 'breadth-up', fill: 'breadth-fill', track: 'breadth-track', down: 'breadth-down', copy: 'breadth-copy' },
+    share, middle, mood.breadth?.[`n_${period}`], 'eligible stocks');
+  fillParticipation(
+    { up: 'lists-up', fill: 'lists-fill', track: 'lists-track', down: 'lists-down', copy: 'lists-copy' },
+    listShare, listMiddle, listCount, 'list names');
+  const listsLabel = $('lists-up-label');
+  if (listsLabel) {
+    listsLabel.textContent = Number.isFinite(listCount)
+      ? `${listCount.toLocaleString()} on Hot tape · Growth · Cheap`
+      : 'Hot tape · Growth · Cheap';
+  }
   const other = period === 63 ? 252 : 63;
-  $('breadth-year').textContent = `${other} sessions: ${levelPercent(mood.breadth?.[`up_${other}`])} up · median ${percent(mood.breadth?.[`median_${other}`])}`;
+  const otherLists = Number.isFinite(lists?.[`up_${other}`])
+    ? ` · lists ${levelPercent(lists[`up_${other}`])} up · median ${percent(lists[`median_${other}`])}`
+    : '';
+  $('breadth-year').textContent = `${other} sessions: eligible ${levelPercent(mood.breadth?.[`up_${other}`])} up · median ${percent(mood.breadth?.[`median_${other}`])}${otherLists}`;
   $('path-window').textContent = `${period} sessions · adjusted returns`;
   renderIndices(mood.indices, period);
   const spy = mood.indices?.SPY?.[`return_${period}`], qqq = mood.indices?.QQQ?.[`return_${period}`];
   $('index-spread').textContent = Number.isFinite(spy) && Number.isFinite(qqq)
     ? `QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
   const breakdown = marketBreakdown(mood.market_details, period);
-  renderDistribution(breakdown); renderSectors(breakdown); renderIndexChart();
+  const listBreakdown = marketBreakdown(mood.market_details, period, true);
+  renderDistribution(breakdown, listBreakdown); renderSectors(breakdown, listBreakdown); renderIndexChart();
   document.querySelectorAll('[data-period]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.period) === period)));
 }
 

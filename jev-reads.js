@@ -56,11 +56,22 @@ function secUrl(url) {
   return typeof url === "string" && url.startsWith("https://www.sec.gov/") ? url : null;
 }
 
-function reactionText(release, late) {
+function reactionValue(release, late) {
   const reaction = release.reaction || {};
-  if (reaction.status === "ready") return `3-day reaction vs SPY ${signedPct(reaction.excess_return_3d)}`;
+  if (reaction.status === "ready") {
+    return { status: "ready", value: reaction.excess_return_3d, late: false };
+  }
   const filled = late && late[release.event_id];
-  if (filled) return `3-day reaction vs SPY ${signedPct(filled.excess_return_3d)} (completed after this week was published)`;
+  if (filled) return { status: "ready", value: filled.excess_return_3d, late: true };
+  return { status: "waiting", value: null, late: false };
+}
+
+function reactionText(release, late) {
+  const info = reactionValue(release, late);
+  if (info.status === "ready") {
+    const base = `3-day reaction vs SPY ${signedPct(info.value)}`;
+    return info.late ? `${base} (completed after this week was published)` : base;
+  }
   return "3-day reaction: not complete when published (filed late in the week)";
 }
 
@@ -77,6 +88,26 @@ function answersText(release) {
 function floorText(release) {
   if (release.floor) return "Passes the floor";
   return `Fails the floor: ${(release.floor_reasons || []).join("; ")}`;
+}
+
+function guidanceDeltaClass(choice) {
+  if (choice === "raised") return "raised";
+  if (choice === "lowered") return "lowered";
+  return "neutral";
+}
+
+function guidanceDeltaText(release) {
+  const choice = (release.jev || {}).guidance;
+  const periods = release.periods || {};
+  const comparison = periods.comparison;
+  if (choice === "raised") {
+    return comparison === "same_period"
+      ? "Jev (AI): raised vs the company's previous same-period guidance"
+      : "Jev (AI): raised guidance";
+  }
+  if (choice === "lowered") return "Jev (AI): lowered guidance";
+  if (choice === "unchanged") return "Jev (AI): unchanged or reaffirmed";
+  return `Jev (AI): ${guidanceLabel(choice).toLowerCase()}`;
 }
 
 function shortListOf(releases) {
@@ -150,54 +181,162 @@ function el(tag, className, text) {
   return node;
 }
 
-function link(url, text) {
+function secButton(url, text) {
   const safe = secUrl(url);
   if (!safe) return null;
-  const node = el("a", "jev-link", text);
+  const node = el("a", "jev-sec-btn");
   node.href = safe;
   node.target = "_blank";
   node.rel = "noopener noreferrer";
+  node.appendChild(document.createTextNode(text));
+  node.appendChild(el("span", "ext", "↗"));
   return node;
+}
+
+function reactionChip(release, late) {
+  const info = reactionValue(release, late);
+  if (info.status !== "ready") {
+    return el("span", "jev-reaction-chip wait", "3-day vs SPY · pending");
+  }
+  const tone = Number(info.value) >= 0 ? "up" : "down";
+  const chip = el("span", `jev-reaction-chip ${tone}`);
+  chip.appendChild(el("span", "jev-reaction-label", info.late ? "3-day vs SPY · late" : "3-day vs SPY"));
+  chip.appendChild(document.createTextNode(signedPct(info.value)));
+  return chip;
+}
+
+function meterRow(kind, valueLabel, confidence) {
+  const row = el("div", "jev-meter");
+  const claim = el("div", "jev-meter-claim");
+  claim.appendChild(el("span", "jev-meter-kind", kind));
+  claim.appendChild(el("span", "jev-meter-value", valueLabel));
+  row.appendChild(claim);
+  const track = el("div", "jev-meter-track");
+  track.setAttribute("role", "meter");
+  track.setAttribute("aria-label", `${kind} confidence`);
+  if (confidence == null || Number.isNaN(Number(confidence))) {
+    track.setAttribute("aria-valuemin", "0");
+    track.setAttribute("aria-valuemax", "1");
+    track.setAttribute("aria-valuenow", "0");
+    row.appendChild(track);
+    row.appendChild(el("span", "jev-meter-score", "—"));
+    return row;
+  }
+  const score = Math.max(0, Math.min(1, Number(confidence)));
+  const fill = el("span", `jev-meter-fill${score < 0.5 ? " low" : score < 0.75 ? " mid" : ""}`);
+  fill.style.width = `${Math.round(score * 100)}%`;
+  track.appendChild(fill);
+  track.setAttribute("aria-valuemin", "0");
+  track.setAttribute("aria-valuemax", "1");
+  track.setAttribute("aria-valuenow", String(Number(score.toFixed(2))));
+  row.appendChild(track);
+  row.appendChild(el("span", "jev-meter-score", score.toFixed(2)));
+  return row;
+}
+
+function answersPanel(release) {
+  const jev = release.jev || {};
+  const panel = el("div", "jev-answers-panel");
+  panel.appendChild(el("p", "jev-answers-label", "Jev (AI)"));
+  const meters = el("div", "jev-meters");
+  meters.appendChild(meterRow("Guidance", guidanceLabel(jev.guidance), jev.guidance_confidence));
+  meters.appendChild(meterRow("Operations", setupLabel(jev.setup), jev.setup_confidence));
+  if (jev.product_score != null) {
+    meters.appendChild(meterRow("Product", `${Number(jev.product_score).toFixed(1)} of 3`, null));
+  }
+  panel.appendChild(meters);
+  const delta = el("p", `jev-delta ${guidanceDeltaClass(jev.guidance)}`, guidanceDeltaText(release));
+  panel.appendChild(delta);
+  return panel;
+}
+
+function quoteFold(label, text, previous) {
+  const fold = el("details", "jev-quote-fold");
+  fold.appendChild(el("summary", null, label));
+  fold.appendChild(el("blockquote", previous ? "jev-quote previous" : "jev-quote", text || "No text could be extracted."));
+  return fold;
 }
 
 function quoteBlock(release) {
-  const box = el("div", "jev-quotes");
   const quote = release.quote || {};
-  box.appendChild(el("p", "jev-quote-label", `${QUOTE_LABEL[quote.section] || "Passage"} (verbatim${quote.truncated ? ", shortened" : ""})`));
-  box.appendChild(el("blockquote", "jev-quote", quote.text || "No text could be extracted."));
-  const current = link(quote.source, "This release on SEC.gov");
-  if (current) box.appendChild(current);
   const previous = release.previous || {};
-  const label = previous.published_at ? `Previous release, ${previous.published_at}` : "Previous release";
-  if (previous.text) {
-    box.appendChild(el("p", "jev-quote-label", `${label}: guidance passage (verbatim${previous.truncated ? ", shortened" : ""})`));
-    box.appendChild(el("blockquote", "jev-quote previous", previous.text));
-    const before = link(previous.source, "Previous release on SEC.gov");
-    if (before) box.appendChild(before);
+  const hasPreviousText = Boolean(previous.text);
+  const box = el("div", hasPreviousText ? "jev-compare" : "jev-compare single");
+
+  const current = el("div", "jev-compare-col");
+  current.appendChild(el("p", "jev-compare-head", `This release · ${release.filed || "—"}`));
+  current.appendChild(el("p", "jev-compare-sub", `${QUOTE_LABEL[quote.section] || "Passage"} · verify against the filing`));
+  current.appendChild(quoteFold(
+    `Verbatim${quote.truncated ? ", shortened" : ""}`,
+    quote.text,
+    false,
+  ));
+  const currentActions = el("div", "jev-actions");
+  const currentLink = secButton(quote.source, "This release on SEC.gov");
+  if (currentLink) currentActions.appendChild(currentLink);
+  current.appendChild(currentActions);
+  box.appendChild(current);
+
+  const prior = el("div", "jev-compare-col previous");
+  const priorDate = previous.published_at || "—";
+  prior.appendChild(el("p", "jev-compare-head", `Previous release · ${priorDate}`));
+  if (hasPreviousText) {
+    prior.appendChild(el("p", "jev-compare-sub", "Guidance passage Jev compared against"));
+    prior.appendChild(quoteFold(
+      `Verbatim${previous.truncated ? ", shortened" : ""}`,
+      previous.text,
+      true,
+    ));
+    const priorActions = el("div", "jev-actions");
+    const priorLink = secButton(previous.source, "Previous release on SEC.gov");
+    if (priorLink) priorActions.appendChild(priorLink);
+    prior.appendChild(priorActions);
   } else {
-    box.appendChild(el("p", "jev-quote-label", `${label}: ${previous.reason || "no passage."}`));
+    prior.appendChild(el("p", "jev-compare-sub", previous.reason || "No previous guidance passage."));
   }
+  box.appendChild(prior);
+
+  const wrap = el("div", "jev-quotes");
+  wrap.appendChild(box);
   const periods = release.periods || {};
   if ((periods.current || []).length || (periods.previous || []).length) {
-    box.appendChild(el("p", "jev-periods",
+    wrap.appendChild(el("p", "jev-periods",
       `Periods named by Python: this release ${(periods.current || []).join(", ") || "none found"}; previous ${(periods.previous || []).join(", ") || "none found"}.`));
   }
-  return box;
+  return wrap;
+}
+
+function floorMeta(release) {
+  const meta = el("p", release.floor ? "jev-meta jev-floor-ok" : "jev-meta jev-floor-fail",
+    `Filed ${release.filed} · ${floorText(release)}`);
+  return meta;
 }
 
 function card(release, late) {
-  const node = el("article", "jev-card");
-  const head = el("div", "jev-card-head");
-  if (release.ticker && globalThis.TLWatch) head.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
-  head.appendChild(el("strong", "jev-ticker", release.ticker || ""));
-  head.appendChild(el("span", "jev-company", release.company || ""));
-  if (release.tier) head.appendChild(el("span", `jev-tier tier-${release.tier}`, `Tier ${release.tier}: ${TIER_LABEL[release.tier] || ""}`));
-  node.appendChild(head);
-  node.appendChild(el("p", "jev-meta", `Filed ${release.filed} · ${floorText(release)}`));
-  node.appendChild(el("p", "jev-answers", answersText(release)));
-  node.appendChild(el("p", "jev-reaction", reactionText(release, late)));
-  node.appendChild(quoteBlock(release));
-  return node;
+  const details = el("details", "jev-card");
+  const summary = el("summary", "jev-card-summary");
+  const top = el("div", "jev-card-top");
+  if (release.ticker && globalThis.TLWatch) top.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
+  if (release.short_list_position) top.appendChild(el("span", "jev-card-rank", String(release.short_list_position)));
+  top.appendChild(el("strong", "jev-ticker", release.ticker || ""));
+  if (release.tier) top.appendChild(el("span", `jev-tier tier-${release.tier}`, `Tier ${release.tier}`));
+  summary.appendChild(top);
+  summary.appendChild(el("span", "jev-card-company", release.company || ""));
+  const signals = el("div", "jev-card-signals");
+  signals.appendChild(reactionChip(release, late));
+  summary.appendChild(signals);
+  summary.appendChild(el("span", "jev-card-meta", `Filed ${release.filed}`));
+  summary.appendChild(el("span", "jev-card-hint", "Open for Jev read and SEC passages"));
+  details.appendChild(summary);
+  const body = el("div", "jev-card-body");
+  if (release.tier) {
+    body.appendChild(el("p", "jev-card-tier-note", TIER_LABEL[release.tier] || ""));
+  }
+  body.appendChild(floorMeta(release));
+  body.appendChild(answersPanel(release));
+  body.appendChild(quoteBlock(release));
+  details.appendChild(body);
+  return details;
 }
 
 function row(release, late) {
@@ -207,10 +346,11 @@ function row(release, late) {
   summary.appendChild(el("strong", "jev-ticker", release.ticker || ""));
   summary.appendChild(el("span", "jev-company", release.company || ""));
   summary.appendChild(el("span", "jev-row-meta",
-    `${release.filed} · operations: ${setupLabel((release.jev || {}).setup)} · ${reactionText(release, late)}${release.floor ? "" : " · fails the floor"}`));
+    `${release.filed} · operations: ${setupLabel((release.jev || {}).setup)}${release.floor ? "" : " · fails the floor"}`));
+  summary.appendChild(reactionChip(release, late));
   details.appendChild(summary);
-  details.appendChild(el("p", "jev-answers", answersText(release)));
-  details.appendChild(el("p", "jev-meta", floorText(release)));
+  details.appendChild(answersPanel(release));
+  details.appendChild(floorMeta(release));
   details.appendChild(quoteBlock(release));
   return details;
 }
