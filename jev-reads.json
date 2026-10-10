@@ -1,8 +1,52 @@
 {
  "schema": "jev-reads-index-1",
- "generated_at": "2026-10-05T17:15:28+00:00",
- "latest": "2026-10-02",
+ "generated_at": "2026-10-10T09:19:49+00:00",
+ "latest": "2026-10-09",
  "weeks": [
+  {
+   "as_of": "2026-10-09",
+   "file": "jev-reads/2026-10-09.json",
+   "window": [
+    "2026-10-05",
+    "2026-10-09"
+   ],
+   "counts": {
+    "companies_checked": 4831,
+    "eightk_checked": 633,
+    "earnings_releases": 68,
+    "in_screener_universe": 25,
+    "smaller_companies_not_shown": 43,
+    "read_by_jev": 25,
+    "passed_floor": 17,
+    "short_list": 4
+   },
+   "short_list": [
+    {
+     "ticker": "NEOG",
+     "company": "NEOGEN CORP",
+     "tier": "A",
+     "position": 1
+    },
+    {
+     "ticker": "LEVI",
+     "company": "LEVI STRAUSS & CO",
+     "tier": "B",
+     "position": 2
+    },
+    {
+     "ticker": "PENG",
+     "company": "Penguin Solutions, Inc.",
+     "tier": "C",
+     "position": 3
+    },
+    {
+     "ticker": "BKD",
+     "company": "Brookdale Senior Living Inc.",
+     "tier": "C",
+     "position": 4
+    }
+   ]
+  },
   {
    "as_of": "2026-10-02",
    "file": "jev-reads/2026-10-02.json",
@@ -18,44 +62,38 @@
     "smaller_companies_not_shown": 22,
     "read_by_jev": 21,
     "passed_floor": 18,
-    "short_list": 6
+    "short_list": 5
    },
    "short_list": [
-    {
-     "ticker": "ACN",
-     "company": "Accenture plc",
-     "tier": "A",
-     "position": 1
-    },
-    {
-     "ticker": "PRGS",
-     "company": "PROGRESS SOFTWARE CORP /MA",
-     "tier": "B",
-     "position": 2
-    },
     {
      "ticker": "CCL",
      "company": "Carnival Corp Ltd.",
      "tier": "B",
-     "position": 3
+     "position": 1
     },
     {
      "ticker": "MU",
      "company": "MICRON TECHNOLOGY INC",
      "tier": "C",
-     "position": 4
+     "position": 2
     },
     {
      "ticker": "JBL",
      "company": "JABIL INC",
      "tier": "C",
-     "position": 5
+     "position": 3
     },
     {
      "ticker": "MGY",
      "company": "Magnolia Oil & Gas Corp",
      "tier": "C",
-     "position": 6
+     "position": 4
+    },
+    {
+     "ticker": "ACN",
+     "company": "Accenture plc",
+     "tier": "C",
+     "position": 5
     }
    ]
   },
@@ -128,24 +166,1948 @@
    ]
   }
  ],
+ "guidance_reviews": {
+  "2026-10-02": {
+   "schema": "jev-reads-week-1",
+   "as_of": "2026-10-02",
+   "window": [
+    "2026-09-28",
+    "2026-10-02"
+   ],
+   "exported_at": "2026-10-03T11:03:54+00:00",
+   "model": "Jev (TypeSafe), an AI model",
+   "question_version": 3,
+   "universe_rule": "market value at least $1 billion, average daily trading at least $10 million over 63 sessions, share price at least $5, and fresh filing data",
+   "shortlist_rule": "Floor: screener-eligible and 'not weak' (dilution <= 10%, operating or FCF-after-stock-pay margin > 0, 1-year drawdown < 60%). Jev read, each counted only at confidence >= 0.5: tier A = raised guidance on a same-period baseline or explicit raise language, and a growth setup; B = raised only; C = growth setup only. Unknown periods alone do not establish a raise; conflicting metric changes are marked unclear. Excluded: lowered guidance or deteriorating operations, at any confidence. One row per company (its highest tier, then Jev's most confident read). Within a tier: 12-1 momentum, highest first (weak evidence: 6-month rank IC t 1.8 over 2021-26).",
+   "shortlist_rule_version": 3,
+   "counts": {
+    "companies_checked": 4837,
+    "eightk_checked": 719,
+    "earnings_releases": 43,
+    "in_screener_universe": 21,
+    "smaller_companies_not_shown": 22,
+    "read_by_jev": 21,
+    "passed_floor": 18,
+    "short_list": 5
+   },
+   "releases": [
+    {
+     "event_id": "0000001750-0001104659-26-111403",
+     "ticker": "AIR",
+     "company": "AAR CORP",
+     "filed": "2026-09-28",
+     "accepted_at": "2026-09-28T20:58:22+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": false,
+     "floor_reasons": [
+      "diluted shares up 11% in a year (limit 10%)"
+     ],
+     "jev": {
+      "guidance": "lowered",
+      "guidance_confidence": 0.42,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.38,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.11478250755913444,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "FISCAL 2027 GUIDANCE The Company is providing the following guidance for the second quarter and full year fiscal 2027. This guidance does not include any impact of the MRO Holdings acquisition: Second quarter FY 2027 As of September 28, 2026 Sales growth (ex. LCP) 1 14% - 16% Adjusted EBITDA margin (ex. LCP) 2 13.0% - 13.4% 1 Reflects total sales growth excluding the Legacy Commercial Programs segment 2 Reflects Adjusted EBITDA margin excluding the Legacy Commercial Programs segment Full year FY 2027 As of September 28, 2026 Prior (as of July 28, 2026) Sales growth (ex. LCP) 1 Low teens Low …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1750/000110465926111403/tm2626100d2_ex99-1.htm"
+     },
+     "previous": {
+      "text": "2027 GUIDANCE The Company is providing the following guidance for the first quarter and full year fiscal 2027: First quarter FY 2027 As of July 21, 2026 Sales growth (ex. LCP) 1 21% - 23% Adjusted EBITDA margin (ex. LCP) 2 12.25% - 12.75% 1 Reflects total sales growth excluding the Legacy Commercial Programs segment. 2 Reflects adjusted EBITDA margin excluding the Legacy Commercial Programs segment. Full year FY 2027 As of July 21, 2026 Sales …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1750/000110465926085429/tm2620584d1_ex99-1.htm",
+      "published_at": "2026-07-21",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "FY2027"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0001005731-0001437749-26-031364",
+     "ticker": "IDT",
+     "company": "IDT CORP",
+     "filed": "2026-09-28",
+     "accepted_at": "2026-09-28T20:31:47+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": false,
+     "floor_reasons": [
+      "margins unknown"
+     ],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.34,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.49,
+      "product_score": 0.0
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.19674807729917376,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "FINANCIAL OUTLOOK For FY 2027, IDT expects to again grow consolidated gross profit by double digits, consistent with its average annual growth rate over the past several years, to a range of $545 million to $555 million. Building on record Adjusted EBITDA of $154.6 million in FY 2026, IDT's fiscal 2027 guidance reflects continued, strong profitability growth, with Adjusted EBITDA expected to range from $176 million to $180 million, with each operating segment contributing to that growth. DIVIDEND IDT’s Board of Directors has declared a quarterly cash dividend of $0.07 per share payable on …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1005731/000143774926031364/ex_950508.htm"
+     },
+     "previous": {
+      "text": "FINANCIAL OUTLOOK IDT is increasing its previous FY 2026 guidance for consolidated Adjusted EBITDA from $147-$149 million to $150-$152 million. At the midpoint, the updated guidance represents an increase of 15% from FY 2025 Adjusted EBITDA of $131.7 million. Reconciliations of Adjusted EBITDA to net income and income from operations for all periods presented are included in the Non-GAAP reconciliations provided at the end of this release. …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1005731/000143774926019382/ex_949775.htm",
+      "published_at": "2026-06-03",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027",
+       "FY2026"
+      ],
+      "previous": [
+       "FY2026",
+       "FY2025"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000096223-0000096223-26-000028",
+     "ticker": "JEF",
+     "company": "Jefferies Financial Group Inc.",
+     "filed": "2026-09-28",
+     "accepted_at": "2026-09-28T20:18:58+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": false,
+     "floor_reasons": [
+      "margins unknown"
+     ],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.89,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.63,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.02959284924554917,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "results",
+      "text": "Three Months Ended Nine Months Ended August 31, 2026 May 31, 2026 August 31, 2025 August 31, 2026 August 31, 2025 Net revenues by source: Advisory $ 817,823 $ 674,118 $ 655,578 $ 2,019,069 $ 1,511,218 Equity underwriting 305,549 370,691 181,205 982,209 432,091 Debt underwriting 177,072 160,186 249,525 519,116 654,250 Other investment banking 30,979 1,825 49,017 35,142 4,765 Total Investment Banking 1,331,423 1,206,820 1,135,325 3,555,536 2,602,324 Equities 626,154 600,751 486,695 1,785,393 1,421,997 Fixed income 176,024 198,541 236,687 594,833 703,824 Total Capital Markets 802,178 799,292 …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/96223/000009622326000028/jfgpressrelease8312026.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-24",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000812011-0000812011-26-000048",
+     "ticker": "MTN",
+     "company": "VAIL RESORTS INC",
+     "filed": "2026-09-28",
+     "accepted_at": "2026-09-28T20:06:47+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.51,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.92,
+      "product_score": 0.0
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.019166047833694688,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal Year 2027 Guidance The Company is providing its initial guidance for the year ending July 31, 2027 and expects: • Net income attributable to Vail Resorts, Inc. of $158 million to $233 million. • Resort Reported EBITDA of $805 million to $865 million, including approximately $14 million of one-time costs. Fiscal 2027 guidance reflects a meaningful recovery from the weather-impacted fiscal 2026 season, supported by increased lift ticket visitation, pricing growth, increased guest spending across ancillary businesses and approximately $25 million of incremental efficiencies from the …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/812011/000081201126000048/a20260731pressrelease.htm"
+     },
+     "previous": {
+      "text": "Fiscal Year 2026 Guidance Due to the historically challenging weather conditions in the western U.S. that persisted through the third quarter, which negatively impacted demand, the Company is reducing its fiscal 2026 guidance. The Company now expects fiscal 2026 Net Income and Resort EBITDA as follows: • Net income attributable to Vail Resorts, Inc. of $128 million to $162 million. • Resort Reported EBITDA of $735 million to $755 million. • …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/812011/000081201126000025/a2026430pressrelease.htm",
+      "published_at": "2026-06-08",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027",
+       "FY2026"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000815097-0000815097-26-000104",
+     "ticker": "CCL",
+     "company": "Carnival Corp Ltd.",
+     "filed": "2026-09-29",
+     "accepted_at": "2026-09-29T13:16:12+00:00",
+     "short_list_position": 1,
+     "tier": "B",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "raised",
+      "guidance_confidence": 0.64,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.67,
+      "product_score": 0.03
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.1142262069625467,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "2026 Outlook For the full year 2026, the company expects: • Operational improvement of more than $150 million in adjusted net income compared to June guidance, driven by improvements in net yields, adjusted cruise costs excluding fuel per ALBD and fuel consumption per ALBD, overcoming $150 million impact from increased fuel prices. • Net yields (in constant currency) up approximately 2.3 percent compared to record 2025 levels and 0.5 percentage points better than June guidance. Net yields (in constant currency) up approximately 2.7 percent, after reflecting the impact of the summer 2025 …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/815097/000081509726000104/a20263qearningsrelease8-k.htm"
+     },
+     "previous": {
+      "text": "2026 Outlook “Our second quarter operational outperformance and accelerated cost efficiency efforts have offset the transitory moderation shaped by the prolonged conflict in the Middle East, which is incorporated into our second-half outlook. As conditions continue to normalize, we expect to benefit from the strong demand, pricing and operational improvements embedded throughout our business. Recent booking trends already suggest that we are …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/815097/000081509726000086/a20262qearningsrelease8-k.htm",
+      "published_at": "2026-06-23",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q1 2026",
+       "Q4 2026",
+       "FY2026"
+      ],
+      "previous": [
+       "Q1 2026",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0001803599-0001803599-26-000147",
+     "ticker": "CNXC",
+     "company": "Concentrix Corp",
+     "filed": "2026-09-29",
+     "accepted_at": "2026-09-29T20:10:45+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.57,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.77,
+      "product_score": 0.0
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.06341259078144179,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Business Outlook: The following statements are based on the Company’s current expectations for the fourth quarter and the full year fiscal 2026.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1803599/000180359926000147/exhibit991q32026.htm"
+     },
+     "previous": {
+      "text": "Business Outlook: The following statements are based on the Company’s current expectations for the third quarter and the full year fiscal 2026.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1803599/000180359926000133/exhibit991q22026.htm",
+      "published_at": "2026-06-29",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2026"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0001170010-0001170010-26-000102",
+     "ticker": "KMX",
+     "company": "CARMAX INC",
+     "filed": "2026-09-29",
+     "accepted_at": "2026-09-29T11:00:30+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.72,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.75,
+      "product_score": 0.05
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.02540202584365292,
+      "window": [
+       "2026-09-28",
+       "2026-09-30"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "2 billion year-over-year reduction in outstanding receivables related to the combination of selling the residual interest in two non-prime securitizations and from lower sales during fiscal 2026.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1170010/000117001026000102/q2fy27earningsrelease.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-17",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [
+       "FY2026"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001327811-0001327811-26-000048",
+     "ticker": "WDAY",
+     "company": "Workday, Inc.",
+     "filed": "2026-09-29",
+     "accepted_at": "2026-09-29T20:01:40+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unchanged",
+      "guidance_confidence": 0.29,
+      "setup": "deteriorating_operations",
+      "setup_confidence": 0.64,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.0076931983894127365,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "(“Workday”) is reiterating its fiscal 2027 third quarter and full-year financial guidance provided on its fiscal 2027 second quarter earnings call on August 27, 2026, with the exception of GAAP operating margin. … 05 below, Workday now expects its fiscal 2027 third quarter GAAP operating margin to be approximately 20 to 21 percentage points lower than its third quarter non-GAAP operating margin and its fiscal 2027 full-year GAAP operating margin to be approximately 19 percentage points lower than its full-year non-GAAP operating margin.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1327811/000132781126000048/wday-20260929.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": null,
+      "reason": "No earlier earnings release 45–140 days before this one."
+     },
+     "periods": {
+      "current": [
+       "Q3 2027",
+       "Q2 2027",
+       "FY2027"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000023217-0000023217-26-000052",
+     "ticker": "CAG",
+     "company": "CONAGRA BRANDS INC.",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T11:32:13+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unchanged",
+      "guidance_confidence": 1.0,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.75,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.06568066010836682,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook The company is reaffirming its fiscal 2027 guidance, reflecting: ● Organic net sales change of (3)% to (1)% compared to fiscal 2026 ● Adjusted operating margin between 10.0% and 10.5% ● Adjusted EPS between $1.40 and $1.50 Key assumptions incorporated in the above guidance remain unchanged and include: ● Equity earnings contribution of approximately $140 million ● Pension income of approximately $25 million ● Interest expense of approximately $360 million ● Adjusted effective tax rate of approximately 24% ● Capital expenditures of approximately $550 million ● Free cash flow conversion …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/23217/000002321726000052/tmb-ex99d1.htm"
+     },
+     "previous": {
+      "text": "Outlook The company is providing the following guidance for fiscal 2027: ● Organic net sales change of (3)% to (1)% compared to fiscal 2026 ● Adjusted operating margin between 10.0% and 10.5% ● Adjusted EPS between $1.40 and $1.50 Key assumptions incorporated in the above guidance include: ● Equity earnings contribution of approximately $140 million ● Pension income of approximately $25 million ● Interest expense of approximately $360 million ● …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/23217/000002321726000022/tmb-20260715xex99d1.htm",
+      "published_at": "2026-07-15",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "FY2027"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000016160-0001562762-26-000111",
+     "ticker": "CALM",
+     "company": "CAL-MAINE FOODS INC",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T10:07:27+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.5,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.37,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.020449430402192825,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook Mr. Miller commented, “Looking ahead, there are two important timing dynamics: when the conventional shell egg market begins to rebalance and when our investments in Prepared Foods translate into greater earnings contribution. We cannot precisely predict the first, but we have considerably greater visibility into the second. Current earnings reflect a difficult point in the commodity cycle while we are simultaneously investing ahead of growth, and we do not believe that fully reflects the through-cycle earnings power we are building. With a strong balance sheet, more than 60% planned …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/16160/000156276226000111/exhibit991.htm"
+     },
+     "previous": {
+      "text": "Outlook Mr. Miller commented, \"Looking ahead, we believe we are increasingly well positioned as market conditions improve, particularly as we move beyond our first quarter. During the first five weeks of our first quarter, Urner Barry reported that market prices averaged just $0.72, approximately 54% below the comparable period in our fourth quarter. More recently, Urner Barry has reported that pricing has strengthened, increasing by more than …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/16160/000156276226000078/exhibit991.htm",
+      "published_at": "2026-07-22",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q1 2027",
+       "FY2028"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001013237-0001628280-26-063888",
+     "ticker": "FDS",
+     "company": "FACTSET RESEARCH SYSTEMS INC",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T11:01:06+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unchanged",
+      "guidance_confidence": 0.75,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.87,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.03925112524639607,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Guidance Revenues $ 634,698 $ 596,901 6.3 % $ 2,476,256 $ 2,321,748 6.7 % $2,450 - $2,470M Organic revenues $ 635,543 $ 593,503 7.1 % $ 2,464,614 $ 2,309,287 6.7 % Operating income $ 156,624 $ 177,321 (11.7) % $ 699,957 $ 748,303 (6.5) % Adjusted operating income $ 209,393 $ 201,701 3.8 % $ 855,308 $ 843,432 1.4 % Operating margin 24.7 % 29.7 % 28.3 % 32.2 % 29.5% - 31.0% Adjusted operating margin 33.0 % 33.8 % 34.5 % 36.3 % 34.0% - 35.5% Net income $ 121,127 $ 153,616 (21.1) % $ 533,481 $ 597,040 (10.6) % Adjusted net income $ 160,887 $ 154,590 4.1 % $ 659,498 $ 651,617 1.2 % Adjusted EBITDA …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1013237/000162828026063888/fdsq42026earningsrelease.htm"
+     },
+     "previous": {
+      "text": "Business Outlook FactSet reaffirms its outlook for fiscal 2026 provided on March 31, 2026. The following forward-looking statements reflect FactSet's expectations as of today's date. Given the risk factors, uncertainties, and assumptions discussed below, actual results may differ materially. FactSet does not intend to update its forward-looking statements prior to its next quarterly results announcement. 3 Reaffirmed Fiscal 2026 Expectations …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1013237/000162828026046338/fdsq32026earningsrelease.htm",
+      "published_at": "2026-07-01",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q4 2026"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000898293-0001628280-26-063890",
+     "ticker": "JBL",
+     "company": "JABIL INC",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T11:32:16+00:00",
+     "short_list_position": 3,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.95,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.93,
+      "product_score": 0.02
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.05789716716902116,
+      "window": [
+       "2026-09-29",
+       "2026-10-01"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal Year 2027 Outlook: • Net revenue $10.6 billion to $11.4 billion • U.S. GAAP operating income $481 million to $541 million • U.S. GAAP diluted earnings per share $2.78 to $3.18 per diluted share • Core operating income (Non-GAAP) (1) $592 million to $652 million • Core diluted earnings per share (Non-GAAP) (1) $3.80 to $4.20 per diluted share (1) Core operating income and core diluted earnings per share exclude anticipated adjustments of $24 million for amortization of intangibles (or $0.21 per diluted share) and $62 million for stock-based compensation expense and related charges (or …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/898293/000162828026063890/jbl-20260930ex991.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-17",
+      "reason": "The previous release guided FY2026; this one guides FY2027. Not comparable, so Jev was not shown it."
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "different_period"
+     }
+    },
+    {
+     "event_id": "0000723125-0000723125-26-000018",
+     "ticker": "MU",
+     "company": "MICRON TECHNOLOGY INC",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T20:02:22+00:00",
+     "short_list_position": 2,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.58,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.99,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.0020920726918904897,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Business Outlook The following table presents Micron’s guidance for the first quarter of 2027: FQ1-27 GAAP (1) Outlook Non-GAAP (2) Outlook Revenue $61.5 billion ± $1.5 billion $61.5 billion ± $1.5 billion Gross margin Approximately 85.95% Approximately 86.25% Operating expenses Approximately $2.31 billion Approximately $2.06 billion Diluted earnings per share $37.84 ± $1.00 $38.15 ± $1.00 Further information regarding Micron’s business outlook is included in the prepared remarks and slides, which have been posted at investors.micron.com . Product Highlights • We began sampling the industry's …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm"
+     },
+     "previous": {
+      "text": "Business Outlook The following table presents Micron’s guidance for the fourth quarter of 2026: FQ4-26 GAAP (1) Outlook Non-GAAP (2) Outlook Revenue $50.0 billion ± $1.0 billion $50.0 billion ± $1.0 billion Gross margin Approximately 86% Approximately 86% Operating expenses Approximately $1.86 billion Approximately $1.65 billion Diluted earnings per share $30.73 ± $1.00 $31.00 ± $1.00 Further information regarding Micron’s business outlook is …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm",
+      "published_at": "2026-06-24",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q1 2027",
+       "Q4 2026"
+      ],
+      "previous": [
+       "Q4 2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000876167-0000876167-26-000110",
+     "ticker": "PRGS",
+     "company": "PROGRESS SOFTWARE CORP /MA",
+     "filed": "2026-09-30",
+     "accepted_at": "2026-09-30T20:07:19+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": null,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.76,
+      "product_score": null
+     },
+     "guidance_review": {
+      "reason": "Guidance metrics move in conflicting directions in the supplied same-period comparison table.",
+      "raw_guidance": "raised",
+      "raw_confidence": 0.6,
+      "comparisons": [
+       {
+        "metric": "revenue",
+        "basis": "GAAP",
+        "period": "FY2026",
+        "current": [
+         1044.0,
+         1052.0
+        ],
+        "prior": [
+         990.0,
+         1002.0
+        ],
+        "direction": "raised",
+        "quote": "Revenue $1,044 - $1,052 $1,044 - $1,052 $990 - $1,002 $990 - $1,002"
+       },
+       {
+        "metric": "revenue",
+        "basis": "Non-GAAP",
+        "period": "FY2026",
+        "current": [
+         1044.0,
+         1052.0
+        ],
+        "prior": [
+         990.0,
+         1002.0
+        ],
+        "direction": "raised",
+        "quote": "Revenue $1,044 - $1,052 $1,044 - $1,052 $990 - $1,002 $990 - $1,002"
+       },
+       {
+        "metric": "diluted earnings per share",
+        "basis": "GAAP",
+        "period": "FY2026",
+        "current": [
+         1.18,
+         1.28
+        ],
+        "prior": [
+         1.6,
+         1.74
+        ],
+        "direction": "lowered",
+        "quote": "Diluted earnings per share $1.18 - $1.28 $6.15 - $6.23 $1.60 - $1.74 $6.09 - $6.21"
+       },
+       {
+        "metric": "diluted earnings per share",
+        "basis": "Non-GAAP",
+        "period": "FY2026",
+        "current": [
+         6.15,
+         6.23
+        ],
+        "prior": [
+         6.09,
+         6.21
+        ],
+        "direction": "raised",
+        "quote": "Diluted earnings per share $1.18 - $1.28 $6.15 - $6.23 $1.60 - $1.74 $6.09 - $6.21"
+       },
+       {
+        "metric": "operating margin",
+        "basis": "GAAP",
+        "period": "FY2026",
+        "current": [
+         13.0,
+         13.0
+        ],
+        "prior": [
+         16.0,
+         16.0
+        ],
+        "direction": "lowered",
+        "quote": "Operating margin 13 % 38 % 16 % 39 %"
+       },
+       {
+        "metric": "operating margin",
+        "basis": "Non-GAAP",
+        "period": "FY2026",
+        "current": [
+         38.0,
+         38.0
+        ],
+        "prior": [
+         39.0,
+         39.0
+        ],
+        "direction": "lowered",
+        "quote": "Operating margin 13 % 38 % 16 % 39 %"
+       }
+      ],
+      "evidence": {
+       "current": "Business Outlook Progress provides the following guidance for the fiscal year ending November 30, 2026 and the fiscal fourth quarter ending November 30, 2026: Updated FY 2026 Guidance (September 30, 2026) Prior FY 2026 Guidance (June 30, 2026) (in millions, except percentages and per share amounts) GAAP Non-GAAP GAAP Non-GAAP Revenue $1,044 - $1,052 $1,044 - $1,052 $990 - $1,002 $990 - $1,002 Diluted earnings per share $1.18 - $1.28 $6.15 - $6.23 $1.60 - $1.74 $6.09 - $6.21 Operating margin 13 % 38 % 16 % 39 % Cash from operations (GAAP) / Adjusted free cash flow (non-GAAP) / Unlevered free cash flow (non-GAAP) $274 - $282 $275 - $283 $273 - $285 $271 - $283 $330 - $338 $323 - $334 Effective tax rate 25 % 20 % 25 % 20 % Q4 2026 Guidance (in millions, except per share amounts) GAAP Non-GAAP Revenue $297 - $305 $297 - $305 Diluted (loss) earnings per share $(0.41) - $(0.32) $1.24 - $1.33 …",
+       "previous": "Guidance Based on currently available information, Progress anticipates revenue and non-GAAP earnings per share for its fiscal third quarter will be within or above the high end of previously issued guidance provided on June 30, 2026. The company will discuss full financial results of its third quarter on a"
+      }
+     },
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.07152010988514834,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Business Outlook Progress provides the following guidance for the fiscal year ending November 30, 2026 and the fiscal fourth quarter ending November 30, 2026: Updated FY 2026 Guidance (September 30, 2026) Prior FY 2026 Guidance (June 30, 2026) (in millions, except percentages and per share amounts) GAAP Non-GAAP GAAP Non-GAAP Revenue $1,044 - $1,052 $1,044 - $1,052 $990 - $1,002 $990 - $1,002 Diluted earnings per share $1.18 - $1.28 $6.15 - $6.23 $1.60 - $1.74 $6.09 - $6.21 Operating margin 13 % 38 % 16 % 39 % Cash from operations (GAAP) / Adjusted free cash flow (non-GAAP) / Unlevered free …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/876167/000087616726000110/exhibit991-q32026earningsr.htm"
+     },
+     "previous": {
+      "text": "Guidance Based on currently available information, Progress anticipates revenue and non-GAAP earnings per share for its fiscal third quarter will be within or above the high end of previously issued guidance provided on June 30, 2026. The company will discuss full financial results of its third quarter on a",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/876167/000155278126000390/e26303_ex99-1.htm",
+      "published_at": "2026-07-22",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q4 2026",
+       "FY2026"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001467373-0001467373-26-000037",
+     "ticker": "ACN",
+     "company": "Accenture plc",
+     "filed": "2026-10-01",
+     "accepted_at": "2026-10-01T10:42:03+00:00",
+     "short_list_position": 5,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": null,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.95,
+      "product_score": null
+     },
+     "guidance_review": {
+      "reason": "The current and previous guidance cover different periods; no explicit guidance raise was found.",
+      "raw_guidance": "raised",
+      "raw_confidence": 0.87,
+      "comparisons": [],
+      "evidence": {
+       "current": "Business Outlook First Quarter Fiscal 2027 Outlook Revenues $18.95B – $19.60B Revenue Growth (Local Currency) 2% – 6% Foreign-Exchange Impact on Results approx. negative 1% Full Year Fiscal 2027 Outlook Revenue Growth (Local Currency) 3% – 6% Foreign-Exchange Impact on Results flat Operating Margin 15.9% – 16.1% 50 bps – 70 bps expansion over FY26 GAAP operating margin 10 bps – 30 bps expansion over FY26 adjusted operating margin Annual Effective Tax Rate 24.5% – 26.5% Diluted Earnings Per Share $14.39 – $14.81 6% – 9% increase over FY26 GAAP EPS 3% – 6% increase over FY26 adjusted EPS Operating Cash Flow $11.9B – $12.7B Property & Equipment Additions $900M Free Cash Flow $11.0B – $11.8B Capital Return at least $9.5B 7",
+       "previous": "Business Outlook Fourth Quarter Fiscal 2026 Outlook Revenues $17.75B – $18.4B Revenue Growth (Local Currency) 1% – 5% Foreign-Exchange Impact on Results approx. (0.5) % Full Year Fiscal 2026 Outlook As of June 18, 2026 As of March 19, 2026 Revenue Growth (Local Currency) * 3% – 4% approx. 4% – 5% excluding an estimated 1% impact from its U.S. federal business 3% – 5% approx. 4% – 6% excluding an estimated 1% impact from its U.S. federal business Foreign-Exchange Impact on Results approx. +2% approx. +2% GAAP Operating Margin * 15.3% 60 bps expansion over FY25 15.2% – 15.4% 50 bps – 70 bps expansion over FY25 Adjusted Operating Margin * 15.8% 20 bps expansion over FY25, excluding $308 million and $615 million for business optimization costs in Q1 FY26 and Q4 FY25, respectively 15.7% – 15.9% 10 bps – 30 bps expansion over FY25, excluding $308 million and $615 million for business …"
+      }
+     },
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.11584891773977213,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Business Outlook Highlights • Company expects full-year revenue growth of 3% to 6% in local currency • Expects full-year GAAP diluted EPS of $14.39 to $14.81, a 6% to 9% increase, and a 3% to 6% increase over adjusted EPS • Company expects to return at least $9.5 billion in cash to shareholders in fiscal year 2027 1 Adjusted financial measures presented in this release are",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1467373/000146737326000037/q4fy26earnings8-kexhibit.htm"
+     },
+     "previous": {
+      "text": "Business Outlook Highlights • Company now expects full-year revenue growth to be 3% to 4% in local currency. Excluding an estimated 1% impact from its U.S. federal business, company now expects revenue growth to be 4% to 5% in local currency • Now expects full-year GAAP diluted earnings per share to be in the range of $13.38 to $13.50, a 10% to 11% increase; now expects full-year adjusted 1 earnings per share to be in the range of $13.78 to …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1467373/000146737326000031/q3fy26earnings8-kexhibit.htm",
+      "published_at": "2026-06-18",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q1 2027",
+       "FY2027"
+      ],
+      "previous": [
+       "Q4 2026",
+       "Q1 2026",
+       "Q4 2025",
+       "FY2026"
+      ],
+      "comparison": "different_period"
+     }
+    },
+    {
+     "event_id": "0001144215-0001144215-26-000047",
+     "ticker": "AYI",
+     "company": "ACUITY INC. (DE)",
+     "filed": "2026-10-01",
+     "accepted_at": "2026-10-01T11:20:55+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.93,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.62,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.007215707882371025,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "results",
+      "text": "Full-Year Results ABL generated net sales of $3.6 billion for the full year of fiscal 2026, a decrease of $35.8 million, or 1.0 percent, compared to the prior year. ABL operating profit was $623.5 million for the full year of fiscal 2026, an increase of $32.9 million, or 5.6 percent, compared to the prior year. ABL operating profit as a percent of ABL net sales was 17.4 percent for the full year of fiscal 2026, an increase of 100 basis points compared to the prior year. ABL adjusted operating profit was $646.0 million for the full year of fiscal 2026, a decrease of $16.3 million, or 2.5 …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1144215/000114421526000047/ayi-20261001x8xk_ex991.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-25",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001698990-0001104659-26-112532",
+     "ticker": "MGY",
+     "company": "Magnolia Oil & Gas Corp",
+     "filed": "2026-10-01",
+     "accepted_at": "2026-10-01T10:05:31+00:00",
+     "short_list_position": 4,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.62,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.6,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.01279666638721566,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook Estimated production for the third quarter 2026 is expected to be 116 to 118 Mboe/d (~42% oil) after factoring in the closing of WildFire and the impact of divested non-core properties. D&C capital spending is expected to be in the range of $155 to $165 million during the third quarter reflecting the same considerations. Production for the fourth quarter of 2026 (the first full quarter pro forma for the acquisition) is expected to be 159 to 161 Mboe/d (49% to 50% oil), reflecting the divested volumes. D&C capital spending is estimated to be approximately $235 million during the fourth …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1698990/000110465926112532/mgy-ex99d1.htm"
+     },
+     "previous": {
+      "text": "Guidance On a standalone basis, Magnolia’s third quarter 2026 D&C capital spending is estimated to be approximately $115 million, with total estimated standalone company capital spending for the year reiterated in the range of $440 to $480 million. Total production for the standalone company in the third quarter is estimated to be similar to second quarter levels. As previously disclosed, we are raising our full year 2026 production growth …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1698990/000169899026000016/q22026pressrelease.htm",
+      "published_at": "2026-08-05",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q3 2026",
+       "Q4 2026",
+       "Q2 2026"
+      ],
+      "previous": [
+       "Q3 2026",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000063754-0000063754-26-000326",
+     "ticker": "MKC",
+     "company": "MCCORMICK & CO INC",
+     "filed": "2026-10-01",
+     "accepted_at": "2026-10-01T11:31:11+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unchanged",
+      "guidance_confidence": 0.99,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.91,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.08418474106400498,
+      "window": [
+       "2026-09-30",
+       "2026-10-02"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Financial Outlook McCormick's fiscal 2026 outlook continues to reflect the Company's prioritized investments in key categories to sustain its volume trends and drive long-term profitable growth while appreciating the uncertainty of the consumer and macro environment, including global trade policies and the conflict in the Middle East. The Company's CCI program is continuing to fuel growth investments while also driving operating margin expansion. Lastly, the outlook reflects meaningful contributions from the acquisition of a controlling interest in McCormick de Mexico, which closed on January …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/63754/000006375426000326/mkcreportssolidthirdquar.htm"
+     },
+     "previous": {
+      "text": "Financial Outlook McCormick's fiscal 2026 outlook continues to reflect the Company's prioritized investments in key categories to sustain its volume trends and drive long-term profitable growth while appreciating the uncertainty of the consumer and macro environment, including global trade policies and the conflict in the Middle East. The Company's CCI program is continuing to fuel growth investments while also driving operating margin …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/63754/000006375426000270/mkcreportsstrongsecondqu.htm",
+      "published_at": "2026-06-25",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2026"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000320187-0000320187-26-000184",
+     "ticker": "NKE",
+     "company": "NIKE, Inc.",
+     "filed": "2026-10-01",
+     "accepted_at": "2026-10-01T20:15:15+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.97,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.59,
+      "product_score": 0.01
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook • Revenues are expected to decline high-single digits in fiscal 2027 . • Effective tax rate for fiscal 2027 is expected to be in the mid-20 percent range, subject to changes in earnings mix and discrete tax items. • Adjusted Diluted earnings per share** is expected to be in the range of $1.15 to $1.35, which excludes approximately $0.15 of restructuring expenses related to Pace for fiscal 2027.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/320187/000032018726000184/q1fy27exhibit991er.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-30",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000831259-0000831259-26-000043",
+     "ticker": "FCX",
+     "company": "FREEPORT-MCMORAN INC",
+     "filed": "2026-10-02",
+     "accepted_at": "2026-10-02T12:35:06+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.43,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.44,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "FCX expects its consolidated copper sales for third-quarter 2026 to approximate its July 2026 estimate of 750 million pounds. … FCX expects consolidated gold sales for third-quarter 2026 to approximate 100 thousand ounces, which is below its July 2026 estimate reflecting the impact of deferred gold sales. … 00 per pound of copper, principally reflecting lower by-product credits resulting from the impact of deferred gold sales.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/831259/000083125926000043/fcx_261002.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-07-23",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [
+       "Q3 2026"
+      ],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001318605-0001628280-26-064366",
+     "ticker": "TSLA",
+     "company": "Tesla, Inc.",
+     "filed": "2026-10-02",
+     "accepted_at": "2026-10-02T13:04:26+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.62,
+      "setup": "unclear",
+      "setup_confidence": 0.14,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "opening",
+      "text": "roduced over 464,000 vehicles, delivered over 486,000 vehicles and deployed 13.7 GWh of energy storage products. Thank you to all of our customers, employees, suppliers, shareholders and supporters who helped us achieve these results. Q3 2026 Production Deliveries Subject to operating lease accounting Model 3/Y 457,387 478,237 1% Other Models 7,004 8,295 4% Total 464,391 486,532 1% *** Tesla will post its financial results for the third quarter of 2026 after market close on Wednesday, October 21, 2026. At that time, Tesla will issue a brief advisory containing a link to the Q3 2026 update …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000162828026064366/exhibit991111111.htm"
+     },
+     "previous": {
+      "text": "5B1 + growth in Energy Generation and Storage + higher automotive ancillary sales, primarily driven by an increase in FSD subscriptions - lower regulatory credit revenue - lower vehicle average selling price (ASP) (excl. … 1B1 + higher automotive ancillary sales, primarily driven by an increase in FSD subscriptions - increase in operating expenses driven by AI and other R&D projects, SBC (including 2025 CEO Performance Award) and SG&A - lower …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1318605/000162828026049213/exhibit991.htm",
+      "published_at": "2026-07-22",
+      "reason": null
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    }
+   ],
+   "review": {
+    "source": "reads-review-20261009T131331181203Z.parquet",
+    "reviewed_at": "2026-10-09T13:13:31.182466+00:00",
+    "original_file": "jev-reads/2026-10-02.json",
+    "note": "Guidance corrections are shown. Tracking retains the originally published short list."
+   }
+  },
+  "2026-09-25": {
+   "schema": "jev-reads-week-1",
+   "as_of": "2026-09-25",
+   "window": [
+    "2026-09-21",
+    "2026-09-25"
+   ],
+   "exported_at": "2026-09-29T10:59:38+00:00",
+   "model": "Jev (TypeSafe), an AI model",
+   "question_version": 3,
+   "universe_rule": "market value at least $1 billion, average daily trading at least $10 million over 63 sessions, share price at least $5, and fresh filing data",
+   "shortlist_rule": "Floor: screener-eligible and 'not weak' (dilution <= 10%, operating or FCF-after-stock-pay margin > 0, 1-year drawdown < 60%). Jev read, each counted only at confidence >= 0.5: tier A = raised guidance on a same-period baseline or explicit raise language, and a growth setup; B = raised only; C = growth setup only. Unknown periods alone do not establish a raise; conflicting metric changes are marked unclear. Excluded: lowered guidance or deteriorating operations, at any confidence. One row per company (its highest tier, then Jev's most confident read). Within a tier: 12-1 momentum, highest first (weak evidence: 6-month rank IC t 1.8 over 2021-26).",
+   "shortlist_rule_version": 3,
+   "counts": {
+    "companies_checked": 4838,
+    "eightk_checked": 596,
+    "earnings_releases": 31,
+    "in_screener_universe": 15,
+    "smaller_companies_not_shown": 16,
+    "read_by_jev": 15,
+    "passed_floor": 14,
+    "short_list": 8
+   },
+   "releases": [
+    {
+     "event_id": "0000866787-0001171843-26-006159",
+     "ticker": "AZO",
+     "company": "AUTOZONE INC",
+     "filed": "2026-09-22",
+     "accepted_at": "2026-09-22T10:55:14+00:00",
+     "short_list_position": 8,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.41,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.58,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.012226937305989227,
+      "window": [
+       "2026-09-21",
+       "2026-09-23"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Based on the data we have, we continued to gain share and we expect sales in each of the three countries in which we operate to accelerate in the new fiscal year.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/866787/000117184326006159/exh_991.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-05-26",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000795266-0000795266-26-000068",
+     "ticker": "KBH",
+     "company": "KB HOME",
+     "filed": "2026-09-22",
+     "accepted_at": "2026-09-22T20:15:45+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "lowered",
+      "guidance_confidence": 0.25,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.95,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.003782883787285529,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Guidance The Company is providing the following guidance for its 2026 fourth quarter and full year as to certain metrics: 2026 Fourth Quarter — • Deliveries in the range of 3,000 to 3,500 homes. • Housing revenues in the range of $1.45 billion to $1.65 billion. • Housing gross profit margin in the range of 16.0% to 16.6%, assuming no inventory-related charges. • Selling, general and administrative expenses as a percentage of revenues in the range of 10.3% to 10.9%. • Effective tax rate of approximately 26%. • Ending community count in the range of 270 to 275. 2026 Full Year — • Deliveries in …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/795266/000079526626000068/exh991kbh-earningsrelease0.htm"
+     },
+     "previous": {
+      "text": "Guidance The Company is providing the following guidance for its 2026 third quarter and full year as to certain metrics: 2026 Third Quarter — • Deliveries in the range of 2,600 to 2,800 homes. • Housing revenues in the range of $1.20 billion to $1.35 billion. • Housing gross profit margin in the range of 16.0% to 16.6%, assuming no inventory-related charges. • Selling, general and administrative expenses as a percentage of revenues in the range …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/795266/000079526626000060/exh991kbh-earningsrelease0.htm",
+      "published_at": "2026-06-23",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q4 2026",
+       "FY2026"
+      ],
+      "previous": [
+       "Q3 2026",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000066382-0000066382-26-000150",
+     "ticker": "MLKN",
+     "company": "MILLERKNOLL, INC.",
+     "filed": "2026-09-22",
+     "accepted_at": "2026-09-22T11:05:11+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "lowered",
+      "guidance_confidence": 0.43,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.83,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.03804438742715499,
+      "window": [
+       "2026-09-21",
+       "2026-09-23"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook The table below presents our selected expectations for the second quarter and full fiscal year 2027 financial operating results: Q2 FY2027 Net sales $972 million to $1.012 billion Gross margin % 38.3% to 39.3% Adjusted operating expenses * $321 million to $331 million Interest and other expense, net $15.8 million to $16.8 million Adjusted effective tax rate * 21% to 23% Adjusted earnings per share - diluted * $0.43 to $0.49 Full Year FY2027 Current Guidance Previous Guidance Net sales $3.88 billion to $4.03 billion $3.93 billion to $4.13 billion Adjusted earnings per share - diluted * …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000150/mlkn8k_08292026ex991.htm"
+     },
+     "previous": {
+      "text": "Fiscal 2027 Outlook The table below presents our selected expectations for the first quarter and full fiscal year 2027 financial operating results: Q1 FY2027 Net sales $928 million to $968 million Gross margin % 38.7% to 39.7% Adjusted operating expenses * $316 million to $326 million Interest and other expense, net $15 million to $16 million Adjusted effective tax rate * 24% to 26% Adjusted earnings per share - diluted * $0.33 to $0.39 Full …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000064/mlkn8k_05302026ex991.htm",
+      "published_at": "2026-06-24",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q2 2027",
+       "FY2027"
+      ],
+      "previous": [
+       "Q1 2027",
+       "FY2027"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000730263-0000730263-26-000028",
+     "ticker": "THO",
+     "company": "THOR INDUSTRIES INC",
+     "filed": "2026-09-22",
+     "accepted_at": "2026-09-22T10:36:18+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": false,
+     "floor_reasons": [
+      "margins unknown"
+     ],
+     "jev": {
+      "guidance": "not_provided",
+      "guidance_confidence": 0.91,
+      "setup": "deteriorating_operations",
+      "setup_confidence": 0.43,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.05895655254754417,
+      "window": [
+       "2026-09-21",
+       "2026-09-23"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal 2027 Guidance “We are confident in our ability to operate successfully in the current market and expect a relatively flat retail environment in fiscal 2027 compared to fiscal 2026, with many of the same headwinds we experienced in fiscal 2026 facing us in the near term. We have two early and critical North American industry events during the second half of September: the Hershey, PA show and the Elkhart, IN Open House. These events will provide us with additional insight regarding our fiscal year expectations as we connect with our independent dealer partners and other industry …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/730263/000073026326000028/thoq4fy26-earningsrelease.htm"
+     },
+     "previous": {
+      "text": "Fiscal 2026 Guidance “Our results through the first three quarters of fiscal 2026 reflect the persistent macroeconomic pressures weighing on the broader RV market, including a challenged retail environment driven in large part by low consumer confidence, cautious independent dealer ordering patterns and ongoing tariff-related and inflationary cost dynamics that continue to negatively impact industry-wide performance. While these external …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/730263/000073026326000019/thoq3fy26-earningsrelease.htm",
+      "published_at": "2026-06-03",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027",
+       "FY2026"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000108516-0001193125-26-397953",
+     "ticker": "WOR",
+     "company": "WORTHINGTON ENTERPRISES, INC.",
+     "filed": "2026-09-22",
+     "accepted_at": "2026-09-22T20:20:20+00:00",
+     "short_list_position": 5,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.74,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.82,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.04565991854446472,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook “We're very encouraged by our start to fiscal 2027 and the opportunities we see across our businesses, including rapidly growing demand for our engineered ASME tanks used in liquid cooling systems for data centers,” Hayek said. “Our teams remain focused on innovation, operational improvement and developing new ways to create value for our customers. With growing free cash flow generation and a healthy balance sheet, we have the flexibility to invest in and pursue additional growth opportunities that fit our strategy.\"",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/108516/000119312526397953/wor-ex99_1.htm"
+     },
+     "previous": {
+      "text": "Lower earnings from ClarkDietrich compared with a strong prior year quarter and margin pressure in our cooling and construction business which Colin will spend a few minutes on later. … And so we don't expect some of the material cost inputs to really whip around on the Worthington Enterprises Fourth Quarter 2026 Earnings Call margins.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/108516/000119312526285420/wor-ex99_1.htm",
+      "published_at": "2026-06-26",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "Q4 2026"
+      ],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001067294-0001104659-26-109812",
+     "ticker": "CBRL",
+     "company": "CRACKER BARREL OLD COUNTRY STORE, INC",
+     "filed": "2026-09-23",
+     "accepted_at": "2026-09-23T11:29:50+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "provided_without_comparison",
+      "guidance_confidence": 0.96,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.82,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.16350833532566889,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal 2027 Outlook The Company provided the following outlook for fiscal 2027: · Total revenue of $3.325 billion to $3.4 billion including comparable store restaurant sales growth of 3% to 5% and no new store openings · Adjusted EBITDA 1 of $180 million to $200 million 2 · Commodity inflation of approximately 3.0% · Hourly wage inflation of 2.5% to 3.0% · Capital expenditures of $110 million to $125 million 1 EBITDA, adjusted net income, adjusted EBITDA, and adjusted earnings per diluted share are",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1067294/000110465926109812/tm2625926d1_ex99-1.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-09",
+      "reason": "The previous release guided FY2026; this one guides FY2027. Not comparable, so Jev was not shown it."
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "different_period"
+     }
+    },
+    {
+     "event_id": "0000723254-0000723254-26-000044",
+     "ticker": "CTAS",
+     "company": "CINTAS CORP",
+     "filed": "2026-09-23",
+     "accepted_at": "2026-09-23T12:31:07+00:00",
+     "short_list_position": 2,
+     "tier": "A",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "raised",
+      "guidance_confidence": 0.81,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.94,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": 0.012233989108613508,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Guidance Fiscal 2027 Updated Guidance Fiscal 2027 (In millions) Fiscal 2026 Low end of Range Growth vs. 2026 High end of Range Growth vs. 2026 Low end of Range Growth vs. 2026 High end of Range Growth vs. 2026 A B E H I L M P Q Total revenue $ 11,264.8 $ 12,100.0 7.4% $ 12,250.0 8.7% $ 12,150.0 7.9% $ 12,270.0 8.9% E=(B-A)/A I=(H-A)/A M=(L-A)/A Q=(P-A)/A C D D D D Workdays in the period 260 261 261 261 261 A F G J K N O R S Workday adjusted revenue growth $ 11,264.8 $ 12,053.6 7.0% $ 12,203.1 8.3% $ 12,103.4 7.4% $ 12,223.0 8.5% F=(B/D)*C G=(F-A)/A J=(H/D)*C K=(J-A)/A N=(L/D)*C O=(N-A)/A …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723254/000072325426000044/ex992026-8x31.htm"
+     },
+     "previous": {
+      "text": "Guidance excludes expected impacts from the proposed UniFirst acquisition. • Guidance does not assume any future acquisitions. • Guidance assumes a constant foreign currency exchange rate. Fiscal 2027 Fiscal 2027 Fiscal 2026 Low end of Range Growth vs. 2026 High end of Range Growth vs. 2026 EPS $ 4.91 $ — $ — UniFirst transaction related expenses 0.03 — — Adjusted EPS (1) $ 4.94 $ 5.36 8.5% $ 5.50 11.3% (1) Cintas has not reconciled its guidance …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723254/000072325426000025/ex992026-5x31.htm",
+      "published_at": "2026-07-15",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027",
+       "FY2026"
+      ],
+      "previous": [
+       "FY2027",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000040704-0001628280-26-063141",
+     "ticker": "GIS",
+     "company": "GENERAL MILLS INC",
+     "filed": "2026-09-23",
+     "accepted_at": "2026-09-23T11:01:47+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unchanged",
+      "guidance_confidence": 0.94,
+      "setup": "mixed_operating_signals",
+      "setup_confidence": 0.39,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.008208835504200707,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal 2027 Outlook General Mills’ top priority is to restore profitable organic net sales growth over the long term by making its brands resonate more deeply with consumers, leveraging all elements of its Remarkable Experience Framework. For fiscal 2027, the company expects category growth to be consistent with recent trends and below its long-term historical growth rate, driven by a continued challenging consumer backdrop. With its base price investment actions completed in fiscal 2026, the company is shifting its focus in fiscal 2027 to product innovation and renovation news centered on …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/40704/000162828026063141/a20260923ex99.htm"
+     },
+     "previous": {
+      "text": "Fiscal 2027 Outlook General Mills’ top priority is to restore profitable organic net sales growth over the long term by improving the remarkability of its brands. For fiscal 2027, the company expects category growth to be consistent with recent trends and below its long-term historical growth rate, driven by a continued challenging consumer backdrop. With its base price investment actions completed in fiscal 2026, the company expects to shift …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/40704/000162828026046337/a20260701ex99.htm",
+      "published_at": "2026-07-01",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027",
+       "FY2026"
+      ],
+      "previous": [
+       "FY2027",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000723531-0000723531-26-000004",
+     "ticker": "PAYX",
+     "company": "PAYCHEX INC",
+     "filed": "2026-09-23",
+     "accepted_at": "2026-09-23T12:41:28+00:00",
+     "short_list_position": 3,
+     "tier": "A",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "raised",
+      "guidance_confidence": 0.6,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.93,
+      "product_score": 1.02
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.10851489151135074,
+      "window": [
+       "2026-09-22",
+       "2026-09-24"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Business Outlook Our current business outlook reflects current assumptions and market conditions. Changes in the macroeconomic environment could alter our guidance. Forward-looking adjusted operating margin and adjusted diluted earnings per share exclude acquisition-related costs. With consideration of these impacts, we have updated our business outlook as follows: Fiscal Year 2027 Outlook Updates Total revenue growth 5% to 6% No change Management Solutions revenue growth 5% to 6% No change PEO and Insurance Solutions revenue growth 7% to 8% Previously 6% to 7% Interest on funds held for …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723531/000072353126000004/payx-ex99_1.htm"
+     },
+     "previous": {
+      "text": "Business Outlook Our outlook for the fiscal year ending May 31, 2027 (\"fiscal 2027\") reflects current assumptions and market conditions. Changes in the macroeconomic environment could alter our guidance. Our updated business outlook is as follows: • Total revenue is anticipated to grow in the range of 5% to 6%. • Management Solutions revenue is anticipated to grow in the range of 5% to 6%. • PEO and Insurance Solutions revenue is anticipated to …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/723531/000119312526280314/payx-ex99_1.htm",
+      "published_at": "2026-06-24",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2027"
+      ],
+      "previous": [
+       "FY2027"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0001070235-0001070235-26-000112",
+     "ticker": "BB",
+     "company": "BLACKBERRY Ltd",
+     "filed": "2026-09-24",
+     "accepted_at": "2026-09-24T11:12:37+00:00",
+     "short_list_position": 1,
+     "tier": "A",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "raised",
+      "guidance_confidence": 0.91,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.85,
+      "product_score": 1.85
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.04493890856484606,
+      "window": [
+       "2026-09-23",
+       "2026-09-25"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Financial Outlook BlackBerry is providing the following guidance for the third fiscal quarter ending November 30, 2026 and the fiscal year ending February 28, 2027. Q3 FY27 FY27 Total BlackBerry revenue: $143 - $154 million $616- $636 million QNX revenue: $82 - $88 million $315 - $325 million Secure Communications revenue: $55 - $60 million $260 - $270 million Licensing revenue: Approximately $6 million Approximately $41 million Total Company adjusted EBITDA: $28 - $37 million $141 - $158 million QNX segment adjusted EBITDA: $27 - $32 million $95 - $105 million Secure Communications segment …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000112/q2fy27ex-991.htm"
+     },
+     "previous": {
+      "text": "Financial Outlook BlackBerry is providing the following guidance for the second fiscal quarter ending August 31, 2026 and the fiscal year ending February 28, 2027. Q2 FY27 FY27 Total BlackBerry revenue: $137 - $148 million $594 - $621 million QNX revenue: $70 - $75 million $295 - $312 million Secure Communications revenue: $57 - $63 million $270 - $280 million Licensing revenue: Approximately $10 million Approximately $29 million Total Company …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1070235/000107023526000071/q1fy27ex-991.htm",
+      "published_at": "2026-06-25",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "Q3 2026",
+       "Q3 2027",
+       "FY2027"
+      ],
+      "previous": [
+       "Q2 2026",
+       "Q2 2027",
+       "FY2027"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0000909832-0000909832-26-000084",
+     "ticker": "COST",
+     "company": "COSTCO WHOLESALE CORP /NEW",
+     "filed": "2026-09-24",
+     "accepted_at": "2026-09-24T20:17:37+00:00",
+     "short_list_position": 6,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.93,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.86,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "opening",
+      "text": "EX-99.1 2 costex9918-k92426.htm EX-99.1 Document Exhibit 99.1 Press Release COSTCO WHOLESALE CORPORATION REPORTS FOURTH QUARTER AND FISCAL YEAR 2026 OPERATING RESULTS ISSAQUAH, Wash., September 24, 2026 - Costco Wholesale Corporation (“Costco” or the “Company”) (Nasdaq: COST) today announced its operating results for the 16-week fourth quarter and the 52-week fiscal year ended August 30, 2026. Net sales for the quarter increased 11.2 percent, to $93.9 billion, from $84.4 billion last year. Net sales for the fiscal year increased 10.1 percent, to $297.2 billion, from $269.9 billion last year. …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/909832/000090983226000084/costex9918-k92426.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-05-28",
+      "reason": "The previous release had no guidance section."
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0000039368-0001437749-26-031113",
+     "ticker": "FUL",
+     "company": "FULLER H B CO",
+     "filed": "2026-09-24",
+     "accepted_at": "2026-09-24T12:51:40+00:00",
+     "short_list_position": 7,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "raised",
+      "guidance_confidence": 0.24,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.81,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.01715186475554009,
+      "window": [
+       "2026-09-23",
+       "2026-09-25"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Fiscal 2026 Outlook: As a result of our year-to-date performance, we are updating our previously communicated financial guidance for fiscal 2026: ■ Net revenue for fiscal 2026 is still expected to be up mid-single digits; organic revenue is still expected to be up low-single digits, with pricing up mid-single digits and volume down low-single digits; the impact from foreign exchange is now expected to be approximately 2%; ■ Adjusted EBITDA for fiscal 2026 is now expected to be in the range of $655 million to $670 million; ■ Core tax rate, excluding the impact of discrete items, is now …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/39368/000143774926031113/ex_1019044.htm"
+     },
+     "previous": {
+      "text": "Fiscal 2026 Outlook: As a result of our year-to-date performance, we are updating our previously communicated financial guidance for fiscal 2026: ■ Net revenue for fiscal 2026 is still expected to be up mid-single digits; organic revenue is still expected to be up low-single digits and the impact from foreign exchange is still expected to be positive 1% to 2%; ■ Adjusted EBITDA for fiscal 2026 is now expected to be in the range of $650 million …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/39368/000143774926021622/ex_980922.htm",
+      "published_at": "2026-06-25",
+      "reason": null
+     },
+     "periods": {
+      "current": [
+       "FY2026"
+      ],
+      "previous": [
+       "Q3 2026",
+       "FY2026"
+      ],
+      "comparison": "same_period"
+     }
+    },
+    {
+     "event_id": "0001362004-0001437749-26-031146",
+     "ticker": "ICFI",
+     "company": "ICF International, Inc.",
+     "filed": "2026-09-24",
+     "accepted_at": "2026-09-24T20:11:53+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.6,
+      "setup": "unclear",
+      "setup_confidence": 0.75,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "opening",
+      "text": "EX-99.1 2 ex_1019497.htm EXHIBIT 99.1 ex_1019497.htm Exhibit 99.1 NEWS RELEASE ICF Announces Timing of Third Quarter 2026 Earnings Release and Conference Call Date: Thursday, November 5, 2026 Time: 4:30 p.m. Eastern Time Audio-only Webcast: https://edge.media-server.com/mmc/p/273vq66x Participant Registration: https://register-conf.media-server.com/register/BI8f18d40afff846bb9db190b4233f0da3 RESTON, Va. (September 24, 2026) — ICF (NASDAQ:ICFI), a leading global solutions and technology provider, will release its third quarter 2026 results on Thursday, November 5, 2026, after the market close. …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1362004/000143774926031146/ex_1019497.htm"
+     },
+     "previous": {
+      "text": "Outlook “We are looking ahead to a strong second half, led by accelerated growth in revenues from commercial energy and state & local government clients, continued double-digit growth in revenues from international government clients, and sequential growth in revenues from federal government clients in the third quarter, followed by a return to year-on-year growth in that client category in the fourth quarter. Approximately 90% of the revenues …",
+      "truncated": true,
+      "source": "https://www.sec.gov/Archives/edgar/data/1362004/000119312526337985/icfi-ex99_1.htm",
+      "published_at": "2026-08-06",
+      "reason": null
+     },
+     "periods": {
+      "current": [],
+      "previous": [
+       "FY2026"
+      ],
+      "comparison": "unknown"
+     }
+    },
+    {
+     "event_id": "0001177394-0001628280-26-063314",
+     "ticker": "SNX",
+     "company": "TD SYNNEX CORP",
+     "filed": "2026-09-24",
+     "accepted_at": "2026-09-24T11:03:05+00:00",
+     "short_list_position": 4,
+     "tier": "C",
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.42,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.56,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "ready",
+      "excess_return_3d": -0.06876082651717774,
+      "window": [
+       "2026-09-23",
+       "2026-09-25"
+      ]
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Outlook The following statements are based on TD SYNNEX’s current expectations for the fiscal 2026 fourth quarter. These statements are forward-looking and actual results may differ materially. Non-GAAP gross billings (1) include the impact of costs incurred and netted against revenue related to sales of third-party supplier service contracts, software as a service arrangements and certain fulfillment contracts, and the remaining",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/1177394/000162828026063314/ex991-fy26q3pressrelease.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": "2026-06-25",
+      "reason": "The previous release guided Q3 2026; this one guides Q4 2026. Not comparable, so Jev was not shown it."
+     },
+     "periods": {
+      "current": [
+       "Q4 2026"
+      ],
+      "previous": [
+       "Q3 2026"
+      ],
+      "comparison": "different_period"
+     }
+    },
+    {
+     "event_id": "0000108516-0001193125-26-402803",
+     "ticker": "WOR",
+     "company": "WORTHINGTON ENTERPRISES, INC.",
+     "filed": "2026-09-25",
+     "accepted_at": "2026-09-25T20:01:39+00:00",
+     "short_list_position": null,
+     "tier": null,
+     "floor": true,
+     "floor_reasons": [],
+     "jev": {
+      "guidance": "unclear",
+      "guidance_confidence": 0.76,
+      "setup": "asymmetric_growth_catalyst",
+      "setup_confidence": 0.54,
+      "product_score": null
+     },
+     "guidance_review": null,
+     "reaction": {
+      "status": "waiting_for_market_data",
+      "excess_return_3d": null,
+      "window": null
+     },
+     "quote": {
+      "section": "guidance",
+      "text": "Recent acquisitions contributed $19 million of net sales in the quarter, while organic sales increased 6%, driven by primarily by strength in our Water and European businesses, partially offset by lower revenue in our Cooling and Construction business.",
+      "truncated": false,
+      "source": "https://www.sec.gov/Archives/edgar/data/108516/000119312526402803/wor-ex99_1.htm"
+     },
+     "previous": {
+      "text": null,
+      "truncated": false,
+      "source": null,
+      "published_at": null,
+      "reason": "No earlier earnings release 45–140 days before this one."
+     },
+     "periods": {
+      "current": [],
+      "previous": [],
+      "comparison": "unknown"
+     }
+    }
+   ],
+   "review": {
+    "source": "reads-review-20261009T131330027556Z.parquet",
+    "reviewed_at": "2026-10-09T13:13:30.029333+00:00",
+    "original_file": "jev-reads/2026-09-25.json",
+    "note": "Guidance corrections are shown. Tracking retains the originally published short list."
+   }
+  }
+ },
  "late_reactions": {
+  "2026-10-09": {},
   "2026-10-02": {
    "0000320187-0000320187-26-000184": {
-    "excess_return_3d": -0.08408279059901724,
+    "excess_return_3d": -0.05667532181480606,
     "window": [
      "2026-10-01",
      "2026-10-05"
     ]
    },
    "0000831259-0000831259-26-000043": {
-    "excess_return_3d": 0.015978511263196715,
+    "excess_return_3d": 0.02114554684437131,
     "window": [
      "2026-10-01",
      "2026-10-05"
     ]
    },
    "0001318605-0001628280-26-064366": {
-    "excess_return_3d": 0.04469435497279961,
+    "excess_return_3d": 0.05141911349613504,
     "window": [
      "2026-10-01",
      "2026-10-05"
@@ -177,6 +2139,28 @@
   }
  },
  "tracking": [
+  {
+   "week": "2026-10-09",
+   "group": "short list",
+   "releases": 4,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
+  {
+   "week": "2026-10-09",
+   "group": "other releases read",
+   "releases": 21,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
   {
    "week": "2026-10-02",
    "group": "short list",
@@ -259,14 +2243,14 @@
    "detectable_pp": 13.30572607115478
   },
   "market_disagreed_minus_agreed_6m": {
-   "difference_pp": 0.6662281617440174,
+   "difference_pp": 0.5115918279723686,
    "ci_pp": [
-    -9.441484654368724,
-    10.886448077408431
+    -9.625907629588248,
+    10.765459521757444
    ],
    "releases": [
     39,
-    61
+    59
    ]
   },
   "note": "Intervals are 95% bootstrap intervals resampling whole filing months. Only companies still listed today are in the data, so all returns are optimistic."

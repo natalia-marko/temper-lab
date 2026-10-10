@@ -186,7 +186,7 @@ The header shows **Data as of** from the weekly freeze's `as_of`, separately fro
 **Snapshot built** from its `recorded_at`. A rebuild or publication does not
 advance the underlying ranking date. Fundamentals retain their own filing periods.
 
-The full research job is installed as `com.temperlab.weekly`: Saturday at 08:00
+The full research job is installed as `com.temperlab.weekly`: Saturday at 06:00
 in the Mac's local timezone (currently Copenhagen), running `run_weekly.sh`.
 Insights is a separate `com.temperlab.ownership` job, Tuesday and Friday at
 08:00, refreshing `ownership-signals.json` and emailing the new filings; the

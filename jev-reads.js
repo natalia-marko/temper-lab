@@ -97,6 +97,7 @@ function guidanceDeltaClass(choice) {
 }
 
 function guidanceDeltaText(release) {
+  if (release.guidance_review) return `Guidance review: ${release.guidance_review.reason}`;
   const choice = (release.jev || {}).guidance;
   const periods = release.periods || {};
   const comparison = periods.comparison;
@@ -238,8 +239,18 @@ function answersPanel(release) {
   const jev = release.jev || {};
   const panel = el("div", "jev-answers-panel");
   panel.appendChild(el("p", "jev-answers-label", "Jev (AI)"));
+  if (release.guidance_review) {
+    const review = release.guidance_review;
+    panel.appendChild(el("p", "insights-note",
+      `Guidance corrected after checking the source. Original AI answer: ${guidanceLabel(review.raw_guidance)}`
+      + (review.raw_confidence == null ? "." : ` (confidence ${Number(review.raw_confidence).toFixed(2)}).`)));
+    const compared = [...new Set((review.comparisons || []).map(r => r.quote))].join("\n");
+    const evidence = review.evidence || {};
+    panel.appendChild(quoteFold("Guidance evidence checked", compared
+      || `Current: ${evidence.current || "No guidance passage."}\nPrevious: ${evidence.previous || "No guidance passage."}`, false));
+  }
   const meters = el("div", "jev-meters");
-  meters.appendChild(meterRow("Guidance", guidanceLabel(jev.guidance), jev.guidance_confidence));
+  meters.appendChild(meterRow(release.guidance_review ? "Reviewed guidance" : "Guidance", guidanceLabel(jev.guidance), jev.guidance_confidence));
   meters.appendChild(meterRow("Operations", setupLabel(jev.setup), jev.setup_confidence));
   if (jev.product_score != null) {
     meters.appendChild(meterRow("Product", `${Number(jev.product_score).toFixed(1)} of 3`, null));
@@ -430,6 +441,7 @@ function renderTrack() {
   table.appendChild(body);
   if (note) {
     note.textContent = "Tracking: mean return of each group minus the average screener-universe stock, from the first session after the week's Friday. "
+      + "Tracking retains the originally published short list when guidance is corrected later. "
       + "\"Not yet\" means that much time has not passed. One week is noise; judge only after many weeks.";
   }
 }
@@ -443,7 +455,7 @@ function renderWeek() {
   if (chip) chip.textContent = `Week ending ${week.as_of}`;
   if (aside) aside.textContent = week.as_of;
   if (rule && week.universe_rule) rule.textContent = week.universe_rule;
-  const message = weekBanner(week, jevState.release, jevState.index.latest);
+  const message = [weekBanner(week, jevState.release, jevState.index.latest), week.review && week.review.note].filter(Boolean).join(" ");
   if (banner) {
     banner.textContent = message || "";
     banner.hidden = !message;
@@ -460,9 +472,19 @@ function loadWeek(asOf) {
   return fetch(`./${entry.file}`, { cache: "no-store" }).then((r) => r.json()).then((week) => {
     if (week.schema !== WEEK_SCHEMA) throw new Error(`week file schema is not ${WEEK_SCHEMA}`);
     if (week.as_of !== asOf) throw new Error("week file does not match the index");
-    jevState.week = week;
+    jevState.week = applyGuidanceReview(week, jevState.index.guidance_reviews);
     renderWeek();
   });
+}
+
+function applyGuidanceReview(week, reviews) {
+  const reviewed = reviews && reviews[week.as_of];
+  if (!reviewed) return week;
+  if (reviewed.schema !== WEEK_SCHEMA || reviewed.as_of !== week.as_of
+      || JSON.stringify(reviewed.releases.map(r => r.event_id).sort()) !== JSON.stringify(week.releases.map(r => r.event_id).sort())) {
+    throw new Error("Guidance review does not match the published week");
+  }
+  return reviewed;
 }
 
 function showError(error) {
