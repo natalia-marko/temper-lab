@@ -38,6 +38,7 @@ const SORTS = { signal: "Signal type", evidence: "Checks 3 → 0", amount: "Amou
 // buys), sales without a plan, big holders, then planned or routine sales. A fixed order, not a score.
 const SIGNAL_RANK = { "Group buy, incl. officer": 0, "Group buy, directors": 1, "Officer buy": 2, "Director buy": 3,
   "Sale, no plan": 4, "Fund/10% owner buy": 5, "Fund/10% owner sale": 5, "Plan or tax sale": 6,
+  "Automatic dividend reinvestment": 6,
   // 5%+ stakes tab only.
   "New stake, active (13D)": 0, "Switched to active (13D)": 0, "Stake change (13D)": 1,
   "New stake, passive (13G)": 2, "Stake change (13G)": 3, "Below 5%": 4 };
@@ -114,6 +115,11 @@ function peopleWith(company, keys, insiders) {
   return (company.people || []).filter((p) => keys.some((k) => (p.money || {})[k])
     && (insiders === null || INSIDER.has(p.role) === insiders));
 }
+function reinvestedAmount(company, sig) {
+  if (!sig.keys) return 0;
+  return peopleWith(company, sig.keys, sig.insiders).reduce((n, p) => n + sum(p.automatic_reinvestment, sig.keys), 0);
+}
+function buyEvidence(p) { return p.buy_evidence_usd ?? sum(p.money, KEYS.buy); }
 // The kind of event a row shows in a view. Facts only: role, plan, several buyers.
 function signal(company, view) {
   if (view === "stakes") return stakeSignal(company);
@@ -124,7 +130,11 @@ function signal(company, view) {
     : view === "buy" ? "buy" : view === "sell" ? (discretionary ? "discretionary" : "planned")
       : view === "holders" ? "holder" : "other";
   if (pick === "buy") {
-    const exec = peopleWith(company, KEYS.buy, true).some((p) => EXEC.has(p.role));
+    const buyers = peopleWith(company, KEYS.buy, true);
+    if (buyers.length && buyers.every((p) => !buyEvidence(p))) {
+      return { kind: "buy", side: "routine", keys: KEYS.buy, insiders: true, text: "Automatic dividend reinvestment" };
+    }
+    const exec = buyers.some((p) => EXEC.has(p.role) && buyEvidence(p));
     const several = ((company.flags || {}).buyers_within_10_sessions || 0) >= 2;
     return { kind: "buy", side: "buy", keys: KEYS.buy, insiders: true,
       text: several ? (exec ? "Group buy, incl. officer" : "Group buy, directors") : (exec ? "Officer buy" : "Director buy") };
@@ -363,6 +373,8 @@ function reasons(company, sig) {
     const dots = [f.buyers_within_10_sessions >= 2, f.ceo_or_cfo_bought, f.holding_up_5pct_on_50k].map((on) => (on ? "●" : "○")).join("");
     out.push([`Checks ${dots}`, ""]);
   }
+  const reinvested = reinvestedAmount(company, sig);
+  if (reinvested) out.push([`Automatic dividend reinvestment: ${money(reinvested)}`, "muted"]);
   if (sig.kind === "discretionary" && f.officers_sold_without_plan >= 2) out.push([`${f.officers_sold_without_plan} officers, no plan`, "warn"]);
   if (company.short && company.short.rank) out.push([`${company.short.rank} shorted`, "muted"]);
   if (f.rows_to_check) out.push([`${plural(f.rows_to_check, "row")} to check`, "muted"]);
@@ -762,12 +774,12 @@ function checks(company, sig) {
   const f = company.flags || {};
   const people = peopleWith(company, sig.keys, sig.insiders);
   if (sig.kind !== "buy") return [];
-  const ceo = people.find((p) => p.role === "CEO" || p.role === "CFO");
+  const ceo = people.find((p) => (p.role === "CEO" || p.role === "CFO") && buyEvidence(p));
   const stake = people.find((p) => p.holding && (p.holding.status === "new_position" || (p.holding.side === "purchase" && p.holding.change_pct >= 5)));
   return [
     [f.buyers_within_10_sessions >= 2, f.buyers_within_10_sessions >= 2 ? `Several insiders: ${f.buyers_within_10_sessions} bought within 10 sessions.` : "Several insiders within 10 sessions: no."],
-    [Boolean(f.ceo_or_cfo_bought), ceo ? `CEO or CFO: ${ceo.role} ${ceo.names[0]} bought ${money(sum(ceo.money, sig.keys))}.` : "CEO or CFO bought: no."],
-    [Boolean(f.holding_up_5pct_on_50k), f.holding_up_5pct_on_50k && stake ? `Holding +5% or new: ${stake.role} ${stake.names[0]}, ${holdingChange(stake).text}.` : "A holding up 5% or new, on $50K+: no."],
+    [Boolean(f.ceo_or_cfo_bought), ceo ? `CEO or CFO: ${ceo.role} ${ceo.names[0]} bought ${money(buyEvidence(ceo))} excluding automatic reinvestment.` : "CEO or CFO bought (excluding automatic reinvestment): no."],
+    [Boolean(f.holding_up_5pct_on_50k), f.holding_up_5pct_on_50k && reinvestedAmount(company, sig) ? "A holding up 5% or new, on $50K+: yes, excluding automatic reinvestment." : f.holding_up_5pct_on_50k && stake ? `Holding +5% or new: ${stake.role} ${stake.names[0]}, ${holdingChange(stake).text}.` : "A holding up 5% or new, on $50K+: no."],
   ];
 }
 function peopleTable(list, columns) {
