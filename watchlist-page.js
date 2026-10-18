@@ -1,6 +1,7 @@
 // The Watchlist page: names starred on any page, with facts from the latest
-// Research snapshot (desk.json), earnings calendar, and 1-year technical timing
-// indicators (50-day SMA, 100-day SMA, 14-day RSI, and MACD 12/26/9) from ticker-volume.json.
+// Research snapshot (desk.json) and the earnings calendar. The Timing tab draws one year of
+// daily closes with the 50/100/200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
+// ticker-timing.json, loaded only when that tab opens. Descriptions of past prices, not calls.
 (function () {
   "use strict";
   const W = globalThis.TLWatch;
@@ -42,298 +43,160 @@
     return `${shortDay(next.date)}${next.timing ? `, ${next.timing}` : ""}${next.unsure ? " (may change)" : ""}`;
   }
 
-  // Compute 50-day SMA, 100-day SMA, 200-day SMA, 14-day RSI, and MACD on the full series,
-  // then slice to the display window so every indicator is warmed up from the first displayed day.
-  // horizon = "mid" (default): 50/200-day SMA regime + 100d support + MACD (19, 39, 9) (Appel mid-term)
-  // horizon = "swing": 50/100-day SMA regime + MACD (12, 26, 9)
+  // Indicators are computed on the whole series (warm-up included) and then cut to the chart
+  // window, so a value on the first chart day already has its history behind it when the
+  // stock has that much history. Standard definitions, no tuning:
+  //   SMA 50 / 100 / 200 of the closes; trend = the 50-day against the slow average
+  //   (200-day, or 100-day on the "50/100-day" view).
+  //   RSI (14): Wilder's. The first averages are the simple mean of 14 daily changes; after that
+  //   avg = (avg × 13 + today) / 14. Undefined while the price has not moved at all.
+  //   MACD (12, 26, 9): EMA 12 − EMA 26 of the closes; signal = EMA 9 of MACD; histogram =
+  //   MACD − signal. Each EMA starts from the simple mean of its first values.
+  // Events are dated the day they happen, from that day's close, and never move afterwards.
+  const RSI_N = 14;
+  const MACD_FAST = 12;
+  const MACD_SLOW = 26;
+  const MACD_SIGNAL = 9;
+  const RSI_HIGH = 70;
+  const RSI_LOW = 30;
   function computeIndicators(allDays, rawCloses, warmup = 0, horizon = "mid") {
     if (!Array.isArray(allDays) || !Array.isArray(rawCloses) || allDays.length !== rawCloses.length || allDays.length < 30) {
       return null;
     }
-    const isMid = horizon !== "swing";
-    const slowPeriod = isMid ? 200 : 100;
-    const macdFast = isMid ? 19 : 12;
-    const macdSlow = isMid ? 39 : 26;
-    const macdSig = 9;
-
-    // Forward-fill isolated single-day gaps for indicator continuity while keeping rawCloses for validity checks.
+    const slowPeriod = horizon === "swing" ? 100 : 200;
+    // The builder keeps only series whose gaps are at most 5 sessions; a gap carries the last close.
     const closes = rawCloses.slice();
     for (let i = 1; i < closes.length; i++) {
       if (!(closes[i] > 0) && closes[i - 1] > 0) closes[i] = closes[i - 1];
     }
     const firstValid = closes.findIndex((v) => v > 0);
     if (firstValid < 0 || closes.length - firstValid < 25) return null;
-
     const n = closes.length;
-    const sma50 = new Array(n).fill(null);
-    const sma100 = new Array(n).fill(null);
-    const sma200 = new Array(n).fill(null);
-    const rsi14 = new Array(n).fill(null);
-    const macd = new Array(n).fill(null);
-    const signal = new Array(n).fill(null);
-    const hist = new Array(n).fill(null);
 
-    for (let i = firstValid; i < n; i++) {
-      if (i - firstValid + 1 >= 50) {
-        let sum50 = 0;
-        for (let j = i - 49; j <= i; j++) sum50 += closes[j];
-        sma50[i] = sum50 / 50;
+    const sma = (period) => {
+      const out = new Array(n).fill(null);
+      for (let i = firstValid + period - 1; i < n; i++) {
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) sum += closes[j];
+        out[i] = sum / period;
       }
-      if (i - firstValid + 1 >= 100) {
-        let sum100 = 0;
-        for (let j = i - 99; j <= i; j++) sum100 += closes[j];
-        sma100[i] = sum100 / 100;
+      return out;
+    };
+    const ema = (src, period, from) => {
+      const out = new Array(n).fill(null);
+      if (n - from < period) return out;
+      let value = 0;
+      for (let j = from; j < from + period; j++) value += src[j];
+      value /= period;
+      out[from + period - 1] = value;
+      const k = 2 / (period + 1);
+      for (let i = from + period; i < n; i++) {
+        value = src[i] * k + value * (1 - k);
+        out[i] = value;
       }
-      if (i - firstValid + 1 >= 200) {
-        let sum200 = 0;
-        for (let j = i - 199; j <= i; j++) sum200 += closes[j];
-        sma200[i] = sum200 / 200;
+      return out;
+    };
+    const sma50 = sma(50);
+    const sma100 = sma(100);
+    const sma200 = sma(200);
+    const slow = slowPeriod === 200 ? sma200 : sma100;
+
+    const rsi = new Array(n).fill(null);
+    if (n - firstValid > RSI_N) {
+      let gain = 0;
+      let loss = 0;
+      for (let j = firstValid + 1; j <= firstValid + RSI_N; j++) {
+        const d = closes[j] - closes[j - 1];
+        if (d > 0) gain += d;
+        else loss -= d;
       }
-      if (i - firstValid >= 14) {
-        let gains = 0;
-        let losses = 0;
-        for (let j = i - 13; j <= i; j++) {
-          const diff = closes[j] - closes[j - 1];
-          if (diff > 0) gains += diff;
-          else if (diff < 0) losses -= diff;
-        }
-        const avgGain = gains / 14;
-        const avgLoss = losses / 14;
-        rsi14[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+      gain /= RSI_N;
+      loss /= RSI_N;
+      const value = () => (loss === 0 ? (gain === 0 ? null : 100) : 100 - 100 / (1 + gain / loss));
+      rsi[firstValid + RSI_N] = value();
+      for (let i = firstValid + RSI_N + 1; i < n; i++) {
+        const d = closes[i] - closes[i - 1];
+        gain = (gain * (RSI_N - 1) + Math.max(d, 0)) / RSI_N;
+        loss = (loss * (RSI_N - 1) + Math.max(-d, 0)) / RSI_N;
+        rsi[i] = value();
       }
     }
 
-    const kFast = 2 / (macdFast + 1);
-    const kSlow = 2 / (macdSlow + 1);
-    const kSig = 2 / (macdSig + 1);
-    let emaFast = closes[firstValid];
-    let emaSlow = closes[firstValid];
-    let sigEma = 0;
-    for (let i = firstValid; i < n; i++) {
-      const c = closes[i];
-      emaFast = i === firstValid ? c : c * kFast + emaFast * (1 - kFast);
-      emaSlow = i === firstValid ? c : c * kSlow + emaSlow * (1 - kSlow);
-      if (i - firstValid >= macdSlow - 1) {
-        const m = emaFast - emaSlow;
-        macd[i] = m;
-        sigEma = i - firstValid === macdSlow - 1 ? m : m * kSig + sigEma * (1 - kSig);
-        signal[i] = sigEma;
-        hist[i] = m - sigEma;
-      }
-    }
+    const fast = ema(closes, MACD_FAST, firstValid);
+    const slowEma = ema(closes, MACD_SLOW, firstValid);
+    const macd = fast.map((v, i) => (v !== null && slowEma[i] !== null ? v - slowEma[i] : null));
+    const macdFrom = firstValid + MACD_SLOW - 1;
+    const signal = macdFrom < n ? ema(macd, MACD_SIGNAL, macdFrom) : new Array(n).fill(null);
+    const hist = macd.map((v, i) => (v !== null && signal[i] !== null ? v - signal[i] : null));
 
     const start = Math.min(Math.max(warmup, firstValid), Math.max(0, n - 20));
-    const dDays = allDays.slice(start);
-    const dClose = closes.slice(start);
-    const dSma50 = sma50.slice(start);
-    const dSma100 = sma100.slice(start);
-    const dSma200 = sma200.slice(start);
-    const dSlowSma = (isMid && dSma200.some((v) => v !== null)) ? dSma200 : dSma100;
-    const effectiveSlowPeriod = dSlowSma === dSma200 ? 200 : 100;
-    const dRsi = rsi14.slice(start);
-    const dMacd = macd.slice(start);
-    const dSig = signal.slice(start);
-    const dHist = hist.slice(start);
-    const m = dDays.length;
+    const cut = (arr) => arr.slice(start);
+    const days = allDays.slice(start);
 
-    // Identify clean, non-overlapping Buy (▲) and Sell (▼) signals in the display window:
-    // - RSI <= 30 oversold episode trough (▲) and RSI >= 70 overbought episode peak (▼)
-    // - 50/slow SMA Golden Cross (▲) and Death Cross (▼)
-    const buySignals = [];
-    const sellSignals = [];
-    let inOversold = false;
-    let minIdx = -1;
-    let inOverbought = false;
-    let maxIdx = -1;
-
-    for (let i = 0; i < m; i++) {
-      const r = dRsi[i];
-      if (r !== null && r <= 30) {
-        if (!inOversold) {
-          inOversold = true;
-          minIdx = i;
-        } else if (dClose[i] <= dClose[minIdx]) {
-          minIdx = i;
-        }
-      } else if (inOversold) {
-        buySignals.push({ index: minIdx, date: dDays[minIdx], price: dClose[minIdx], rsi: dRsi[minIdx], reason: `RSI oversold (${dRsi[minIdx].toFixed(1)})` });
-        inOversold = false;
+    // Events, each on the day of the close that produced it.
+    const maEvents = [];
+    const rsiEvents = [];
+    const macdEvents = [];
+    for (let i = Math.max(start, 1); i < n; i++) {
+      const at = { index: i - start, date: allDays[i], price: closes[i] };
+      if (sma50[i - 1] !== null && slow[i - 1] !== null && sma50[i] !== null && slow[i] !== null) {
+        if (sma50[i - 1] <= slow[i - 1] && sma50[i] > slow[i]) maEvents.push({ ...at, kind: "up" });
+        else if (sma50[i - 1] >= slow[i - 1] && sma50[i] < slow[i]) maEvents.push({ ...at, kind: "down" });
       }
-
-      if (r !== null && r >= 70) {
-        if (!inOverbought) {
-          inOverbought = true;
-          maxIdx = i;
-        } else if (dClose[i] >= dClose[maxIdx]) {
-          maxIdx = i;
-        }
-      } else if (inOverbought) {
-        sellSignals.push({ index: maxIdx, date: dDays[maxIdx], price: dClose[maxIdx], rsi: dRsi[maxIdx], reason: `RSI overbought (${dRsi[maxIdx].toFixed(1)})` });
-        inOverbought = false;
+      if (rsi[i - 1] !== null && rsi[i] !== null) {
+        if (rsi[i - 1] < RSI_HIGH && rsi[i] >= RSI_HIGH) rsiEvents.push({ ...at, value: rsi[i], kind: "high" });
+        else if (rsi[i - 1] > RSI_LOW && rsi[i] <= RSI_LOW) rsiEvents.push({ ...at, value: rsi[i], kind: "low" });
       }
-
-      if (i > 0 && dSma50[i - 1] !== null && dSlowSma[i - 1] !== null && dSma50[i] !== null && dSlowSma[i] !== null) {
-        if (dSma50[i - 1] <= dSlowSma[i - 1] && dSma50[i] > dSlowSma[i]) {
-          buySignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: `50/${effectiveSlowPeriod}d SMA Golden Cross` });
-        } else if (dSma50[i - 1] >= dSlowSma[i - 1] && dSma50[i] < dSlowSma[i]) {
-          sellSignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: `50/${effectiveSlowPeriod}d SMA Death Cross` });
-        }
+      if (macd[i - 1] !== null && signal[i - 1] !== null && macd[i] !== null && signal[i] !== null) {
+        if (macd[i - 1] <= signal[i - 1] && macd[i] > signal[i]) macdEvents.push({ ...at, value: macd[i], kind: "up" });
+        else if (macd[i - 1] >= signal[i - 1] && macd[i] < signal[i]) macdEvents.push({ ...at, value: macd[i], kind: "down" });
       }
     }
-    if (inOversold && minIdx >= 0) {
-      buySignals.push({ index: minIdx, date: dDays[minIdx], price: dClose[minIdx], rsi: dRsi[minIdx], reason: `RSI oversold (${dRsi[minIdx].toFixed(1)})` });
-    }
-    if (inOverbought && maxIdx >= 0) {
-      sellSignals.push({ index: maxIdx, date: dDays[maxIdx], price: dClose[maxIdx], rsi: dRsi[maxIdx], reason: `RSI overbought (${dRsi[maxIdx].toFixed(1)})` });
-    }
 
-    const rawMacdCrosses = [];
-    for (let i = 1; i < m; i++) {
-      if (dMacd[i - 1] !== null && dSig[i - 1] !== null && dMacd[i] !== null && dSig[i] !== null) {
-        if (dMacd[i - 1] <= dSig[i - 1] && dMacd[i] > dSig[i]) {
-          rawMacdCrosses.push({ index: i, date: dDays[i], kind: "buy", value: dMacd[i], label: "MACD Golden Cross" });
-        } else if (dMacd[i - 1] >= dSig[i - 1] && dMacd[i] < dSig[i]) {
-          rawMacdCrosses.push({ index: i, date: dDays[i], kind: "sell", value: dMacd[i], label: "MACD Bearish Cross" });
-        }
-      }
-    }
-    // Filter out 1-to-4 day micro-graze whipsaws so Golden/Bearish crossover markers never pile on top of each other.
-    const macdCrosses = [];
-    let k = 0;
-    while (k < rawMacdCrosses.length) {
-      const curr = rawMacdCrosses[k];
-      const next = rawMacdCrosses[k + 1];
-      if (
-        macdCrosses.length > 0 &&
-        next &&
-        next.kind !== curr.kind &&
-        next.index - curr.index <= 4 &&
-        next.index < m - 5
-      ) {
-        // curr and next cancelled each other out within <= 4 days; skip both to preserve clean alternation
-        k += 2;
-        continue;
-      }
-      if (macdCrosses.length > 0 && macdCrosses[macdCrosses.length - 1].kind === curr.kind) {
-        macdCrosses[macdCrosses.length - 1] = curr;
-      } else {
-        macdCrosses.push(curr);
-      }
-      k += 1;
-    }
-
-    const lastIdx = m - 1;
-    const lastClose = dClose[lastIdx];
-    const lastSma50 = dSma50[lastIdx];
-    const lastSma100 = dSma100[lastIdx];
-    const lastSma200 = dSma200[lastIdx];
-    const lastSlowSma = dSlowSma[lastIdx];
-    const lastRsi = dRsi[lastIdx];
-    const lastMacd = dMacd[lastIdx];
-    const lastSig = dSig[lastIdx];
-    const lastHist = dHist[lastIdx];
-    const vsSma50 = lastSma50 ? lastClose / lastSma50 - 1 : null;
-    const sma50Vs100 = lastSma50 && lastSma100 ? lastSma50 / lastSma100 - 1 : null;
-    const sma50Vs200 = lastSma50 && lastSma200 ? lastSma50 / lastSma200 - 1 : null;
-    const sma50VsSlow = lastSma50 && lastSlowSma ? lastSma50 / lastSlowSma - 1 : null;
-    const recentBuy = buySignals.length ? buySignals[buySignals.length - 1] : null;
-    const recentSell = sellSignals.length ? sellSignals[sellSignals.length - 1] : null;
-    const lastSignal = !recentBuy ? recentSell : !recentSell ? recentBuy
-      : recentBuy.index >= recentSell.index ? { ...recentBuy, type: "buy" } : { ...recentSell, type: "sell" };
-    if (lastSignal && !lastSignal.type) lastSignal.type = recentBuy ? "buy" : "sell";
-
-    // Timing classification answering "Is it the right time to buy?"
-    let setup = { tone: "caution", label: "Mixed / neutral", detail: "Inspect trend and RSI before entry." };
-    const uptrend = sma50VsSlow !== null ? sma50VsSlow > 0 : (vsSma50 !== null && vsSma50 > 0);
-    const recentOversold = recentBuy && (lastIdx - recentBuy.index <= 12);
-    if (lastRsi !== null && lastRsi >= 70) {
-      setup = {
-        tone: "wait",
-        label: "Overbought · wait for pullback",
-        detail: `RSI (14) is ${lastRsi.toFixed(1)} (≥ 70 overbought). Trend is strong, but short-term entry is stretched.`,
-      };
-    } else if (lastSma50 === null) {
-      setup = {
-        tone: "caution",
-        label: "Short history (<50d)",
-        detail: `Only ${m} active sessions in this window; 50d SMA not yet formed (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}).`,
-      };
-    } else if (lastSlowSma === null) {
-      setup = {
-        tone: vsSma50 >= 0 ? "steady" : "caution",
-        label: vsSma50 >= 0 ? "Above 50d SMA (forming 100d)" : "Below 50d SMA (forming 100d)",
-        detail: `Price is ${signedPct(vsSma50)} vs 50d SMA (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}); 100d/200d SMA still forming.`,
-      };
-    } else if (uptrend && ((lastRsi !== null && lastRsi <= 40) || recentOversold)) {
-      setup = {
-        tone: "buy",
-        label: "Pullback in uptrend · ▲ setup",
-        detail: `50d SMA > ${effectiveSlowPeriod}d SMA with RSI (14) at ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}${recentOversold ? ` (▲ ${recentBuy.reason} on ${shortDay(recentBuy.date)})` : ""}.`,
-      };
-    } else if (uptrend && lastClose >= (lastSma50 || 0)) {
-      setup = {
-        tone: "steady",
-        label: "Steady uptrend · Golden Cross",
-        detail: `Price above 50d & ${effectiveSlowPeriod}d SMA with neutral RSI (${lastRsi !== null ? lastRsi.toFixed(1) : "—"})${lastHist !== null && lastHist > 0 ? " and positive MACD momentum." : "."}`,
-      };
-    } else if (uptrend) {
-      setup = {
-        tone: "caution",
-        label: `Testing ${effectiveSlowPeriod === 200 ? "100d/200d" : "100d"} SMA support`,
-        detail: `Longer trend is positive (50d > ${effectiveSlowPeriod}d SMA), but price is ${signedPct(vsSma50)} below 50d SMA (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}).`,
-      };
-    } else {
-      setup = {
-        tone: "wait",
-        label: "Below trend · Death Cross",
-        detail: `50d SMA is below ${effectiveSlowPeriod}d SMA (${signedPct(sma50VsSlow)}). Wait for trend repair or RSI ≤ 30 washout.`,
-      };
-    }
-
+    const last = n - 1;
+    const ratio = (a, b) => (a !== null && b ? a / b - 1 : null);
+    const lastOf = (list, kind) => [...list].reverse().find((e) => !kind || e.kind === kind) || null;
     return {
-      horizon: isMid ? "mid" : "swing",
-      slowPeriod: effectiveSlowPeriod,
-      macdFast,
-      macdSlow,
-      macdSig,
-      days: dDays,
-      close: dClose,
-      sma50: dSma50,
-      sma100: dSma100,
-      sma200: dSma200,
-      slowSma: dSlowSma,
-      rsi14: dRsi,
-      macd: dMacd,
-      signal: dSig,
-      hist: dHist,
-      buySignals,
-      sellSignals,
-      macdCrosses,
+      slowPeriod,
+      history: n - firstValid,
+      days,
+      close: cut(closes),
+      sma50: cut(sma50),
+      sma100: cut(sma100),
+      sma200: cut(sma200),
+      slow: cut(slow),
+      rsi14: cut(rsi),
+      macd: cut(macd),
+      signal: cut(signal),
+      hist: cut(hist),
+      events: { ma: maEvents, rsi: rsiEvents, macd: macdEvents },
       last: {
-        date: dDays[lastIdx],
-        close: lastClose,
-        sma50: lastSma50,
-        sma100: lastSma100,
-        sma200: lastSma200,
-        slowSma: lastSlowSma,
-        vsSma50,
-        sma50Vs100,
-        sma50Vs200,
-        sma50VsSlow,
-        rsi14: lastRsi,
-        macd: lastMacd,
-        signal: lastSig,
-        hist: lastHist,
-        lastSignal,
-        lastMacdCross: macdCrosses.length ? macdCrosses[macdCrosses.length - 1] : null,
-        setup,
+        date: allDays[last],
+        close: closes[last],
+        sma50: sma50[last],
+        sma100: sma100[last],
+        sma200: sma200[last],
+        slow: slow[last],
+        vsSma50: ratio(closes[last], sma50[last]),
+        vsSlow: ratio(closes[last], slow[last]),
+        sma50VsSlow: ratio(sma50[last], slow[last]),
+        trend: sma50[last] !== null && slow[last] !== null ? (sma50[last] > slow[last] ? "up" : sma50[last] < slow[last] ? "down" : "flat") : null,
+        rsi14: rsi[last],
+        macd: macd[last],
+        signal: signal[last],
+        hist: hist[last],
+        lastMa: lastOf(maEvents),
+        lastRsiHigh: lastOf(rsiEvents, "high"),
+        lastRsiLow: lastOf(rsiEvents, "low"),
+        lastMacd: lastOf(macdEvents),
       },
     };
   }
 
   let desk = {};
   let earnings = {};
-  let volume = null;
+  let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
+  let timingState = "idle"; // idle → loading → ready | failed
   let outlookPicks = DEFAULT_OUTLOOK.slice();
   let bulkRows = []; // Keep bulk-unselected rows here so Select all can restore them this visit.
   let displayed = [];
@@ -341,16 +204,27 @@
   let activeSymbol = "";
   let oscMode = "both";
   let horizonMode = "mid";
+  const computed = new Map();
 
   function seriesFor(symbol) {
-    if (!volume) return null;
-    if (volume.timing && volume.timing.closes && Array.isArray(volume.timing.closes[symbol])) {
-      return computeIndicators(volume.timing.days, volume.timing.closes[symbol], volume.timing.warmup || 200, horizonMode);
-    }
-    if (volume.chart && volume.closes && Array.isArray(volume.closes[symbol])) {
-      return computeIndicators(volume.chart.days, volume.closes[symbol], 0, horizonMode);
-    }
-    return null;
+    if (!timing || !timing.closes || !Array.isArray(timing.closes[symbol])) return null;
+    const key = `${symbol}|${horizonMode}`;
+    if (!computed.has(key)) computed.set(key, computeIndicators(timing.days, timing.closes[symbol], timing.warmup || 200, horizonMode));
+    return computed.get(key);
+  }
+
+  function loadTiming() {
+    if (timingState !== "idle") return;
+    timingState = "loading";
+    fetch("./ticker-timing.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((data) => {
+        timing = data && data.schema === "ticker-timing-1" && Array.isArray(data.days) ? data : null;
+        timingState = timing ? "ready" : "failed";
+        computed.clear();
+        if (activeTab === "timing") renderTiming(W.list());
+      });
   }
 
   function row(item) {
@@ -370,497 +244,342 @@
     return tr;
   }
 
-  // Draw the multi-panel Technical Analysis SVG (Price + 50/200 or 50/100 SMA + Buy/Sell triangles + RSI 14 + MACD).
+  // Prices in ticker-timing.json carry four significant digits; show them that way, not as cents.
+  function p4(value) {
+    const v = Number(value);
+    if (!Number.isFinite(v) || v <= 0) return "—";
+    if (v >= 1000) return `$${Math.round(v).toLocaleString("en-US")}`;
+    const decimals = Math.min(4, Math.max(0, 3 - Math.floor(Math.log10(v))));
+    return `$${v.toFixed(decimals)}`;
+  }
+  // The close shown as a figure: the Research snapshot's traded close when there is one.
+  const closeText = (symbol, ta) => (desk[symbol] && Number(desk[symbol].price) > 0 ? price(desk[symbol].price) : p4(ta.last.close));
+  const trendText = (L, slow) => (L.trend === "up" ? `50-day above ${slow}-day` : L.trend === "down" ? `50-day below ${slow}-day`
+    : L.trend === "flat" ? `50-day equal to ${slow}-day` : `${slow}-day not formed yet`);
+  const rsiZone = (r) => (r === null ? "—" : r >= RSI_HIGH ? `${RSI_HIGH} or above` : r <= RSI_LOW ? `${RSI_LOW} or below` : `between ${RSI_LOW} and ${RSI_HIGH}`);
+  const axisNumber = (v) => {
+    const a = Math.abs(v);
+    return v.toFixed(a >= 10 ? 0 : a >= 1 ? 1 : a >= 0.1 ? 2 : 3);
+  };
+
+  // Price with the 50-day and slow averages, RSI (14) and MACD (12, 26, 9), one shared date axis.
+  // Legends sit above each panel, never on the data. The drawing is as wide as its box (340–920
+  // units), so text keeps its size on a phone.
   function drawTimingChart(symbol, ta) {
     const host = $("wl-timing-chart");
     if (!host) return;
     if (!ta) {
-      host.replaceChildren(el("p", "wl-empty", !volume ? `Loading technical chart for ${symbol}…` : `No daily price history available for ${symbol} in this snapshot.`));
+      host.replaceChildren(el("p", "wl-empty", timingState === "ready"
+        ? `No daily price history for ${symbol} in this snapshot.`
+        : timingState === "failed" ? "The price history could not be loaded." : `Loading the price history for ${symbol}…`));
       return;
     }
-
     const showRsi = oscMode === "both" || oscMode === "rsi";
     const showMacd = oscMode === "both" || oscMode === "macd";
-    const isMid = ta.slowPeriod === 200;
-    const macdTitle = `MACD (${ta.macdFast}, ${ta.macdSlow}, ${ta.macdSig})`;
-    const W_SVG = 920;
-    const L = 66;
-    const R = 24;
+    const slowP = ta.slowPeriod;
+    const W_SVG = host.clientWidth ? Math.max(340, Math.min(920, host.clientWidth - 40)) : 920;
+    const narrow = W_SVG < 560;
+    const L = narrow ? 46 : 66;
+    const R = narrow ? 10 : 24;
     const PW = W_SVG - L - R;
-
-    const P1_TOP = 30;
-    const P1_H = 225;
-    const P1_BOT = P1_TOP + P1_H;
-
-    const GAP = 42;
-    const RSI_H = 135;
-    const MACD_H = 158;
-
-    const P2_TOP = showRsi ? P1_BOT + GAP : P1_BOT;
-    const P2_BOT = showRsi ? P2_TOP + RSI_H : P1_BOT;
-
-    const P3_TOP = showMacd ? (showRsi ? P2_BOT + GAP : P1_BOT + GAP) : P2_BOT;
-    const P3_BOT = showMacd ? P3_TOP + MACD_H : P2_BOT;
-
-    const H_SVG = (showMacd ? P3_BOT : showRsi ? P2_BOT : P1_BOT) + 34;
     const n = ta.days.length;
     const x = (i) => L + (n > 1 ? (i / (n - 1)) * PW : PW / 2);
-
     const chart = svg("svg", {
-      viewBox: `0 0 ${W_SVG} ${H_SVG}`,
       class: "wl-ta-svg",
       role: "img",
       tabindex: "0",
-      "aria-label": `Technical Analysis for ${symbol}: 1-year close price, 50-day SMA, ${ta.slowPeriod}-day SMA, buy/sell signals${showRsi ? ", RSI (14)" : ""}${showMacd ? `, and ${macdTitle}` : ""}`,
+      "aria-label": `${symbol}: daily close with 50-day and ${slowP}-day averages${showRsi ? ", RSI (14)" : ""}${showMacd ? ", MACD (12, 26, 9)" : ""}, ${longDay(ta.days[0])} to ${longDay(ta.days[n - 1])}`,
     });
 
-    // Helper for framed panel + title + y-label
-    const drawFrame = (top, bottom, title, yLabel) => {
-      svg("text", { x: L + PW / 2, y: top - 9, "text-anchor": "middle", fill: "#111827", "font-size": "13.5", "font-weight": "600" }, chart, title);
-      svg("rect", { x: L, y: top, width: PW, height: bottom - top, fill: "#ffffff", stroke: "#374151", "stroke-width": "1" }, chart);
-      if (yLabel) {
-        const cy = (top + bottom) / 2;
-        svg("text", { x: 18, y: cy, "text-anchor": "middle", fill: "#111827", "font-size": "11.5", transform: `rotate(-90 18 ${cy})` }, chart, yLabel);
+    let cursor = 0;
+    const legendItem = (item, lx, ly) => {
+      if (item.shape === "up" || item.shape === "down") {
+        const pts = item.shape === "up" ? `${lx + 10},${ly - 6} ${lx + 4.5},${ly + 4} ${lx + 15.5},${ly + 4}` : `${lx + 10},${ly + 4} ${lx + 4.5},${ly - 6} ${lx + 15.5},${ly - 6}`;
+        svg("polygon", { points: pts, fill: item.color }, chart);
+      } else if (item.shape === "dot") {
+        svg("circle", { cx: lx + 10, cy: ly - 1, r: 3.6, fill: item.color, stroke: "#ffffff", "stroke-width": "1" }, chart);
+      } else if (item.shape === "bar") {
+        svg("rect", { x: lx + 5, y: ly - 6, width: 10, height: 9, fill: item.color }, chart);
+      } else {
+        svg("line", { x1: lx, x2: lx + 20, y1: ly - 1, y2: ly - 1, stroke: item.color, "stroke-width": "1.8", "stroke-dasharray": item.dash || undefined }, chart);
       }
+      svg("text", { x: lx + 25, y: ly + 3, fill: "#1f2937", "font-size": "10.5" }, chart, item.label);
     };
-
-    // --- PANEL 1: Price + 50-day SMA + 200-day (or 100-day) SMA + ▲ Buy / ▼ Sell Signals ---
-    drawFrame(P1_TOP, P1_BOT, `Technical Analysis for ${symbol} (${isMid ? "Mid-term 50/200d SMA" : "Swing 50/100d SMA"})`, "Price (USD)");
-    const priceVals = [...ta.close, ...ta.sma50, ...ta.sma100, ...(isMid ? ta.sma200 : [])].filter((v) => v !== null && Number.isFinite(v));
-    const pMinRaw = Math.min(...priceVals);
-    const pMaxRaw = Math.max(...priceVals);
-    const pPad = (pMaxRaw - pMinRaw || pMaxRaw * 0.1 || 1) * 0.08;
-    const pLo = pMinRaw - pPad;
-    const pHi = pMaxRaw + pPad;
-    const yPrice = (v) => P1_TOP + (1 - (v - pLo) / (pHi - pLo || 1)) * P1_H;
-
-    // Price y-axis ticks (5 clean steps)
-    const pRange = pHi - pLo;
-    const rawStep = pRange / 5;
-    const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
-    const pStep = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => pRange / s <= 6) || rawStep;
-    for (let tick = Math.ceil(pLo / pStep) * pStep; tick <= pHi - pStep * 0.1; tick += pStep) {
-      const yy = yPrice(tick);
-      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#e5e7eb", "stroke-width": "0.8" }, chart);
-      svg("line", { x1: L - 4, x2: L, y1: yy, y2: yy, stroke: "#374151", "stroke-width": "1" }, chart);
-      svg("text", { x: L - 7, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart,
-        pStep < 1 ? tick.toFixed(2) : Math.round(tick).toString());
-    }
-
+    const panel = (title, items, height, yLabel) => {
+      svg("text", { x: L, y: cursor + 13, fill: "#111827", "font-size": "13", "font-weight": "600" }, chart, title);
+      let lx = L;
+      let ly = cursor + 31;
+      for (const item of items) {
+        const w = 28 + item.label.length * 6;
+        if (lx > L && lx + w > L + PW) {
+          lx = L;
+          ly += 15;
+        }
+        legendItem(item, lx, ly);
+        lx += w + 10;
+      }
+      const top = ly + 10;
+      const bottom = top + height;
+      svg("rect", { x: L, y: top, width: PW, height, fill: "#ffffff", stroke: "#374151", "stroke-width": "1" }, chart);
+      const cy = (top + bottom) / 2;
+      svg("text", { x: 12, y: cy, "text-anchor": "middle", fill: "#111827", "font-size": "11", transform: `rotate(-90 12 ${cy})` }, chart, yLabel);
+      cursor = bottom + 22;
+      return { top, bottom };
+    };
     const buildPath = (arr, yFn) => {
       let d = "";
       for (let i = 0; i < arr.length; i++) {
         const v = arr[i];
-        if (v !== null && Number.isFinite(v)) {
-          d += `${d && arr[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${yFn(v).toFixed(1)}`;
-        }
+        if (v !== null && Number.isFinite(v)) d += `${d && arr[i - 1] !== null && Number.isFinite(arr[i - 1]) ? "L" : "M"}${x(i).toFixed(1)},${yFn(v).toFixed(1)}`;
       }
       return d;
     };
+    const vLine = (top, bottom, i, color) => svg("line", { x1: x(i).toFixed(1), x2: x(i).toFixed(1), y1: top + 1, y2: bottom - 1, stroke: color, "stroke-width": "1", "stroke-dasharray": "3,3", "stroke-opacity": "0.45" }, chart);
 
+    // --- Price panel ---
+    const isMid = slowP === 200;
+    const priceItems = [
+      { color: "#1d4ed8", label: `${symbol} close` },
+      { color: "#15803d", label: "50-day average" },
+      ...(isMid ? [{ color: "#d97706", dash: "4,3", label: "100-day average" }] : []),
+      { color: "#dc2626", label: `${slowP}-day average` },
+      { shape: "up", color: "#15803d", label: `50-day crossed above ${slowP}-day` },
+      { shape: "down", color: "#dc2626", label: `50-day crossed below ${slowP}-day` },
+    ];
+    const p1 = panel(narrow ? `${symbol} · adjusted close` : `${symbol} · daily close, adjusted for splits and dividends`, priceItems, narrow ? 190 : 225, "Price (USD)");
+    const priceVals = [...ta.close, ...ta.sma50, ...(isMid ? ta.sma100 : []), ...ta.slow].filter((v) => v !== null && Number.isFinite(v));
+    const pMin = Math.min(...priceVals);
+    const pMax = Math.max(...priceVals);
+    const pPad = (pMax - pMin || pMax * 0.1 || 1) * 0.08;
+    const pLo = pMin - pPad;
+    const pHi = pMax + pPad;
+    const yPrice = (v) => p1.top + (1 - (v - pLo) / (pHi - pLo || 1)) * (p1.bottom - p1.top);
+    const pRange = pHi - pLo;
+    const mag = Math.pow(10, Math.floor(Math.log10(pRange / 5 || 1)));
+    const pStep = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => pRange / s <= 6) || pRange / 5;
+    for (let tick = Math.ceil(pLo / pStep) * pStep; tick <= pHi - pStep * 0.1; tick += pStep) {
+      const yy = yPrice(tick);
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#e5e7eb", "stroke-width": "0.8" }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, pStep < 1 ? tick.toFixed(2) : Math.round(tick).toString());
+    }
     svg("path", { d: buildPath(ta.close, yPrice), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
     svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#15803d", "stroke-width": "1.6" }, chart);
-    if (isMid) {
-      svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#d97706", "stroke-width": "1.2", "stroke-dasharray": "4,3" }, chart);
-      svg("path", { d: buildPath(ta.sma200, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
-    } else {
-      svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.6" }, chart);
+    if (isMid) svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#d97706", "stroke-width": "1.2", "stroke-dasharray": "4,3" }, chart);
+    svg("path", { d: buildPath(ta.slow, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
+    for (const e of ta.events.ma) {
+      const cx = x(e.index);
+      const cy = yPrice(e.price);
+      const pts = e.kind === "up"
+        ? `${cx.toFixed(1)},${(cy - 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy + 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy + 5).toFixed(1)}`
+        : `${cx.toFixed(1)},${(cy + 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy - 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy - 5).toFixed(1)}`;
+      svg("polygon", { points: pts, fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1" }, chart);
     }
 
-    const legLine = (g, rowIdx, color, dash, label) => {
-      const yy = 14 + rowIdx * 16;
-      svg("line", { x1: 8, x2: 28, y1: yy, y2: yy, stroke: color, "stroke-width": "1.8", "stroke-dasharray": dash || undefined }, g);
-      svg("text", { x: 35, y: yy + 3.5, fill: "#1f2937", "font-size": "10.5" }, g, label);
-    };
-
-    // Panel 1 Legend Box (top-left, styled like matplotlib legend)
-    const leg1 = svg("g", { transform: `translate(${L + 10}, ${P1_TOP + 10})` }, chart);
-    if (isMid) {
-      svg("rect", { x: 0, y: 0, width: 170, height: 104, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg1);
-      legLine(leg1, 0, "#1d4ed8", null, `${symbol} Close Price`);
-      legLine(leg1, 1, "#15803d", null, "50-day SMA");
-      legLine(leg1, 2, "#d97706", "4,3", "100-day SMA (support)");
-      legLine(leg1, 3, "#dc2626", null, "200-day SMA (regime)");
-      svg("polygon", { points: "18,73 12.5,84 23.5,84", fill: "#15803d" }, leg1);
-      svg("text", { x: 35, y: 82, fill: "#1f2937", "font-size": "10.5" }, leg1, "Buy Signal");
-      svg("polygon", { points: "18,100 12.5,89 23.5,89", fill: "#dc2626" }, leg1);
-      svg("text", { x: 35, y: 98, fill: "#1f2937", "font-size": "10.5" }, leg1, "Sell Signal");
-    } else {
-      svg("rect", { x: 0, y: 0, width: 154, height: 88, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg1);
-      legLine(leg1, 0, "#1d4ed8", null, `${symbol} Close Price`);
-      legLine(leg1, 1, "#15803d", null, "50-day SMA");
-      legLine(leg1, 2, "#dc2626", null, "100-day SMA");
-      svg("polygon", { points: "18,57 12.5,68 23.5,68", fill: "#15803d" }, leg1);
-      svg("text", { x: 35, y: 66, fill: "#1f2937", "font-size": "10.5" }, leg1, "Buy Signal");
-      svg("polygon", { points: "18,84 12.5,73 23.5,73", fill: "#dc2626" }, leg1);
-      svg("text", { x: 35, y: 82, fill: "#1f2937", "font-size": "10.5" }, leg1, "Sell Signal");
-    }
-
-    // Draw ▲ Buy Signal and ▼ Sell Signal triangles on top of legend so none are hidden
-    for (const sig of ta.buySignals) {
-      const cx = x(sig.index);
-      const cy = yPrice(sig.price);
-      svg("polygon", {
-        points: `${cx.toFixed(1)},${(cy - 7).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy + 6).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy + 6).toFixed(1)}`,
-        fill: "#15803d",
-        stroke: "#ffffff",
-        "stroke-width": "1",
-      }, chart);
-    }
-    for (const sig of ta.sellSignals) {
-      const cx = x(sig.index);
-      const cy = yPrice(sig.price);
-      svg("polygon", {
-        points: `${cx.toFixed(1)},${(cy + 7).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy - 6).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy - 6).toFixed(1)}`,
-        fill: "#dc2626",
-        stroke: "#ffffff",
-        "stroke-width": "1",
-      }, chart);
-    }
-
-    // --- PANEL 2: RSI (14) with 70 Overbought & 30 Oversold dashed lines ---
+    // --- RSI panel ---
+    let p2 = null;
+    let yRsi = null;
     if (showRsi) {
-      drawFrame(P2_TOP, P2_BOT, `${symbol} RSI (14)`, "RSI");
-      const yRsi = (v) => P2_TOP + (1 - v / 100) * RSI_H;
-      for (const tick of [0, 20, 40, 60, 80, 100]) {
+      p2 = panel(`${symbol} · RSI (14, Wilder)`, [
+        { color: "#7e22ce", label: "RSI (14)" },
+        { color: "#6b7280", dash: "5,4", label: `${RSI_HIGH} and ${RSI_LOW} lines` },
+        { shape: "dot", color: "#7e22ce", label: `first day at ${RSI_HIGH}+ or at ${RSI_LOW} or below` },
+      ], narrow ? 120 : 135, "RSI");
+      yRsi = (v) => p2.top + (1 - v / 100) * (p2.bottom - p2.top);
+      for (const tick of [0, 30, 50, 70, 100]) {
         const yy = yRsi(tick);
-        svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
-        svg("line", { x1: L - 4, x2: L, y1: yy, y2: yy, stroke: "#374151", "stroke-width": "1" }, chart);
-        svg("text", { x: L - 7, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, String(tick));
+        svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 30 || tick === 70 ? "#6b7280" : "#f3f4f6", "stroke-width": tick === 30 || tick === 70 ? "1.2" : "0.8", "stroke-dasharray": tick === 30 || tick === 70 ? "5,4" : undefined }, chart);
+        svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, String(tick));
       }
-      // Overbought (70) and Oversold (30) dashed lines
-      svg("line", { x1: L, x2: L + PW, y1: yRsi(70), y2: yRsi(70), stroke: "#dc2626", "stroke-width": "1.4", "stroke-dasharray": "5,4" }, chart);
-      svg("line", { x1: L, x2: L + PW, y1: yRsi(30), y2: yRsi(30), stroke: "#15803d", "stroke-width": "1.4", "stroke-dasharray": "5,4" }, chart);
       svg("path", { d: buildPath(ta.rsi14, yRsi), fill: "none", stroke: "#7e22ce", "stroke-width": "1.6" }, chart);
-
-      const leg2 = svg("g", { transform: `translate(${L + 10}, ${P2_TOP + 10})` }, chart);
-      svg("rect", { x: 0, y: 0, width: 118, height: 54, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg2);
-      legLine(leg2, 0, "#7e22ce", null, "RSI (14)");
-      legLine(leg2, 1, "#dc2626", "4,3", "Overbought");
-      legLine(leg2, 2, "#15803d", "4,3", "Oversold");
+      for (const e of ta.events.rsi) svg("circle", { cx: x(e.index).toFixed(1), cy: yRsi(e.value).toFixed(1), r: "3.6", fill: "#7e22ce", stroke: "#ffffff", "stroke-width": "1" }, chart);
     }
 
-    // --- PANEL 3: MACD with high-visibility ▲ Golden / ▼ Bearish crossover badges & callouts ---
+    // --- MACD panel ---
+    let p3 = null;
     if (showMacd) {
-      drawFrame(P3_TOP, P3_BOT, `${symbol} ${macdTitle}`, "MACD");
-      const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v));
-      const mMax = Math.max(...mVals.map((v) => Math.abs(v)), 0.5) * 1.28;
-      const yMacd = (v) => P3_TOP + (1 - (v + mMax) / (2 * mMax)) * MACD_H;
+      const latest = ta.last.lastMacd;
+      const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${shortDay(latest.date)}` : "";
+      p3 = panel(narrow ? `MACD (12, 26, 9)${crossNote.replace(" signal", "")}` : `${symbol} · MACD (12, 26, 9)${crossNote}`, [
+        { color: "#1d4ed8", label: "MACD" },
+        { color: "#d97706", label: "Signal" },
+        { shape: "bar", color: "#9ca3af", label: "Histogram" },
+        { shape: "dot", color: "#15803d", label: "crossed above signal" },
+        { shape: "dot", color: "#dc2626", label: "crossed below signal" },
+      ], narrow ? 140 : 158, "MACD ($)");
+      const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v)).map(Math.abs);
+      const mMax = (Math.max(0, ...mVals) || 1) * 1.15;
+      const yMacd = (v) => p3.top + (1 - (v + mMax) / (2 * mMax)) * (p3.bottom - p3.top);
       const yZero = yMacd(0);
-
-      for (const tick of [-mMax * 0.72, 0, mMax * 0.72]) {
+      for (const tick of [-mMax * 0.75, 0, mMax * 0.75]) {
         const yy = yMacd(tick);
         svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#9ca3af" : "#f3f4f6", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
-        svg("line", { x1: L - 4, x2: L, y1: yy, y2: yy, stroke: "#374151", "stroke-width": "1" }, chart);
-        svg("text", { x: L - 7, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, tick === 0 ? "0" : tick.toFixed(1));
+        svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, tick === 0 ? "0" : axisNumber(tick));
       }
-
-      const barW = Math.max(1.2, (PW / n) * 0.65);
+      const barW = Math.max(1, (PW / n) * 0.65);
       for (let i = 0; i < n; i++) {
         const h = ta.hist[i];
         if (h === null || !Number.isFinite(h)) continue;
         const yy = yMacd(h);
-        svg("rect", {
-          x: (x(i) - barW / 2).toFixed(1),
-          y: Math.min(yZero, yy).toFixed(1),
-          width: barW.toFixed(1),
-          height: Math.max(0.8, Math.abs(yy - yZero)).toFixed(1),
-          fill: h >= 0 ? "#86efac" : "#fca5a5",
-        }, chart);
+        svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#86efac" : "#fca5a5" }, chart);
       }
-
-      // Vertical dashed guide lines at each MACD crossover so Golden/Bearish dates are easy to trace
-      for (const cr of ta.macdCrosses) {
-        const cx = x(cr.index);
-        const isBuy = cr.kind === "buy";
-        svg("line", {
-          x1: cx.toFixed(1),
-          x2: cx.toFixed(1),
-          y1: (P3_TOP + 2).toFixed(1),
-          y2: (P3_BOT - 2).toFixed(1),
-          stroke: isBuy ? "#16a34a" : "#dc2626",
-          "stroke-width": "1",
-          "stroke-dasharray": "3,3",
-          "stroke-opacity": "0.45",
-        }, chart);
-      }
-
       svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
       svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
-
-      // Place MACD legend where curve has the most room, and draw explicit Golden ▲ and Bearish ▼ badges
-      const leg3 = svg("g", { transform: `translate(${L + 10}, ${P3_TOP + 8})` }, chart);
-      svg("rect", { x: 0, y: 0, width: 162, height: 70, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg3);
-      legLine(leg3, 0, "#1d4ed8", null, `MACD (${ta.macdFast}, ${ta.macdSlow})`);
-      legLine(leg3, 1, "#d97706", null, `Signal (${ta.macdSig})`);
-      // Row 3: Golden Cross (buy) badge + ▲
-      svg("circle", { cx: "18", cy: "46", r: "5.5", fill: "#15803d", stroke: "#ffffff", "stroke-width": "1.2" }, leg3);
-      svg("polygon", { points: "18,42.5 14.8,48.2 21.2,48.2", fill: "#ffffff" }, leg3);
-      svg("text", { x: 35, y: 49.5, fill: "#15803d", "font-size": "10.5", "font-weight": "600" }, leg3, "Golden Cross (buy)");
-      // Row 4: Bearish Cross (sell) badge + ▼
-      svg("circle", { cx: "18", cy: "61", r: "5.5", fill: "#dc2626", stroke: "#ffffff", "stroke-width": "1.2" }, leg3);
-      svg("polygon", { points: "18,64.5 14.8,58.8 21.2,58.8", fill: "#ffffff" }, leg3);
-      svg("text", { x: 35, y: 64.5, fill: "#b91c1c", "font-size": "10.5", "font-weight": "600" }, leg3, "Bearish Cross (sell)");
-
-      // Draw prominent Golden Cross (green badge + ▲) and Bearish Cross (red badge + ▼) markers on top
-      const lastBuyCross = [...ta.macdCrosses].reverse().find((c) => c.kind === "buy");
-      const lastSellCross = [...ta.macdCrosses].reverse().find((c) => c.kind === "sell");
-      for (const cr of ta.macdCrosses) {
-        const cx = x(cr.index);
-        const cy = yMacd(cr.value);
-        const isBuy = cr.kind === "buy";
-        const isLatest = cr === lastBuyCross || cr === lastSellCross;
-        const rad = isLatest ? 7 : 5.8;
-        // White outer halo + colored circle badge + crisp white triangle inside
-        svg("circle", {
-          cx: cx.toFixed(1),
-          cy: cy.toFixed(1),
-          r: (rad + 1.8).toFixed(1),
-          fill: "#ffffff",
-          "fill-opacity": "0.95",
-        }, chart);
-        svg("circle", {
-          cx: cx.toFixed(1),
-          cy: cy.toFixed(1),
-          r: rad.toFixed(1),
-          fill: isBuy ? "#15803d" : "#dc2626",
-          stroke: isLatest ? (isBuy ? "#052e16" : "#450a0a") : "#ffffff",
-          "stroke-width": isLatest ? "1.3" : "1",
-        }, chart);
-        if (isBuy) {
-          svg("polygon", {
-            points: `${cx.toFixed(1)},${(cy - 3.6).toFixed(1)} ${(cx - 3.3).toFixed(1)},${(cy + 2.4).toFixed(1)} ${(cx + 3.3).toFixed(1)},${(cy + 2.4).toFixed(1)}`,
-            fill: "#ffffff",
-          }, chart);
-        } else {
-          svg("polygon", {
-            points: `${cx.toFixed(1)},${(cy + 3.6).toFixed(1)} ${(cx - 3.3).toFixed(1)},${(cy - 2.4).toFixed(1)} ${(cx + 3.3).toFixed(1)},${(cy - 2.4).toFixed(1)}`,
-            fill: "#ffffff",
-          }, chart);
-        }
-
-        // Direct on-chart callout pill for the latest Golden Cross and latest Bearish Cross
-        if (isLatest) {
-          const pillText = `${isBuy ? "▲ Golden" : "▼ Bearish"} · ${shortDay(cr.date)}`;
-          const pillW = 94;
-          const pillH = 17;
-          const rawPx = cx - pillW / 2;
-          const px = Math.max(L + 176, Math.min(L + PW - pillW - 4, rawPx));
-          const placeAbove = isBuy ? cy > P3_TOP + 32 : cy > P3_BOT - 30;
-          const py = placeAbove ? Math.max(P3_TOP + 4, cy - 26) : Math.min(P3_BOT - pillH - 4, cy + 10);
-          svg("rect", {
-            x: px.toFixed(1),
-            y: py.toFixed(1),
-            width: String(pillW),
-            height: String(pillH),
-            rx: "8.5",
-            fill: isBuy ? "#dcfce7" : "#fee2e2",
-            stroke: isBuy ? "#15803d" : "#dc2626",
-            "stroke-width": "1.1",
-          }, chart);
-          svg("text", {
-            x: (px + pillW / 2).toFixed(1),
-            y: (py + 11.8).toFixed(1),
-            "text-anchor": "middle",
-            fill: isBuy ? "#14532d" : "#7f1d1d",
-            "font-size": "10",
-            "font-weight": "700",
-          }, chart, pillText);
-        }
+      for (const e of ta.events.macd) {
+        svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1" }, chart);
       }
     }
 
-    // --- Shared YYYY-MM X-axis ticks along the bottom panel ---
-    const bottomY = showMacd ? P3_BOT : showRsi ? P2_BOT : P1_BOT;
+    // --- Shared month axis along the bottom panel ---
+    const bottomY = (p3 || p2 || p1).bottom;
     let lastLabelX = -100;
-    for (let i = 0; i < n; i++) {
+    for (let i = 1; i < n; i++) {
       const ym = ta.days[i].slice(0, 7);
-      const prevYm = i > 0 ? ta.days[i - 1].slice(0, 7) : "";
-      if (i > 0 && ym !== prevYm) {
-        const xx = x(i);
-        if (xx - lastLabelX >= 70 && xx <= L + PW - 25) {
-          svg("line", { x1: xx, x2: xx, y1: P1_TOP, y2: P1_BOT, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
-          svg("line", { x1: xx, x2: xx, y1: bottomY, y2: bottomY + 5, stroke: "#374151", "stroke-width": "1" }, chart);
-          svg("text", { x: xx, y: bottomY + 18, "text-anchor": "middle", fill: "#1f2937", "font-size": "11" }, chart, ym);
-          lastLabelX = xx;
-        }
-      }
+      if (ym === ta.days[i - 1].slice(0, 7)) continue;
+      const xx = x(i);
+      if (xx - lastLabelX < (narrow ? 58 : 70) || xx > L + PW - 22) continue;
+      for (const p of [p1, p2, p3]) if (p) svg("line", { x1: xx, x2: xx, y1: p.top, y2: p.bottom, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
+      svg("text", { x: xx, y: bottomY + 15, "text-anchor": "middle", fill: "#1f2937", "font-size": "10.5" }, chart, `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(2, 4)}`);
+      lastLabelX = xx;
     }
+    for (const e of ta.events.ma) for (const p of [p2, p3]) if (p) vLine(p.top, p.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
+    const H_SVG = bottomY + 24;
+    chart.setAttribute("viewBox", `0 0 ${W_SVG} ${H_SVG}`);
 
-    // Interactive hover / keyboard readout
-    const cross = svg("line", { y1: P1_TOP, y2: bottomY, stroke: "#6b7280", "stroke-width": "1", "stroke-dasharray": "3,3", visibility: "hidden" }, chart);
-    const dotP = svg("circle", { r: "4", fill: "#1d4ed8", stroke: "#fff", "stroke-width": "1.2", visibility: "hidden" }, chart);
+    // Hover / keyboard readout: that day's numbers and events.
+    const cross = svg("line", { y1: p1.top, y2: bottomY, stroke: "#6b7280", "stroke-width": "1", "stroke-dasharray": "3,3", visibility: "hidden" }, chart);
+    const dot = svg("circle", { r: "4", fill: "#1d4ed8", stroke: "#fff", "stroke-width": "1.2", visibility: "hidden" }, chart);
     const tip = el("p", "wl-ta-tip");
-    const formatReadout = (idx) => {
+    const readout = (idx) => {
       const i = Math.max(0, Math.min(n - 1, idx));
-      const d = ta.days[i];
-      const sigHere = [
-        ...ta.buySignals.filter((s) => s.index === i).map((s) => `▲ ${s.reason}`),
-        ...ta.sellSignals.filter((s) => s.index === i).map((s) => `▼ ${s.reason}`),
-        ...ta.macdCrosses.filter((s) => s.index === i).map((s) => (s.kind === "buy" ? `▲ ${s.label}` : `▼ ${s.label}`)),
+      const happened = [
+        ...ta.events.ma.filter((e) => e.index === i).map((e) => `50-day crossed ${e.kind === "up" ? "above" : "below"} ${slowP}-day`),
+        ...ta.events.rsi.filter((e) => e.index === i).map((e) => (e.kind === "high" ? `RSI reached ${RSI_HIGH}` : `RSI fell to ${RSI_LOW}`)),
+        ...ta.events.macd.filter((e) => e.index === i).map((e) => `MACD crossed ${e.kind === "up" ? "above" : "below"} signal`),
       ];
-      const partsText = [
-        `${longDay(d)}: Close ${price(ta.close[i])}`,
-        `50d SMA ${ta.sma50[i] !== null ? price(ta.sma50[i]) : "—"}`,
-        `100d SMA ${ta.sma100[i] !== null ? price(ta.sma100[i]) : "—"}`,
-        ...(ta.sma200[i] !== null ? [`200d SMA ${price(ta.sma200[i])}`] : []),
-        `RSI (14) ${ta.rsi14[i] !== null ? ta.rsi14[i].toFixed(1) : "—"}`,
-        `MACD (${ta.macdFast},${ta.macdSlow},${ta.macdSig}) ${ta.macd[i] !== null ? ta.macd[i].toFixed(2) : "—"} / Signal ${ta.signal[i] !== null ? ta.signal[i].toFixed(2) : "—"}`,
+      const parts = [
+        `${longDay(ta.days[i])}: close ${p4(ta.close[i])}`,
+        `50-day ${p4(ta.sma50[i])}`,
+        ...(isMid ? [`100-day ${p4(ta.sma100[i])}`] : []),
+        `${slowP}-day ${p4(ta.slow[i])}`,
+        `RSI ${ta.rsi14[i] !== null ? ta.rsi14[i].toFixed(1) : "—"}`,
+        `MACD ${ta.macd[i] !== null ? axisNumber(ta.macd[i]) : "—"} / signal ${ta.signal[i] !== null ? axisNumber(ta.signal[i]) : "—"}`,
+        ...happened,
       ];
-      if (sigHere.length) partsText.push(sigHere.join(" · "));
-      tip.textContent = partsText.join(" · ");
+      tip.textContent = parts.join(" · ");
       cross.setAttribute("x1", x(i).toFixed(1));
       cross.setAttribute("x2", x(i).toFixed(1));
       cross.setAttribute("visibility", "visible");
-      dotP.setAttribute("cx", x(i).toFixed(1));
-      dotP.setAttribute("cy", yPrice(ta.close[i]).toFixed(1));
-      dotP.setAttribute("visibility", "visible");
+      dot.setAttribute("cx", x(i).toFixed(1));
+      dot.setAttribute("cy", yPrice(ta.close[i]).toFixed(1));
+      dot.setAttribute("visibility", "visible");
     };
-    formatReadout(n - 1);
-
+    readout(n - 1);
     chart.addEventListener("pointermove", (e) => {
       if (!chart.getBoundingClientRect) return;
       const box = chart.getBoundingClientRect();
       if (!box.width) return;
-      const relX = ((e.clientX - box.left) / box.width) * W_SVG;
-      const idx = Math.round(((relX - L) / PW) * (n - 1));
-      formatReadout(idx);
+      readout(Math.round(((((e.clientX - box.left) / box.width) * W_SVG - L) / PW) * (n - 1)));
     });
     chart.addEventListener("pointerleave", () => {
       cross.setAttribute("visibility", "hidden");
-      dotP.setAttribute("visibility", "hidden");
-      formatReadout(n - 1);
+      dot.setAttribute("visibility", "hidden");
+      readout(n - 1);
     });
-
+    chart.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const now = Number(chart.dataset ? chart.dataset.at || n - 1 : n - 1);
+      const next = Math.max(0, Math.min(n - 1, now + (e.key === "ArrowLeft" ? -1 : 1)));
+      if (chart.dataset) chart.dataset.at = String(next);
+      readout(next);
+    });
     host.replaceChildren(chart, tip);
   }
 
   function renderTiming(items) {
-    const panel = $("wl-timing-panel");
-    if (!panel) return;
-
-    const isMid = horizonMode !== "swing";
+    const panelEl = $("wl-timing-panel");
+    if (!panelEl) return;
+    const slowP = horizonMode === "swing" ? 100 : 200;
     if ($("wl-timing-sub")) {
-      $("wl-timing-sub").textContent = isMid
-        ? "1-year mid-term technical setup (50-day & 200-day SMA with 100-day support, 14-day RSI oversold/overbought signals, and MACD 19/39/9 crossovers) from the Friday close."
-        : "1-year swing technical setup (50-day & 100-day SMA, 14-day RSI oversold/overbought signals, and MACD 12/26/9 crossovers) from the Friday close.";
+      $("wl-timing-sub").textContent = `${timing && timing.as_of ? `Close on ${longDay(timing.as_of)} (the weekly snapshot)` : "Weekly snapshot"}: `
+        + `50-day and ${slowP}-day averages, RSI (14, Wilder) and MACD (12, 26, 9). Descriptions of past prices, not a buy or sell call.`;
     }
-    if ($("wl-th-trend")) $("wl-th-trend").textContent = isMid ? "50d vs 200d SMA" : "50d vs 100d SMA";
-    if ($("wl-th-macd")) $("wl-th-macd").textContent = isMid ? "MACD (19,39,9)" : "MACD (12,26,9)";
+    if ($("wl-th-trend")) $("wl-th-trend").textContent = `50-day vs ${slowP}-day average`;
+    if ($("wl-th-gap")) $("wl-th-gap").textContent = `Gap, 50 vs ${slowP}`;
+    if ($("wl-th-cross")) $("wl-th-cross").textContent = `Last 50/${slowP} cross`;
     if ($("wl-timing-foot")) {
-      $("wl-timing-foot").textContent = `Signals are historical rule readouts (▲ Buy Signal: RSI ≤ 30 oversold trough or 50/${isMid ? 200 : 100}-day SMA Golden Cross; ▼ Sell Signal: RSI ≥ 70 overbought peak or 50/${isMid ? 200 : 100}-day SMA Death Cross), not investment advice. Moving averages and oscillators use 200 prior sessions of warmup before the 252-session chart window.`;
+      $("wl-timing-foot").textContent = `How these are made: prices are Yahoo adjusted closes (splits and dividends), four significant digits, so past levels can sit below the prices traded then. `
+        + `Averages are simple moving averages; ▲/▼ mark the day the 50-day crossed the ${slowP}-day. RSI is Wilder's 14-day RSI; dots mark the first day at ${RSI_HIGH} or above or at ${RSI_LOW} or below. `
+        + `MACD is 12/26/9 on exponential averages, in dollars, so it cannot be compared across stocks; every crossover of the signal line is drawn. `
+        + `Up to 200 sessions before the chart are used to start the averages; a younger listing starts later. These rules have not been tested on Temper Lab data and are not a buy or sell call.`;
     }
 
     const starredSyms = items.map((x) => x.symbol);
     const symbols = starredSyms.length ? starredSyms : outlookPicks.slice();
-    if (!activeSymbol || !symbols.includes(activeSymbol)) {
-      activeSymbol = symbols[0] || "MPC";
-    }
+    if (!activeSymbol || (!symbols.includes(activeSymbol) && !outlookPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
+    const tone = (ta) => (!ta ? "" : ta.last.trend === "up" ? "up" : ta.last.trend === "down" ? "down" : "none");
 
-    // 1. Render ticker selector pills
     const picksBar = $("wl-timing-picks");
     if (picksBar) {
-      const nodes = [
-        el("span", "wl-timing-picks-label", starredSyms.length ? "Your watchlist:" : "5 Outlook picks (star any ticker to customize):"),
-      ];
-      for (const sym of symbols) {
-        const ta = seriesFor(sym);
-        const tone = ta ? ta.last.setup.tone : "";
+      const pick = (sym) => {
         const btn = el("button", `wl-pick-btn${sym === activeSymbol ? " on" : ""}`);
         btn.type = "button";
-        btn.append(el("span", `wl-pick-dot ${tone}`), el("span", "", sym));
+        btn.append(el("span", `wl-pick-dot ${tone(seriesFor(sym))}`), el("span", "", sym));
         btn.addEventListener("click", () => {
           activeSymbol = sym;
           renderTiming(W.list());
         });
-        nodes.push(btn);
-      }
-      // If user has starred items, also offer quick pills for Outlook picks not yet starred
+        return btn;
+      };
+      const nodes = [el("span", "wl-timing-picks-label", starredSyms.length ? "Your watchlist:" : "12-month outlook names (star any ticker to add your own):"), ...symbols.map(pick)];
       if (starredSyms.length) {
         const extra = outlookPicks.filter((s) => !starredSyms.includes(s));
-        if (extra.length) {
-          nodes.push(el("span", "wl-timing-picks-label", "12M Outlook:"));
-          for (const sym of extra) {
-            const ta = seriesFor(sym);
-            const tone = ta ? ta.last.setup.tone : "";
-            const btn = el("button", `wl-pick-btn${sym === activeSymbol ? " on" : ""}`);
-            btn.type = "button";
-            btn.append(el("span", `wl-pick-dot ${tone}`), el("span", "", sym));
-            if (sym === activeSymbol && !symbols.includes(sym)) symbols.push(sym);
-            btn.addEventListener("click", () => {
-              activeSymbol = sym;
-              renderTiming(W.list());
-            });
-            nodes.push(btn);
-          }
-        }
+        if (extra.length) nodes.push(el("span", "wl-timing-picks-label", "12-month outlook:"), ...extra.map(pick));
       }
       picksBar.replaceChildren(...nodes);
     }
 
-    // 2. Render summary cards for activeSymbol
-    const summaryHost = $("wl-timing-summary");
-    const activeTa = seriesFor(activeSymbol);
-    const vRow = volume && volume.rows && volume.rows[activeSymbol];
-    if (summaryHost) {
+    const summary = $("wl-timing-summary");
+    const activeTa = activeSymbol ? seriesFor(activeSymbol) : null;
+    if (summary) {
       if (!activeTa) {
-        summaryHost.replaceChildren(el("div", "wl-stat-card", `Loading technical series for ${activeSymbol}…`));
+        summary.replaceChildren(el("div", "wl-stat-card", timingState === "ready" ? `No price history for ${activeSymbol} in this snapshot.`
+          : timingState === "failed" ? "The price history could not be loaded." : "Loading the price history…"));
       } else {
         const L = activeTa.last;
-        const slowLbl = `${activeTa.slowPeriod}d SMA`;
-        const c1 = el("div", "wl-stat-card");
-        const badge = el("span", `wl-badge ${L.setup.tone}`, L.setup.label);
-        c1.append(el("span", "", `${activeSymbol} · Timing verdict`), badge, el("small", "", L.setup.detail));
-
-        const c2 = el("div", "wl-stat-card");
-        const supportNote = activeTa.slowPeriod === 200 && L.sma100
-          ? `50d ${price(L.sma50)} · 100d ${price(L.sma100)} · 200d ${price(L.sma200)} (${signedPct(L.sma50VsSlow)})`
-          : `50d SMA ${price(L.sma50)} · ${slowLbl} ${price(L.slowSma)} (${signedPct(L.sma50VsSlow)})`;
-        c2.append(
-          el("span", "", `Price vs 50d & ${slowLbl}`),
-          el("strong", "", `${price(L.close)} (${signedPct(L.vsSma50)} vs 50d)`),
-          el("small", "", supportNote)
+        const card = (title, strong, small, badge) => {
+          const c = el("div", "wl-stat-card");
+          c.append(el("span", "", title));
+          if (badge) c.append(el("span", `wl-badge ${badge}`, strong));
+          else c.append(el("strong", "", strong));
+          c.append(el("small", "", small));
+          return c;
+        };
+        const since = L.lastMa
+          ? `Since ${longDay(L.lastMa.date)}, when the 50-day crossed ${L.lastMa.kind === "up" ? "above" : "below"} the ${slowP}-day.`
+          : L.trend ? "No cross in the chart year." : `${activeTa.history} sessions of history; the ${slowP}-day average needs ${slowP}.`;
+        const levels = [`50-day ${p4(L.sma50)}`, ...(slowP === 200 ? [`100-day ${p4(L.sma100)}`] : []), `${slowP}-day ${p4(L.slow)}`];
+        const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? shortDay(L.lastRsiHigh.date) : "not in the chart year"}`,
+          `last fell to ${RSI_LOW}: ${L.lastRsiLow ? shortDay(L.lastRsiLow.date) : "not in the chart year"}`];
+        summary.replaceChildren(
+          card(`Trend · 50-day vs ${slowP}-day`, trendText(L, slowP), `${since}${L.sma50VsSlow !== null ? ` Gap ${signedPct(L.sma50VsSlow)}.` : ""}`, tone(activeTa)),
+          card("Price vs averages", `${closeText(activeSymbol, activeTa)} · ${signedPct(L.vsSma50)} vs 50-day`, `${levels.join(" · ")} · price ${signedPct(L.vsSlow)} vs ${slowP}-day`),
+          card("RSI (14, Wilder)", L.rsi14 !== null ? `${L.rsi14.toFixed(1)} · ${rsiZone(L.rsi14)}` : "—", `${rsiLast.join(" · ")}`),
+          card("MACD (12, 26, 9)", L.hist === null ? "—" : L.hist >= 0 ? "MACD above signal" : "MACD below signal",
+            `${L.lastMacd ? `Since the ${shortDay(L.lastMacd.date)} crossover · ` : ""}Next results: ${resultsText(earnings[activeSymbol])}`),
         );
-
-        const c3 = el("div", "wl-stat-card");
-        const rsiState = L.rsi14 === null ? "—" : L.rsi14 >= 70 ? "Overbought (≥70)" : L.rsi14 <= 30 ? "Oversold (≤30)" : L.rsi14 <= 42 ? "Pullback zone" : "Neutral (30–70)";
-        const sigNote = L.lastSignal
-          ? `Last signal: ${L.lastSignal.type === "buy" ? "▲" : "▼"} ${L.lastSignal.reason} on ${shortDay(L.lastSignal.date)}`
-          : "No extreme RSI or MA cross in 1Y";
-        c3.append(
-          el("span", "", "RSI (14) & signals"),
-          el("strong", "", `${L.rsi14 !== null ? L.rsi14.toFixed(1) : "—"} · ${rsiState}`),
-          el("small", "", sigNote)
-        );
-
-        const c4 = el("div", "wl-stat-card");
-        const macdState = L.hist !== null ? (L.hist >= 0 ? "Bullish (MACD > Signal)" : "Bearish (MACD < Signal)") : "—";
-        const crossNote = L.lastMacdCross
-          ? `${L.lastMacdCross.kind === "buy" ? "▲" : "▼"} ${L.lastMacdCross.label} on ${shortDay(L.lastMacdCross.date)}`
-          : "No recent MACD crossover";
-        const nextEarn = resultsText(earnings[activeSymbol]);
-        const upVol = vRow && Number.isFinite(vRow[4]) ? ` · 21d up-vol ${Math.round(vRow[4] * 100)}%` : "";
-        c4.append(
-          el("span", "", `MACD (${activeTa.macdFast}, ${activeTa.macdSlow}, ${activeTa.macdSig}) & events`),
-          el("strong", "", macdState),
-          el("small", "", `${crossNote} · Next results: ${nextEarn}${upVol}`)
-        );
-
-        summaryHost.replaceChildren(c1, c2, c3, c4);
       }
     }
 
-    // 3. Draw SVG chart
     drawTimingChart(activeSymbol, activeTa);
 
-    // 4. Render comparison table for all shown symbols
     const table = $("wl-timing-table");
     const tbody = $("wl-timing-rows");
     if (table && tbody) {
-      const starredNames = Object.fromEntries(items.map((x) => [x.symbol, x.name || ""]));
-      const allSyms = [...new Set([...(starredSyms.length ? starredSyms : outlookPicks), activeSymbol])];
-      table.hidden = allSyms.length === 0;
-      const trs = allSyms.map((sym) => {
+      const names = Object.fromEntries(items.map((x) => [x.symbol, x.name || ""]));
+      const all = [...new Set([...symbols, ...(activeSymbol ? [activeSymbol] : [])])];
+      table.hidden = all.length === 0;
+      tbody.replaceChildren(...all.map((sym) => {
         const c = desk[sym] || {};
         const ta = seriesFor(sym);
         const tr = el("tr", sym === activeSymbol ? "on" : "");
@@ -869,33 +588,22 @@
           renderTiming(W.list());
         });
         const co = el("td");
-        const st = el("strong", "", sym);
-        co.append(st, el("small", "", c.name || starredNames[sym] || ""));
+        co.append(el("strong", "", sym), el("small", "", c.name || names[sym] || ""));
         if (!ta) {
-          tr.append(co, el("td", "", "—"), el("td", "num", price(c.price)), el("td", "num", "—"),
-            el("td", "num", "—"), el("td", "num", "—"), el("td", "", "—"), el("td", "", "—"), el("td", "", resultsText(earnings[sym])));
+          tr.append(co, ...["—", price(c.price), "—", "—", "—", "—", "—", resultsText(earnings[sym])].map((t, i) => el("td", i >= 1 && i <= 4 ? "num" : "", t)));
           return tr;
         }
         const L = ta.last;
-        const setupTd = el("td");
-        setupTd.append(el("span", `wl-badge ${L.setup.tone}`, L.setup.label));
-        const vs50Cls = L.vsSma50 === null ? "" : L.vsSma50 >= 0 ? "wl-pos" : "wl-neg";
-        const vsSlowCls = L.sma50VsSlow === null ? "" : L.sma50VsSlow >= 0 ? "wl-pos" : "wl-neg";
-        const rsiCls = L.rsi14 === null ? "" : L.rsi14 >= 70 ? "wl-neg" : L.rsi14 <= 35 ? "wl-pos" : "";
-        const vs50Td = el("td", `num ${vs50Cls}`.trim(), signedPct(L.vsSma50));
-        const vsSlowTd = el("td", `num ${vsSlowCls}`.trim(), signedPct(L.sma50VsSlow));
-        const rsiTd = el("td", `num ${rsiCls}`.trim(), L.rsi14 !== null ? L.rsi14.toFixed(1) : "—");
-        const macdText = L.lastMacdCross && L.hist !== null
-          ? `${L.lastMacdCross.kind === "buy" ? "▲" : "▼"} ${shortDay(L.lastMacdCross.date)} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})`
-          : L.hist !== null
-            ? `${L.hist >= 0 ? "Bullish" : "Bearish"} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})`
-            : "—";
-        const macdTd = el("td", "", macdText);
-        const sigTd = el("td", "", L.lastSignal ? `${L.lastSignal.type === "buy" ? "▲" : "▼"} ${L.lastSignal.reason} (${shortDay(L.lastSignal.date)})` : "—");
-        tr.append(co, setupTd, el("td", "num", price(L.close)), vs50Td, vsSlowTd, rsiTd, macdTd, sigTd, el("td", "", resultsText(earnings[sym])));
+        const trend = el("td");
+        trend.append(el("span", `wl-badge ${tone(ta)}`, L.trend === "up" ? "Above" : L.trend === "down" ? "Below" : L.trend === "flat" ? "Equal" : "Not formed"));
+        const signed = (v) => el("td", `num ${v === null ? "" : v >= 0 ? "wl-pos" : "wl-neg"}`.trim(), signedPct(v));
+        tr.append(co, trend, el("td", "num", closeText(sym, ta)), signed(L.vsSma50), signed(L.sma50VsSlow),
+          el("td", "num", L.rsi14 !== null ? L.rsi14.toFixed(1) : "—"),
+          el("td", "", L.hist === null ? "—" : `${L.hist >= 0 ? "Above" : "Below"} signal${L.lastMacd ? ` since ${shortDay(L.lastMacd.date)}` : ""}`),
+          el("td", "", L.lastMa ? `${L.lastMa.kind === "up" ? "▲ above" : "▼ below"} · ${shortDay(L.lastMa.date)}` : "None in the chart year"),
+          el("td", "", resultsText(earnings[sym])));
         return tr;
-      });
-      tbody.replaceChildren(...trs);
+      }));
     }
   }
 
@@ -913,7 +621,7 @@
     $("wl-export").disabled = items.length === 0;
     $("wl-storage").hidden = W.stored();
     $("wl-rows").replaceChildren(...sorted.map(row));
-    renderTiming(items);
+    if (activeTab === "timing") renderTiming(items);
   }
   const say = (text) => { $("wl-status").textContent = text; };
 
@@ -931,7 +639,10 @@
       tabTiming.setAttribute("aria-selected", String(onTiming));
       savedPanel.hidden = onTiming;
       timingPanel.hidden = !onTiming;
-      if (onTiming) renderTiming(W.list());
+      if (onTiming) {
+        loadTiming();
+        renderTiming(W.list());
+      }
     }
   }
 
@@ -990,10 +701,9 @@
     W.onChange(render);
     render(W.list());
     const get = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./ticker-volume.json"), get("./outlook.json")]).then(([deskData, calendar, volData, outlookData]) => {
+    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./outlook.json")]).then(([deskData, calendar, outlookData]) => {
       desk = (deskData && deskData.companies) || {};
       earnings = (calendar && calendar.companies) || {};
-      volume = volData || null;
       if (outlookData && Array.isArray(outlookData.candidates) && outlookData.candidates.length) {
         outlookPicks = outlookData.candidates.map((c) => c.symbol).filter(Boolean);
       }

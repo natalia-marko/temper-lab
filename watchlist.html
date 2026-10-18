@@ -7,7 +7,7 @@
     <title>Temper Lab — Watchlist</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=b7747d4533bd" />
-    <link rel="stylesheet" href="./watchlist.css?v=ecfaf71c93dc" />
+    <link rel="stylesheet" href="./watchlist.css?v=594ca09c0abb" />
   </head>
   <body class="watchlist-page">
     <div class="desk">
@@ -56,40 +56,40 @@
           <p id="wl-source" class="wl-note"></p>
           <p class="wl-note">Stars are kept in this browser only: the live site and the local preview have separate lists, and other devices don't see them. Clearing site data deletes them. Export a copy to keep them; Import adds the names from a copy.</p>
         </section>
-        <section id="wl-timing-panel" class="surface" aria-label="Technical analysis and timing" hidden>
+        <section id="wl-timing-panel" class="surface" aria-label="Trend and momentum of past prices" hidden>
           <div class="wl-timing-head">
             <div>
-              <h2>Is it the right time to buy?</h2>
-              <p id="wl-timing-sub">1-year mid-term technical setup (50-day &amp; 200-day SMA with 100-day support, 14-day RSI oversold/overbought signals, and MACD 19/39/9 crossovers) from the Friday close.</p>
+              <h2>Trend and momentum</h2>
+              <p id="wl-timing-sub">Weekly snapshot: 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9). Descriptions of past prices, not a buy or sell call.</p>
             </div>
             <div class="wl-timing-controls">
-              <div id="wl-horizon-switch" class="wl-osc-switch" role="group" aria-label="Investment horizon">
-                <button type="button" data-horizon="mid" class="on">Mid-term (50/200 · MACD 19,39,9)</button>
-                <button type="button" data-horizon="swing">Swing (50/100 · MACD 12,26,9)</button>
+              <div id="wl-horizon-switch" class="wl-osc-switch" role="group" aria-label="Slow moving average">
+                <button type="button" data-horizon="mid" class="on">50 / 200-day</button>
+                <button type="button" data-horizon="swing">50 / 100-day</button>
               </div>
               <div id="wl-osc-switch" class="wl-osc-switch" role="group" aria-label="Oscillator panels">
-                <button type="button" data-osc="both" class="on">RSI (14) + MACD</button>
-                <button type="button" data-osc="rsi">RSI (14) only</button>
+                <button type="button" data-osc="both" class="on">RSI + MACD</button>
+                <button type="button" data-osc="rsi">RSI only</button>
                 <button type="button" data-osc="macd">MACD only</button>
               </div>
             </div>
           </div>
-          <div id="wl-timing-picks" class="wl-timing-picks" role="toolbar" aria-label="Select ticker to plot"></div>
+          <div id="wl-timing-picks" class="wl-timing-picks" role="toolbar" aria-label="Choose the company to chart"></div>
           <div id="wl-timing-summary" class="wl-timing-summary" aria-live="polite"></div>
           <div id="wl-timing-chart" class="wl-timing-chart"></div>
           <div class="wl-table-wrap">
             <table id="wl-timing-table" class="wl-table wl-timing-table" hidden>
-              <thead><tr><th scope="col">Company</th><th scope="col">Timing setup</th><th scope="col" class="num">Close</th><th scope="col" class="num">vs 50d SMA</th><th scope="col" id="wl-th-trend" class="num">50d vs 200d SMA</th><th scope="col" class="num">RSI (14)</th><th scope="col" id="wl-th-macd">MACD (19,39,9)</th><th scope="col">Last signal</th><th scope="col">Next results</th></tr></thead>
+              <thead><tr><th scope="col">Company</th><th scope="col" id="wl-th-trend">50-day vs 200-day average</th><th scope="col" class="num">Close</th><th scope="col" class="num">Price vs 50-day</th><th scope="col" id="wl-th-gap" class="num">Gap, 50 vs 200</th><th scope="col" class="num">RSI (14)</th><th scope="col">MACD (12, 26, 9)</th><th scope="col" id="wl-th-cross">Last 50/200 cross</th><th scope="col">Next results</th></tr></thead>
               <tbody id="wl-timing-rows"></tbody>
             </table>
           </div>
-          <p id="wl-timing-foot" class="wl-note">Signals are historical rule readouts (▲ Buy Signal: RSI ≤ 30 oversold trough or 50/200-day SMA Golden Cross; ▼ Sell Signal: RSI ≥ 70 overbought peak or 50/200-day SMA Death Cross), not investment advice. Moving averages and oscillators use 200 prior sessions of warmup before the 252-session chart window.</p>
+          <p id="wl-timing-foot" class="wl-note">Prices are Yahoo adjusted closes (splits and dividends). These rules have not been tested on Temper Lab data and are not a buy or sell call.</p>
         </section>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
-    <script src="./watchlist-page.js?v=842f295b44b9"></script>
+    <script src="./watchlist-page.js?v=5831cdfe5d96"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>
