@@ -1,8 +1,70 @@
 {
  "schema": "jev-reads-index-1",
- "generated_at": "2026-10-10T09:19:49+00:00",
- "latest": "2026-10-09",
+ "generated_at": "2026-10-18T10:57:57+00:00",
+ "latest": "2026-10-16",
  "weeks": [
+  {
+   "as_of": "2026-10-16",
+   "file": "jev-reads/2026-10-16.json",
+   "window": [
+    "2026-10-12",
+    "2026-10-16"
+   ],
+   "counts": {
+    "companies_checked": 4832,
+    "eightk_checked": 584,
+    "earnings_releases": 97,
+    "in_screener_universe": 39,
+    "smaller_companies_not_shown": 58,
+    "read_by_jev": 39,
+    "passed_floor": 20,
+    "short_list": 7
+   },
+   "short_list": [
+    {
+     "ticker": "AZZ",
+     "company": "AZZ INC",
+     "tier": "B",
+     "position": 1
+    },
+    {
+     "ticker": "UNH",
+     "company": "UNITEDHEALTH GROUP INC",
+     "tier": "B",
+     "position": 2
+    },
+    {
+     "ticker": "FAST",
+     "company": "FASTENAL CO",
+     "tier": "C",
+     "position": 3
+    },
+    {
+     "ticker": "CMC",
+     "company": "COMMERCIAL METALS Co",
+     "tier": "C",
+     "position": 4
+    },
+    {
+     "ticker": "SCHW",
+     "company": "SCHWAB CHARLES CORP",
+     "tier": "C",
+     "position": 5
+    },
+    {
+     "ticker": "BLK",
+     "company": "BlackRock, Inc.",
+     "tier": "C",
+     "position": 6
+    },
+    {
+     "ticker": "MRSH",
+     "company": "MARSH & MCLENNAN COMPANIES, INC.",
+     "tier": "C",
+     "position": 7
+    }
+   ]
+  },
   {
    "as_of": "2026-10-09",
    "file": "jev-reads/2026-10-09.json",
@@ -2090,7 +2152,51 @@
   }
  },
  "late_reactions": {
-  "2026-10-09": {},
+  "2026-10-16": {},
+  "2026-10-09": {
+   "0001332349-0001332349-26-000068": {
+    "excess_return_3d": -0.050343079197725515,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   },
+   "0001539838-0001539838-26-000177": {
+    "excess_return_3d": 0.05706276041121372,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   },
+   "0000821189-0000821189-26-000202": {
+    "excess_return_3d": 0.04255388821315931,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   },
+   "0001662991-0001662991-26-000165": {
+    "excess_return_3d": 0.14493712050604501,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   },
+   "0001122976-0001193125-26-418501": {
+    "excess_return_3d": -0.050888366765648674,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   },
+   "0000027904-0000027904-26-000035": {
+    "excess_return_3d": -0.03560249641967017,
+    "window": [
+     "2026-10-08",
+     "2026-10-12"
+    ]
+   }
+  },
   "2026-10-02": {
    "0000320187-0000320187-26-000184": {
     "excess_return_3d": -0.05667532181480606,
@@ -2100,7 +2206,7 @@
     ]
    },
    "0000831259-0000831259-26-000043": {
-    "excess_return_3d": 0.02114554684437131,
+    "excess_return_3d": 0.021145573011708718,
     "window": [
      "2026-10-01",
      "2026-10-05"
@@ -2139,6 +2245,28 @@
   }
  },
  "tracking": [
+  {
+   "week": "2026-10-16",
+   "group": "short list",
+   "releases": 7,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
+  {
+   "week": "2026-10-16",
+   "group": "other releases read",
+   "releases": 32,
+   "mean_excess_vs_spy_3m": null,
+   "mean_excess_vs_universe_3m": null,
+   "mean_excess_vs_spy_6m": null,
+   "mean_excess_vs_universe_6m": null,
+   "mean_excess_vs_spy_12m": null,
+   "mean_excess_vs_universe_12m": null
+  },
   {
    "week": "2026-10-09",
    "group": "short list",
