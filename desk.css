@@ -266,3 +266,46 @@ dialog dd { margin: 0; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   .nav-ready #site-sidebar { transition: none; }
 }
+
+/* Research company panel (desk.js showEvidence): why it is on the list, what to
+   check first, six numbers beside the sector median, data dates folded. */
+.qv-bar { position: sticky; top: -24px; z-index: 1; display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin: -24px -24px 6px; padding: 12px 16px 8px; background: #fff; }
+.qv-bar form { margin: 0 0 0 6px; }
+.qv-bar .close-evidence { float: none; }
+.qv-step { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); font-size: 18px; line-height: 1; }
+.qv-step:disabled { opacity: 0.35; cursor: default; }
+.qv-position { min-width: 64px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
+#evidence-title { margin: 0 0 2px; }
+dialog .qv-sub { margin: 0 0 10px; font-size: 13px; }
+.qv-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.qv-spacer { flex: 1; }
+.qv-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f1f3f1; color: #3d4f43; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.qv-chip.trust-complete { background: var(--chip); color: #2d5a3e; }
+.qv-chip.trust-review { background: #f4ead3; color: #7a5a1e; }
+.qv-chip.trust-broken { background: #f4dcd6; color: #8a2f24; }
+.qv-chip.loss { background: #e8eef1; color: #44606f; }
+.qv-ticker { padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--green); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.qv-ticker:hover { background: var(--chip); }
+#evidence-content h3 { margin: 18px 0 6px; font-size: 13px; letter-spacing: 0.02em; color: var(--ink); }
+dialog .qv-lead { color: var(--ink); }
+.qv-out { color: #8a5a3c; font-weight: 600; }
+.qv-checks { margin: 0; padding-left: 18px; }
+.qv-checks li { margin: 4px 0; line-height: 1.5; }
+.qv-checks .qv-warn { color: #8a2f24; }
+dialog .qv-note { margin: 6px 0 0; font-size: 12px; }
+.qv-metrics { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.qv-metrics th, .qv-metrics td { padding: 6px 0; border-top: 1px solid var(--line); text-align: right; font-size: 13px; }
+.qv-metrics thead th, .qv-metrics thead td { border-top: 0; color: var(--muted); font-size: 11px; font-weight: 600; }
+.qv-metrics tbody th { text-align: left; font-weight: 400; }
+.qv-metrics td { width: 26%; }
+.qv-metrics .qv-median { color: var(--muted); }
+dialog .qv-more { margin: 14px 0 0; font-size: 13px; }
+.qv-more a { color: var(--green); }
+.qv-dates { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.qv-dates summary { font-size: 13px; }
+@media (max-width: 480px) {
+  dialog { padding: 18px 16px; }
+  .qv-bar { top: -18px; margin: -18px -16px 6px; padding: 10px 10px 8px; }
+  .qv-spacer { display: none; }
+  .qv-metrics td { width: 30%; }
+}

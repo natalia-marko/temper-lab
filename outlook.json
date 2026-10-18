@@ -551,7 +551,7 @@
   ],
   "selection": "Equal-weighted four-pillar composite (25% volatility-scaled 6M relative-strength percentile, 25% revenue-growth percentile, 25% ROE percentile, 25% operating-cash-flow-yield percentile) inside the quality cohort, requiring positive 6M relative strength vs QQQ, trailing P/E <= 40x (earnings yield >= 2.5%), and revenue growth <= 100%; maximum two per sector, one per industry, trailing daily correlation <= 0.80 with >=126 paired observations. Fewer than five if constraints prevent filling slots. Experimental model estimates do not determine this ranking.",
   "selection_method": "confirmed_momentum",
-  "snapshot_sha256": "acf88db20201ffdcfda37207fe7aa48073ab2ad22db1795c7ab718e79cc9f383",
+  "snapshot_sha256": "51037dd6bada09f7ca564f1b4d916e21db17f76f25a44e8af5080bef69b08e3a",
   "training_months": 49,
   "training_rows": 9457,
   "universe": "Liquid US stocks, cap >= $2B, revenue growth >=5%, positive operating/net income, cash/profit >=0.7, ROE 5\u201380%, equity/assets >=5%, operating margin >=5%, liabilities/assets <=80%, annualised volatility <=65%, fresh reconciled accounts. Financials, REITs and unknown sectors excluded.",

@@ -572,10 +572,225 @@ function renderEvidenceControls() {
   $("required-metrics").checked = state.requiredMetrics;
 }
 
-function showEvidence(symbol) {
+// ---------- company panel ----------
+// The Research quick view: why the company is on this list, what to check
+// before acting, and six fixed numbers beside the sector median. The rows the
+// table already shows are not repeated; the data dates sit at the bottom,
+// folded, and the full record lives on the Ticker page. Facts, not calls.
+const PANEL_METRICS = [
+  ["revenue_yoy", "Revenue, year on year", "change"],
+  ["net_margin", "Net margin", "level"],
+  ["roe", "Return on equity", "level"],
+  ["cash_conversion", "Cash / profit", "multiple"],
+  ["pe", "Price / earnings", "times"],
+  ["momentum_252", "Return, 12 months", "change"],
+];
+
+function oneDecimal(value, kind) {
+  if (!Number.isFinite(value)) return "—";
+  if (kind === "multiple") return `${value.toFixed(2)}×`;
+  if (kind === "times") return `${value.toFixed(1)}×`;
+  const sign = kind === "change" && value >= 0 ? "+" : "";
+  return `${sign}${(value * 100).toFixed(1)}%`;
+}
+
+// Market cap / trailing net income, only when income is positive: the Ticker
+// page's formula, and the one the weekly build uses for the sector median.
+function peOf(symbol) {
   const company = state.desk.companies[symbol];
-  if (!company) return;
-  $("evidence-title").textContent = `${symbol} · ${company.name || symbol}`;
+  const income = company?.factors?.ttm_net_income;
+  const cap = company?.market_cap;
+  return Number.isFinite(income) && Number.isFinite(cap) && income > 0 && cap > 0 ? cap / income : null;
+}
+
+function panelValue(symbol, key) {
+  return key === "pe" ? peOf(symbol) : factor(symbol, key);
+}
+
+function panelMissing(symbol, key) {
+  if (key === "pe") {
+    const income = state.desk.companies[symbol]?.factors?.ttm_net_income;
+    return Number.isFinite(income) && income <= 0 ? "Net loss" : "Unavailable";
+  }
+  return notReported(symbol, key) ? "Not reported by this filer" : "Unavailable";
+}
+
+function sectorOf(symbol) {
+  return sectorFor(industryKey(state.desk.companies[symbol]));
+}
+
+// Stored per sector by the weekly build (desk.json sector_medians); null when
+// the snapshot predates it, the sector is unclassified, or too few companies
+// have the number.
+function sectorMedian(symbol, key) {
+  return state.desk.sector_medians?.sectors?.[sectorOf(symbol)]?.[key]?.median ?? null;
+}
+
+function withMedian(symbol, key, format) {
+  const median = sectorMedian(symbol, key);
+  return Number.isFinite(median) ? `; the ${sectorLabel(sectorOf(symbol))} median is ${format(median)}` : "";
+}
+
+function screenName(key) {
+  return SCREENS.find(([id]) => id === key)?.[1] ?? key;
+}
+
+// One sentence with the company's own inputs to the score, from the method
+// each list states in desk.json. Missing inputs are left out, not invented.
+function scoreInputs(screen, symbol) {
+  const f = state.desk.companies[symbol]?.factors || {};
+  const has = (key) => Number.isFinite(f[key]);
+  if (screen === "growth") {
+    const parts = [has("revenue_yoy") ? `revenue ${oneDecimal(f.revenue_yoy, "change")} year on year` : "",
+      has("relative_strength_6m") ? `6 months vs QQQ ${oneDecimal(f.relative_strength_6m, "change")}` : ""].filter(Boolean);
+    return `Ranked by return on equity${has("roe") ? ` (${oneDecimal(f.roe, "level")})` : ""}; revenue growth is an entry gate, not the score.${parts.length ? ` Now ${parts.join(", ")}.` : ""}`;
+  }
+  if (screen === "strength") {
+    const now = [has("momentum_63") ? `63 sessions ${oneDecimal(f.momentum_63, "change")}` : "",
+      has("momentum_252") ? `252 sessions ${oneDecimal(f.momentum_252, "change")}` : ""].filter(Boolean);
+    return `Score is 60% the 63-session and 40% the 252-session return.${now.length ? ` Now ${now.join(", ")}.` : ""} Recent price, not a forecast.`;
+  }
+  if (screen === "undervalued") {
+    return `Ranked by operating income / EV${has("operating_earnings_yield_ev") ? ` (${oneDecimal(f.operating_earnings_yield_ev, "level")})` : ""}${has("operating_earnings_yield") ? `; on equity market cap it is ${oneDecimal(f.operating_earnings_yield, "level")}` : ""}. Cheap is not a quality grade.`;
+  }
+  if (screen === "conviction") {
+    const ratings = has("strong_buy_count") && has("analyst_total")
+      ? `${f.strong_buy_count} of ${f.analyst_total} ratings strong buy${has("strong_buy") ? ` (${oneDecimal(f.strong_buy, "level")})` : ""}` : "";
+    const revisions = has("up_last_30_days") || has("down_last_30_days")
+      ? `EPS estimates in 30 days: ${has("up_last_30_days") ? f.up_last_30_days : 0} up, ${has("down_last_30_days") ? f.down_last_30_days : 0} down${has("revision_breadth") ? ` (breadth ${oneDecimal(f.revision_breadth, "change")})` : ""}` : "";
+    const now = [ratings, revisions].filter(Boolean).join("; ");
+    return `Score blends two percentiles equally: strong-buy share and EPS-revision breadth.${now ? ` Now ${now}.` : ""}`;
+  }
+  return "";
+}
+
+function whyHere(symbol) {
+  if (state.view === "potential") {
+    return `<h3>Potential research</h3><p>Unranked research context: no list rank, score or predictive claim.</p>`;
+  }
+  const key = state.screen;
+  const row = rankedMap(key).get(symbol);
+  const moved = movementLabel(key, symbol);
+  const excluded = state.desk.setups[key]?.exclusions?.find((entry) => entry.symbol === symbol);
+  const count = state.desk.setups[key]?.results?.length || 0;
+  let lead;
+  if (row) {
+    lead = `Rank ${row.rank} of ${count}, score ${row.score.toFixed(1)}${moved ? ` · ${escapeHtml(moved)}` : ""}.`;
+  } else {
+    const reasons = [moved ? `${moved[0].toUpperCase()}${moved.slice(1)}.` : "",
+      excluded ? `${excluded.reasons.join("; ")}.` : ""].filter(Boolean);
+    lead = `<span class="qv-out">${reasons.length ? escapeHtml(reasons.join(" ")) : "A missing input, failed gate, or shortlist cutoff may apply."}</span>`;
+  }
+  const others = SCREENS.filter(([other]) => other !== key && state.desk.setups[other]).map(([other, label]) => {
+    const ranked = rankedMap(other).get(symbol);
+    const change = movementLabel(other, symbol);
+    if (ranked) return `${label} (rank ${ranked.rank}${change ? `, ${change}` : ""})`;
+    return change ? `${label} (${change})` : "";
+  }).filter(Boolean);
+  return `<h3>${row ? "Why it's on" : "Not on"} ${escapeHtml(screenName(key))}</h3>
+    <p class="qv-lead">${lead} ${escapeHtml(scoreInputs(key, symbol))}</p>
+    <p>${others.length ? `Other lists: ${escapeHtml(others.join(" · "))}.` : "Not on any other list."}</p>`;
+}
+
+// "Thu 5 Nov", as on the Market mood earnings panel.
+function weekday(iso) {
+  const date = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
+  const part = (options) => date.toLocaleDateString("en-GB", { ...options, timeZone: "UTC" });
+  return `${part({ weekday: "short" })} ${part({ day: "numeric", month: "short" })}`;
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Next results date from share/earnings-calendar.json (refreshed Tue/Fri). A
+// planning fact, not a signal: Leg D found no price drift after results.
+function earningsLine(symbol) {
+  const calendar = state.earnings;
+  if (!calendar) return "";
+  const next = calendar.companies?.[symbol];
+  const timing = next?.timing ? `, ${next.timing}` : "";
+  if (!next?.date) {
+    return calendar.window?.to ? `No results date in the calendar to ${day(calendar.window.to)}.` : "";
+  }
+  const today = todayIso();
+  const unsure = next.unsure ? " (the date may still move)" : "";
+  if (next.date >= today) {
+    const days = Math.round((Date.parse(`${next.date}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
+    const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+    return `Results ${next.unsure ? "~" : ""}${weekday(next.date)}${timing} · ${when}${unsure}.`;
+  }
+  const filed = state.desk.companies[symbol]?.revenue_filed;
+  return filed && next.date > filed
+    ? `Results came out ${weekday(next.date)}${timing}; the figures here are from the ${day(filed)} filing.`
+    : "";
+}
+
+// FINRA short interest from share/short-interest.json (written with Insights,
+// Tue/Fri). Days to cover is the one ownership fact our Leg D test backed.
+function shortLine(symbol) {
+  const shorts = state.shorts;
+  const row = shorts?.rows?.[symbol];
+  if (!row) return "";
+  const [daysToCover, change, rank] = row;
+  if (!Number.isFinite(daysToCover)) return "";
+  const when = shorts.date ? `FINRA, ${day(shorts.date)}` : "FINRA";
+  const moved = Number.isFinite(change) ? `, ${change >= 0 ? "+" : ""}${change.toFixed(1)}% since the report before` : "";
+  const facts = `${daysToCover.toFixed(1)} days to cover (${when}${moved})`;
+  if (rank === "heavily") return `Heavily shorted: ${facts}, top 10% of eligible stocks of similar size.`;
+  if (rank === "lightly") return `Lightly shorted: ${facts}, bottom 10% of eligible stocks of similar size.`;
+  return `Short interest ${facts}; not in the top or bottom 10% of eligible stocks of similar size.`;
+}
+
+function checkFirst(symbol) {
+  const status = trustStatus(symbol);
+  const reasons = state.desk.companies[symbol]?.trust?.reasons || [];
+  const items = [];
+  if (status !== "complete") {
+    items.push(`<li class="qv-warn"><strong>${trustLabel(status)}</strong>${reasons.length ? `: ${reasons.map(escapeHtml).join("; ")}` : ""}</li>`);
+  }
+  const results = earningsLine(symbol);
+  if (results) items.push(`<li>${escapeHtml(results)}</li>`);
+  const notes = standoutNotes(symbol);
+  for (const note of notes) items.push(`<li class="qv-steer">${escapeHtml(note)}</li>`);
+  const short = shortLine(symbol);
+  if (short) {
+    items.push(`<li title="In our Leg D test (2022–26), heavily shorted stocks trailed stocks of similar size over six months and lightly shorted ones led them.">${escapeHtml(short)}</li>`);
+  }
+  if (!items.length) return "";
+  return `<h3>Check first</h3><ul class="qv-checks">${items.join("")}</ul>${notes.length
+    ? "<p class=\"qv-note\">The steers are prompts to look further, not conclusions; they change nothing about the rank or score.</p>" : ""}`;
+}
+
+function metricsTable(symbol) {
+  const sector = sectorOf(symbol);
+  const medians = Boolean(state.desk.sector_medians);
+  const head = medians ? `<th scope="col">${escapeHtml(sector === "unclassified" ? "Sector" : sectorLabel(sector))} median</th>` : "";
+  const body = PANEL_METRICS.map(([key, label, kind]) => {
+    const value = panelValue(symbol, key);
+    const median = sectorMedian(symbol, key);
+    const cell = Number.isFinite(value) ? oneDecimal(value, kind) : `<span class="na">${panelMissing(symbol, key)}</span>`;
+    return `<tr><th scope="row">${label}</th><td>${cell}</td>${medians ? `<td class="qv-median">${Number.isFinite(median) ? oneDecimal(median, kind) : "—"}</td>` : ""}</tr>`;
+  }).join("");
+  const note = medians
+    ? `<p class="qv-note">The same six numbers on every list. Medians are of this week's companies in the same sector; accounting ratios leave out statements that do not add up.${sector === "unclassified" ? " This industry has no sector, so no median." : ""}</p>`
+    : "";
+  return `<h3>The business vs its sector</h3>
+    <table class="qv-metrics"><thead><tr><td></td><th scope="col">${escapeHtml(symbol)}</th>${head}</tr></thead><tbody>${body}</tbody></table>${note}`;
+}
+
+function analystLine(symbol) {
+  if (state.screen === "conviction") return "";
+  const f = state.desk.companies[symbol]?.factors || {};
+  if (!Number.isFinite(f.analyst_total)) return "";
+  const parts = [Number.isFinite(f.strong_buy_count) ? `${f.strong_buy_count} of ${f.analyst_total} ratings strong buy` : `${f.analyst_total} ratings`];
+  if (Number.isFinite(f.up_last_30_days) || Number.isFinite(f.down_last_30_days)) {
+    parts.push(`EPS estimates in 30 days ${f.up_last_30_days ?? 0} up, ${f.down_last_30_days ?? 0} down`);
+  }
+  return `Analysts: ${parts.join("; ")}.`;
+}
+
+function dataDates(symbol, company) {
   const dates = [
     ["Price date", company.price_date],
     ["Revenue fiscal period end", company.revenue_period_end],
@@ -583,43 +798,103 @@ function showEvidence(symbol) {
     ["Quality filing date", company.quality_filed],
     ["Analyst observations collected", company.analyst?.retrieved_at],
   ];
-  const reasons = company.trust?.reasons || [];
-  const notes = standoutNotes(symbol);
-  const profitable = state.desk.companies[symbol]?.profitable;
+  const profitable = company.profitable;
   const earns =
     profitable === false
       ? " Trailing twelve-month net income is negative; that is a fact about the business, not a problem with the evidence."
       : profitable === true
         ? " Trailing twelve-month net income is positive."
         : "";
-  $("evidence-content").innerHTML = `<p><strong>${trustLabel(trustStatus(symbol))}</strong>. This statement status does not certify coverage, freshness, or valuation.${earns}</p>
-    ${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : "<p>No specific issue recorded.</p>"}
+  return `<details class="qv-dates"><summary>Data dates and limits</summary>
+    <p><strong>${trustLabel(trustStatus(symbol))}</strong>. This statement status does not certify coverage, freshness, or valuation.${earns}</p>
     <dl>${dates.map(([label, value]) => `<dt>${label}</dt><dd>${value ? escapeHtml(day(value)) : "Not recorded in this snapshot"}</dd>`).join("")}</dl>
     <p>Filing dates are calendar dates, not exact publication timestamps. The quality filing date is not a separate fiscal period or filing date for every ratio component. Original accessions and share-count reconciliation are not included in this public snapshot.</p>
     ${company.analyst ? "<p>Analyst counts are dated by collection, which can be after the price date. EPS revisions cover the current fiscal year (Yahoo 0y). They are not individual report dates.</p>" : ""}
+    ${state.desk.sector_medians?.basis ? `<p>Sector medians: ${escapeHtml(state.desk.sector_medians.basis)}</p>` : ""}
+  </details>`;
+}
+
+function panelHeader(symbol, company) {
+  const sector = sectorOf(symbol);
+  const where = [company.industry, sector !== "unclassified" ? sectorLabel(sector) : ""].filter(Boolean).join(" · ");
+  const quote = [Number.isFinite(company.price) ? `${price(company.price)}${company.price_date ? ` on ${day(company.price_date)}` : ""}` : "",
+    Number.isFinite(company.market_cap) ? `market cap ${money(company.market_cap)}` : ""].filter(Boolean).join(" · ");
+  const status = trustStatus(symbol);
+  const income = company.factors?.ttm_net_income;
+  const earns = company.profitable === false
+    ? `<span class="qv-chip loss" title="A fact about the business, not a problem with the evidence">Loss-making${Number.isFinite(income) ? ` · TTM ${money(income)}` : ""}</span>`
+    : company.profitable === true
+      ? `<span class="qv-chip">Profitable${Number.isFinite(income) ? ` · TTM ${money(income)}` : ""}</span>`
+      : "";
+  return `<p class="qv-sub">${escapeHtml([where, quote].filter(Boolean).join(" · "))}</p>
+    <div class="qv-actions">
+      <span class="qv-chip trust-${status}" title="Statement status. It does not certify coverage, freshness, or valuation.">${trustLabel(status)}</span>${earns}
+      <span class="qv-spacer"></span>${starHtml(symbol, company.name)}
+      <a class="qv-ticker" href="./ticker.html?t=${encodeURIComponent(symbol)}">Full ticker page →</a>
+    </div>`;
+}
+
+function panelPosition() {
+  const list = state.panelRows || [];
+  const at = list.indexOf(state.panelSymbol);
+  const prev = $("evidence-prev");
+  const next = $("evidence-next");
+  const label = $("evidence-position");
+  if (at < 0) {
+    prev.hidden = true; next.hidden = true; label.textContent = "";
+    return;
+  }
+  prev.hidden = false; next.hidden = false;
+  prev.disabled = at === 0;
+  next.disabled = at === list.length - 1;
+  label.textContent = `${(at + 1).toLocaleString()} of ${list.length.toLocaleString()}`;
+}
+
+// Opening from the table remembers its current order, so ‹ › walk the same
+// filtered, sorted list across pages without closing the panel.
+function openCompany(symbol) {
+  state.panelRows = rows();
+  showEvidence(symbol);
+}
+
+function stepCompany(delta) {
+  const list = state.panelRows || [];
+  const at = list.indexOf(state.panelSymbol);
+  const target = at < 0 ? null : list[at + delta];
+  if (target) showEvidence(target);
+}
+
+function showEvidence(symbol) {
+  const company = state.desk.companies[symbol];
+  if (!company) return;
+  state.panelSymbol = symbol;
+  $("evidence-title").textContent = `${symbol} · ${company.name || symbol}`;
+  const fscore = fscoreLine(symbol);
+  const analysts = analystLine(symbol);
+  $("evidence-content").innerHTML = `${panelHeader(symbol, company)}
+    ${whyHere(symbol)}
+    ${checkFirst(symbol)}
+    ${metricsTable(symbol)}
+    ${fscore || analysts ? `<p class="qv-more">${[fscore, analysts].filter(Boolean).map(escapeHtml).join("<br>")}</p>` : ""}
+    <p class="qv-more">Insiders, 13F funds, the price chart and analyst targets are on the <a href="./ticker.html?t=${encodeURIComponent(symbol)}">full ticker page</a>.</p>
     ${potentialEvidence(company.potential)}
-    <h3>Metrics in this view</h3><dl>${currentMetrics().map(([key, label, kind]) => `<dt>${label}</dt><dd>${Number.isFinite(factor(symbol, key)) ? fmt(factor(symbol, key), kind) : notReported(symbol, key) ? "Not reported by this filer" : "Unavailable"}</dd>`).join("")}</dl>
-    ${notes.length ? `<h3>What stands out</h3><ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul><p>These are prompts to look further, not conclusions, and they change nothing about the rank or score.</p>` : ""}
-    ${fscoreSection(symbol)}
-    <h3>Published screen membership</h3><ul>${SCREENS.map(([key, label]) => {
-      const row = rankedMap(key).get(symbol);
-      const moved = movementLabel(key, symbol);
-      const since = moved ? ` <em>${escapeHtml(moved)}</em>` : "";
-      const excluded = state.desk.setups[key]?.exclusions?.find((entry) => entry.symbol === symbol);
-      return `<li>${label}: ${row ? `original rank ${row.rank}, score ${row.score.toFixed(1)}${since}` : excluded ? escapeHtml(excluded.reasons.join("; ")) : `Outside the published list; a missing input, failed gate, or shortlist cutoff may apply.${since}`}</li>`;
-    }).join("")}</ul>`;
-  $("company-evidence").showModal();
+    ${dataDates(symbol, company)}`;
+  panelPosition();
+  const dialog = $("company-evidence");
+  dialog.scrollTop = 0;
+  if (!dialog.open) dialog.showModal();
 }
 
 // One line about a number already on the page, when that number is unusual
-// enough to be worth a second look. Nothing here is new data.
+// enough to be worth a second look, with its sector median beside it. Nothing
+// here is new data.
 function standoutNotes(symbol) {
   const company = state.desk.companies[symbol];
   const factors = company?.factors ?? {};
   const notes = [];
   if (Number.isFinite(factors.leverage) && factors.leverage > LEVERAGE_STEER) {
     notes.push(
-      `Liabilities are ${(factors.leverage * 100).toFixed(0)}% of assets. How much balance sheet is normal varies widely by industry — banks, insurers and property trusts sit this high by construction — so compare it against similar companies rather than reading it as risk on its own.`,
+      `Liabilities are ${(factors.leverage * 100).toFixed(0)}% of assets${withMedian(symbol, "leverage", (m) => `${(m * 100).toFixed(0)}%`)}. What is normal varies widely by industry — banks, insurers and property trusts sit this high by construction — so compare it with similar companies rather than reading it as risk on its own.`,
     );
   }
   // Cash conversion is operating cash flow over net income, so it does not
@@ -631,12 +906,45 @@ function standoutNotes(symbol) {
     factors.cash_conversion < CASH_CONVERSION_STEER
   ) {
     notes.push(
-      `Operating cash flow is ${factors.cash_conversion.toFixed(2)}× net income, so less cash arrived than the profit line implies. One quarter of working capital or a one-off charge can do this; what matters is whether it persists.`,
+      `Operating cash flow is ${factors.cash_conversion.toFixed(2)}× net income${withMedian(symbol, "cash_conversion", (m) => `${m.toFixed(2)}×`)}, so less cash arrived than the profit line implies. One quarter of working capital or a one-off charge can do this; what matters is whether it persists.`,
     );
   }
   return notes;
 }
 
+// Optional files for the panel. The page works without them; a panel already
+// open is redrawn when they arrive.
+async function loadPanelExtras() {
+  const load = async (file, check) => {
+    try {
+      const response = await fetch(`./${file}`, { cache: "no-store" });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return check(data) ? data : null;
+    } catch (error) {
+      console.warn(`Temper Lab ${file} is unavailable:`, error);
+      return null;
+    }
+  };
+  const [earnings, shorts] = await Promise.all([
+    load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
+    load("short-interest.json", (data) => data.schema === "short-interest-1"),
+  ]);
+  state.earnings = earnings;
+  state.shorts = shorts;
+  if ($("company-evidence").open && state.panelSymbol) showEvidence(state.panelSymbol);
+}
+
+// Piotroski F-Score in one line; the nine checks are on the Ticker page.
+// Context, not a signal: Leg D 2021-26 found no reliable return edge.
+function fscoreLine(symbol) {
+  if (!state.fscore) return "";
+  const f = fscoreOf(symbol);
+  if (!f) return "F-Score: no 10-K for a fiscal year ending in the last 15 months in this snapshot.";
+  if (!f.scored) return `F-Score: Not scored: only ${f.computed} of 9 checks can be computed (needs 7).`;
+  const missing = f.computed < 9 ? `; ${9 - f.computed} not available, counted as not passed` : "";
+  return `F-Score ${f.passed}/9${f.computed < 9 ? "*" : ""}: ${f.passed} of 9 financial-health checks passed (Piotroski), 10-K for the year to ${day(f.fy_end)}${missing}. Context, not a signal; the nine checks are on the ticker page.`;
+}
 function renderScreenGates() {
   // A screen's entry gates are a fact about the screen, so they are stated
   // once here rather than repeated on every row. They used to be a per-row
@@ -710,23 +1018,6 @@ function fscoreCell(symbol) {
     + (f.computed < 9 ? ` * Not available: ${missing.length ? missing.join(", ") : `${9 - f.computed} checks`}.` : "") + " Context, not a signal.";
   return `<td class="fscore-cell"><span class="fscore ${band}" title="${escapeHtml(title)}">${f.passed}/9${f.computed < 9 ? "*" : ""}</span></td>`;
 }
-function fscoreSection(symbol) {
-  const f = fscoreOf(symbol);
-  if (!state.fscore) return "";
-  if (!f) return "<h3>Financial-health checklist (Piotroski F-Score)</h3><p>No 10-K for a fiscal year ending in the last 15 months in this snapshot.</p>";
-  const mark = (v) => (v === true ? "✓" : v === false ? "✗" : "—");
-  const head = f.scored
-    ? `<strong>${f.passed} of 9</strong> checks passed${f.computed < 9 ? ` (${9 - f.computed} not available, counted as not passed)` : ""}`
-    : `Not scored: only ${f.computed} of 9 checks can be computed (needs 7)`;
-  return `<h3>Financial-health checklist (Piotroski F-Score)</h3>
-    <p>${head}. From the 10-K for the year ending ${escapeHtml(day(f.fy_end))} (filed ${escapeHtml(day(f.filed))}), compared with the year before.</p>
-    <ul class="fscore-checks">${FSCORE_CHECKS.map(([key, label]) => {
-      const v = f.checks?.[key];
-      return `<li class="${v === true ? "pass" : v === false ? "fail" : "na"}"><span aria-hidden="true">${mark(v)}</span> ${label}${v == null ? " <em>not available</em>" : ""}</li>`;
-    }).join("")}</ul>
-    <p>Context, not a signal: in our Leg D tests (eligible stocks, 2021–26) high scores did no better than average after 6 or 12 months, among all, cheap, expensive or momentum stocks.</p>`;
-}
-
 function sortHeader(key, label) {
   const sorted = state.sortKey === key ? " sorted" : "";
   const direction = state.sortDir === "asc" ? "ascending" : "descending";
@@ -998,7 +1289,15 @@ function renderIndustries() {
 function bind() {
   $("body").addEventListener("click", (event) => {
     const button = event.target.closest("button[data-company]");
-    if (button) showEvidence(button.dataset.company);
+    if (button) openCompany(button.dataset.company);
+  });
+  $("evidence-prev").addEventListener("click", () => stepCompany(-1));
+  $("evidence-next").addEventListener("click", () => stepCompany(1));
+  $("company-evidence").addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    if (event.target.closest?.("input, select, textarea")) return;
+    event.preventDefault();
+    stepCompany(event.key === "ArrowLeft" ? -1 : 1);
   });
   $("evidence-status").addEventListener("change", (event) => {
     state.evidenceStatus = event.target.value;
@@ -1178,6 +1477,7 @@ async function start() {
       controlsBound = true;
     }
     render();
+    loadPanelExtras();
   } catch (error) {
     console.error("Temper Lab could not load the screener:", error);
     $("body").innerHTML = `<tr><td class="empty" colspan="${$("head").querySelectorAll("th").length || 1}" role="alert">The screener could not load. <button type="button" id="retry-load">Try again</button></td></tr>`;

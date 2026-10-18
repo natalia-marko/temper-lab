@@ -252,6 +252,18 @@
         label: "Overbought · wait for pullback",
         detail: `RSI (14) is ${lastRsi.toFixed(1)} (≥ 70 overbought). Trend is strong, but short-term entry is stretched.`,
       };
+    } else if (lastSma50 === null) {
+      setup = {
+        tone: "caution",
+        label: "Short history (<50d)",
+        detail: `Only ${m} active sessions in this window; 50d SMA not yet formed (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}).`,
+      };
+    } else if (lastSlowSma === null) {
+      setup = {
+        tone: vsSma50 >= 0 ? "steady" : "caution",
+        label: vsSma50 >= 0 ? "Above 50d SMA (forming 100d)" : "Below 50d SMA (forming 100d)",
+        detail: `Price is ${signedPct(vsSma50)} vs 50d SMA (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}); 100d/200d SMA still forming.`,
+      };
     } else if (uptrend && ((lastRsi !== null && lastRsi <= 40) || recentOversold)) {
       setup = {
         tone: "buy",
@@ -262,7 +274,7 @@
       setup = {
         tone: "steady",
         label: "Steady uptrend · Golden Cross",
-        detail: `Price above 50d & ${effectiveSlowPeriod}d SMA with neutral RSI (${lastRsi !== null ? lastRsi.toFixed(1) : "—"})${lastHist > 0 ? " and positive MACD momentum." : "."}`,
+        detail: `Price above 50d & ${effectiveSlowPeriod}d SMA with neutral RSI (${lastRsi !== null ? lastRsi.toFixed(1) : "—"})${lastHist !== null && lastHist > 0 ? " and positive MACD momentum." : "."}`,
       };
     } else if (uptrend) {
       setup = {
@@ -363,7 +375,7 @@
     const host = $("wl-timing-chart");
     if (!host) return;
     if (!ta) {
-      host.replaceChildren(el("p", "wl-empty", `No daily price history available for ${symbol} in this snapshot.`));
+      host.replaceChildren(el("p", "wl-empty", !volume ? `Loading technical chart for ${symbol}…` : `No daily price history available for ${symbol} in this snapshot.`));
       return;
     }
 
@@ -692,7 +704,7 @@
         `50d SMA ${ta.sma50[i] !== null ? price(ta.sma50[i]) : "—"}`,
         `100d SMA ${ta.sma100[i] !== null ? price(ta.sma100[i]) : "—"}`,
         ...(ta.sma200[i] !== null ? [`200d SMA ${price(ta.sma200[i])}`] : []),
-        `RSI (14) ${ta.rsi14[i] !== null ? ta.rsi14.toFixed(1) : "—"}`,
+        `RSI (14) ${ta.rsi14[i] !== null ? ta.rsi14[i].toFixed(1) : "—"}`,
         `MACD (${ta.macdFast},${ta.macdSlow},${ta.macdSig}) ${ta.macd[i] !== null ? ta.macd[i].toFixed(2) : "—"} / Signal ${ta.signal[i] !== null ? ta.signal[i].toFixed(2) : "—"}`,
       ];
       if (sigHere.length) partsText.push(sigHere.join(" · "));
@@ -811,7 +823,7 @@
         );
 
         const c3 = el("div", "wl-stat-card");
-        const rsiState = L.rsi14 >= 70 ? "Overbought (≥70)" : L.rsi14 <= 30 ? "Oversold (≤30)" : L.rsi14 <= 42 ? "Pullback zone" : "Neutral (30–70)";
+        const rsiState = L.rsi14 === null ? "—" : L.rsi14 >= 70 ? "Overbought (≥70)" : L.rsi14 <= 30 ? "Oversold (≤30)" : L.rsi14 <= 42 ? "Pullback zone" : "Neutral (30–70)";
         const sigNote = L.lastSignal
           ? `Last signal: ${L.lastSignal.type === "buy" ? "▲" : "▼"} ${L.lastSignal.reason} on ${shortDay(L.lastSignal.date)}`
           : "No extreme RSI or MA cross in 1Y";
@@ -845,6 +857,7 @@
     const table = $("wl-timing-table");
     const tbody = $("wl-timing-rows");
     if (table && tbody) {
+      const starredNames = Object.fromEntries(items.map((x) => [x.symbol, x.name || ""]));
       const allSyms = [...new Set([...(starredSyms.length ? starredSyms : outlookPicks), activeSymbol])];
       table.hidden = allSyms.length === 0;
       const trs = allSyms.map((sym) => {
@@ -857,7 +870,7 @@
         });
         const co = el("td");
         const st = el("strong", "", sym);
-        co.append(st, el("small", "", c.name || ""));
+        co.append(st, el("small", "", c.name || starredNames[sym] || ""));
         if (!ta) {
           tr.append(co, el("td", "", "—"), el("td", "num", price(c.price)), el("td", "num", "—"),
             el("td", "num", "—"), el("td", "num", "—"), el("td", "", "—"), el("td", "", "—"), el("td", "", resultsText(earnings[sym])));
@@ -866,10 +879,18 @@
         const L = ta.last;
         const setupTd = el("td");
         setupTd.append(el("span", `wl-badge ${L.setup.tone}`, L.setup.label));
-        const vs50Td = el("td", `num ${L.vsSma50 >= 0 ? "wl-pos" : "wl-neg"}`, signedPct(L.vsSma50));
-        const vsSlowTd = el("td", `num ${L.sma50VsSlow >= 0 ? "wl-pos" : "wl-neg"}`, signedPct(L.sma50VsSlow));
-        const rsiTd = el("td", `num ${L.rsi14 >= 70 ? "wl-neg" : L.rsi14 <= 35 ? "wl-pos" : ""}`, L.rsi14 !== null ? L.rsi14.toFixed(1) : "—");
-        const macdTd = el("td", "", L.lastMacdCross ? `${L.lastMacdCross.kind === "buy" ? "▲" : "▼"} ${shortDay(L.lastMacdCross.date)} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})` : "—");
+        const vs50Cls = L.vsSma50 === null ? "" : L.vsSma50 >= 0 ? "wl-pos" : "wl-neg";
+        const vsSlowCls = L.sma50VsSlow === null ? "" : L.sma50VsSlow >= 0 ? "wl-pos" : "wl-neg";
+        const rsiCls = L.rsi14 === null ? "" : L.rsi14 >= 70 ? "wl-neg" : L.rsi14 <= 35 ? "wl-pos" : "";
+        const vs50Td = el("td", `num ${vs50Cls}`.trim(), signedPct(L.vsSma50));
+        const vsSlowTd = el("td", `num ${vsSlowCls}`.trim(), signedPct(L.sma50VsSlow));
+        const rsiTd = el("td", `num ${rsiCls}`.trim(), L.rsi14 !== null ? L.rsi14.toFixed(1) : "—");
+        const macdText = L.lastMacdCross && L.hist !== null
+          ? `${L.lastMacdCross.kind === "buy" ? "▲" : "▼"} ${shortDay(L.lastMacdCross.date)} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})`
+          : L.hist !== null
+            ? `${L.hist >= 0 ? "Bullish" : "Bearish"} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})`
+            : "—";
+        const macdTd = el("td", "", macdText);
         const sigTd = el("td", "", L.lastSignal ? `${L.lastSignal.type === "buy" ? "▲" : "▼"} ${L.lastSignal.reason} (${shortDay(L.lastSignal.date)})` : "—");
         tr.append(co, setupTd, el("td", "num", price(L.close)), vs50Td, vsSlowTd, rsiTd, macdTd, sigTd, el("td", "", resultsText(earnings[sym])));
         return tr;
