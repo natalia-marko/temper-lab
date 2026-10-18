@@ -1,6 +1,6 @@
 // The Watchlist page: names starred on any page, with facts from the latest
 // Research snapshot (desk.json) and the earnings calendar. The Timing tab draws one year of
-// daily closes with the 50/100/200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
+// daily closes with the 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
 // ticker-timing.json, loaded only when that tab opens. Descriptions of past prices, not calls.
 (function () {
   "use strict";
@@ -46,8 +46,9 @@
   // Indicators are computed on the whole series (warm-up included) and then cut to the chart
   // window, so a value on the first chart day already has its history behind it when the
   // stock has that much history. Standard definitions, no tuning:
-  //   SMA 50 / 100 / 200 of the closes; trend = the 50-day against the slow average
-  //   (200-day, or 100-day on the "50/100-day" view).
+  //   SMA 50 and 200 of the closes; trend = the 50-day against the 200-day (the usual
+  //   golden/death-cross pair). One pair only: offering a second lets a reader pick the one
+  //   that tells the story they want, and neither has been tested on Temper Lab data.
   //   RSI (14): Wilder's. The first averages are the simple mean of 14 daily changes; after that
   //   avg = (avg × 13 + today) / 14. Undefined while the price has not moved at all.
   //   MACD (12, 26, 9): EMA 12 − EMA 26 of the closes; signal = EMA 9 of MACD; histogram =
@@ -59,11 +60,11 @@
   const MACD_SIGNAL = 9;
   const RSI_HIGH = 70;
   const RSI_LOW = 30;
-  function computeIndicators(allDays, rawCloses, warmup = 0, horizon = "mid") {
+  function computeIndicators(allDays, rawCloses, warmup = 0) {
     if (!Array.isArray(allDays) || !Array.isArray(rawCloses) || allDays.length !== rawCloses.length || allDays.length < 30) {
       return null;
     }
-    const slowPeriod = horizon === "swing" ? 100 : 200;
+    const slowPeriod = 200;
     // The builder keeps only series whose gaps are at most 5 sessions; a gap carries the last close.
     const closes = rawCloses.slice();
     for (let i = 1; i < closes.length; i++) {
@@ -97,9 +98,8 @@
       return out;
     };
     const sma50 = sma(50);
-    const sma100 = sma(100);
     const sma200 = sma(200);
-    const slow = slowPeriod === 200 ? sma200 : sma100;
+    const slow = sma200;
 
     const rsi = new Array(n).fill(null);
     if (n - firstValid > RSI_N) {
@@ -162,7 +162,6 @@
       days,
       close: cut(closes),
       sma50: cut(sma50),
-      sma100: cut(sma100),
       sma200: cut(sma200),
       slow: cut(slow),
       rsi14: cut(rsi),
@@ -174,7 +173,6 @@
         date: allDays[last],
         close: closes[last],
         sma50: sma50[last],
-        sma100: sma100[last],
         sma200: sma200[last],
         slow: slow[last],
         vsSma50: ratio(closes[last], sma50[last]),
@@ -203,14 +201,12 @@
   let activeTab = "saved";
   let activeSymbol = "";
   let oscMode = "both";
-  let horizonMode = "mid";
   const computed = new Map();
 
   function seriesFor(symbol) {
     if (!timing || !timing.closes || !Array.isArray(timing.closes[symbol])) return null;
-    const key = `${symbol}|${horizonMode}`;
-    if (!computed.has(key)) computed.set(key, computeIndicators(timing.days, timing.closes[symbol], timing.warmup || 200, horizonMode));
-    return computed.get(key);
+    if (!computed.has(symbol)) computed.set(symbol, computeIndicators(timing.days, timing.closes[symbol], timing.warmup || 200));
+    return computed.get(symbol);
   }
 
   function loadTiming() {
@@ -340,17 +336,15 @@
     const vLine = (top, bottom, i, color) => svg("line", { x1: x(i).toFixed(1), x2: x(i).toFixed(1), y1: top + 1, y2: bottom - 1, stroke: color, "stroke-width": "1", "stroke-dasharray": "3,3", "stroke-opacity": "0.45" }, chart);
 
     // --- Price panel ---
-    const isMid = slowP === 200;
     const priceItems = [
       { color: "#1d4ed8", label: `${symbol} close` },
       { color: "#15803d", label: "50-day average" },
-      ...(isMid ? [{ color: "#d97706", dash: "4,3", label: "100-day average" }] : []),
       { color: "#dc2626", label: `${slowP}-day average` },
       { shape: "up", color: "#15803d", label: `50-day crossed above ${slowP}-day` },
       { shape: "down", color: "#dc2626", label: `50-day crossed below ${slowP}-day` },
     ];
     const p1 = panel(narrow ? `${symbol} · adjusted close` : `${symbol} · daily close, adjusted for splits and dividends`, priceItems, narrow ? 190 : 225, "Price (USD)");
-    const priceVals = [...ta.close, ...ta.sma50, ...(isMid ? ta.sma100 : []), ...ta.slow].filter((v) => v !== null && Number.isFinite(v));
+    const priceVals = [...ta.close, ...ta.sma50, ...ta.slow].filter((v) => v !== null && Number.isFinite(v));
     const pMin = Math.min(...priceVals);
     const pMax = Math.max(...priceVals);
     const pPad = (pMax - pMin || pMax * 0.1 || 1) * 0.08;
@@ -367,7 +361,6 @@
     }
     svg("path", { d: buildPath(ta.close, yPrice), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
     svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#15803d", "stroke-width": "1.6" }, chart);
-    if (isMid) svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#d97706", "stroke-width": "1.2", "stroke-dasharray": "4,3" }, chart);
     svg("path", { d: buildPath(ta.slow, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
     for (const e of ta.events.ma) {
       const cx = x(e.index);
@@ -462,7 +455,6 @@
       const parts = [
         `${longDay(ta.days[i])}: close ${p4(ta.close[i])}`,
         `50-day ${p4(ta.sma50[i])}`,
-        ...(isMid ? [`100-day ${p4(ta.sma100[i])}`] : []),
         `${slowP}-day ${p4(ta.slow[i])}`,
         `RSI ${ta.rsi14[i] !== null ? ta.rsi14[i].toFixed(1) : "—"}`,
         `MACD ${ta.macd[i] !== null ? axisNumber(ta.macd[i]) : "—"} / signal ${ta.signal[i] !== null ? axisNumber(ta.signal[i]) : "—"}`,
@@ -502,7 +494,7 @@
   function renderTiming(items) {
     const panelEl = $("wl-timing-panel");
     if (!panelEl) return;
-    const slowP = horizonMode === "swing" ? 100 : 200;
+    const slowP = 200;
     if ($("wl-timing-sub")) {
       $("wl-timing-sub").textContent = `${timing && timing.as_of ? `Close on ${longDay(timing.as_of)} (the weekly snapshot)` : "Weekly snapshot"}: `
         + `50-day and ${slowP}-day averages, RSI (14, Wilder) and MACD (12, 26, 9). Descriptions of past prices, not a buy or sell call.`;
@@ -561,7 +553,7 @@
         const since = L.lastMa
           ? `Since ${longDay(L.lastMa.date)}, when the 50-day crossed ${L.lastMa.kind === "up" ? "above" : "below"} the ${slowP}-day.`
           : L.trend ? "No cross in the chart year." : `${activeTa.history} sessions of history; the ${slowP}-day average needs ${slowP}.`;
-        const levels = [`50-day ${p4(L.sma50)}`, ...(slowP === 200 ? [`100-day ${p4(L.sma100)}`] : []), `${slowP}-day ${p4(L.slow)}`];
+        const levels = [`50-day ${p4(L.sma50)}`, `${slowP}-day ${p4(L.slow)}`];
         const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? eventDay(L.lastRsiHigh.date) : "not in the chart year"}`,
           `last fell to ${RSI_LOW}: ${L.lastRsiLow ? eventDay(L.lastRsiLow.date) : "not in the chart year"}`];
         summary.replaceChildren(
@@ -675,17 +667,6 @@
     if ($("wl-tab-saved") && $("wl-tab-timing")) {
       $("wl-tab-saved").addEventListener("click", () => setTab("saved"));
       $("wl-tab-timing").addEventListener("click", () => setTab("timing"));
-    }
-    if ($("wl-horizon-switch") && $("wl-horizon-switch").querySelectorAll) {
-      for (const btn of $("wl-horizon-switch").querySelectorAll("button[data-horizon]")) {
-        btn.addEventListener("click", () => {
-          horizonMode = btn.dataset.horizon || "mid";
-          for (const b of $("wl-horizon-switch").querySelectorAll("button[data-horizon]")) {
-            b.classList.toggle("on", b === btn);
-          }
-          renderTiming(W.list());
-        });
-      }
     }
     if ($("wl-osc-switch") && $("wl-osc-switch").querySelectorAll) {
       for (const btn of $("wl-osc-switch").querySelectorAll("button[data-osc]")) {
