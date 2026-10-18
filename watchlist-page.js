@@ -256,6 +256,9 @@
   const closeText = (symbol, ta) => (desk[symbol] && Number(desk[symbol].price) > 0 ? price(desk[symbol].price) : p4(ta.last.close));
   const trendText = (L, slow) => (L.trend === "up" ? `50-day above ${slow}-day` : L.trend === "down" ? `50-day below ${slow}-day`
     : L.trend === "flat" ? `50-day equal to ${slow}-day` : `${slow}-day not formed yet`);
+  // A past event's date: the year is added when it differs from the snapshot's, so "7 Nov" from
+  // last year cannot be read as next month.
+  const eventDay = (iso) => (timing && timing.as_of && String(iso).slice(0, 4) !== String(timing.as_of).slice(0, 4) ? longDay(iso) : shortDay(iso));
   const rsiZone = (r) => (r === null ? "—" : r >= RSI_HIGH ? `${RSI_HIGH} or above` : r <= RSI_LOW ? `${RSI_LOW} or below` : `between ${RSI_LOW} and ${RSI_HIGH}`);
   const axisNumber = (v) => {
     const a = Math.abs(v);
@@ -398,7 +401,7 @@
     let p3 = null;
     if (showMacd) {
       const latest = ta.last.lastMacd;
-      const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${shortDay(latest.date)}` : "";
+      const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${eventDay(latest.date)}` : "";
       p3 = panel(narrow ? `MACD (12, 26, 9)${crossNote.replace(" signal", "")}` : `${symbol} · MACD (12, 26, 9)${crossNote}`, [
         { color: "#1d4ed8", label: "MACD" },
         { color: "#d97706", label: "Signal" },
@@ -559,14 +562,14 @@
           ? `Since ${longDay(L.lastMa.date)}, when the 50-day crossed ${L.lastMa.kind === "up" ? "above" : "below"} the ${slowP}-day.`
           : L.trend ? "No cross in the chart year." : `${activeTa.history} sessions of history; the ${slowP}-day average needs ${slowP}.`;
         const levels = [`50-day ${p4(L.sma50)}`, ...(slowP === 200 ? [`100-day ${p4(L.sma100)}`] : []), `${slowP}-day ${p4(L.slow)}`];
-        const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? shortDay(L.lastRsiHigh.date) : "not in the chart year"}`,
-          `last fell to ${RSI_LOW}: ${L.lastRsiLow ? shortDay(L.lastRsiLow.date) : "not in the chart year"}`];
+        const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? eventDay(L.lastRsiHigh.date) : "not in the chart year"}`,
+          `last fell to ${RSI_LOW}: ${L.lastRsiLow ? eventDay(L.lastRsiLow.date) : "not in the chart year"}`];
         summary.replaceChildren(
           card(`Trend · 50-day vs ${slowP}-day`, trendText(L, slowP), `${since}${L.sma50VsSlow !== null ? ` Gap ${signedPct(L.sma50VsSlow)}.` : ""}`, tone(activeTa)),
           card("Price vs averages", `${closeText(activeSymbol, activeTa)} · ${signedPct(L.vsSma50)} vs 50-day`, `${levels.join(" · ")} · price ${signedPct(L.vsSlow)} vs ${slowP}-day`),
           card("RSI (14, Wilder)", L.rsi14 !== null ? `${L.rsi14.toFixed(1)} · ${rsiZone(L.rsi14)}` : "—", `${rsiLast.join(" · ")}`),
           card("MACD (12, 26, 9)", L.hist === null ? "—" : L.hist >= 0 ? "MACD above signal" : "MACD below signal",
-            `${L.lastMacd ? `Since the ${shortDay(L.lastMacd.date)} crossover · ` : ""}Next results: ${resultsText(earnings[activeSymbol])}`),
+            `${L.lastMacd ? `Since the ${eventDay(L.lastMacd.date)} crossover · ` : ""}Next results: ${resultsText(earnings[activeSymbol])}`),
         );
       }
     }
@@ -599,8 +602,8 @@
         const signed = (v) => el("td", `num ${v === null ? "" : v >= 0 ? "wl-pos" : "wl-neg"}`.trim(), signedPct(v));
         tr.append(co, trend, el("td", "num", closeText(sym, ta)), signed(L.vsSma50), signed(L.sma50VsSlow),
           el("td", "num", L.rsi14 !== null ? L.rsi14.toFixed(1) : "—"),
-          el("td", "", L.hist === null ? "—" : `${L.hist >= 0 ? "Above" : "Below"} signal${L.lastMacd ? ` since ${shortDay(L.lastMacd.date)}` : ""}`),
-          el("td", "", L.lastMa ? `${L.lastMa.kind === "up" ? "▲ above" : "▼ below"} · ${shortDay(L.lastMa.date)}` : "None in the chart year"),
+          el("td", "", L.hist === null ? "—" : `${L.hist >= 0 ? "Above" : "Below"} signal${L.lastMacd ? ` since ${eventDay(L.lastMacd.date)}` : ""}`),
+          el("td", "", L.lastMa ? `${L.lastMa.kind === "up" ? "▲ above" : "▼ below"} · ${eventDay(L.lastMa.date)}` : "None in the chart year"),
           el("td", "", resultsText(earnings[sym])));
         return tr;
       }));
