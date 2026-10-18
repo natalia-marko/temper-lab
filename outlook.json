@@ -1,7 +1,7 @@
 {
   "as_of": "2026-10-16",
   "benchmark": "QQQ",
-  "candidate_count": 226,
+  "candidate_count": 303,
   "candidates": [
     {
       "classification_override": null,
@@ -10,24 +10,24 @@
         "revenue_filed": "2026-08-04",
         "revenue_period_end": "2026-06-30"
       },
-      "excess_high": 0.25669410824775696,
-      "excess_low": -0.4681500196456909,
-      "excess_median": -0.0984582006931305,
+      "excess_high": 0.23685938119888306,
+      "excess_low": -0.42549505829811096,
+      "excess_median": -0.09115144610404968,
       "industry": "Integrated oil Companies",
       "inputs": {
         "cash_conversion": 2.002104278700023,
         "earnings_yield": 0.0637150971051807,
         "leverage": 0.7272823666631322,
         "operating_margin": 0.09202549860981787,
-        "rank_cash_conversion": 0.8100436681222707,
-        "rank_earnings_yield": 0.8755458515283843,
-        "rank_leverage": 0.9279475982532751,
-        "rank_market_cap_usd": 0.9148471615720524,
-        "rank_operating_margin": 0.1331877729257642,
-        "rank_relative_strength_6m": 0.9934497816593887,
-        "rank_return_on_equity": 0.9235807860262009,
-        "rank_revenue_yoy": 0.9366812227074236,
-        "rank_volatility_252": 0.425764192139738,
+        "rank_cash_conversion": 0.7931596091205212,
+        "rank_earnings_yield": 0.8583061889250815,
+        "rank_leverage": 0.9234527687296417,
+        "rank_market_cap_usd": 0.9006514657980456,
+        "rank_operating_margin": 0.13517915309446255,
+        "rank_relative_strength_6m": 0.995114006514658,
+        "rank_return_on_equity": 0.9364820846905537,
+        "rank_revenue_yoy": 0.9495114006514658,
+        "rank_volatility_252": 0.4576547231270358,
         "relative_strength_6m": 1.1556214094161987,
         "return_on_equity": 0.4483933532526079,
         "revenue_yoy": 0.5383295363768159,
@@ -70,11 +70,11 @@
       ],
       "sector": "energy",
       "security_id": "yfinance:MPC",
-      "selection_score": 0.9655021834061135,
+      "selection_score": 0.9716612377850162,
       "symbol": "MPC",
-      "total_high": 0.47317802906036377,
-      "total_low": -0.22262270748615265,
-      "total_median": 0.06354474276304245,
+      "total_high": 0.4526835083961487,
+      "total_low": -0.22183595597743988,
+      "total_median": 0.08181443065404892,
       "valuation_inputs": {
         "enterprise_value": 159301896504.232,
         "market_cap": 134253896504.232,
@@ -88,24 +88,24 @@
         "revenue_filed": "2026-08-04",
         "revenue_period_end": "2026-06-30"
       },
-      "excess_high": 0.45302891731262207,
-      "excess_low": -0.454508900642395,
-      "excess_median": -0.0809006467461586,
+      "excess_high": 0.38055625557899475,
+      "excess_low": -0.4579123258590698,
+      "excess_median": -0.101105235517025,
       "industry": "Computer Software: Prepackaged Software",
       "inputs": {
         "cash_conversion": 1.5539013478968162,
         "earnings_yield": 0.032976206980776655,
         "leverage": 0.47659920701786396,
         "operating_margin": 0.3436485119712309,
-        "rank_cash_conversion": 0.5786026200873362,
-        "rank_earnings_yield": 0.4039301310043668,
-        "rank_leverage": 0.46943231441048033,
-        "rank_market_cap_usd": 0.3296943231441048,
-        "rank_operating_margin": 0.9017467248908297,
-        "rank_relative_strength_6m": 0.9847161572052402,
-        "rank_return_on_equity": 0.8755458515283843,
-        "rank_revenue_yoy": 0.3777292576419214,
-        "rank_volatility_252": 0.8930131004366813,
+        "rank_cash_conversion": 0.5390879478827362,
+        "rank_earnings_yield": 0.3762214983713355,
+        "rank_leverage": 0.42833876221498374,
+        "rank_market_cap_usd": 0.30781758957654726,
+        "rank_operating_margin": 0.9169381107491856,
+        "rank_relative_strength_6m": 0.988599348534202,
+        "rank_return_on_equity": 0.8811074918566775,
+        "rank_revenue_yoy": 0.41205211726384366,
+        "rank_volatility_252": 0.9039087947882736,
         "relative_strength_6m": 1.0805878639221191,
         "return_on_equity": 0.3673702427684389,
         "revenue_yoy": 0.11040338408650396,
@@ -146,11 +146,11 @@
       ],
       "sector": "technology",
       "security_id": "yfinance:QLYS",
-      "selection_score": 0.9410480349344978,
+      "selection_score": 0.9456026058631921,
       "symbol": "QLYS",
-      "total_high": 0.6959788203239441,
-      "total_low": -0.25770968198776245,
-      "total_median": 0.09220436960458755,
+      "total_high": 0.5636919736862183,
+      "total_low": -0.25226184725761414,
+      "total_median": 0.07035728543996811,
       "valuation_inputs": {
         "enterprise_value": null,
         "market_cap": 6263425036.625565,
@@ -170,24 +170,24 @@
         "revenue_filed": "2026-08-06",
         "revenue_period_end": "2026-06-30"
       },
-      "excess_high": 0.3437381386756897,
-      "excess_low": -0.5428990125656128,
-      "excess_median": -0.17503699660301208,
+      "excess_high": 0.3111553490161896,
+      "excess_low": -0.5425169467926025,
+      "excess_median": -0.16354528069496155,
       "industry": "Digital musculoskeletal care",
       "inputs": {
         "cash_conversion": 2.666082938323447,
         "earnings_yield": 0.013928622072600011,
         "leverage": 0.5838423588164342,
         "operating_margin": 0.1300889785726487,
-        "rank_cash_conversion": 0.9192139737991266,
-        "rank_earnings_yield": 0.04585152838427948,
-        "rank_leverage": 0.6790393013100436,
-        "rank_market_cap_usd": 0.3864628820960699,
-        "rank_operating_margin": 0.3296943231441048,
-        "rank_relative_strength_6m": 0.9978165938864629,
-        "rank_return_on_equity": 0.7794759825327511,
-        "rank_revenue_yoy": 0.9279475982532751,
-        "rank_volatility_252": 0.8537117903930131,
+        "rank_cash_conversion": 0.9267100977198697,
+        "rank_earnings_yield": 0.04723127035830619,
+        "rank_leverage": 0.6530944625407166,
+        "rank_market_cap_usd": 0.36644951140065146,
+        "rank_operating_margin": 0.3273615635179153,
+        "rank_relative_strength_6m": 0.998371335504886,
+        "rank_return_on_equity": 0.7964169381107492,
+        "rank_revenue_yoy": 0.9397394136807817,
+        "rank_volatility_252": 0.8713355048859935,
         "relative_strength_6m": 1.1927332878112793,
         "return_on_equity": 0.3167590204688553,
         "revenue_yoy": 0.5299788638226286,
@@ -230,14 +230,89 @@
       ],
       "sector": "healthcare",
       "security_id": "yfinance:HNGE",
-      "selection_score": 0.9104803493449782,
+      "selection_score": 0.9175895765472313,
       "symbol": "HNGE",
-      "total_high": 0.5218592882156372,
-      "total_low": -0.35760337114334106,
-      "total_median": 0.005365407560020685,
+      "total_high": 0.533565104007721,
+      "total_low": -0.3262469172477722,
+      "total_median": 0.012180894613265991,
       "valuation_inputs": {
         "enterprise_value": null,
         "market_cap": 7830566329.193115,
+        "net_debt": null
+      }
+    },
+    {
+      "classification_override": null,
+      "evidence": {
+        "quality_filed": "2026-08-05",
+        "revenue_filed": "2026-08-05",
+        "revenue_period_end": "2026-07-03"
+      },
+      "excess_high": 0.24419179558753967,
+      "excess_low": -0.42714640498161316,
+      "excess_median": -0.09440769255161285,
+      "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
+      "inputs": {
+        "cash_conversion": 1.3750771243622353,
+        "earnings_yield": 0.05581410172514908,
+        "leverage": 0.26079028671728477,
+        "operating_margin": 0.39882713718020296,
+        "rank_cash_conversion": 0.40553745928338764,
+        "rank_earnings_yield": 0.757328990228013,
+        "rank_leverage": 0.10586319218241043,
+        "rank_market_cap_usd": 0.5260586319218241,
+        "rank_operating_margin": 0.9527687296416938,
+        "rank_relative_strength_6m": 0.8843648208469055,
+        "rank_return_on_equity": 0.9495114006514658,
+        "rank_revenue_yoy": 0.3925081433224756,
+        "rank_volatility_252": 0.49022801302931596,
+        "relative_strength_6m": 0.28999876976013184,
+        "return_on_equity": 0.4667755382744628,
+        "revenue_yoy": 0.1063402204268813,
+        "volatility_252": 0.3663308814402
+      },
+      "name": "Exelixis Inc.",
+      "price_date": "2026-10-16",
+      "probability_beat_qqq": null,
+      "rank": 4,
+      "reference_price": 62.22999954223633,
+      "risks": [
+        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
+        "The model's central excess return is negative: this candidate is not forecast to beat QQQ."
+      ],
+      "scenarios": [
+        {
+          "ev_multiple_change": -0.2,
+          "label": "Stress",
+          "operating_profit_growth": -0.1,
+          "price_return": null,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0,
+          "label": "Steady",
+          "operating_profit_growth": 0.1,
+          "price_return": null,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0.1,
+          "label": "Expansion",
+          "operating_profit_growth": 0.2,
+          "price_return": null,
+          "share_count_change": 0
+        }
+      ],
+      "sector": "healthcare",
+      "security_id": "yfinance:EXEL",
+      "selection_score": 0.9104234527687296,
+      "symbol": "EXEL",
+      "total_high": 0.4565419554710388,
+      "total_low": -0.21874162554740906,
+      "total_median": 0.11788274347782135,
+      "valuation_inputs": {
+        "enterprise_value": null,
+        "market_cap": 15419454579.734543,
         "net_debt": null
       }
     },
@@ -248,24 +323,24 @@
         "revenue_filed": "2026-08-10",
         "revenue_period_end": "2026-06-30"
       },
-      "excess_high": 0.280729204416275,
-      "excess_low": -0.441302090883255,
-      "excess_median": -0.10680027306079865,
+      "excess_high": 0.2697332203388214,
+      "excess_low": -0.4656798839569092,
+      "excess_median": -0.11501633375883102,
       "industry": "Marine Transportation",
       "inputs": {
         "cash_conversion": 0.8125418742732167,
         "earnings_yield": 0.14301125590607605,
         "leverage": 0.24962619354727583,
         "operating_margin": 0.6417969340429425,
-        "rank_cash_conversion": 0.024017467248908297,
-        "rank_earnings_yield": 0.9978165938864629,
-        "rank_leverage": 0.10698689956331878,
-        "rank_market_cap_usd": 0.2816593886462882,
-        "rank_operating_margin": 0.9934497816593887,
-        "rank_relative_strength_6m": 0.9454148471615721,
-        "rank_return_on_equity": 0.8318777292576419,
-        "rank_revenue_yoy": 0.9934497816593887,
-        "rank_volatility_252": 0.5393013100436681,
+        "rank_cash_conversion": 0.021172638436482084,
+        "rank_earnings_yield": 0.998371335504886,
+        "rank_leverage": 0.09283387622149837,
+        "rank_market_cap_usd": 0.2687296416938111,
+        "rank_operating_margin": 0.995114006514658,
+        "rank_relative_strength_6m": 0.9429967426710097,
+        "rank_return_on_equity": 0.8452768729641694,
+        "rank_revenue_yoy": 0.99185667752443,
+        "rank_volatility_252": 0.5781758957654723,
         "relative_strength_6m": 0.5031603574752808,
         "return_on_equity": 0.34393058863258635,
         "revenue_yoy": 1.38849218722047,
@@ -274,7 +349,7 @@
       "name": "International Seaways Inc.",
       "price_date": "2026-10-16",
       "probability_beat_qqq": null,
-      "rank": 4,
+      "rank": 5,
       "reference_price": 109.98999786376953,
       "risks": [
         "Annual return estimates remain experimental; losses can exceed the lower estimate.",
@@ -307,90 +382,15 @@
       ],
       "sector": "industrials",
       "security_id": "yfinance:INSW",
-      "selection_score": 0.8999999999999999,
+      "selection_score": 0.9039087947882736,
       "symbol": "INSW",
-      "total_high": 0.47050538659095764,
-      "total_low": -0.22271499037742615,
-      "total_median": 0.14139075577259064,
+      "total_high": 0.4565419554710388,
+      "total_low": -0.22294826805591583,
+      "total_median": 0.13754354417324066,
       "valuation_inputs": {
         "enterprise_value": 5934173791.079704,
         "market_cap": 5447948791.079704,
         "net_debt": 486225000.0
-      }
-    },
-    {
-      "classification_override": null,
-      "evidence": {
-        "quality_filed": "2026-08-05",
-        "revenue_filed": "2026-08-05",
-        "revenue_period_end": "2026-07-03"
-      },
-      "excess_high": 0.248106449842453,
-      "excess_low": -0.45077866315841675,
-      "excess_median": -0.08034098893404007,
-      "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
-      "inputs": {
-        "cash_conversion": 1.3750771243622353,
-        "earnings_yield": 0.05581410172514908,
-        "leverage": 0.26079028671728477,
-        "operating_margin": 0.39882713718020296,
-        "rank_cash_conversion": 0.44759825327510916,
-        "rank_earnings_yield": 0.7707423580786026,
-        "rank_leverage": 0.12008733624454149,
-        "rank_market_cap_usd": 0.5436681222707423,
-        "rank_operating_margin": 0.9366812227074236,
-        "rank_relative_strength_6m": 0.87117903930131,
-        "rank_return_on_equity": 0.9366812227074236,
-        "rank_revenue_yoy": 0.35152838427947597,
-        "rank_volatility_252": 0.45633187772925765,
-        "relative_strength_6m": 0.28999876976013184,
-        "return_on_equity": 0.4667755382744628,
-        "revenue_yoy": 0.1063402204268813,
-        "volatility_252": 0.3663308814402
-      },
-      "name": "Exelixis Inc.",
-      "price_date": "2026-10-16",
-      "probability_beat_qqq": null,
-      "rank": 5,
-      "reference_price": 62.22999954223633,
-      "risks": [
-        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
-        "The model's central excess return is negative: this candidate is not forecast to beat QQQ."
-      ],
-      "scenarios": [
-        {
-          "ev_multiple_change": -0.2,
-          "label": "Stress",
-          "operating_profit_growth": -0.1,
-          "price_return": null,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0,
-          "label": "Steady",
-          "operating_profit_growth": 0.1,
-          "price_return": null,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0.1,
-          "label": "Expansion",
-          "operating_profit_growth": 0.2,
-          "price_return": null,
-          "share_count_change": 0
-        }
-      ],
-      "sector": "healthcare",
-      "security_id": "yfinance:EXEL",
-      "selection_score": 0.8973799126637555,
-      "symbol": "EXEL",
-      "total_high": 0.4661789536476135,
-      "total_low": -0.2253844439983368,
-      "total_median": 0.1051146537065506,
-      "valuation_inputs": {
-        "enterprise_value": null,
-        "market_cap": 15419454579.734543,
-        "net_debt": null
       }
     }
   ],
@@ -401,6 +401,10 @@
     },
     {
       "reason": "Model inputs differ from the public freeze",
+      "symbol": "SM"
+    },
+    {
+      "reason": "Model inputs differ from the public freeze",
       "symbol": "NRIX"
     },
     {
@@ -408,8 +412,8 @@
       "symbol": "LB"
     }
   ],
-  "forecast_id": "2026-10-16-09f995cb4346ad7c",
-  "generated_at": "2026-10-18T12:19:40.872823+00:00",
+  "forecast_id": "2026-10-16-63c2abda50789725",
+  "generated_at": "2026-10-18T13:59:21.734490+00:00",
   "horizon_sessions": 252,
   "latest_training_exit": "2026-09-30",
   "limitations": [
@@ -466,15 +470,15 @@
         "source": "https://www.lamresearch.com/products/products-overview/"
       }
     },
-    "sector_taxonomy_sha256": "1cdbdb7f59aa95a09926dc30a93dc6e20eb7637bceac83f4ffeeeb1de295916a",
-    "source_sha256": "4fe83f49eb009133d6256da5118e42c6757b7695bbed1c1c4a0e14a5011536c9",
+    "sector_taxonomy_sha256": "19639ede4b17abdbf049d635e95ca06eb4acc8479795555289c6d2441e6f133f",
+    "source_sha256": "9af5e43d3b95d7661b1252de56662d1cb2de951e3caca90591f13c489a33884b",
     "xgboost_version": "3.4.1"
   },
   "model_promoted": false,
   "record_type": "prospective_weekend_forecast",
   "return_definition": "Total return including dividend adjustments; next session adjusted open to close 252 sessions later. Estimates are before costs and tax.",
   "round_trip_cost_assumption": 0.002,
-  "run_id": "2026-10-16-7b64f1ef66fc",
+  "run_id": "2026-10-16-45587cfc9c50",
   "schema": "outlook-12m-v1",
   "secondary_benchmark": "SPY",
   "selected_correlations": [
@@ -489,14 +493,14 @@
       "right": "HNGE"
     },
     {
-      "correlation": 0.1471458234271783,
-      "left": "MPC",
-      "right": "INSW"
-    },
-    {
       "correlation": -0.12315131026552802,
       "left": "MPC",
       "right": "EXEL"
+    },
+    {
+      "correlation": 0.1471458234271783,
+      "left": "MPC",
+      "right": "INSW"
     },
     {
       "correlation": 0.19977855882852072,
@@ -504,18 +508,13 @@
       "right": "HNGE"
     },
     {
-      "correlation": -0.0396822551336606,
-      "left": "QLYS",
-      "right": "INSW"
-    },
-    {
       "correlation": 0.024440521737180285,
       "left": "QLYS",
       "right": "EXEL"
     },
     {
-      "correlation": -0.012611876090278059,
-      "left": "HNGE",
+      "correlation": -0.0396822551336606,
+      "left": "QLYS",
       "right": "INSW"
     },
     {
@@ -524,88 +523,93 @@
       "right": "EXEL"
     },
     {
+      "correlation": -0.012611876090278059,
+      "left": "HNGE",
+      "right": "INSW"
+    },
+    {
       "correlation": -0.03679574291943266,
-      "left": "INSW",
-      "right": "EXEL"
+      "left": "EXEL",
+      "right": "INSW"
     }
   ],
   "selection": "60% six-month relative-strength percentile + 40% ROE percentile inside the quality cohort; maximum two per sector, one per industry, trailing daily correlation <= 0.80 with >=126 paired observations. Fewer than five if constraints prevent filling slots. Experimental model estimates do not determine this ranking.",
   "selection_method": "composite_60_40",
-  "snapshot_sha256": "3ed8ba5e9a01cc23d2aac02defaf7e4b660d42df8845bd7b9fd05fab2a490781",
+  "snapshot_sha256": "acf88db20201ffdcfda37207fe7aa48073ab2ad22db1795c7ab718e79cc9f383",
   "training_months": 49,
-  "training_rows": 6274,
+  "training_rows": 9457,
   "universe": "Liquid US stocks, cap >= $2B, revenue growth >=5%, positive operating/net income, cash/profit >=0.7, ROE 5\u201380%, equity/assets >=5%, operating margin >=5%, liabilities/assets <=80%, annualised volatility <=65%, fresh reconciled accounts. Financials, REITs and unknown sectors excluded.",
   "validation": {
-    "all_candidate_range_coverage": 0.5848610402676365,
+    "all_candidate_range_coverage": 0.5988669493778818,
     "by_trailing_market_direction": {
       "composite_60_40": {
         "QQQ trailing 6M down": {
           "cohorts": 2,
-          "mean_excess_qqq_net": -0.41478113181827336
+          "mean_excess_qqq_net": -0.36742295350623855
         },
         "QQQ trailing 6M up": {
           "cohorts": 23,
-          "mean_excess_qqq_net": 0.19302452374900672
+          "mean_excess_qqq_net": 0.13867984441416611
         }
       },
       "momentum": {
         "QQQ trailing 6M down": {
           "cohorts": 2,
-          "mean_excess_qqq_net": -0.44023698089796276
+          "mean_excess_qqq_net": -0.3900696639800675
         },
         "QQQ trailing 6M up": {
           "cohorts": 23,
-          "mean_excess_qqq_net": 0.27861105916424833
+          "mean_excess_qqq_net": 0.23884040244650329
         }
       },
       "quantile_trees": {
         "QQQ trailing 6M down": {
           "cohorts": 2,
-          "mean_excess_qqq_net": 0.17023519852246524
+          "mean_excess_qqq_net": -0.27915999033223277
         },
         "QQQ trailing 6M up": {
           "cohorts": 23,
-          "mean_excess_qqq_net": 0.005340371099071028
+          "mean_excess_qqq_net": -0.07098517473938214
         }
       }
     },
     "cohorts": [
       {
         "complete": true,
-        "excess_qqq_net": 0.2529571644578602,
-        "excess_spy_net": 0.2549351798680165,
+        "excess_qqq_net": 0.014845797604720315,
+        "excess_spy_net": 0.016823813014876614,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.07412090244134184,
-        "median_absolute_error": 0.6801194731271286,
+        "maximum_drawdown": -0.09625326574663029,
+        "median_absolute_error": 0.37537615714924744,
         "method": "quantile_trees",
         "range_coverage": 0.2,
-        "return_net": 0.6063775217864357,
+        "return_net": 0.3682661549332958,
         "signal_date": "2023-09-29",
         "symbols": [
-          "CALM",
-          "GM",
-          "CHRD",
-          "ATI",
-          "SFM"
+          "BRC",
+          "CBZ",
+          "ENSG",
+          "LOPE",
+          "MDU"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.89877569040884,
-        "excess_spy_net": 0.9007537058189964,
+        "excess_qqq_net": 0.7201758079709171,
+        "excess_spy_net": 0.7221538233810733,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17728133007437163,
-        "median_absolute_error": 1.3308052800140935,
+        "maximum_drawdown": -0.19955936931736074,
+        "median_absolute_error": 1.149510197263288,
         "method": "momentum",
-        "range_coverage": 0.2,
-        "return_net": 1.2521960477374154,
+        "range_coverage": 0.4,
+        "return_net": 1.0735961652994925,
         "signal_date": "2023-09-29",
         "symbols": [
           "VRT",
           "MOD",
+          "TDW",
           "NVDA",
-          "LBRT",
-          "META"
+          "LBRT"
         ]
       },
       {
@@ -614,7 +618,7 @@
         "excess_spy_net": 0.21614341517353322,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.14209681302856925,
-        "median_absolute_error": 0.635295391962243,
+        "median_absolute_error": 0.6229139611537884,
         "method": "composite_60_40",
         "range_coverage": 0.4,
         "return_net": 0.5675857570919524,
@@ -629,78 +633,78 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.03858545391873367,
-        "excess_spy_net": -0.02316710754001692,
+        "excess_qqq_net": 0.047020698328974084,
+        "excess_spy_net": 0.062439044707690836,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.12288835033091727,
-        "median_absolute_error": 0.44317616413767835,
+        "maximum_drawdown": -0.10120376615609028,
+        "median_absolute_error": 0.4799369087435001,
         "method": "quantile_trees",
-        "range_coverage": 0.4,
-        "return_net": 0.3982786596204079,
+        "range_coverage": 0.2,
+        "return_net": 0.48388481186811566,
         "signal_date": "2023-10-27",
         "symbols": [
-          "TOL",
-          "ATI",
+          "AWI",
+          "BRC",
           "CBZ",
-          "LOPE",
-          "OPCH"
+          "ENSG",
+          "GNTX"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.8060146136608869,
-        "excess_spy_net": 0.8214329600396034,
+        "excess_qqq_net": 0.8220436196998869,
+        "excess_spy_net": 0.8374619660786036,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20394311579555768,
-        "median_absolute_error": 1.369330502843868,
+        "maximum_drawdown": -0.20787098235353563,
+        "median_absolute_error": 1.3473810744482921,
         "method": "momentum",
         "range_coverage": 0.4,
-        "return_net": 1.2428787272000286,
+        "return_net": 1.2589077332390286,
         "signal_date": "2023-10-27",
         "symbols": [
           "VRT",
           "MOD",
+          "TDW",
           "NVDA",
-          "PR",
-          "QLYS"
+          "PR"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.3951839251816888,
-        "excess_spy_net": 0.4106022715604056,
+        "excess_qqq_net": 0.39518392518168877,
+        "excess_spy_net": 0.4106022715604055,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.1940171181153676,
-        "median_absolute_error": 1.0443552869353652,
+        "median_absolute_error": 1.0357451915722549,
         "method": "composite_60_40",
         "range_coverage": 0.6,
-        "return_net": 0.8320480387208304,
+        "return_net": 0.8320480387208302,
         "signal_date": "2023-10-27",
         "symbols": [
           "QLYS",
-          "NVDA",
           "MEDP",
+          "NVDA",
           "MOD",
           "HAL"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.5987879512492199,
-        "excess_spy_net": 0.5780228810090241,
+        "excess_qqq_net": 0.19926781603398297,
+        "excess_spy_net": 0.17850274579378717,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.09477868635722586,
-        "median_absolute_error": 1.0126691133810675,
+        "maximum_drawdown": -0.13972674922555528,
+        "median_absolute_error": 0.6179937151165722,
         "method": "quantile_trees",
         "range_coverage": 0.4,
-        "return_net": 0.9170141425990068,
+        "return_net": 0.5174940073837699,
         "signal_date": "2023-11-24",
         "symbols": [
-          "IDCC",
-          "LOPE",
-          "SFM",
+          "ALGM",
           "BOOT",
-          "OPCH"
+          "CBZ",
+          "CORT",
+          "CROX"
         ]
       },
       {
@@ -709,7 +713,7 @@
         "excess_spy_net": 0.34040366515027193,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.17858882420811362,
-        "median_absolute_error": 0.9453668173340466,
+        "median_absolute_error": 0.957332430866858,
         "method": "momentum",
         "range_coverage": 0.4,
         "return_net": 0.6793949267402549,
@@ -728,7 +732,7 @@
         "excess_spy_net": 0.07478213660003359,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.16697082108142824,
-        "median_absolute_error": 0.6585042854138827,
+        "median_absolute_error": 0.6723229111471392,
         "method": "composite_60_40",
         "range_coverage": 0.4,
         "return_net": 0.4137733981900164,
@@ -736,28 +740,28 @@
         "symbols": [
           "PARR",
           "QLYS",
-          "MOD",
           "MEDP",
-          "KTB"
+          "KTB",
+          "MOD"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.06216240212872763,
-        "excess_spy_net": -0.051578876137213056,
+        "excess_qqq_net": 0.02765685877245492,
+        "excess_spy_net": 0.038240384763969494,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.09242082913729155,
-        "median_absolute_error": 0.3067556522337729,
+        "maximum_drawdown": -0.09965012388874928,
+        "median_absolute_error": 0.28285189415426276,
         "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.20252853210334237,
+        "range_coverage": 0.6,
+        "return_net": 0.29234779300452496,
         "signal_date": "2023-12-29",
         "symbols": [
+          "PRGS",
+          "BWXT",
           "CROX",
-          "GOLF",
-          "IDCC",
-          "ALGM",
-          "AVA"
+          "EXLS",
+          "GOLF"
         ]
       },
       {
@@ -766,7 +770,7 @@
         "excess_spy_net": 0.5569009111527825,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.17988386187145733,
-        "median_absolute_error": 0.8581774146091824,
+        "median_absolute_error": 0.8618797521833962,
         "method": "momentum",
         "range_coverage": 0.2,
         "return_net": 0.8110083193933381,
@@ -781,40 +785,40 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.17946965302013518,
-        "excess_spy_net": -0.1688861270286206,
+        "excess_qqq_net": -0.0706137430073737,
+        "excess_spy_net": -0.06003021701585918,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17314820630055838,
-        "median_absolute_error": 0.42424691945666676,
+        "maximum_drawdown": -0.13484400144760034,
+        "median_absolute_error": 0.524231044024764,
         "method": "composite_60_40",
-        "range_coverage": 0.4,
-        "return_net": 0.08522128121193487,
+        "range_coverage": 0.2,
+        "return_net": 0.1940771912246963,
         "signal_date": "2023-12-29",
         "symbols": [
           "KTB",
           "QLYS",
-          "MOD",
           "PARR",
-          "HCC"
+          "MOD",
+          "AWI"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.10805807513520642,
-        "excess_spy_net": -0.1243429110995155,
+        "excess_qqq_net": 0.019178813487877977,
+        "excess_spy_net": 0.002893977523568904,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.18175050618030297,
-        "median_absolute_error": 0.20739492857425956,
+        "maximum_drawdown": -0.0944246369425501,
+        "median_absolute_error": 0.29632750552761633,
         "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.13209195764731724,
+        "range_coverage": 0.6,
+        "return_net": 0.25932884627040165,
         "signal_date": "2024-01-26",
         "symbols": [
           "ALGM",
-          "ABNB",
-          "DE",
-          "MOD",
-          "PLUS"
+          "CROX",
+          "EXLS",
+          "GOLF",
+          "IDCC"
         ]
       },
       {
@@ -823,7 +827,7 @@
         "excess_spy_net": 0.45302340783770806,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.21355364434336044,
-        "median_absolute_error": 0.7710623566676728,
+        "median_absolute_error": 0.7799768655245057,
         "method": "momentum",
         "range_coverage": 0.2,
         "return_net": 0.7094582765845407,
@@ -838,324 +842,324 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.40616086888195063,
-        "excess_spy_net": 0.38987603291764156,
+        "excess_qqq_net": 0.21075119124856925,
+        "excess_spy_net": 0.19446635528426018,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17118851074275676,
-        "median_absolute_error": 0.6344222293210191,
+        "maximum_drawdown": -0.1630735424029397,
+        "median_absolute_error": 0.5446472795783989,
         "method": "composite_60_40",
-        "range_coverage": 0.2,
-        "return_net": 0.6463109016644744,
+        "range_coverage": 0.4,
+        "return_net": 0.4509012240310929,
         "signal_date": "2024-01-26",
         "symbols": [
           "KTB",
           "MOD",
-          "ANET",
+          "QLYS",
           "NVDA",
           "URI"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.0219720269144593,
-        "excess_spy_net": -0.03772308849123061,
+        "excess_qqq_net": -0.1385312381763843,
+        "excess_spy_net": -0.1542822997531556,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.1351888897794823,
-        "median_absolute_error": 0.26477124823199294,
+        "maximum_drawdown": -0.1421888026615692,
+        "median_absolute_error": 0.37959583956147264,
         "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.12803465292646168,
+        "range_coverage": 0.4,
+        "return_net": 0.01147544166453667,
         "signal_date": "2024-02-23",
         "symbols": [
-          "IDCC",
-          "ABNB",
-          "MDLZ",
-          "CACI",
-          "GOLF"
+          "EXLS",
+          "GOLF",
+          "LOPE",
+          "PARR",
+          "QLYS"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.08279473419997174,
-        "excess_spy_net": 0.06704367262320043,
+        "excess_qqq_net": 0.1694209206174722,
+        "excess_spy_net": 0.15366985904070088,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.12912658348771622,
-        "median_absolute_error": 0.3108063802429477,
+        "maximum_drawdown": -0.19150186423375115,
+        "median_absolute_error": 0.3978531412968686,
         "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": 0.23280141404089272,
+        "range_coverage": 0.2,
+        "return_net": 0.31942760045839313,
         "signal_date": "2024-02-23",
         "symbols": [
+          "VRT",
           "RL",
           "NVDA",
           "META",
-          "URI",
-          "HCC"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.058663928842979815,
-        "excess_spy_net": -0.07441499041975112,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2290098313507275,
-        "median_absolute_error": 0.1491810401622084,
-        "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": 0.09134275099794116,
-        "signal_date": "2024-02-23",
-        "symbols": [
-          "NVDA",
-          "KTB",
-          "URI",
-          "CMG",
-          "EXP"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.07374378773073387,
-        "excess_spy_net": 0.058962722652392774,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17945755354616155,
-        "median_absolute_error": 0.3062586035079052,
-        "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.1503566667386229,
-        "signal_date": "2024-03-28",
-        "symbols": [
-          "IDCC",
-          "ABNB",
-          "TOL",
-          "CACI",
-          "INCY"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.5003345801253749,
-        "excess_spy_net": 0.48555351504703387,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.39877858298866,
-        "median_absolute_error": 0.8271368503174547,
-        "method": "momentum",
-        "range_coverage": 0.8,
-        "return_net": 0.576947459133264,
-        "signal_date": "2024-03-28",
-        "symbols": [
-          "NVDA",
-          "TOL",
-          "APP",
-          "CROX",
-          "EXP"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.5118769035004606,
-        "excess_spy_net": 0.49709583842211946,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.3977162349415735,
-        "median_absolute_error": 0.8038983847978678,
-        "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": 0.5884897825083496,
-        "signal_date": "2024-03-28",
-        "symbols": [
-          "NVDA",
-          "CROX",
-          "EXP",
-          "CMG",
-          "APP"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.01613034395493409,
-        "excess_spy_net": 0.02623829347155284,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13131233208251047,
-        "median_absolute_error": 0.29974393119736203,
-        "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.1350189214119222,
-        "signal_date": "2024-04-26",
-        "symbols": [
-          "OPCH",
-          "ABNB",
-          "MDLZ",
-          "IDCC",
-          "TOL"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.5488803357687079,
-        "excess_spy_net": 0.5589882852853266,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.43787508529060626,
-        "median_absolute_error": 0.8495161608164906,
-        "method": "momentum",
-        "range_coverage": 0.6,
-        "return_net": 0.667768913225696,
-        "signal_date": "2024-04-26",
-        "symbols": [
-          "IESC",
-          "NVDA",
-          "APP",
-          "TOL",
-          "CMG"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.3896039595253304,
-        "excess_spy_net": 0.39971190904194914,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.43540387837461403,
-        "median_absolute_error": 0.7741451055530646,
-        "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": 0.5084925369823186,
-        "signal_date": "2024-04-26",
-        "symbols": [
-          "NVDA",
-          "CMG",
-          "EXP",
-          "APP",
           "MEDP"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.024088885935727736,
-        "excess_spy_net": 0.05031789157400453,
+        "excess_qqq_net": -0.06907359416868246,
+        "excess_spy_net": -0.08482465574545377,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.21897905972136766,
-        "median_absolute_error": 0.22469095352910565,
-        "method": "quantile_trees",
+        "maximum_drawdown": -0.20927578069576835,
+        "median_absolute_error": 0.16035327775888267,
+        "method": "composite_60_40",
         "range_coverage": 0.8,
-        "return_net": 0.18562110282894956,
-        "signal_date": "2024-05-31",
+        "return_net": 0.08093308567223852,
+        "signal_date": "2024-02-23",
         "symbols": [
-          "UTHR",
-          "MGRC",
-          "OPCH",
-          "OLED",
-          "TPL"
+          "NVDA",
+          "MEDP",
+          "DECK",
+          "KTB",
+          "GWW"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.22335880251506648,
-        "excess_spy_net": 0.24958780815334325,
+        "excess_qqq_net": -0.05206971179033282,
+        "excess_spy_net": -0.06685077686867391,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2855545326132851,
-        "median_absolute_error": 0.5367214726334038,
+        "maximum_drawdown": -0.14708444904425477,
+        "median_absolute_error": 0.3144610737148352,
+        "method": "quantile_trees",
+        "range_coverage": 0.4,
+        "return_net": 0.024543167217556228,
+        "signal_date": "2024-03-28",
+        "symbols": [
+          "AMR",
+          "EXLS",
+          "LOPE",
+          "YETI",
+          "FDS"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.1150329928666822,
+        "excess_spy_net": -0.1298140579450233,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.3971733357134142,
+        "median_absolute_error": 0.15844028787732528,
         "method": "momentum",
-        "range_coverage": 0.2,
-        "return_net": 0.3848910194082883,
+        "range_coverage": 1.0,
+        "return_net": -0.03842011385879316,
+        "signal_date": "2024-03-28",
+        "symbols": [
+          "VRT",
+          "NVDA",
+          "DECK",
+          "FIX",
+          "TOL"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.17925003932090902,
+        "excess_spy_net": -0.19403110439925011,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.27220183195344305,
+        "median_absolute_error": 0.1920098894270364,
+        "method": "composite_60_40",
+        "range_coverage": 1.0,
+        "return_net": -0.10263716031301998,
+        "signal_date": "2024-03-28",
+        "symbols": [
+          "NVDA",
+          "DECK",
+          "MEDP",
+          "EXP",
+          "CMG"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": 0.016815492502374886,
+        "excess_spy_net": 0.02692344201899364,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.14656508957827497,
+        "median_absolute_error": 0.24892184378370716,
+        "method": "quantile_trees",
+        "range_coverage": 0.6,
+        "return_net": 0.135704069959363,
+        "signal_date": "2024-04-26",
+        "symbols": [
+          "EXLS",
+          "LOPE",
+          "OPCH",
+          "YETI",
+          "DCI"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": 0.5046573469602542,
+        "excess_spy_net": 0.514765296476873,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.45029904843478896,
+        "median_absolute_error": 0.86388700036192,
+        "method": "momentum",
+        "range_coverage": 0.4,
+        "return_net": 0.6235459244172423,
+        "signal_date": "2024-04-26",
+        "symbols": [
+          "IESC",
+          "NVDA",
+          "APP",
+          "ANF",
+          "TOL"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.3498714929603551,
+        "excess_spy_net": -0.3397635434437363,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.4066967571800245,
+        "median_absolute_error": 0.35558723697464656,
+        "method": "composite_60_40",
+        "range_coverage": 0.6,
+        "return_net": -0.23098291550336697,
+        "signal_date": "2024-04-26",
+        "symbols": [
+          "NVDA",
+          "CMG",
+          "ANF",
+          "EXP",
+          "AMR"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.0033927549996266996,
+        "excess_spy_net": 0.022836250638650094,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.13492193303589717,
+        "median_absolute_error": 0.3204320865975904,
+        "method": "quantile_trees",
+        "range_coverage": 0.4,
+        "return_net": 0.15813946189359512,
         "signal_date": "2024-05-31",
         "symbols": [
+          "AWI",
+          "EXLS",
+          "LOPE",
+          "LPG",
+          "OPCH"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": 0.03643570097309479,
+        "excess_spy_net": 0.06266470661137158,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.32099461519167916,
+        "median_absolute_error": 0.560837930682524,
+        "method": "momentum",
+        "range_coverage": 0.2,
+        "return_net": 0.19796791786631665,
+        "signal_date": "2024-05-31",
+        "symbols": [
+          "ANF",
           "STRL",
           "SFM",
           "EME",
-          "FSLR",
-          "KGS"
+          "FSLR"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.061182886140681125,
-        "excess_spy_net": 0.08741189177895792,
+        "excess_qqq_net": -0.22659784526389296,
+        "excess_spy_net": -0.20036883962561616,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20191867144974218,
-        "median_absolute_error": 0.463971403279655,
+        "maximum_drawdown": -0.3542376985752964,
+        "median_absolute_error": 0.4587820912790376,
         "method": "composite_60_40",
-        "range_coverage": 0.6,
-        "return_net": 0.22271510303390296,
+        "range_coverage": 0.2,
+        "return_net": -0.06506562837067113,
         "signal_date": "2024-05-31",
         "symbols": [
-          "CROX",
-          "ALSN",
+          "ANF",
+          "DECK",
+          "CVLT",
           "EME",
-          "MEDP",
-          "SFM"
+          "WMS"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.2086722730613138,
-        "excess_spy_net": -0.20380038567782593,
+        "excess_qqq_net": 0.07726639242266493,
+        "excess_spy_net": 0.0821382798061528,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.248924423839454,
-        "median_absolute_error": 0.13729078605905415,
+        "maximum_drawdown": -0.15052309575197376,
+        "median_absolute_error": 0.2537629223578848,
         "method": "quantile_trees",
-        "range_coverage": 1.0,
-        "return_net": -0.04343763723609455,
+        "range_coverage": 0.6,
+        "return_net": 0.2425010282478842,
         "signal_date": "2024-06-28",
         "symbols": [
-          "UTHR",
-          "FSLR",
-          "MGRC",
+          "AWI",
+          "EXLS",
+          "LOPE",
           "OPCH",
-          "OLED"
+          "YETI"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.036675125505846375,
-        "excess_spy_net": 0.041547012889334246,
+        "excess_qqq_net": 0.05278616483997509,
+        "excess_spy_net": 0.057658052223462965,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.23556986883952935,
-        "median_absolute_error": 0.3823496170835218,
+        "maximum_drawdown": -0.23961779411484785,
+        "median_absolute_error": 0.5107377907221211,
         "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": 0.20190976133106564,
+        "range_coverage": 0.0,
+        "return_net": 0.21802080066519433,
         "signal_date": "2024-06-28",
         "symbols": [
+          "ANF",
           "SFM",
           "EME",
           "CROX",
-          "UFPT",
-          "UTHR"
+          "CVLT"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.016665684937927527,
-        "excess_spy_net": -0.011793797554439654,
+        "excess_qqq_net": -0.17945043556631643,
+        "excess_spy_net": -0.17457854818282856,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.30668640074103337,
-        "median_absolute_error": 0.2937152863879168,
+        "maximum_drawdown": -0.29487520461874894,
+        "median_absolute_error": 0.38929780513048157,
         "method": "composite_60_40",
-        "range_coverage": 0.4,
-        "return_net": 0.14856895088729172,
+        "range_coverage": 0.2,
+        "return_net": -0.014215799741097188,
         "signal_date": "2024-06-28",
         "symbols": [
+          "CVLT",
           "CROX",
-          "CMG",
+          "ANF",
           "EME",
-          "TPL",
-          "ANET"
+          "MEDP"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.2831291209427433,
-        "excess_spy_net": -0.23509044882499913,
+        "excess_qqq_net": 0.027622226165280407,
+        "excess_spy_net": 0.07566089828302455,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.29712321097583394,
-        "median_absolute_error": 0.31952877277949027,
+        "maximum_drawdown": -0.15407767619236012,
+        "median_absolute_error": 0.23310230464228274,
         "method": "quantile_trees",
         "range_coverage": 0.6,
-        "return_net": -0.06305886734415941,
+        "return_net": 0.2476924797638643,
         "signal_date": "2024-07-26",
         "symbols": [
-          "FSLR",
-          "UTHR",
-          "OLED",
-          "ANET",
+          "AWI",
+          "CVLT",
+          "EXLS",
+          "LOPE",
           "OPCH"
         ]
       },
@@ -1165,7 +1169,7 @@
         "excess_spy_net": 0.3526764586999504,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.31037947645389363,
-        "median_absolute_error": 0.6373148727352811,
+        "median_absolute_error": 0.6043848046456544,
         "method": "momentum",
         "range_coverage": 0.4,
         "return_net": 0.5247080401807902,
@@ -1180,97 +1184,97 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.0286587095083247,
-        "excess_spy_net": 0.019379962609419453,
+        "excess_qqq_net": -0.05812855112634054,
+        "excess_spy_net": -0.01008987900859639,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.26145638219703027,
-        "median_absolute_error": 0.46192660738538527,
+        "maximum_drawdown": -0.3286222747387678,
+        "median_absolute_error": 0.3939725425698034,
         "method": "composite_60_40",
         "range_coverage": 0.4,
-        "return_net": 0.1914115440902592,
+        "return_net": 0.16194170247224335,
         "signal_date": "2024-07-26",
         "symbols": [
+          "CVLT",
           "TPL",
+          "ANF",
           "EME",
-          "IBP",
-          "NSSC",
-          "SFM"
+          "IBP"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.18374728008250327,
-        "excess_spy_net": 0.23878946935740153,
+        "excess_qqq_net": 0.13139306465952239,
+        "excess_spy_net": 0.18643525393442062,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20004706401874095,
-        "median_absolute_error": 0.40530932292634836,
+        "maximum_drawdown": -0.23905722703322263,
+        "median_absolute_error": 0.3402832390002737,
         "method": "quantile_trees",
-        "range_coverage": 0.6,
-        "return_net": 0.40798920120484766,
+        "range_coverage": 0.4,
+        "return_net": 0.3556349857818667,
         "signal_date": "2024-08-30",
         "symbols": [
-          "RMBS",
-          "UTHR",
-          "IDCC",
           "YELP",
-          "ITRI"
+          "AWI",
+          "BYD",
+          "QLYS",
+          "RMBS"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.22936593784945764,
-        "excess_spy_net": -0.1743237485745594,
+        "excess_qqq_net": -0.19900680688794098,
+        "excess_spy_net": -0.14396461761304274,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2749063560535281,
-        "median_absolute_error": 0.15578934635735753,
+        "maximum_drawdown": -0.2372293579079625,
+        "median_absolute_error": 0.16691364126027136,
         "method": "momentum",
         "range_coverage": 0.8,
-        "return_net": -0.00512401672711331,
+        "return_net": 0.025235114234403326,
         "signal_date": "2024-08-30",
         "symbols": [
           "ADMA",
           "TPL",
           "SFM",
-          "UFPT",
-          "ACIW"
+          "CVLT",
+          "UFPT"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.43570187250052883,
-        "excess_spy_net": 0.49074406177542707,
+        "excess_qqq_net": 0.10801218687790368,
+        "excess_spy_net": 0.1630543761528019,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2014373600885787,
-        "median_absolute_error": 0.6189405969810704,
+        "maximum_drawdown": -0.1765220872009512,
+        "median_absolute_error": 0.28413963213861726,
         "method": "composite_60_40",
-        "range_coverage": 0.4,
-        "return_net": 0.6599437936228731,
+        "range_coverage": 0.8,
+        "return_net": 0.332254108000248,
         "signal_date": "2024-08-30",
         "symbols": [
+          "CVLT",
           "TPL",
           "SFM",
           "IDCC",
-          "HWM",
-          "CORT"
+          "CTAS"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.39928791360068544,
-        "excess_spy_net": 0.4654709382009272,
+        "excess_qqq_net": -0.17046168770400677,
+        "excess_spy_net": -0.10427866310376506,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.22352448155602433,
-        "median_absolute_error": 0.662924242782022,
+        "maximum_drawdown": -0.2665163900208014,
+        "median_absolute_error": 0.27918438845410826,
         "method": "quantile_trees",
         "range_coverage": 0.6,
-        "return_net": 0.6529398956298902,
+        "return_net": 0.08319029432519791,
         "signal_date": "2024-09-27",
         "symbols": [
-          "RMBS",
-          "UTHR",
-          "TPL",
-          "IDCC",
-          "YELP"
+          "YELP",
+          "AWI",
+          "BYD",
+          "QLYS",
+          "SM"
         ]
       },
       {
@@ -1278,8 +1282,8 @@
         "excess_qqq_net": 0.7046526211895525,
         "excess_spy_net": 0.7708356457897944,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.268757082317155,
-        "median_absolute_error": 1.0598526074093955,
+        "maximum_drawdown": -0.2687570823171549,
+        "median_absolute_error": 1.0710833563012259,
         "method": "momentum",
         "range_coverage": 0.6,
         "return_net": 0.9583046032187572,
@@ -1294,39 +1298,39 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.3198682681764042,
-        "excess_spy_net": 0.38605129277664596,
+        "excess_qqq_net": 0.17735865619589875,
+        "excess_spy_net": 0.2435416807961405,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.1823086228752755,
-        "median_absolute_error": 0.5574232277110343,
+        "maximum_drawdown": -0.1816232608202314,
+        "median_absolute_error": 0.40278802379680145,
         "method": "composite_60_40",
-        "range_coverage": 0.6,
-        "return_net": 0.5735202502056089,
+        "range_coverage": 0.8,
+        "return_net": 0.43101063822510344,
         "signal_date": "2024-09-27",
         "symbols": [
+          "CVLT",
           "TPL",
           "PODD",
           "IDCC",
-          "SFM",
-          "CORT"
+          "SFM"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.4966680442057789,
-        "excess_spy_net": 0.5782982065057231,
+        "excess_qqq_net": -0.11553194838021978,
+        "excess_spy_net": -0.03390178608027576,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20073191408453317,
-        "median_absolute_error": 0.7515076415207502,
+        "maximum_drawdown": -0.197035976838432,
+        "median_absolute_error": 0.2066133149418984,
         "method": "quantile_trees",
-        "range_coverage": 0.4,
-        "return_net": 0.7594148613864931,
+        "range_coverage": 0.8,
+        "return_net": 0.14721486880049434,
         "signal_date": "2024-10-25",
         "symbols": [
-          "RMBS",
-          "UTHR",
-          "YELP",
-          "IDCC",
+          "AWI",
+          "BYD",
+          "HOG",
+          "MGRC",
           "NEU"
         ]
       },
@@ -1336,7 +1340,7 @@
         "excess_spy_net": 0.7560724666195232,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.21065905177571143,
-        "median_absolute_error": 0.9979184903138002,
+        "median_absolute_error": 0.9975339867573847,
         "method": "momentum",
         "range_coverage": 0.4,
         "return_net": 0.9371891215002932,
@@ -1351,40 +1355,40 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.06032341162717116,
-        "excess_spy_net": 0.021306750672772837,
+        "excess_qqq_net": 0.014106806314528432,
+        "excess_spy_net": 0.09573696861447242,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13130688697258863,
-        "median_absolute_error": 0.6033028595091465,
+        "maximum_drawdown": -0.15473011706680384,
+        "median_absolute_error": 0.5440367025512538,
         "method": "composite_60_40",
-        "range_coverage": 0.4,
-        "return_net": 0.202423405553543,
+        "range_coverage": 0.6,
+        "return_net": 0.27685362349524256,
         "signal_date": "2024-10-25",
         "symbols": [
           "LNTH",
           "TPL",
           "IDCC",
-          "PODD",
-          "SFM"
+          "CVLT",
+          "PODD"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.043030560733829895,
-        "excess_spy_net": 0.11981565107451826,
+        "excess_qqq_net": -0.04439014273858135,
+        "excess_spy_net": 0.03239494760210702,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.242426865800755,
-        "median_absolute_error": 0.30946745115533014,
+        "maximum_drawdown": -0.20344003234339214,
+        "median_absolute_error": 0.16399992702106345,
         "method": "quantile_trees",
-        "range_coverage": 0.6,
-        "return_net": 0.2686466873142063,
+        "range_coverage": 0.8,
+        "return_net": 0.18122598384179509,
         "signal_date": "2024-11-29",
         "symbols": [
           "UPWK",
-          "GOOGL",
-          "YETI",
+          "AEO",
+          "BYD",
           "NEU",
-          "ITRI"
+          "PPC"
         ]
       },
       {
@@ -1393,7 +1397,7 @@
         "excess_spy_net": 0.23226587020033942,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.2754344570779069,
-        "median_absolute_error": 0.8130070061967614,
+        "median_absolute_error": 0.8236063288138153,
         "method": "momentum",
         "range_coverage": 0.2,
         "return_net": 0.38109690644002747,
@@ -1408,40 +1412,40 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.4671862516728745,
-        "excess_spy_net": -0.39040116133218605,
+        "excess_qqq_net": -0.46934732054108597,
+        "excess_spy_net": -0.3925622302003976,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.30603044059995,
-        "median_absolute_error": 0.35436607715910584,
+        "maximum_drawdown": -0.29593239977643016,
+        "median_absolute_error": 0.37142076052807843,
         "method": "composite_60_40",
-        "range_coverage": 0.2,
-        "return_net": -0.24157012509249798,
+        "range_coverage": 0.4,
+        "return_net": -0.24373119396070955,
         "signal_date": "2024-11-29",
         "symbols": [
           "TPL",
+          "CVLT",
           "ALSN",
           "SFM",
-          "PAYC",
           "PODD"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.05365901731014331,
-        "excess_spy_net": -0.03399801299389025,
+        "excess_qqq_net": 0.23599285992149502,
+        "excess_spy_net": 0.25565386423774805,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.18888748051915805,
-        "median_absolute_error": 0.318184319519465,
+        "maximum_drawdown": -0.24276604478515496,
+        "median_absolute_error": 0.3239623282347863,
         "method": "quantile_trees",
         "range_coverage": 0.6,
-        "return_net": 0.14171940925939266,
+        "return_net": 0.43137128649103096,
         "signal_date": "2024-12-27",
         "symbols": [
-          "ACIW",
-          "UTHR",
-          "LRN",
-          "YETI",
-          "GOOGL"
+          "UPWK",
+          "FSS",
+          "IBP",
+          "NEU",
+          "STRL"
         ]
       },
       {
@@ -1450,7 +1454,7 @@
         "excess_spy_net": -0.013714075736850215,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.32872279400727866,
-        "median_absolute_error": 0.3366323959181769,
+        "median_absolute_error": 0.3498295372509676,
         "method": "momentum",
         "range_coverage": 0.8,
         "return_net": 0.16200334651643267,
@@ -1469,7 +1473,7 @@
         "excess_spy_net": -0.39858839442229455,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.3401461363317948,
-        "median_absolute_error": 0.2852753174727855,
+        "median_absolute_error": 0.3103835989957748,
         "method": "composite_60_40",
         "range_coverage": 0.6,
         "return_net": -0.22287097216901164,
@@ -1484,306 +1488,306 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.0009704616268649141,
-        "excess_spy_net": 0.013340407823619184,
+        "excess_qqq_net": 0.2533251039346773,
+        "excess_spy_net": 0.2676359733851614,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.16179287887930882,
-        "median_absolute_error": 0.3146853741974396,
+        "maximum_drawdown": -0.18294737505128977,
+        "median_absolute_error": 0.5166370705357504,
         "method": "quantile_trees",
-        "range_coverage": 0.6,
-        "return_net": 0.18473104669080273,
+        "range_coverage": 0.4,
+        "return_net": 0.4390266122523449,
         "signal_date": "2025-01-31",
         "symbols": [
           "UPWK",
-          "IBP",
+          "LRN",
           "NEU",
-          "SPB",
-          "ACIW"
+          "STRL",
+          "YETI"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.5239783470580425,
-        "excess_spy_net": -0.5096674776075584,
+        "excess_qqq_net": -0.6106890306372952,
+        "excess_spy_net": -0.5963781611868111,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.42497515828781807,
-        "median_absolute_error": 0.3819121965677436,
+        "maximum_drawdown": -0.5162186646801816,
+        "median_absolute_error": 0.49479607804186426,
         "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": -0.33827683874037484,
+        "range_coverage": 0.0,
+        "return_net": -0.42498752231962766,
         "signal_date": "2025-01-31",
         "symbols": [
           "AXON",
           "DUOL",
           "DOCS",
           "LRN",
-          "TSLA"
+          "CORT"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.37873637001780913,
-        "excess_spy_net": -0.36442550056732503,
+        "excess_qqq_net": -0.375700823562524,
+        "excess_spy_net": -0.3613899541120399,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2602489322935897,
-        "median_absolute_error": 0.26193838571151506,
+        "maximum_drawdown": -0.26413910403098617,
+        "median_absolute_error": 0.2679402720758347,
         "method": "composite_60_40",
         "range_coverage": 0.8,
-        "return_net": -0.1930348617001415,
+        "return_net": -0.18999931524485633,
         "signal_date": "2025-01-31",
         "symbols": [
           "DOCU",
           "TPL",
           "NFLX",
           "PODD",
-          "META"
+          "ALSN"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.11289759674050633,
-        "excess_spy_net": -0.07554692283928106,
+        "excess_qqq_net": -0.3492911478491644,
+        "excess_spy_net": -0.31194047394793906,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.19734102031329914,
-        "median_absolute_error": 0.2662728632638653,
+        "maximum_drawdown": -0.25953315923706777,
+        "median_absolute_error": 0.42954522907086606,
         "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.0871483838434846,
+        "range_coverage": 0.2,
+        "return_net": -0.14924516726517345,
         "signal_date": "2025-02-28",
         "symbols": [
-          "LOPE",
-          "UPWK",
-          "YETI",
-          "ALRM",
-          "ENS"
+          "WDAY",
+          "DOCU",
+          "GOLF",
+          "HURN",
+          "LRN"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.20317677826119654,
-        "excess_spy_net": -0.1658261043599713,
+        "excess_qqq_net": -0.25572841699335036,
+        "excess_spy_net": -0.21837774309212513,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.23296971220291185,
-        "median_absolute_error": 0.37447312342320466,
+        "maximum_drawdown": -0.3063549176714192,
+        "median_absolute_error": 0.4238042958172604,
         "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": -0.0031307976772056304,
+        "range_coverage": 0.2,
+        "return_net": -0.05568243640935946,
         "signal_date": "2025-02-28",
         "symbols": [
           "PLTR",
           "BROS",
+          "CORT",
           "LRN",
-          "TPL",
-          "UPWK"
+          "TPL"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.2844503723009602,
-        "excess_spy_net": -0.24709969839973495,
+        "excess_qqq_net": -0.0824661567995997,
+        "excess_spy_net": -0.045115482898374436,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20598335974270532,
-        "median_absolute_error": 0.22694186305064906,
+        "maximum_drawdown": -0.18422944309327927,
+        "median_absolute_error": 0.280197132319056,
         "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": -0.0844043917169693,
+        "range_coverage": 0.6,
+        "return_net": 0.11757982378439122,
         "signal_date": "2025-02-28",
         "symbols": [
+          "IDCC",
           "TPL",
-          "UPWK",
           "DOCU",
           "RCL",
-          "PODD"
+          "NFLX"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.11073128241575432,
-        "excess_spy_net": 0.176438564104962,
+        "excess_qqq_net": -0.2703286668630881,
+        "excess_spy_net": -0.20462138517388043,
         "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.14776175269911573,
-        "median_absolute_error": 0.5054513091573803,
+        "maximum_drawdown": -0.1455998877472987,
+        "median_absolute_error": 0.23003268886266715,
         "method": "quantile_trees",
-        "range_coverage": 0.4,
-        "return_net": 0.38181353882029245,
+        "range_coverage": 1.0,
+        "return_net": 0.0007535895414499745,
         "signal_date": "2025-03-28",
         "symbols": [
-          "LRN",
-          "YETI",
-          "ENS",
-          "MMS",
-          "NE"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.3952866397790412,
-        "excess_spy_net": -0.3295793580898335,
-        "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.3293994418411159,
-        "median_absolute_error": 0.24099196274037382,
-        "method": "momentum",
-        "range_coverage": 0.6,
-        "return_net": -0.12420438337450312,
-        "signal_date": "2025-03-28",
-        "symbols": [
-          "BROS",
-          "LRN",
-          "TPL",
-          "EXEL",
-          "DOCU"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.2534546585995375,
-        "excess_spy_net": -0.18774737691032978,
-        "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.24102079748857896,
-        "median_absolute_error": 0.20600504846241377,
-        "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": 0.01762759780500061,
-        "signal_date": "2025-03-28",
-        "symbols": [
-          "DOCU",
-          "TPL",
-          "NFLX",
-          "RCL",
-          "CALM"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 0.22973911462917615,
-        "excess_spy_net": 0.3297739129085694,
-        "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.1637473817541859,
-        "median_absolute_error": 0.6571493078053331,
-        "method": "quantile_trees",
-        "range_coverage": 0.4,
-        "return_net": 0.6350882350840992,
-        "signal_date": "2025-04-25",
-        "symbols": [
-          "CVSA",
-          "GNRC",
-          "ALRM",
-          "BOOT",
-          "ENS"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.4851873220168843,
-        "excess_spy_net": -0.38515252373749115,
-        "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.20672688687687224,
-        "median_absolute_error": 0.39711921192063504,
-        "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": -0.07983820156196123,
-        "signal_date": "2025-04-25",
-        "symbols": [
-          "LRN",
-          "NFLX",
-          "PPC",
-          "HWM",
-          "PEGA"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.5761076050370092,
-        "excess_spy_net": -0.4760728067576159,
-        "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.2971652359953457,
-        "median_absolute_error": 0.2329318328300909,
-        "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": -0.17075848458208598,
-        "signal_date": "2025-04-25",
-        "symbols": [
-          "NFLX",
-          "DOCU",
-          "TPL",
-          "PEGA",
+          "SAIC",
+          "GOLF",
+          "HURN",
+          "IPAR",
           "LOPE"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.22729656434121243,
-        "excess_spy_net": -0.07947760716246574,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.12310904610227236,
-        "median_absolute_error": 0.591970205281948,
-        "method": "quantile_trees",
-        "range_coverage": 0.4,
-        "return_net": 0.218477682605997,
-        "signal_date": "2025-05-30",
+        "excess_qqq_net": -0.2152745237417097,
+        "excess_spy_net": -0.149567242052502,
+        "market_regime": "QQQ trailing 6M down",
+        "maximum_drawdown": -0.18953673532223925,
+        "median_absolute_error": 0.2417229407804693,
+        "method": "momentum",
+        "range_coverage": 0.6,
+        "return_net": 0.05580773266282839,
+        "signal_date": "2025-03-28",
         "symbols": [
-          "CALM",
-          "KBR",
-          "YELP",
-          "ENS",
-          "PATK"
+          "BROS",
+          "IDCC",
+          "LRN",
+          "TPL",
+          "EXEL"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.3411440637867979,
-        "excess_spy_net": -0.19332510660805116,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.1609610337237971,
-        "median_absolute_error": 0.5912599373531455,
+        "excess_qqq_net": -0.33920646427838996,
+        "excess_spy_net": -0.27349918258918227,
+        "market_regime": "QQQ trailing 6M down",
+        "maximum_drawdown": -0.2597577042355662,
+        "median_absolute_error": 0.3073509997531073,
+        "method": "composite_60_40",
+        "range_coverage": 0.4,
+        "return_net": -0.0681242078738519,
+        "signal_date": "2025-03-28",
+        "symbols": [
+          "DOCU",
+          "IDCC",
+          "TPL",
+          "NFLX",
+          "SFM"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.28799131380137744,
+        "excess_spy_net": -0.18795651552198422,
+        "market_regime": "QQQ trailing 6M down",
+        "maximum_drawdown": -0.17470680235228753,
+        "median_absolute_error": 0.3036770181745627,
+        "method": "quantile_trees",
+        "range_coverage": 0.6,
+        "return_net": 0.11735780665354567,
+        "signal_date": "2025-04-25",
+        "symbols": [
+          "SAIC",
+          "UBER",
+          "ROAD",
+          "GOLF",
+          "IPAR"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.5648648042184252,
+        "excess_spy_net": -0.46483000593903195,
+        "market_regime": "QQQ trailing 6M down",
+        "maximum_drawdown": -0.32587166058099315,
+        "median_absolute_error": 0.4936854019983814,
         "method": "momentum",
         "range_coverage": 0.2,
-        "return_net": 0.10463018316041159,
+        "return_net": -0.15951568376350211,
+        "signal_date": "2025-04-25",
+        "symbols": [
+          "LRN",
+          "NFLX",
+          "SFM",
+          "PAYC",
+          "HWM"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.3956394427340872,
+        "excess_spy_net": -0.295604644454694,
+        "market_regime": "QQQ trailing 6M down",
+        "maximum_drawdown": -0.27566963836554537,
+        "median_absolute_error": 0.35885588828790504,
+        "method": "composite_60_40",
+        "range_coverage": 0.6,
+        "return_net": 0.00970967772083591,
+        "signal_date": "2025-04-25",
+        "symbols": [
+          "NFLX",
+          "CVLT",
+          "IDCC",
+          "TPL",
+          "PEGA"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.7063745976811601,
+        "excess_spy_net": -0.5585556405024135,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.31751177991808643,
+        "median_absolute_error": 0.350909476246789,
+        "method": "quantile_trees",
+        "range_coverage": 0.2,
+        "return_net": -0.2606003507339506,
         "signal_date": "2025-05-30",
         "symbols": [
+          "SAIC",
+          "KBR",
+          "PAY",
+          "LOPE",
+          "DOCU"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.26857992946729314,
+        "excess_spy_net": -0.1207609722885464,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.16661442531212867,
+        "median_absolute_error": 0.5024173595481423,
+        "method": "momentum",
+        "range_coverage": 0.4,
+        "return_net": 0.17719431747991635,
+        "signal_date": "2025-05-30",
+        "symbols": [
+          "URBN",
           "DUOL",
           "HWM",
           "CVSA",
-          "NFLX",
           "ATI"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.2946910217219436,
-        "excess_spy_net": -0.14687206454319687,
+        "excess_qqq_net": 0.4762554498918488,
+        "excess_spy_net": 0.6240744070705956,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.10533594340303776,
-        "median_absolute_error": 0.49292256694564046,
+        "maximum_drawdown": -0.11693887304839656,
+        "median_absolute_error": 1.0062766613177268,
         "method": "composite_60_40",
-        "range_coverage": 0.0,
-        "return_net": 0.15108322522526588,
+        "range_coverage": 0.2,
+        "return_net": 0.9220296968390582,
         "signal_date": "2025-05-30",
         "symbols": [
           "TPR",
           "NFLX",
           "ULS",
           "HWM",
-          "PODD"
+          "LRCX"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.356774072981208,
-        "excess_spy_net": -0.2562888072337647,
+        "excess_qqq_net": -0.41654163009606926,
+        "excess_spy_net": -0.31605636434862594,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17619634821943087,
-        "median_absolute_error": 0.15831986509576013,
+        "maximum_drawdown": -0.24588055300899636,
+        "median_absolute_error": 0.3600217301092464,
         "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": -0.03496108050454623,
+        "range_coverage": 0.2,
+        "return_net": -0.09472863761940756,
         "signal_date": "2025-06-27",
         "symbols": [
-          "CALM",
-          "TPL",
-          "USLM",
+          "URBN",
           "KBR",
-          "URBN"
+          "CNM",
+          "EME",
+          "SFM"
         ]
       },
       {
@@ -1792,7 +1796,7 @@
         "excess_spy_net": 0.09180492923585584,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.13818254446369493,
-        "median_absolute_error": 0.48852182671606786,
+        "median_absolute_error": 0.47039663911044843,
         "method": "momentum",
         "range_coverage": 0.4,
         "return_net": 0.3131326559650743,
@@ -1807,40 +1811,40 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": 0.4914411785374273,
-        "excess_spy_net": 0.5919264442848706,
+        "excess_qqq_net": 0.40023536862277936,
+        "excess_spy_net": 0.5007206343702225,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.11295689934844222,
-        "median_absolute_error": 0.9609649585717633,
+        "maximum_drawdown": -0.11413286025732161,
+        "median_absolute_error": 0.8788132139109622,
         "method": "composite_60_40",
-        "range_coverage": 0.2,
-        "return_net": 0.8132541710140889,
+        "range_coverage": 0.4,
+        "return_net": 0.722048361099441,
         "signal_date": "2025-06-27",
         "symbols": [
           "NFLX",
           "TPR",
-          "ULS",
           "LRCX",
-          "HWM"
+          "ULS",
+          "RCL"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.04740297571164043,
-        "excess_spy_net": -0.033204203258487275,
+        "excess_qqq_net": -0.38191744851412424,
+        "excess_spy_net": -0.3677186760609711,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.09980716610955154,
-        "median_absolute_error": 0.3000287145086368,
+        "maximum_drawdown": -0.25409665522778757,
+        "median_absolute_error": 0.3003166154030438,
         "method": "quantile_trees",
-        "range_coverage": 0.6,
-        "return_net": 0.12376171847150352,
+        "range_coverage": 0.4,
+        "return_net": -0.2107527543309803,
         "signal_date": "2025-07-25",
         "symbols": [
-          "CALM",
-          "USLM",
-          "ENS",
           "KBR",
-          "URBN"
+          "URBN",
+          "CNM",
+          "EME",
+          "SFM"
         ]
       },
       {
@@ -1848,8 +1852,8 @@
         "excess_qqq_net": 0.2511931495858331,
         "excess_spy_net": 0.26539192203898626,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.12751929210067303,
-        "median_absolute_error": 0.4185322073480364,
+        "maximum_drawdown": -0.1275192921006728,
+        "median_absolute_error": 0.41105966989009346,
         "method": "momentum",
         "range_coverage": 0.6,
         "return_net": 0.422357843768977,
@@ -1864,40 +1868,40 @@
       },
       {
         "complete": true,
-        "excess_qqq_net": 1.134548271646175,
-        "excess_spy_net": 1.1487470440993282,
+        "excess_qqq_net": 1.4053915237230499,
+        "excess_spy_net": 1.419590296176203,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2604445258565453,
-        "median_absolute_error": 1.3086732329069086,
+        "maximum_drawdown": -0.2962676270676422,
+        "median_absolute_error": 1.5574470825722033,
         "method": "composite_60_40",
-        "range_coverage": 0.8,
-        "return_net": 1.305712965829319,
+        "range_coverage": 0.6,
+        "return_net": 1.5765562179061938,
         "signal_date": "2025-07-25",
         "symbols": [
           "TPR",
           "RCL",
           "ULS",
-          "WDC",
-          "EXEL"
+          "LRCX",
+          "WDC"
         ]
       },
       {
         "complete": true,
-        "excess_qqq_net": -0.2545342720646691,
-        "excess_spy_net": -0.1984545925588142,
+        "excess_qqq_net": -0.10455837315581087,
+        "excess_spy_net": -0.04847869364995596,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.200908040119667,
-        "median_absolute_error": 0.2762890691523701,
+        "maximum_drawdown": -0.1302257545156844,
+        "median_absolute_error": 0.14123480228955002,
         "method": "quantile_trees",
-        "range_coverage": 0.6,
-        "return_net": 0.015095446969715721,
+        "range_coverage": 1.0,
+        "return_net": 0.16507134587857394,
         "signal_date": "2025-08-29",
         "symbols": [
-          "IDCC",
-          "OLED",
-          "VRTX",
-          "CALM",
-          "NOG"
+          "RSI",
+          "ECG",
+          "HNI",
+          "HURN",
+          "DOCU"
         ]
       },
       {
@@ -1906,7 +1910,7 @@
         "excess_spy_net": 0.21239953261943545,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.32106055115082033,
-        "median_absolute_error": 0.5839362924076242,
+        "median_absolute_error": 0.5458830637015029,
         "method": "momentum",
         "range_coverage": 0.4,
         "return_net": 0.42594957214796536,
@@ -1925,53 +1929,53 @@
         "excess_spy_net": 1.1866274486666348,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.3618096960982504,
-        "median_absolute_error": 1.4371341196414174,
+        "median_absolute_error": 1.401438434195155,
         "method": "composite_60_40",
         "range_coverage": 0.4,
         "return_net": 1.4001774881951647,
         "signal_date": "2025-08-29",
         "symbols": [
-          "FIX",
-          "STRL",
           "IDXX",
-          "ECG",
-          "WDC"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": -0.18949908379521116,
-        "excess_spy_net": -0.10921700005749288,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13577920942169108,
-        "median_absolute_error": 0.28610273660925206,
-        "method": "quantile_trees",
-        "range_coverage": 0.8,
-        "return_net": 0.05108421551722677,
-        "signal_date": "2025-09-26",
-        "symbols": [
-          "OLED",
-          "VRTX",
-          "IDCC",
-          "ECG",
-          "URBN"
-        ]
-      },
-      {
-        "complete": true,
-        "excess_qqq_net": 1.027420163109047,
-        "excess_spy_net": 1.1077022468467654,
-        "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.37644691340045777,
-        "median_absolute_error": 1.2168930677946292,
-        "method": "momentum",
-        "range_coverage": 0.4,
-        "return_net": 1.268003462421485,
-        "signal_date": "2025-09-26",
-        "symbols": [
+          "FIX",
           "STRL",
           "WDC",
-          "FIX",
+          "ECG"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": -0.1999834617543338,
+        "excess_spy_net": -0.11970137801661551,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.1525930501856232,
+        "median_absolute_error": 0.18998907058198447,
+        "method": "quantile_trees",
+        "range_coverage": 1.0,
+        "return_net": 0.040599837558104146,
+        "signal_date": "2025-09-26",
+        "symbols": [
+          "RSI",
+          "ECG",
+          "HNI",
+          "HURN",
+          "CVLT"
+        ]
+      },
+      {
+        "complete": true,
+        "excess_qqq_net": 1.0553814296210728,
+        "excess_spy_net": 1.1356635133587913,
+        "market_regime": "QQQ trailing 6M up",
+        "maximum_drawdown": -0.4206480648464097,
+        "median_absolute_error": 1.230480080407796,
+        "method": "momentum",
+        "range_coverage": 0.4,
+        "return_net": 1.2959647289335108,
+        "signal_date": "2025-09-26",
+        "symbols": [
+          "STRL",
+          "TTMI",
+          "WDC",
           "ECG",
           "CIEN"
         ]
@@ -1982,16 +1986,16 @@
         "excess_spy_net": 1.1211124224985138,
         "market_regime": "QQQ trailing 6M up",
         "maximum_drawdown": -0.38875148313907915,
-        "median_absolute_error": 1.2278374633670128,
+        "median_absolute_error": 1.2001609860837736,
         "method": "composite_60_40",
         "range_coverage": 0.4,
         "return_net": 1.2814136380732335,
         "signal_date": "2025-09-26",
         "symbols": [
           "WDC",
+          "LRCX",
           "FIX",
           "STRL",
-          "LRCX",
           "ECG"
         ]
       }
@@ -2001,151 +2005,151 @@
         "latest_training_exit": "2023-08-30",
         "signal_date": "2023-09-29",
         "train_months": 12,
-        "train_rows": 1796
+        "train_rows": 2918
       },
       {
         "latest_training_exit": "2023-10-04",
         "signal_date": "2023-10-27",
         "train_months": 13,
-        "train_rows": 1936
+        "train_rows": 3124
       },
       {
         "latest_training_exit": "2023-11-01",
         "signal_date": "2023-11-24",
         "train_months": 14,
-        "train_rows": 2075
+        "train_rows": 3330
       },
       {
         "latest_training_exit": "2023-11-29",
         "signal_date": "2023-12-29",
         "train_months": 15,
-        "train_rows": 2206
+        "train_rows": 3517
       },
       {
         "latest_training_exit": "2024-01-04",
         "signal_date": "2024-01-26",
         "train_months": 16,
-        "train_rows": 2333
+        "train_rows": 3706
       },
       {
         "latest_training_exit": "2024-01-31",
         "signal_date": "2024-02-23",
         "train_months": 17,
-        "train_rows": 2463
+        "train_rows": 3899
       },
       {
         "latest_training_exit": "2024-02-28",
         "signal_date": "2024-03-28",
         "train_months": 18,
-        "train_rows": 2543
+        "train_rows": 4076
       },
       {
         "latest_training_exit": "2024-04-04",
         "signal_date": "2024-04-26",
         "train_months": 19,
-        "train_rows": 2610
+        "train_rows": 4256
       },
       {
         "latest_training_exit": "2024-05-30",
         "signal_date": "2024-05-31",
         "train_months": 21,
-        "train_rows": 2804
+        "train_rows": 4581
       },
       {
         "latest_training_exit": "2024-05-30",
         "signal_date": "2024-06-28",
         "train_months": 21,
-        "train_rows": 2804
+        "train_rows": 4581
       },
       {
         "latest_training_exit": "2024-07-03",
         "signal_date": "2024-07-26",
         "train_months": 22,
-        "train_rows": 2925
+        "train_rows": 4742
       },
       {
         "latest_training_exit": "2024-08-28",
         "signal_date": "2024-08-30",
         "train_months": 24,
-        "train_rows": 3173
+        "train_rows": 5054
       },
       {
         "latest_training_exit": "2024-08-28",
         "signal_date": "2024-09-27",
         "train_months": 24,
-        "train_rows": 3173
+        "train_rows": 5054
       },
       {
         "latest_training_exit": "2024-10-02",
         "signal_date": "2024-10-25",
         "train_months": 25,
-        "train_rows": 3294
+        "train_rows": 5202
       },
       {
         "latest_training_exit": "2024-11-26",
         "signal_date": "2024-11-29",
         "train_months": 27,
-        "train_rows": 3525
+        "train_rows": 5499
       },
       {
         "latest_training_exit": "2024-11-26",
         "signal_date": "2024-12-27",
         "train_months": 27,
-        "train_rows": 3525
+        "train_rows": 5499
       },
       {
         "latest_training_exit": "2025-01-30",
         "signal_date": "2025-01-31",
         "train_months": 29,
-        "train_rows": 3765
+        "train_rows": 5808
       },
       {
         "latest_training_exit": "2025-02-27",
         "signal_date": "2025-02-28",
         "train_months": 30,
-        "train_rows": 3872
+        "train_rows": 5964
       },
       {
         "latest_training_exit": "2025-02-27",
         "signal_date": "2025-03-28",
         "train_months": 30,
-        "train_rows": 3872
+        "train_rows": 5964
       },
       {
         "latest_training_exit": "2025-04-02",
         "signal_date": "2025-04-25",
         "train_months": 31,
-        "train_rows": 3951
+        "train_rows": 6122
       },
       {
         "latest_training_exit": "2025-05-01",
         "signal_date": "2025-05-30",
         "train_months": 32,
-        "train_rows": 4045
+        "train_rows": 6280
       },
       {
         "latest_training_exit": "2025-06-05",
         "signal_date": "2025-06-27",
         "train_months": 33,
-        "train_rows": 4166
+        "train_rows": 6441
       },
       {
         "latest_training_exit": "2025-07-03",
         "signal_date": "2025-07-25",
         "train_months": 34,
-        "train_rows": 4292
+        "train_rows": 6605
       },
       {
         "latest_training_exit": "2025-07-31",
         "signal_date": "2025-08-29",
         "train_months": 35,
-        "train_rows": 4420
+        "train_rows": 6770
       },
       {
         "latest_training_exit": "2025-09-05",
         "signal_date": "2025-09-26",
         "train_months": 36,
-        "train_rows": 4562
+        "train_rows": 6958
       }
     ],
     "model_beats_both_baselines": false,
@@ -2154,43 +2158,43 @@
     "status": "experimental",
     "summary": {
       "composite_60_40": {
-        "beat_qqq_fraction": 0.52,
+        "beat_qqq_fraction": 0.48,
         "cohorts": 25,
-        "mean_excess_qqq_net": 0.1444000713036243,
-        "mean_excess_spy_net": 0.18300868019771033,
-        "mean_return_net": 0.3915391098257065,
-        "mean_shortlist_replacement_fraction": 0.4583333333333333,
-        "median_excess_qqq_net": 0.061182886140681125,
-        "selected_mean_absolute_error": 0.6047327796390332,
-        "selected_range_coverage": 0.52,
-        "worst_cohort_return_net": -0.24157012509249798,
-        "worst_holding_drawdown": -0.43540387837461403
+        "mean_excess_qqq_net": 0.09819162058053375,
+        "mean_excess_spy_net": 0.13680022947461976,
+        "mean_return_net": 0.3453306591026159,
+        "mean_shortlist_replacement_fraction": 0.4166666666666667,
+        "median_excess_qqq_net": -0.05812855112634054,
+        "selected_mean_absolute_error": 0.5808445047656993,
+        "selected_range_coverage": 0.512,
+        "worst_cohort_return_net": -0.24373119396070955,
+        "worst_holding_drawdown": -0.4066967571800245
       },
       "momentum": {
-        "beat_qqq_fraction": 0.68,
+        "beat_qqq_fraction": 0.64,
         "cohorts": 25,
-        "mean_excess_qqq_net": 0.22110321595927146,
-        "mean_excess_spy_net": 0.2597118248533575,
-        "mean_return_net": 0.4682422544813536,
-        "mean_shortlist_replacement_fraction": 0.5750000000000001,
-        "median_excess_qqq_net": 0.22335880251506648,
-        "selected_mean_absolute_error": 0.6750170959105967,
-        "selected_range_coverage": 0.43199999999999994,
-        "worst_cohort_return_net": -0.33827683874037484,
-        "worst_holding_drawdown": -0.43787508529060626
+        "mean_excess_qqq_net": 0.18852759713237763,
+        "mean_excess_spy_net": 0.22713620602646364,
+        "mean_return_net": 0.4356666356544598,
+        "mean_shortlist_replacement_fraction": 0.5833333333333334,
+        "median_excess_qqq_net": 0.15631985311358057,
+        "selected_mean_absolute_error": 0.6566173462220951,
+        "selected_range_coverage": 0.39199999999999996,
+        "worst_cohort_return_net": -0.42498752231962766,
+        "worst_holding_drawdown": -0.5162186646801816
       },
       "quantile_trees": {
         "beat_qqq_fraction": 0.44,
         "cohorts": 25,
-        "mean_excess_qqq_net": 0.018531957292942557,
-        "mean_excess_spy_net": 0.05714056618702857,
-        "mean_return_net": 0.26567099581502474,
-        "mean_shortlist_replacement_fraction": 0.5916666666666667,
-        "median_excess_qqq_net": -0.0219720269144593,
-        "selected_mean_absolute_error": 0.4002424819893888,
-        "selected_range_coverage": 0.6240000000000001,
-        "worst_cohort_return_net": -0.06305886734415941,
-        "worst_holding_drawdown": -0.29712321097583394
+        "mean_excess_qqq_net": -0.0876391599868102,
+        "mean_excess_spy_net": -0.04903055109272419,
+        "mean_return_net": 0.15949987853527195,
+        "mean_shortlist_replacement_fraction": 0.525,
+        "median_excess_qqq_net": -0.04439014273858135,
+        "selected_mean_absolute_error": 0.3175667660110225,
+        "selected_range_coverage": 0.528,
+        "worst_cohort_return_net": -0.2606003507339506,
+        "worst_holding_drawdown": -0.31751177991808643
       }
     }
   }
