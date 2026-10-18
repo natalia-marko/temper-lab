@@ -46,6 +46,7 @@
 .wl-timing-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 20px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line, #e3e8e3); }
 .wl-timing-head h2 { margin: 0 0 4px; color: #1d3528; font-size: 18px; font-weight: 650; }
 .wl-timing-head p { margin: 0; color: #5d7263; font-size: 13px; line-height: 1.45; }
+.wl-timing-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .wl-osc-switch { display: inline-flex; border: 1px solid var(--line, #d9e0da); border-radius: 8px; overflow: hidden; background: #f7f9f6; }
 .wl-osc-switch button { min-height: 32px; padding: 0 11px; border: 0; border-right: 1px solid var(--line, #d9e0da); background: transparent; color: #4c6253; font: inherit; font-size: 12px; cursor: pointer; }
 .wl-osc-switch button:last-child { border-right: 0; }

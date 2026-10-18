@@ -42,12 +42,20 @@
     return `${shortDay(next.date)}${next.timing ? `, ${next.timing}` : ""}${next.unsure ? " (may change)" : ""}`;
   }
 
-  // Compute 50-day SMA, 100-day SMA, 14-day RSI, MACD(12,26,9), and buy/sell signals on the full series,
+  // Compute 50-day SMA, 100-day SMA, 200-day SMA, 14-day RSI, and MACD on the full series,
   // then slice to the display window so every indicator is warmed up from the first displayed day.
-  function computeIndicators(allDays, rawCloses, warmup = 0) {
+  // horizon = "mid" (default): 50/200-day SMA regime + 100d support + MACD (19, 39, 9) (Appel mid-term)
+  // horizon = "swing": 50/100-day SMA regime + MACD (12, 26, 9)
+  function computeIndicators(allDays, rawCloses, warmup = 0, horizon = "mid") {
     if (!Array.isArray(allDays) || !Array.isArray(rawCloses) || allDays.length !== rawCloses.length || allDays.length < 30) {
       return null;
     }
+    const isMid = horizon !== "swing";
+    const slowPeriod = isMid ? 200 : 100;
+    const macdFast = isMid ? 19 : 12;
+    const macdSlow = isMid ? 39 : 26;
+    const macdSig = 9;
+
     // Forward-fill isolated single-day gaps for indicator continuity while keeping rawCloses for validity checks.
     const closes = rawCloses.slice();
     for (let i = 1; i < closes.length; i++) {
@@ -59,6 +67,7 @@
     const n = closes.length;
     const sma50 = new Array(n).fill(null);
     const sma100 = new Array(n).fill(null);
+    const sma200 = new Array(n).fill(null);
     const rsi14 = new Array(n).fill(null);
     const macd = new Array(n).fill(null);
     const signal = new Array(n).fill(null);
@@ -75,6 +84,11 @@
         for (let j = i - 99; j <= i; j++) sum100 += closes[j];
         sma100[i] = sum100 / 100;
       }
+      if (i - firstValid + 1 >= 200) {
+        let sum200 = 0;
+        for (let j = i - 199; j <= i; j++) sum200 += closes[j];
+        sma200[i] = sum200 / 200;
+      }
       if (i - firstValid >= 14) {
         let gains = 0;
         let losses = 0;
@@ -89,17 +103,20 @@
       }
     }
 
-    let ema12 = closes[firstValid];
-    let ema26 = closes[firstValid];
+    const kFast = 2 / (macdFast + 1);
+    const kSlow = 2 / (macdSlow + 1);
+    const kSig = 2 / (macdSig + 1);
+    let emaFast = closes[firstValid];
+    let emaSlow = closes[firstValid];
     let sigEma = 0;
     for (let i = firstValid; i < n; i++) {
       const c = closes[i];
-      ema12 = i === firstValid ? c : c * (2 / 13) + ema12 * (11 / 13);
-      ema26 = i === firstValid ? c : c * (2 / 27) + ema26 * (25 / 27);
-      if (i - firstValid >= 25) {
-        const m = ema12 - ema26;
+      emaFast = i === firstValid ? c : c * kFast + emaFast * (1 - kFast);
+      emaSlow = i === firstValid ? c : c * kSlow + emaSlow * (1 - kSlow);
+      if (i - firstValid >= macdSlow - 1) {
+        const m = emaFast - emaSlow;
         macd[i] = m;
-        sigEma = i - firstValid === 25 ? m : m * (2 / 10) + sigEma * (8 / 10);
+        sigEma = i - firstValid === macdSlow - 1 ? m : m * kSig + sigEma * (1 - kSig);
         signal[i] = sigEma;
         hist[i] = m - sigEma;
       }
@@ -110,6 +127,9 @@
     const dClose = closes.slice(start);
     const dSma50 = sma50.slice(start);
     const dSma100 = sma100.slice(start);
+    const dSma200 = sma200.slice(start);
+    const dSlowSma = (isMid && dSma200.some((v) => v !== null)) ? dSma200 : dSma100;
+    const effectiveSlowPeriod = dSlowSma === dSma200 ? 200 : 100;
     const dRsi = rsi14.slice(start);
     const dMacd = macd.slice(start);
     const dSig = signal.slice(start);
@@ -118,7 +138,7 @@
 
     // Identify clean, non-overlapping Buy (▲) and Sell (▼) signals in the display window:
     // - RSI <= 30 oversold episode trough (▲) and RSI >= 70 overbought episode peak (▼)
-    // - 50/100-day SMA Golden Cross (▲) and Death Cross (▼)
+    // - 50/slow SMA Golden Cross (▲) and Death Cross (▼)
     const buySignals = [];
     const sellSignals = [];
     let inOversold = false;
@@ -152,11 +172,11 @@
         inOverbought = false;
       }
 
-      if (i > 0 && dSma50[i - 1] !== null && dSma100[i - 1] !== null && dSma50[i] !== null && dSma100[i] !== null) {
-        if (dSma50[i - 1] <= dSma100[i - 1] && dSma50[i] > dSma100[i]) {
-          buySignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: "50/100d SMA Golden Cross" });
-        } else if (dSma50[i - 1] >= dSma100[i - 1] && dSma50[i] < dSma100[i]) {
-          sellSignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: "50/100d SMA Death Cross" });
+      if (i > 0 && dSma50[i - 1] !== null && dSlowSma[i - 1] !== null && dSma50[i] !== null && dSlowSma[i] !== null) {
+        if (dSma50[i - 1] <= dSlowSma[i - 1] && dSma50[i] > dSlowSma[i]) {
+          buySignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: `50/${effectiveSlowPeriod}d SMA Golden Cross` });
+        } else if (dSma50[i - 1] >= dSlowSma[i - 1] && dSma50[i] < dSlowSma[i]) {
+          sellSignals.push({ index: i, date: dDays[i], price: dClose[i], rsi: dRsi[i], reason: `50/${effectiveSlowPeriod}d SMA Death Cross` });
         }
       }
     }
@@ -167,27 +187,55 @@
       sellSignals.push({ index: maxIdx, date: dDays[maxIdx], price: dClose[maxIdx], rsi: dRsi[maxIdx], reason: `RSI overbought (${dRsi[maxIdx].toFixed(1)})` });
     }
 
-    const macdCrosses = [];
+    const rawMacdCrosses = [];
     for (let i = 1; i < m; i++) {
       if (dMacd[i - 1] !== null && dSig[i - 1] !== null && dMacd[i] !== null && dSig[i] !== null) {
         if (dMacd[i - 1] <= dSig[i - 1] && dMacd[i] > dSig[i]) {
-          macdCrosses.push({ index: i, date: dDays[i], kind: "buy", value: dMacd[i], label: "MACD Golden Cross" });
+          rawMacdCrosses.push({ index: i, date: dDays[i], kind: "buy", value: dMacd[i], label: "MACD Golden Cross" });
         } else if (dMacd[i - 1] >= dSig[i - 1] && dMacd[i] < dSig[i]) {
-          macdCrosses.push({ index: i, date: dDays[i], kind: "sell", value: dMacd[i], label: "MACD Bearish Cross" });
+          rawMacdCrosses.push({ index: i, date: dDays[i], kind: "sell", value: dMacd[i], label: "MACD Bearish Cross" });
         }
       }
+    }
+    // Filter out 1-to-4 day micro-graze whipsaws so Golden/Bearish crossover markers never pile on top of each other.
+    const macdCrosses = [];
+    let k = 0;
+    while (k < rawMacdCrosses.length) {
+      const curr = rawMacdCrosses[k];
+      const next = rawMacdCrosses[k + 1];
+      if (
+        macdCrosses.length > 0 &&
+        next &&
+        next.kind !== curr.kind &&
+        next.index - curr.index <= 4 &&
+        next.index < m - 5
+      ) {
+        // curr and next cancelled each other out within <= 4 days; skip both to preserve clean alternation
+        k += 2;
+        continue;
+      }
+      if (macdCrosses.length > 0 && macdCrosses[macdCrosses.length - 1].kind === curr.kind) {
+        macdCrosses[macdCrosses.length - 1] = curr;
+      } else {
+        macdCrosses.push(curr);
+      }
+      k += 1;
     }
 
     const lastIdx = m - 1;
     const lastClose = dClose[lastIdx];
     const lastSma50 = dSma50[lastIdx];
     const lastSma100 = dSma100[lastIdx];
+    const lastSma200 = dSma200[lastIdx];
+    const lastSlowSma = dSlowSma[lastIdx];
     const lastRsi = dRsi[lastIdx];
     const lastMacd = dMacd[lastIdx];
     const lastSig = dSig[lastIdx];
     const lastHist = dHist[lastIdx];
     const vsSma50 = lastSma50 ? lastClose / lastSma50 - 1 : null;
     const sma50Vs100 = lastSma50 && lastSma100 ? lastSma50 / lastSma100 - 1 : null;
+    const sma50Vs200 = lastSma50 && lastSma200 ? lastSma50 / lastSma200 - 1 : null;
+    const sma50VsSlow = lastSma50 && lastSlowSma ? lastSma50 / lastSlowSma - 1 : null;
     const recentBuy = buySignals.length ? buySignals[buySignals.length - 1] : null;
     const recentSell = sellSignals.length ? sellSignals[sellSignals.length - 1] : null;
     const lastSignal = !recentBuy ? recentSell : !recentSell ? recentBuy
@@ -196,7 +244,7 @@
 
     // Timing classification answering "Is it the right time to buy?"
     let setup = { tone: "caution", label: "Mixed / neutral", detail: "Inspect trend and RSI before entry." };
-    const uptrend = sma50Vs100 !== null ? sma50Vs100 > 0 : (vsSma50 !== null && vsSma50 > 0);
+    const uptrend = sma50VsSlow !== null ? sma50VsSlow > 0 : (vsSma50 !== null && vsSma50 > 0);
     const recentOversold = recentBuy && (lastIdx - recentBuy.index <= 12);
     if (lastRsi !== null && lastRsi >= 70) {
       setup = {
@@ -208,33 +256,40 @@
       setup = {
         tone: "buy",
         label: "Pullback in uptrend · ▲ setup",
-        detail: `50d SMA > 100d SMA with RSI (14) at ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}${recentOversold ? ` (▲ ${recentBuy.reason} on ${shortDay(recentBuy.date)})` : ""}.`,
+        detail: `50d SMA > ${effectiveSlowPeriod}d SMA with RSI (14) at ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}${recentOversold ? ` (▲ ${recentBuy.reason} on ${shortDay(recentBuy.date)})` : ""}.`,
       };
     } else if (uptrend && lastClose >= (lastSma50 || 0)) {
       setup = {
         tone: "steady",
         label: "Steady uptrend · Golden Cross",
-        detail: `Price above 50d & 100d SMA with neutral RSI (${lastRsi !== null ? lastRsi.toFixed(1) : "—"})${lastHist > 0 ? " and positive MACD momentum." : "."}`,
+        detail: `Price above 50d & ${effectiveSlowPeriod}d SMA with neutral RSI (${lastRsi !== null ? lastRsi.toFixed(1) : "—"})${lastHist > 0 ? " and positive MACD momentum." : "."}`,
       };
     } else if (uptrend) {
       setup = {
         tone: "caution",
-        label: "Testing 100d SMA support",
-        detail: `Longer trend is positive (50d > 100d SMA), but price is ${signedPct(vsSma50)} below 50d SMA (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}).`,
+        label: `Testing ${effectiveSlowPeriod === 200 ? "100d/200d" : "100d"} SMA support`,
+        detail: `Longer trend is positive (50d > ${effectiveSlowPeriod}d SMA), but price is ${signedPct(vsSma50)} below 50d SMA (RSI ${lastRsi !== null ? lastRsi.toFixed(1) : "—"}).`,
       };
     } else {
       setup = {
         tone: "wait",
         label: "Below trend · Death Cross",
-        detail: `50d SMA is below 100d SMA (${signedPct(sma50Vs100)}). Wait for trend repair or RSI ≤ 30 washout.`,
+        detail: `50d SMA is below ${effectiveSlowPeriod}d SMA (${signedPct(sma50VsSlow)}). Wait for trend repair or RSI ≤ 30 washout.`,
       };
     }
 
     return {
+      horizon: isMid ? "mid" : "swing",
+      slowPeriod: effectiveSlowPeriod,
+      macdFast,
+      macdSlow,
+      macdSig,
       days: dDays,
       close: dClose,
       sma50: dSma50,
       sma100: dSma100,
+      sma200: dSma200,
+      slowSma: dSlowSma,
       rsi14: dRsi,
       macd: dMacd,
       signal: dSig,
@@ -247,8 +302,12 @@
         close: lastClose,
         sma50: lastSma50,
         sma100: lastSma100,
+        sma200: lastSma200,
+        slowSma: lastSlowSma,
         vsSma50,
         sma50Vs100,
+        sma50Vs200,
+        sma50VsSlow,
         rsi14: lastRsi,
         macd: lastMacd,
         signal: lastSig,
@@ -269,14 +328,15 @@
   let activeTab = "saved";
   let activeSymbol = "";
   let oscMode = "both";
+  let horizonMode = "mid";
 
   function seriesFor(symbol) {
     if (!volume) return null;
     if (volume.timing && volume.timing.closes && Array.isArray(volume.timing.closes[symbol])) {
-      return computeIndicators(volume.timing.days, volume.timing.closes[symbol], volume.timing.warmup || 100);
+      return computeIndicators(volume.timing.days, volume.timing.closes[symbol], volume.timing.warmup || 200, horizonMode);
     }
     if (volume.chart && volume.closes && Array.isArray(volume.closes[symbol])) {
-      return computeIndicators(volume.chart.days, volume.closes[symbol], 0);
+      return computeIndicators(volume.chart.days, volume.closes[symbol], 0, horizonMode);
     }
     return null;
   }
@@ -298,7 +358,7 @@
     return tr;
   }
 
-  // Draw the multi-panel Technical Analysis SVG (matching the matplotlib Price + SMA 50/100 + Buy/Sell triangles + RSI 14 + MACD layout).
+  // Draw the multi-panel Technical Analysis SVG (Price + 50/200 or 50/100 SMA + Buy/Sell triangles + RSI 14 + MACD).
   function drawTimingChart(symbol, ta) {
     const host = $("wl-timing-chart");
     if (!host) return;
@@ -309,23 +369,26 @@
 
     const showRsi = oscMode === "both" || oscMode === "rsi";
     const showMacd = oscMode === "both" || oscMode === "macd";
+    const isMid = ta.slowPeriod === 200;
+    const macdTitle = `MACD (${ta.macdFast}, ${ta.macdSlow}, ${ta.macdSig})`;
     const W_SVG = 920;
     const L = 66;
     const R = 24;
     const PW = W_SVG - L - R;
 
     const P1_TOP = 30;
-    const P1_H = 220;
+    const P1_H = 225;
     const P1_BOT = P1_TOP + P1_H;
 
     const GAP = 42;
-    const OSC_H = 135;
+    const RSI_H = 135;
+    const MACD_H = 158;
 
     const P2_TOP = showRsi ? P1_BOT + GAP : P1_BOT;
-    const P2_BOT = showRsi ? P2_TOP + OSC_H : P1_BOT;
+    const P2_BOT = showRsi ? P2_TOP + RSI_H : P1_BOT;
 
     const P3_TOP = showMacd ? (showRsi ? P2_BOT + GAP : P1_BOT + GAP) : P2_BOT;
-    const P3_BOT = showMacd ? P3_TOP + OSC_H : P2_BOT;
+    const P3_BOT = showMacd ? P3_TOP + MACD_H : P2_BOT;
 
     const H_SVG = (showMacd ? P3_BOT : showRsi ? P2_BOT : P1_BOT) + 34;
     const n = ta.days.length;
@@ -336,7 +399,7 @@
       class: "wl-ta-svg",
       role: "img",
       tabindex: "0",
-      "aria-label": `Technical Analysis for ${symbol}: 1-year close price, 50-day SMA, 100-day SMA, buy/sell signals${showRsi ? ", RSI (14)" : ""}${showMacd ? ", and MACD (12, 26, 9)" : ""}`,
+      "aria-label": `Technical Analysis for ${symbol}: 1-year close price, 50-day SMA, ${ta.slowPeriod}-day SMA, buy/sell signals${showRsi ? ", RSI (14)" : ""}${showMacd ? `, and ${macdTitle}` : ""}`,
     });
 
     // Helper for framed panel + title + y-label
@@ -349,9 +412,9 @@
       }
     };
 
-    // --- PANEL 1: Price + 50-day SMA + 100-day SMA + ▲ Buy / ▼ Sell Signals ---
-    drawFrame(P1_TOP, P1_BOT, `Technical Analysis for ${symbol}`, "Price (USD)");
-    const priceVals = [...ta.close, ...ta.sma50, ...ta.sma100].filter((v) => v !== null && Number.isFinite(v));
+    // --- PANEL 1: Price + 50-day SMA + 200-day (or 100-day) SMA + ▲ Buy / ▼ Sell Signals ---
+    drawFrame(P1_TOP, P1_BOT, `Technical Analysis for ${symbol} (${isMid ? "Mid-term 50/200d SMA" : "Swing 50/100d SMA"})`, "Price (USD)");
+    const priceVals = [...ta.close, ...ta.sma50, ...ta.sma100, ...(isMid ? ta.sma200 : [])].filter((v) => v !== null && Number.isFinite(v));
     const pMinRaw = Math.min(...priceVals);
     const pMaxRaw = Math.max(...priceVals);
     const pPad = (pMaxRaw - pMinRaw || pMaxRaw * 0.1 || 1) * 0.08;
@@ -385,17 +448,51 @@
 
     svg("path", { d: buildPath(ta.close, yPrice), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
     svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#15803d", "stroke-width": "1.6" }, chart);
-    svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.6" }, chart);
+    if (isMid) {
+      svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#d97706", "stroke-width": "1.2", "stroke-dasharray": "4,3" }, chart);
+      svg("path", { d: buildPath(ta.sma200, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
+    } else {
+      svg("path", { d: buildPath(ta.sma100, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.6" }, chart);
+    }
 
-    // Draw ▲ Buy Signal and ▼ Sell Signal triangles on the Price panel
+    const legLine = (g, rowIdx, color, dash, label) => {
+      const yy = 14 + rowIdx * 16;
+      svg("line", { x1: 8, x2: 28, y1: yy, y2: yy, stroke: color, "stroke-width": "1.8", "stroke-dasharray": dash || undefined }, g);
+      svg("text", { x: 35, y: yy + 3.5, fill: "#1f2937", "font-size": "10.5" }, g, label);
+    };
+
+    // Panel 1 Legend Box (top-left, styled like matplotlib legend)
+    const leg1 = svg("g", { transform: `translate(${L + 10}, ${P1_TOP + 10})` }, chart);
+    if (isMid) {
+      svg("rect", { x: 0, y: 0, width: 170, height: 104, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg1);
+      legLine(leg1, 0, "#1d4ed8", null, `${symbol} Close Price`);
+      legLine(leg1, 1, "#15803d", null, "50-day SMA");
+      legLine(leg1, 2, "#d97706", "4,3", "100-day SMA (support)");
+      legLine(leg1, 3, "#dc2626", null, "200-day SMA (regime)");
+      svg("polygon", { points: "18,73 12.5,84 23.5,84", fill: "#15803d" }, leg1);
+      svg("text", { x: 35, y: 82, fill: "#1f2937", "font-size": "10.5" }, leg1, "Buy Signal");
+      svg("polygon", { points: "18,100 12.5,89 23.5,89", fill: "#dc2626" }, leg1);
+      svg("text", { x: 35, y: 98, fill: "#1f2937", "font-size": "10.5" }, leg1, "Sell Signal");
+    } else {
+      svg("rect", { x: 0, y: 0, width: 154, height: 88, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg1);
+      legLine(leg1, 0, "#1d4ed8", null, `${symbol} Close Price`);
+      legLine(leg1, 1, "#15803d", null, "50-day SMA");
+      legLine(leg1, 2, "#dc2626", null, "100-day SMA");
+      svg("polygon", { points: "18,57 12.5,68 23.5,68", fill: "#15803d" }, leg1);
+      svg("text", { x: 35, y: 66, fill: "#1f2937", "font-size": "10.5" }, leg1, "Buy Signal");
+      svg("polygon", { points: "18,84 12.5,73 23.5,73", fill: "#dc2626" }, leg1);
+      svg("text", { x: 35, y: 82, fill: "#1f2937", "font-size": "10.5" }, leg1, "Sell Signal");
+    }
+
+    // Draw ▲ Buy Signal and ▼ Sell Signal triangles on top of legend so none are hidden
     for (const sig of ta.buySignals) {
       const cx = x(sig.index);
       const cy = yPrice(sig.price);
       svg("polygon", {
         points: `${cx.toFixed(1)},${(cy - 7).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy + 6).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy + 6).toFixed(1)}`,
         fill: "#15803d",
-        stroke: "#052e16",
-        "stroke-width": "0.6",
+        stroke: "#ffffff",
+        "stroke-width": "1",
       }, chart);
     }
     for (const sig of ta.sellSignals) {
@@ -404,32 +501,15 @@
       svg("polygon", {
         points: `${cx.toFixed(1)},${(cy + 7).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy - 6).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy - 6).toFixed(1)}`,
         fill: "#dc2626",
-        stroke: "#450a0a",
-        "stroke-width": "0.6",
+        stroke: "#ffffff",
+        "stroke-width": "1",
       }, chart);
     }
-
-    // Panel 1 Legend Box (top-left, styled like matplotlib legend)
-    const leg1 = svg("g", { transform: `translate(${L + 10}, ${P1_TOP + 10})` }, chart);
-    svg("rect", { x: 0, y: 0, width: 154, height: 88, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg1);
-    const legLine = (g, rowIdx, color, dash, label) => {
-      const yy = 14 + rowIdx * 16;
-      svg("line", { x1: 8, x2: 28, y1: yy, y2: yy, stroke: color, "stroke-width": "1.8", "stroke-dasharray": dash || undefined }, g);
-      svg("text", { x: 35, y: yy + 3.5, fill: "#1f2937", "font-size": "10.5" }, g, label);
-    };
-    legLine(leg1, 0, "#1d4ed8", null, `${symbol} Close Price`);
-    legLine(leg1, 1, "#15803d", null, "50-day SMA");
-    legLine(leg1, 2, "#dc2626", null, "100-day SMA");
-    // Triangle legend entries
-    svg("polygon", { points: "18,57 12.5,68 23.5,68", fill: "#15803d" }, leg1);
-    svg("text", { x: 35, y: 66, fill: "#1f2937", "font-size": "10.5" }, leg1, "Buy Signal");
-    svg("polygon", { points: "18,84 12.5,73 23.5,73", fill: "#dc2626" }, leg1);
-    svg("text", { x: 35, y: 82, fill: "#1f2937", "font-size": "10.5" }, leg1, "Sell Signal");
 
     // --- PANEL 2: RSI (14) with 70 Overbought & 30 Oversold dashed lines ---
     if (showRsi) {
       drawFrame(P2_TOP, P2_BOT, `${symbol} RSI (14)`, "RSI");
-      const yRsi = (v) => P2_TOP + (1 - v / 100) * OSC_H;
+      const yRsi = (v) => P2_TOP + (1 - v / 100) * RSI_H;
       for (const tick of [0, 20, 40, 60, 80, 100]) {
         const yy = yRsi(tick);
         svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
@@ -448,15 +528,15 @@
       legLine(leg2, 2, "#15803d", "4,3", "Oversold");
     }
 
-    // --- PANEL 3: MACD (12, 26, 9) with Signal Golden Line & Histogram ---
+    // --- PANEL 3: MACD with high-visibility ▲ Golden / ▼ Bearish crossover badges & callouts ---
     if (showMacd) {
-      drawFrame(P3_TOP, P3_BOT, `${symbol} MACD (12, 26, 9)`, "MACD");
+      drawFrame(P3_TOP, P3_BOT, `${symbol} ${macdTitle}`, "MACD");
       const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v));
-      const mMax = Math.max(...mVals.map((v) => Math.abs(v)), 0.5) * 1.15;
-      const yMacd = (v) => P3_TOP + (1 - (v + mMax) / (2 * mMax)) * OSC_H;
+      const mMax = Math.max(...mVals.map((v) => Math.abs(v)), 0.5) * 1.28;
+      const yMacd = (v) => P3_TOP + (1 - (v + mMax) / (2 * mMax)) * MACD_H;
       const yZero = yMacd(0);
 
-      for (const tick of [-mMax * 0.75, 0, mMax * 0.75]) {
+      for (const tick of [-mMax * 0.72, 0, mMax * 0.72]) {
         const yy = yMacd(tick);
         svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#9ca3af" : "#f3f4f6", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
         svg("line", { x1: L - 4, x2: L, y1: yy, y2: yy, stroke: "#374151", "stroke-width": "1" }, chart);
@@ -477,27 +557,105 @@
         }, chart);
       }
 
-      svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.5" }, chart);
-      svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.5" }, chart);
-
+      // Vertical dashed guide lines at each MACD crossover so Golden/Bearish dates are easy to trace
       for (const cr of ta.macdCrosses) {
         const cx = x(cr.index);
-        const cy = yMacd(cr.value);
-        svg("circle", {
-          cx: cx.toFixed(1),
-          cy: cy.toFixed(1),
-          r: "3.8",
-          fill: cr.kind === "buy" ? "#15803d" : "#dc2626",
-          stroke: "#ffffff",
+        const isBuy = cr.kind === "buy";
+        svg("line", {
+          x1: cx.toFixed(1),
+          x2: cx.toFixed(1),
+          y1: (P3_TOP + 2).toFixed(1),
+          y2: (P3_BOT - 2).toFixed(1),
+          stroke: isBuy ? "#16a34a" : "#dc2626",
           "stroke-width": "1",
+          "stroke-dasharray": "3,3",
+          "stroke-opacity": "0.45",
         }, chart);
       }
 
-      const leg3 = svg("g", { transform: `translate(${L + 10}, ${P3_TOP + 10})` }, chart);
-      svg("rect", { x: 0, y: 0, width: 146, height: 54, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg3);
-      legLine(leg3, 0, "#1d4ed8", null, "MACD (12, 26)");
-      legLine(leg3, 1, "#d97706", null, "Signal (9) Golden");
-      legLine(leg3, 2, "#15803d", null, "● Golden / Bearish");
+      svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
+      svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
+
+      // Place MACD legend where curve has the most room, and draw explicit Golden ▲ and Bearish ▼ badges
+      const leg3 = svg("g", { transform: `translate(${L + 10}, ${P3_TOP + 8})` }, chart);
+      svg("rect", { x: 0, y: 0, width: 162, height: 70, rx: 3, fill: "#ffffff", "fill-opacity": "0.92", stroke: "#d1d5db", "stroke-width": "1" }, leg3);
+      legLine(leg3, 0, "#1d4ed8", null, `MACD (${ta.macdFast}, ${ta.macdSlow})`);
+      legLine(leg3, 1, "#d97706", null, `Signal (${ta.macdSig})`);
+      // Row 3: Golden Cross (buy) badge + ▲
+      svg("circle", { cx: "18", cy: "46", r: "5.5", fill: "#15803d", stroke: "#ffffff", "stroke-width": "1.2" }, leg3);
+      svg("polygon", { points: "18,42.5 14.8,48.2 21.2,48.2", fill: "#ffffff" }, leg3);
+      svg("text", { x: 35, y: 49.5, fill: "#15803d", "font-size": "10.5", "font-weight": "600" }, leg3, "Golden Cross (buy)");
+      // Row 4: Bearish Cross (sell) badge + ▼
+      svg("circle", { cx: "18", cy: "61", r: "5.5", fill: "#dc2626", stroke: "#ffffff", "stroke-width": "1.2" }, leg3);
+      svg("polygon", { points: "18,64.5 14.8,58.8 21.2,58.8", fill: "#ffffff" }, leg3);
+      svg("text", { x: 35, y: 64.5, fill: "#b91c1c", "font-size": "10.5", "font-weight": "600" }, leg3, "Bearish Cross (sell)");
+
+      // Draw prominent Golden Cross (green badge + ▲) and Bearish Cross (red badge + ▼) markers on top
+      const lastBuyCross = [...ta.macdCrosses].reverse().find((c) => c.kind === "buy");
+      const lastSellCross = [...ta.macdCrosses].reverse().find((c) => c.kind === "sell");
+      for (const cr of ta.macdCrosses) {
+        const cx = x(cr.index);
+        const cy = yMacd(cr.value);
+        const isBuy = cr.kind === "buy";
+        const isLatest = cr === lastBuyCross || cr === lastSellCross;
+        const rad = isLatest ? 7 : 5.8;
+        // White outer halo + colored circle badge + crisp white triangle inside
+        svg("circle", {
+          cx: cx.toFixed(1),
+          cy: cy.toFixed(1),
+          r: (rad + 1.8).toFixed(1),
+          fill: "#ffffff",
+          "fill-opacity": "0.95",
+        }, chart);
+        svg("circle", {
+          cx: cx.toFixed(1),
+          cy: cy.toFixed(1),
+          r: rad.toFixed(1),
+          fill: isBuy ? "#15803d" : "#dc2626",
+          stroke: isLatest ? (isBuy ? "#052e16" : "#450a0a") : "#ffffff",
+          "stroke-width": isLatest ? "1.3" : "1",
+        }, chart);
+        if (isBuy) {
+          svg("polygon", {
+            points: `${cx.toFixed(1)},${(cy - 3.6).toFixed(1)} ${(cx - 3.3).toFixed(1)},${(cy + 2.4).toFixed(1)} ${(cx + 3.3).toFixed(1)},${(cy + 2.4).toFixed(1)}`,
+            fill: "#ffffff",
+          }, chart);
+        } else {
+          svg("polygon", {
+            points: `${cx.toFixed(1)},${(cy + 3.6).toFixed(1)} ${(cx - 3.3).toFixed(1)},${(cy - 2.4).toFixed(1)} ${(cx + 3.3).toFixed(1)},${(cy - 2.4).toFixed(1)}`,
+            fill: "#ffffff",
+          }, chart);
+        }
+
+        // Direct on-chart callout pill for the latest Golden Cross and latest Bearish Cross
+        if (isLatest) {
+          const pillText = `${isBuy ? "▲ Golden" : "▼ Bearish"} · ${shortDay(cr.date)}`;
+          const pillW = 94;
+          const pillH = 17;
+          const rawPx = cx - pillW / 2;
+          const px = Math.max(L + 176, Math.min(L + PW - pillW - 4, rawPx));
+          const placeAbove = isBuy ? cy > P3_TOP + 32 : cy > P3_BOT - 30;
+          const py = placeAbove ? Math.max(P3_TOP + 4, cy - 26) : Math.min(P3_BOT - pillH - 4, cy + 10);
+          svg("rect", {
+            x: px.toFixed(1),
+            y: py.toFixed(1),
+            width: String(pillW),
+            height: String(pillH),
+            rx: "8.5",
+            fill: isBuy ? "#dcfce7" : "#fee2e2",
+            stroke: isBuy ? "#15803d" : "#dc2626",
+            "stroke-width": "1.1",
+          }, chart);
+          svg("text", {
+            x: (px + pillW / 2).toFixed(1),
+            y: (py + 11.8).toFixed(1),
+            "text-anchor": "middle",
+            fill: isBuy ? "#14532d" : "#7f1d1d",
+            "font-size": "10",
+            "font-weight": "700",
+          }, chart, pillText);
+        }
+      }
     }
 
     // --- Shared YYYY-MM X-axis ticks along the bottom panel ---
@@ -533,8 +691,9 @@
         `${longDay(d)}: Close ${price(ta.close[i])}`,
         `50d SMA ${ta.sma50[i] !== null ? price(ta.sma50[i]) : "—"}`,
         `100d SMA ${ta.sma100[i] !== null ? price(ta.sma100[i]) : "—"}`,
-        `RSI (14) ${ta.rsi14[i] !== null ? ta.rsi14[i].toFixed(1) : "—"}`,
-        `MACD ${ta.macd[i] !== null ? ta.macd[i].toFixed(2) : "—"} / Signal ${ta.signal[i] !== null ? ta.signal[i].toFixed(2) : "—"}`,
+        ...(ta.sma200[i] !== null ? [`200d SMA ${price(ta.sma200[i])}`] : []),
+        `RSI (14) ${ta.rsi14[i] !== null ? ta.rsi14.toFixed(1) : "—"}`,
+        `MACD (${ta.macdFast},${ta.macdSlow},${ta.macdSig}) ${ta.macd[i] !== null ? ta.macd[i].toFixed(2) : "—"} / Signal ${ta.signal[i] !== null ? ta.signal[i].toFixed(2) : "—"}`,
       ];
       if (sigHere.length) partsText.push(sigHere.join(" · "));
       tip.textContent = partsText.join(" · ");
@@ -567,6 +726,18 @@
   function renderTiming(items) {
     const panel = $("wl-timing-panel");
     if (!panel) return;
+
+    const isMid = horizonMode !== "swing";
+    if ($("wl-timing-sub")) {
+      $("wl-timing-sub").textContent = isMid
+        ? "1-year mid-term technical setup (50-day & 200-day SMA with 100-day support, 14-day RSI oversold/overbought signals, and MACD 19/39/9 crossovers) from the Friday close."
+        : "1-year swing technical setup (50-day & 100-day SMA, 14-day RSI oversold/overbought signals, and MACD 12/26/9 crossovers) from the Friday close.";
+    }
+    if ($("wl-th-trend")) $("wl-th-trend").textContent = isMid ? "50d vs 200d SMA" : "50d vs 100d SMA";
+    if ($("wl-th-macd")) $("wl-th-macd").textContent = isMid ? "MACD (19,39,9)" : "MACD (12,26,9)";
+    if ($("wl-timing-foot")) {
+      $("wl-timing-foot").textContent = `Signals are historical rule readouts (▲ Buy Signal: RSI ≤ 30 oversold trough or 50/${isMid ? 200 : 100}-day SMA Golden Cross; ▼ Sell Signal: RSI ≥ 70 overbought peak or 50/${isMid ? 200 : 100}-day SMA Death Cross), not investment advice. Moving averages and oscillators use 200 prior sessions of warmup before the 252-session chart window.`;
+    }
 
     const starredSyms = items.map((x) => x.symbol);
     const symbols = starredSyms.length ? starredSyms : outlookPicks.slice();
@@ -618,22 +789,25 @@
     // 2. Render summary cards for activeSymbol
     const summaryHost = $("wl-timing-summary");
     const activeTa = seriesFor(activeSymbol);
-    const activeCo = desk[activeSymbol] || {};
     const vRow = volume && volume.rows && volume.rows[activeSymbol];
     if (summaryHost) {
       if (!activeTa) {
         summaryHost.replaceChildren(el("div", "wl-stat-card", `Loading technical series for ${activeSymbol}…`));
       } else {
         const L = activeTa.last;
+        const slowLbl = `${activeTa.slowPeriod}d SMA`;
         const c1 = el("div", "wl-stat-card");
         const badge = el("span", `wl-badge ${L.setup.tone}`, L.setup.label);
         c1.append(el("span", "", `${activeSymbol} · Timing verdict`), badge, el("small", "", L.setup.detail));
 
         const c2 = el("div", "wl-stat-card");
+        const supportNote = activeTa.slowPeriod === 200 && L.sma100
+          ? `50d ${price(L.sma50)} · 100d ${price(L.sma100)} · 200d ${price(L.sma200)} (${signedPct(L.sma50VsSlow)})`
+          : `50d SMA ${price(L.sma50)} · ${slowLbl} ${price(L.slowSma)} (${signedPct(L.sma50VsSlow)})`;
         c2.append(
-          el("span", "", "Price vs 50d & 100d SMA"),
+          el("span", "", `Price vs 50d & ${slowLbl}`),
           el("strong", "", `${price(L.close)} (${signedPct(L.vsSma50)} vs 50d)`),
-          el("small", "", `50d SMA ${price(L.sma50)} · 100d SMA ${price(L.sma100)} (${signedPct(L.sma50Vs100)})`)
+          el("small", "", supportNote)
         );
 
         const c3 = el("div", "wl-stat-card");
@@ -655,7 +829,7 @@
         const nextEarn = resultsText(earnings[activeSymbol]);
         const upVol = vRow && Number.isFinite(vRow[4]) ? ` · 21d up-vol ${Math.round(vRow[4] * 100)}%` : "";
         c4.append(
-          el("span", "", "MACD (12, 26, 9) & events"),
+          el("span", "", `MACD (${activeTa.macdFast}, ${activeTa.macdSlow}, ${activeTa.macdSig}) & events`),
           el("strong", "", macdState),
           el("small", "", `${crossNote} · Next results: ${nextEarn}${upVol}`)
         );
@@ -693,11 +867,11 @@
         const setupTd = el("td");
         setupTd.append(el("span", `wl-badge ${L.setup.tone}`, L.setup.label));
         const vs50Td = el("td", `num ${L.vsSma50 >= 0 ? "wl-pos" : "wl-neg"}`, signedPct(L.vsSma50));
-        const vs100Td = el("td", `num ${L.sma50Vs100 >= 0 ? "wl-pos" : "wl-neg"}`, signedPct(L.sma50Vs100));
+        const vsSlowTd = el("td", `num ${L.sma50VsSlow >= 0 ? "wl-pos" : "wl-neg"}`, signedPct(L.sma50VsSlow));
         const rsiTd = el("td", `num ${L.rsi14 >= 70 ? "wl-neg" : L.rsi14 <= 35 ? "wl-pos" : ""}`, L.rsi14 !== null ? L.rsi14.toFixed(1) : "—");
         const macdTd = el("td", "", L.lastMacdCross ? `${L.lastMacdCross.kind === "buy" ? "▲" : "▼"} ${shortDay(L.lastMacdCross.date)} (${L.hist >= 0 ? "+" : ""}${L.hist.toFixed(2)})` : "—");
         const sigTd = el("td", "", L.lastSignal ? `${L.lastSignal.type === "buy" ? "▲" : "▼"} ${L.lastSignal.reason} (${shortDay(L.lastSignal.date)})` : "—");
-        tr.append(co, setupTd, el("td", "num", price(L.close)), vs50Td, vs100Td, rsiTd, macdTd, sigTd, el("td", "", resultsText(earnings[sym])));
+        tr.append(co, setupTd, el("td", "num", price(L.close)), vs50Td, vsSlowTd, rsiTd, macdTd, sigTd, el("td", "", resultsText(earnings[sym])));
         return tr;
       });
       tbody.replaceChildren(...trs);
@@ -766,6 +940,17 @@
     if ($("wl-tab-saved") && $("wl-tab-timing")) {
       $("wl-tab-saved").addEventListener("click", () => setTab("saved"));
       $("wl-tab-timing").addEventListener("click", () => setTab("timing"));
+    }
+    if ($("wl-horizon-switch") && $("wl-horizon-switch").querySelectorAll) {
+      for (const btn of $("wl-horizon-switch").querySelectorAll("button[data-horizon]")) {
+        btn.addEventListener("click", () => {
+          horizonMode = btn.dataset.horizon || "mid";
+          for (const b of $("wl-horizon-switch").querySelectorAll("button[data-horizon]")) {
+            b.classList.toggle("on", b === btn);
+          }
+          renderTiming(W.list());
+        });
+      }
     }
     if ($("wl-osc-switch") && $("wl-osc-switch").querySelectorAll) {
       for (const btn of $("wl-osc-switch").querySelectorAll("button[data-osc]")) {
