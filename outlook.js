@@ -21,14 +21,12 @@ function outlookCard(row) {
   return `<article class="outlook-card">
     <div class="outlook-card-top"><span class="outlook-rank">${row.rank}</span>${globalThis.TLWatch ? globalThis.TLWatch.html(row.symbol, row.name) : ""}<strong>${outlookEscape(row.symbol)}</strong><span>${outlookEscape(row.sector.replaceAll("_", " "))}</span></div>
     <h3>${outlookEscape(row.name)}</h3>
-    <div class="outlook-estimate ${row.total_median < 0 ? "outlook-negative" : ""}">${outlookPercent(row.total_median)}</div>
-    <p class="outlook-label">12-month return, model midpoint</p>
-    <div class="outlook-range"><span>Low <b>${outlookPercent(row.total_low)}</b></span><span>High <b>${outlookPercent(row.total_high)}</b></span></div>
-    <p class="outlook-label">Model low / high. The real result can be worse than low.</p>
-    <p class="outlook-relative">Model vs QQQ: <strong>${outlookPercent(row.excess_median, true)}</strong></p>
-    <dl class="outlook-facts"><div><dt>Revenue growth</dt><dd>${outlookPercent(f.revenue_yoy)}</dd></div><div><dt>Return on equity</dt><dd>${outlookPercent(f.return_on_equity)}</dd></div><div><dt>Cash / profit</dt><dd>${f.cash_conversion.toFixed(2)}×</dd></div></dl>
+    <div class="outlook-estimate ${f.relative_strength_6m < 0 ? "outlook-negative" : ""}">${outlookPercent(f.relative_strength_6m)}</div>
+    <p class="outlook-label">6-month return vs QQQ · ${(100 * f.rank_relative_strength_6m).toFixed(0)}th pct in quality cohort</p>
+    <dl class="outlook-facts"><div><dt>Revenue growth</dt><dd>${outlookPercent(f.revenue_yoy)}</dd></div><div><dt>Return on equity</dt><dd>${outlookPercent(f.return_on_equity)}</dd></div><div><dt>Operating margin</dt><dd>${outlookPercent(f.operating_margin)}</dd></div><div><dt>Cash / profit</dt><dd>${f.cash_conversion.toFixed(2)}×</dd></div></dl>
     <details><summary>Evidence, scenarios & risks</summary>
-      <p>The rank is strength and ROE. The return model did not pick these names.</p>
+      <p>Ranked by 6-month strength inside the quality screen. The return model did not pick these names.</p>
+      <p>12-month return, model midpoint: <strong>${outlookPercent(row.total_median)}</strong> (low <b>${outlookPercent(row.total_low)}</b> / high <b>${outlookPercent(row.total_high)}</b>; vs QQQ <b>${outlookPercent(row.excess_median, true)}</b>). The real result can be worse than low.</p>
       <p>Reference close: $${row.reference_price.toFixed(2)} on ${outlookEscape(row.price_date)}. Estimates use next-session entry; they are total returns, not share-price targets.</p>
       <p>Revenue quarter: ${outlookEscape(row.evidence.revenue_period_end)} · filed ${outlookEscape(row.evidence.revenue_filed)}. Quality filing: ${outlookEscape(row.evidence.quality_filed)}.</p>
       <p>Trailing earnings yield ${outlookPercent(f.earnings_yield)} · annualised volatility ${outlookPercent(f.volatility_252)} · liabilities/assets ${outlookPercent(f.leverage)}.</p>
@@ -39,11 +37,12 @@ function outlookCard(row) {
 }
 function outlookEvidence(report) {
   const summary = report.validation.summary;
-  const rows = [["composite_60_40", "60/40 shortlist (default)"], ["momentum", "Momentum baseline"], ["quantile_trees", "Experimental AI"]];
+  const active = summary[report.selection_method] || summary.momentum || summary.composite_60_40;
+  const rows = [["momentum", "Momentum shortlist (default)"], ["composite_60_40", "60/40 baseline"], ["quantile_trees", "Experimental AI"]];
   return `<details class="outlook-method"><summary>How it works & how it performed</summary>
     <p>${outlookEscape(report.selection)}</p><p>${outlookEscape(report.universe)}</p>
     <div class="outlook-table"><table><caption>Reconstructed 12-month, five-stock cohorts · same constraints · 0.20% assumed round-trip cost</caption><thead><tr><th>Method</th><th>Cohorts</th><th>Mean excess vs QQQ</th><th>Median excess vs QQQ</th><th>Worst holding drawdown</th></tr></thead><tbody>${rows.map(([key, label]) => { const r = summary[key]; return `<tr><td>${label}</td><td>${r.cohorts}</td><td>${outlookPercent(r.mean_excess_qqq_net, true)}</td><td>${outlookPercent(r.median_excess_qqq_net, true)}</td><td>${outlookPercent(r.worst_holding_drawdown)}</td></tr>`; }).join("")}</tbody></table></div>
-    <p>For the default shortlist, the model's nominal 70% interval covered ${Number.isFinite(summary.composite_60_40.selected_range_coverage) ? (100 * summary.composite_60_40.selected_range_coverage).toFixed(0) + "%" : "an unavailable fraction"} of selected historical outcomes. Mean absolute central-estimate error: ${outlookPercent(summary.composite_60_40.selected_mean_absolute_error, true)}. Probabilities of beating QQQ are withheld.</p>
+    <p>For the default shortlist, the model's nominal 70% interval covered ${Number.isFinite(active.selected_range_coverage) ? (100 * active.selected_range_coverage).toFixed(0) + "%" : "an unavailable fraction"} of selected historical outcomes. Mean absolute central-estimate error: ${outlookPercent(active.selected_mean_absolute_error, true)}. Probabilities of beating QQQ are withheld.</p>
     <p>These monthly cohorts overlap for most of their holding periods. Returns are cohort averages, not an annualised portfolio return. Drawdown follows equal entry allocations held without rebalancing. No confidence or significance claim is made.</p>
     <p>Training: ${report.training_months} matured monthly cohorts, ${report.training_rows.toLocaleString()} company observations. Latest training exit: ${outlookEscape(report.latest_training_exit)}. All training outcomes precede their historical forecast dates.</p>
     <p>Total and excess returns are modelled separately; their medians do not add together as a forecast for QQQ. Values are before taxes and forecast costs; validation subtracts the displayed cost assumption.</p>
@@ -56,8 +55,8 @@ function renderOutlook(report, now = new Date()) {
   const age = Math.floor((now - new Date(`${report.as_of}T00:00:00Z`)) / 86400000);
   const caution = report.validation.model_beats_both_baselines
     ? "Experimental estimates. Historical coverage is incomplete, and no forecast probability is validated."
-    : "Picked for strength and profitability, max two per sector. The return model is extra; it has not beaten those simple lists.";
-  return `<div class="outlook-heading"><div><div class="eyebrow">RESEARCH SHORTLIST · 252 TRADING SESSIONS</div><h2>Five names, next 12 months</h2><p>Ranked by recent strength and profitability. The bands are a model, not a claim they beat QQQ.</p></div><span class="badge">Experimental</span></div>
+    : "Picked for 6-month strength inside the profitable quality screen, max two per sector. The return model is extra; it has not beaten those simple lists.";
+  return `<div class="outlook-heading"><div><div class="eyebrow">RESEARCH SHORTLIST · 252 TRADING SESSIONS</div><h2>Five names, next 12 months</h2><p>Ranked by 6-month relative strength inside the profitable quality screen. Model ranges are in the details, not a claim they beat QQQ.</p></div><span class="badge">Experimental</span></div>
     <p class="outlook-notice">${caution}</p>
     <p class="outlook-date">As of ${outlookEscape(report.as_of)} · ${report.candidate_count} passed the quality screen · max two per sector.${age > 7 ? " Over a week old." : ""}</p>
     ${report.record_type === "retrospective_reconstruction" ? '<p class="outlook-date">Filled in later from that Friday’s files, not issued that day.</p>' : ""}

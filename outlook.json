@@ -4,6 +4,90 @@
   "candidate_count": 303,
   "candidates": [
     {
+      "classification_override": {
+        "industry": "Digital musculoskeletal care",
+        "reason": "Hinge Health delivers musculoskeletal care; the broad EDP Services label obscures its healthcare exposure.",
+        "reviewed_on": "2026-09-18",
+        "sector": "healthcare",
+        "source": "https://ir.hingehealth.com/why-invest/default.aspx"
+      },
+      "evidence": {
+        "quality_filed": "2026-08-06",
+        "revenue_filed": "2026-08-06",
+        "revenue_period_end": "2026-06-30"
+      },
+      "excess_high": 0.3111553490161896,
+      "excess_low": -0.5425169467926025,
+      "excess_median": -0.16354528069496155,
+      "industry": "Digital musculoskeletal care",
+      "inputs": {
+        "cash_conversion": 2.666082938323447,
+        "earnings_yield": 0.013928622072600011,
+        "leverage": 0.5838423588164342,
+        "operating_margin": 0.1300889785726487,
+        "rank_cash_conversion": 0.9267100977198697,
+        "rank_earnings_yield": 0.04723127035830619,
+        "rank_leverage": 0.6530944625407166,
+        "rank_market_cap_usd": 0.36644951140065146,
+        "rank_operating_margin": 0.3273615635179153,
+        "rank_relative_strength_6m": 0.998371335504886,
+        "rank_return_on_equity": 0.7964169381107492,
+        "rank_revenue_yoy": 0.9397394136807817,
+        "rank_volatility_252": 0.8713355048859935,
+        "relative_strength_6m": 1.1927332878112793,
+        "return_on_equity": 0.3167590204688553,
+        "revenue_yoy": 0.5299788638226286,
+        "volatility_252": 0.5347571466209113
+      },
+      "name": "Hinge Health Inc.",
+      "price_date": "2026-10-16",
+      "probability_beat_qqq": null,
+      "rank": 1,
+      "reference_price": 99.16000366210938,
+      "risks": [
+        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
+        "The model's central excess return is negative: this candidate is not forecast to beat QQQ.",
+        "Trailing earnings multiple exceeds 40\u00d7; the valuation is sensitive to slower growth.",
+        "Annualised daily volatility exceeds 40%.",
+        "Revenue growth exceeds 50%; check acquisition effects and the comparison base."
+      ],
+      "scenarios": [
+        {
+          "ev_multiple_change": -0.2,
+          "label": "Stress",
+          "operating_profit_growth": -0.1,
+          "price_return": null,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0,
+          "label": "Steady",
+          "operating_profit_growth": 0.1,
+          "price_return": null,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0.1,
+          "label": "Expansion",
+          "operating_profit_growth": 0.2,
+          "price_return": null,
+          "share_count_change": 0
+        }
+      ],
+      "sector": "healthcare",
+      "security_id": "yfinance:HNGE",
+      "selection_score": 0.998371335504886,
+      "symbol": "HNGE",
+      "total_high": 0.533565104007721,
+      "total_low": -0.3262469172477722,
+      "total_median": 0.012180894613265991,
+      "valuation_inputs": {
+        "enterprise_value": null,
+        "market_cap": 7830566329.193115,
+        "net_debt": null
+      }
+    },
+    {
       "classification_override": null,
       "evidence": {
         "quality_filed": "2026-08-04",
@@ -36,7 +120,7 @@
       "name": "Marathon Petroleum Corporation",
       "price_date": "2026-10-16",
       "probability_beat_qqq": null,
-      "rank": 1,
+      "rank": 2,
       "reference_price": 478.07000732421875,
       "risks": [
         "Annual return estimates remain experimental; losses can exceed the lower estimate.",
@@ -70,7 +154,7 @@
       ],
       "sector": "energy",
       "security_id": "yfinance:MPC",
-      "selection_score": 0.9716612377850162,
+      "selection_score": 0.995114006514658,
       "symbol": "MPC",
       "total_high": 0.4526835083961487,
       "total_low": -0.22183595597743988,
@@ -114,7 +198,7 @@
       "name": "Qualys Inc.",
       "price_date": "2026-10-16",
       "probability_beat_qqq": null,
-      "rank": 2,
+      "rank": 3,
       "reference_price": 181.0500030517578,
       "risks": [
         "Annual return estimates remain experimental; losses can exceed the lower estimate.",
@@ -146,7 +230,7 @@
       ],
       "sector": "technology",
       "security_id": "yfinance:QLYS",
-      "selection_score": 0.9456026058631921,
+      "selection_score": 0.988599348534202,
       "symbol": "QLYS",
       "total_high": 0.5636919736862183,
       "total_low": -0.25226184725761414,
@@ -158,239 +242,157 @@
       }
     },
     {
-      "classification_override": {
-        "industry": "Digital musculoskeletal care",
-        "reason": "Hinge Health delivers musculoskeletal care; the broad EDP Services label obscures its healthcare exposure.",
-        "reviewed_on": "2026-09-18",
-        "sector": "healthcare",
-        "source": "https://ir.hingehealth.com/why-invest/default.aspx"
-      },
+      "classification_override": null,
       "evidence": {
-        "quality_filed": "2026-08-06",
-        "revenue_filed": "2026-08-06",
-        "revenue_period_end": "2026-06-30"
+        "quality_filed": "2026-09-03",
+        "revenue_filed": "2026-09-03",
+        "revenue_period_end": "2026-07-31"
       },
-      "excess_high": 0.3111553490161896,
-      "excess_low": -0.5425169467926025,
-      "excess_median": -0.16354528069496155,
-      "industry": "Digital musculoskeletal care",
+      "excess_high": 0.40948954224586487,
+      "excess_low": -0.47536158561706543,
+      "excess_median": -0.12431343644857407,
+      "industry": "Retail: Computer Software & Peripheral Equipment",
       "inputs": {
-        "cash_conversion": 2.666082938323447,
-        "earnings_yield": 0.013928622072600011,
-        "leverage": 0.5838423588164342,
-        "operating_margin": 0.1300889785726487,
-        "rank_cash_conversion": 0.9267100977198697,
-        "rank_earnings_yield": 0.04723127035830619,
-        "rank_leverage": 0.6530944625407166,
-        "rank_market_cap_usd": 0.36644951140065146,
-        "rank_operating_margin": 0.3273615635179153,
-        "rank_relative_strength_6m": 0.998371335504886,
-        "rank_return_on_equity": 0.7964169381107492,
-        "rank_revenue_yoy": 0.9397394136807817,
-        "rank_volatility_252": 0.8713355048859935,
-        "relative_strength_6m": 1.1927332878112793,
-        "return_on_equity": 0.3167590204688553,
-        "revenue_yoy": 0.5299788638226286,
-        "volatility_252": 0.5347571466209113
+        "cash_conversion": 2.398423504120387,
+        "earnings_yield": 0.03813720264554002,
+        "leverage": 0.6828317144360975,
+        "operating_margin": 0.06214324950443027,
+        "rank_cash_conversion": 0.8843648208469055,
+        "rank_earnings_yield": 0.49348534201954397,
+        "rank_leverage": 0.8680781758957655,
+        "rank_market_cap_usd": 0.8192182410423453,
+        "rank_operating_margin": 0.050488599348534204,
+        "rank_relative_strength_6m": 0.9853420195439739,
+        "rank_return_on_equity": 0.18729641693811075,
+        "rank_revenue_yoy": 0.8778501628664495,
+        "rank_volatility_252": 0.9364820846905537,
+        "relative_strength_6m": 1.000209093093872,
+        "return_on_equity": 0.10526514294335068,
+        "revenue_yoy": 0.3367994746059544,
+        "volatility_252": 0.5899468371716725
       },
-      "name": "Hinge Health Inc.",
+      "name": "Hewlett Packard Enterprise Company",
       "price_date": "2026-10-16",
       "probability_beat_qqq": null,
-      "rank": 3,
-      "reference_price": 99.16000366210938,
+      "rank": 4,
+      "reference_price": 55.130001068115234,
+      "risks": [
+        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
+        "The model's central excess return is negative: this candidate is not forecast to beat QQQ.",
+        "Annualised daily volatility exceeds 40%.",
+        "Liabilities exceed 65% of assets; inspect debt maturities and operating commitments."
+      ],
+      "scenarios": [
+        {
+          "ev_multiple_change": -0.2,
+          "label": "Stress",
+          "operating_profit_growth": -0.1,
+          "price_return": -0.33367138230620774,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0,
+          "label": "Steady",
+          "operating_profit_growth": 0.1,
+          "price_return": 0.11916835082364585,
+          "share_count_change": 0
+        },
+        {
+          "ev_multiple_change": 0.1,
+          "label": "Expansion",
+          "operating_profit_growth": 0.2,
+          "price_return": 0.38133872263566615,
+          "share_count_change": 0
+        }
+      ],
+      "sector": "consumer_cyclical",
+      "security_id": "yfinance:HPE",
+      "selection_score": 0.9853420195439739,
+      "symbol": "HPE",
+      "total_high": 0.5410190224647522,
+      "total_low": -0.2872824966907501,
+      "total_median": 0.06361521780490875,
+      "valuation_inputs": {
+        "enterprise_value": 87211134684.15535,
+        "market_cap": 73183134684.15535,
+        "net_debt": 14028000000.0
+      }
+    },
+    {
+      "classification_override": null,
+      "evidence": {
+        "quality_filed": "2026-07-31",
+        "revenue_filed": "2026-07-31",
+        "revenue_period_end": "2026-06-28"
+      },
+      "excess_high": 0.3111553490161896,
+      "excess_low": -0.5099064707756042,
+      "excess_median": -0.16343578696250916,
+      "industry": "Medical Specialities",
+      "inputs": {
+        "cash_conversion": 1.3272727272727274,
+        "earnings_yield": 0.020810451556573427,
+        "leverage": 0.5732330827067669,
+        "operating_margin": 0.19630536389939907,
+        "rank_cash_conversion": 0.3469055374592834,
+        "rank_earnings_yield": 0.11237785016286644,
+        "rank_leverage": 0.6270358306188925,
+        "rank_market_cap_usd": 0.7149837133550488,
+        "rank_operating_margin": 0.6400651465798045,
+        "rank_relative_strength_6m": 0.9788273615635179,
+        "rank_return_on_equity": 0.7671009771986971,
+        "rank_revenue_yoy": 0.30781758957654726,
+        "rank_volatility_252": 0.8192182410423453,
+        "relative_strength_6m": 0.8556914925575256,
+        "return_on_equity": 0.29069767441860467,
+        "revenue_yoy": 0.09442870632672329,
+        "volatility_252": 0.49482800929223375
+      },
+      "name": "Illumina Inc.",
+      "price_date": "2026-10-16",
+      "probability_beat_qqq": null,
+      "rank": 5,
+      "reference_price": 262.5400085449219,
       "risks": [
         "Annual return estimates remain experimental; losses can exceed the lower estimate.",
         "The model's central excess return is negative: this candidate is not forecast to beat QQQ.",
         "Trailing earnings multiple exceeds 40\u00d7; the valuation is sensitive to slower growth.",
-        "Annualised daily volatility exceeds 40%.",
-        "Revenue growth exceeds 50%; check acquisition effects and the comparison base."
+        "Annualised daily volatility exceeds 40%."
       ],
       "scenarios": [
         {
           "ev_multiple_change": -0.2,
           "label": "Stress",
           "operating_profit_growth": -0.1,
-          "price_return": null,
+          "price_return": -0.2867168570549793,
           "share_count_change": 0
         },
         {
           "ev_multiple_change": 0,
           "label": "Steady",
           "operating_profit_growth": 0.1,
-          "price_return": null,
+          "price_return": 0.10239887751963539,
           "share_count_change": 0
         },
         {
           "ev_multiple_change": 0.1,
           "label": "Expansion",
           "operating_profit_growth": 0.2,
-          "price_return": null,
+          "price_return": 0.3276764080628336,
           "share_count_change": 0
         }
       ],
       "sector": "healthcare",
-      "security_id": "yfinance:HNGE",
-      "selection_score": 0.9175895765472313,
-      "symbol": "HNGE",
+      "security_id": "yfinance:ILMN",
+      "selection_score": 0.9788273615635179,
+      "symbol": "ILMN",
       "total_high": 0.533565104007721,
-      "total_low": -0.3262469172477722,
-      "total_median": 0.012180894613265991,
+      "total_low": -0.29067978262901306,
+      "total_median": 0.036275994032621384,
       "valuation_inputs": {
-        "enterprise_value": null,
-        "market_cap": 7830566329.193115,
-        "net_debt": null
-      }
-    },
-    {
-      "classification_override": null,
-      "evidence": {
-        "quality_filed": "2026-08-05",
-        "revenue_filed": "2026-08-05",
-        "revenue_period_end": "2026-07-03"
-      },
-      "excess_high": 0.24419179558753967,
-      "excess_low": -0.42714640498161316,
-      "excess_median": -0.09440769255161285,
-      "industry": "Biotechnology: Biological Products (No Diagnostic Substances)",
-      "inputs": {
-        "cash_conversion": 1.3750771243622353,
-        "earnings_yield": 0.05581410172514908,
-        "leverage": 0.26079028671728477,
-        "operating_margin": 0.39882713718020296,
-        "rank_cash_conversion": 0.40553745928338764,
-        "rank_earnings_yield": 0.757328990228013,
-        "rank_leverage": 0.10586319218241043,
-        "rank_market_cap_usd": 0.5260586319218241,
-        "rank_operating_margin": 0.9527687296416938,
-        "rank_relative_strength_6m": 0.8843648208469055,
-        "rank_return_on_equity": 0.9495114006514658,
-        "rank_revenue_yoy": 0.3925081433224756,
-        "rank_volatility_252": 0.49022801302931596,
-        "relative_strength_6m": 0.28999876976013184,
-        "return_on_equity": 0.4667755382744628,
-        "revenue_yoy": 0.1063402204268813,
-        "volatility_252": 0.3663308814402
-      },
-      "name": "Exelixis Inc.",
-      "price_date": "2026-10-16",
-      "probability_beat_qqq": null,
-      "rank": 4,
-      "reference_price": 62.22999954223633,
-      "risks": [
-        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
-        "The model's central excess return is negative: this candidate is not forecast to beat QQQ."
-      ],
-      "scenarios": [
-        {
-          "ev_multiple_change": -0.2,
-          "label": "Stress",
-          "operating_profit_growth": -0.1,
-          "price_return": null,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0,
-          "label": "Steady",
-          "operating_profit_growth": 0.1,
-          "price_return": null,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0.1,
-          "label": "Expansion",
-          "operating_profit_growth": 0.2,
-          "price_return": null,
-          "share_count_change": 0
-        }
-      ],
-      "sector": "healthcare",
-      "security_id": "yfinance:EXEL",
-      "selection_score": 0.9104234527687296,
-      "symbol": "EXEL",
-      "total_high": 0.4565419554710388,
-      "total_low": -0.21874162554740906,
-      "total_median": 0.11788274347782135,
-      "valuation_inputs": {
-        "enterprise_value": null,
-        "market_cap": 15419454579.734543,
-        "net_debt": null
-      }
-    },
-    {
-      "classification_override": null,
-      "evidence": {
-        "quality_filed": "2026-08-10",
-        "revenue_filed": "2026-08-10",
-        "revenue_period_end": "2026-06-30"
-      },
-      "excess_high": 0.2697332203388214,
-      "excess_low": -0.4656798839569092,
-      "excess_median": -0.11501633375883102,
-      "industry": "Marine Transportation",
-      "inputs": {
-        "cash_conversion": 0.8125418742732167,
-        "earnings_yield": 0.14301125590607605,
-        "leverage": 0.24962619354727583,
-        "operating_margin": 0.6417969340429425,
-        "rank_cash_conversion": 0.021172638436482084,
-        "rank_earnings_yield": 0.998371335504886,
-        "rank_leverage": 0.09283387622149837,
-        "rank_market_cap_usd": 0.2687296416938111,
-        "rank_operating_margin": 0.995114006514658,
-        "rank_relative_strength_6m": 0.9429967426710097,
-        "rank_return_on_equity": 0.8452768729641694,
-        "rank_revenue_yoy": 0.99185667752443,
-        "rank_volatility_252": 0.5781758957654723,
-        "relative_strength_6m": 0.5031603574752808,
-        "return_on_equity": 0.34393058863258635,
-        "revenue_yoy": 1.38849218722047,
-        "volatility_252": 0.3945020100806132
-      },
-      "name": "International Seaways Inc.",
-      "price_date": "2026-10-16",
-      "probability_beat_qqq": null,
-      "rank": 5,
-      "reference_price": 109.98999786376953,
-      "risks": [
-        "Annual return estimates remain experimental; losses can exceed the lower estimate.",
-        "The model's central excess return is negative: this candidate is not forecast to beat QQQ.",
-        "Revenue growth exceeds 50%; check acquisition effects and the comparison base.",
-        "Cyclical business: recent growth and earnings may reflect favourable commodity prices or freight rates."
-      ],
-      "scenarios": [
-        {
-          "ev_multiple_change": -0.2,
-          "label": "Stress",
-          "operating_profit_growth": -0.1,
-          "price_return": -0.3049897723383369,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0,
-          "label": "Steady",
-          "operating_profit_growth": 0.1,
-          "price_return": 0.1089249186922634,
-          "share_count_change": 0
-        },
-        {
-          "ev_multiple_change": 0.1,
-          "label": "Expansion",
-          "operating_profit_growth": 0.2,
-          "price_return": 0.34855973981524246,
-          "share_count_change": 0
-        }
-      ],
-      "sector": "industrials",
-      "security_id": "yfinance:INSW",
-      "selection_score": 0.9039087947882736,
-      "symbol": "INSW",
-      "total_high": 0.4565419554710388,
-      "total_low": -0.22294826805591583,
-      "total_median": 0.13754354417324066,
-      "valuation_inputs": {
-        "enterprise_value": 5934173791.079704,
-        "market_cap": 5447948791.079704,
-        "net_debt": 486225000.0
+        "enterprise_value": 40594541290.2832,
+        "market_cap": 39643541290.2832,
+        "net_debt": 951000000.0
       }
     }
   ],
@@ -412,8 +414,8 @@
       "symbol": "LB"
     }
   ],
-  "forecast_id": "2026-10-16-63c2abda50789725",
-  "generated_at": "2026-10-18T13:59:21.734490+00:00",
+  "forecast_id": "2026-10-16-6b0ea3222c984d08",
+  "generated_at": "2026-10-18T14:55:11.742872+00:00",
   "horizon_sessions": 252,
   "latest_training_exit": "2026-09-30",
   "limitations": [
@@ -437,7 +439,7 @@
       "rank_market_cap_usd",
       "rank_volatility_252"
     ],
-    "implementation_sha256": "ccc4dedc017fca30c615f9e9ec7e2e6f572b9c6033155dcbeb20e6c6e13112ea",
+    "implementation_sha256": "00d2fd88d472c7bcfe43aff31a9e999f4d947b89e8e202ec34136e1f42af47c8",
     "parameters": {
       "eta": 0.04,
       "lambda": 20,
@@ -483,58 +485,58 @@
   "secondary_benchmark": "SPY",
   "selected_correlations": [
     {
+      "correlation": -0.03607507873683352,
+      "left": "HNGE",
+      "right": "MPC"
+    },
+    {
+      "correlation": 0.19977855882852072,
+      "left": "HNGE",
+      "right": "QLYS"
+    },
+    {
+      "correlation": 0.03542096530856337,
+      "left": "HNGE",
+      "right": "HPE"
+    },
+    {
+      "correlation": 0.1674333111954416,
+      "left": "HNGE",
+      "right": "ILMN"
+    },
+    {
       "correlation": 0.03776953734572851,
       "left": "MPC",
       "right": "QLYS"
     },
     {
-      "correlation": -0.03607507873683352,
+      "correlation": 0.16395310098640417,
       "left": "MPC",
-      "right": "HNGE"
+      "right": "HPE"
     },
     {
-      "correlation": -0.12315131026552802,
+      "correlation": -0.036358495290843056,
       "left": "MPC",
-      "right": "EXEL"
+      "right": "ILMN"
     },
     {
-      "correlation": 0.1471458234271783,
-      "left": "MPC",
-      "right": "INSW"
-    },
-    {
-      "correlation": 0.19977855882852072,
+      "correlation": 0.08030183110443562,
       "left": "QLYS",
-      "right": "HNGE"
+      "right": "HPE"
     },
     {
-      "correlation": 0.024440521737180285,
+      "correlation": 0.20307465029312347,
       "left": "QLYS",
-      "right": "EXEL"
+      "right": "ILMN"
     },
     {
-      "correlation": -0.0396822551336606,
-      "left": "QLYS",
-      "right": "INSW"
-    },
-    {
-      "correlation": 0.06387687613571241,
-      "left": "HNGE",
-      "right": "EXEL"
-    },
-    {
-      "correlation": -0.012611876090278059,
-      "left": "HNGE",
-      "right": "INSW"
-    },
-    {
-      "correlation": -0.03679574291943266,
-      "left": "EXEL",
-      "right": "INSW"
+      "correlation": 0.08512621991804438,
+      "left": "HPE",
+      "right": "ILMN"
     }
   ],
-  "selection": "60% six-month relative-strength percentile + 40% ROE percentile inside the quality cohort; maximum two per sector, one per industry, trailing daily correlation <= 0.80 with >=126 paired observations. Fewer than five if constraints prevent filling slots. Experimental model estimates do not determine this ranking.",
-  "selection_method": "composite_60_40",
+  "selection": "Six-month relative-strength percentile inside the quality cohort; maximum two per sector, one per industry, trailing daily correlation <= 0.80 with >=126 paired observations. Fewer than five if constraints prevent filling slots. Experimental model estimates do not determine this ranking.",
+  "selection_method": "momentum",
   "snapshot_sha256": "acf88db20201ffdcfda37207fe7aa48073ab2ad22db1795c7ab718e79cc9f383",
   "training_months": 49,
   "training_rows": 9457,
@@ -655,7 +657,7 @@
         "excess_qqq_net": 0.8220436196998869,
         "excess_spy_net": 0.8374619660786036,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20787098235353563,
+        "maximum_drawdown": -0.20787098235353552,
         "median_absolute_error": 1.3473810744482921,
         "method": "momentum",
         "range_coverage": 0.4,
@@ -693,7 +695,7 @@
         "excess_qqq_net": 0.19926781603398297,
         "excess_spy_net": 0.17850274579378717,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13972674922555528,
+        "maximum_drawdown": -0.1397267492255554,
         "median_absolute_error": 0.6179937151165722,
         "method": "quantile_trees",
         "range_coverage": 0.4,
@@ -769,7 +771,7 @@
         "excess_qqq_net": 0.5463173851612679,
         "excess_spy_net": 0.5569009111527825,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.17988386187145733,
+        "maximum_drawdown": -0.17988386187145722,
         "median_absolute_error": 0.8618797521833962,
         "method": "momentum",
         "range_coverage": 0.2,
@@ -788,7 +790,7 @@
         "excess_qqq_net": -0.0706137430073737,
         "excess_spy_net": -0.06003021701585918,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13484400144760034,
+        "maximum_drawdown": -0.13484400144760023,
         "median_absolute_error": 0.524231044024764,
         "method": "composite_60_40",
         "range_coverage": 0.2,
@@ -807,7 +809,7 @@
         "excess_qqq_net": 0.019178813487877977,
         "excess_spy_net": 0.002893977523568904,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.0944246369425501,
+        "maximum_drawdown": -0.09442463694255043,
         "median_absolute_error": 0.29632750552761633,
         "method": "quantile_trees",
         "range_coverage": 0.6,
@@ -845,7 +847,7 @@
         "excess_qqq_net": 0.21075119124856925,
         "excess_spy_net": 0.19446635528426018,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.1630735424029397,
+        "maximum_drawdown": -0.1630735424029398,
         "median_absolute_error": 0.5446472795783989,
         "method": "composite_60_40",
         "range_coverage": 0.4,
@@ -1016,7 +1018,7 @@
         "excess_qqq_net": -0.3498714929603551,
         "excess_spy_net": -0.3397635434437363,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.4066967571800245,
+        "maximum_drawdown": -0.4066967571800244,
         "median_absolute_error": 0.35558723697464656,
         "method": "composite_60_40",
         "range_coverage": 0.6,
@@ -1035,7 +1037,7 @@
         "excess_qqq_net": -0.0033927549996266996,
         "excess_spy_net": 0.022836250638650094,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.13492193303589717,
+        "maximum_drawdown": -0.13492193303589728,
         "median_absolute_error": 0.3204320865975904,
         "method": "quantile_trees",
         "range_coverage": 0.4,
@@ -1073,7 +1075,7 @@
         "excess_qqq_net": -0.22659784526389296,
         "excess_spy_net": -0.20036883962561616,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.3542376985752964,
+        "maximum_drawdown": -0.3542376985752965,
         "median_absolute_error": 0.4587820912790376,
         "method": "composite_60_40",
         "range_coverage": 0.2,
@@ -1130,7 +1132,7 @@
         "excess_qqq_net": -0.17945043556631643,
         "excess_spy_net": -0.17457854818282856,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.29487520461874894,
+        "maximum_drawdown": -0.29487520461874905,
         "median_absolute_error": 0.38929780513048157,
         "method": "composite_60_40",
         "range_coverage": 0.2,
@@ -1225,7 +1227,7 @@
         "excess_qqq_net": -0.19900680688794098,
         "excess_spy_net": -0.14396461761304274,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2372293579079625,
+        "maximum_drawdown": -0.23722935790796262,
         "median_absolute_error": 0.16691364126027136,
         "method": "momentum",
         "range_coverage": 0.8,
@@ -1244,7 +1246,7 @@
         "excess_qqq_net": 0.10801218687790368,
         "excess_spy_net": 0.1630543761528019,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.1765220872009512,
+        "maximum_drawdown": -0.17652208720095097,
         "median_absolute_error": 0.28413963213861726,
         "method": "composite_60_40",
         "range_coverage": 0.8,
@@ -1282,7 +1284,7 @@
         "excess_qqq_net": 0.7046526211895525,
         "excess_spy_net": 0.7708356457897944,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2687570823171549,
+        "maximum_drawdown": -0.26875708231715467,
         "median_absolute_error": 1.0710833563012259,
         "method": "momentum",
         "range_coverage": 0.6,
@@ -1339,7 +1341,7 @@
         "excess_qqq_net": 0.6744423043195792,
         "excess_spy_net": 0.7560724666195232,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.21065905177571143,
+        "maximum_drawdown": -0.21065905177571131,
         "median_absolute_error": 0.9975339867573847,
         "method": "momentum",
         "range_coverage": 0.4,
@@ -1358,7 +1360,7 @@
         "excess_qqq_net": 0.014106806314528432,
         "excess_spy_net": 0.09573696861447242,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.15473011706680384,
+        "maximum_drawdown": -0.15473011706680362,
         "median_absolute_error": 0.5440367025512538,
         "method": "composite_60_40",
         "range_coverage": 0.6,
@@ -1377,7 +1379,7 @@
         "excess_qqq_net": -0.04439014273858135,
         "excess_spy_net": 0.03239494760210702,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.20344003234339214,
+        "maximum_drawdown": -0.2034400323433918,
         "median_absolute_error": 0.16399992702106345,
         "method": "quantile_trees",
         "range_coverage": 0.8,
@@ -1415,7 +1417,7 @@
         "excess_qqq_net": -0.46934732054108597,
         "excess_spy_net": -0.3925622302003976,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.29593239977643016,
+        "maximum_drawdown": -0.29593239977643004,
         "median_absolute_error": 0.37142076052807843,
         "method": "composite_60_40",
         "range_coverage": 0.4,
@@ -1453,7 +1455,7 @@
         "excess_qqq_net": -0.03337508005310328,
         "excess_spy_net": -0.013714075736850215,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.32872279400727866,
+        "maximum_drawdown": -0.3287227940072788,
         "median_absolute_error": 0.3498295372509676,
         "method": "momentum",
         "range_coverage": 0.8,
@@ -1548,7 +1550,7 @@
         "excess_qqq_net": -0.3492911478491644,
         "excess_spy_net": -0.31194047394793906,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.25953315923706777,
+        "maximum_drawdown": -0.25953315923706766,
         "median_absolute_error": 0.42954522907086606,
         "method": "quantile_trees",
         "range_coverage": 0.2,
@@ -1605,7 +1607,7 @@
         "excess_qqq_net": -0.2703286668630881,
         "excess_spy_net": -0.20462138517388043,
         "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.1455998877472987,
+        "maximum_drawdown": -0.14559988774729826,
         "median_absolute_error": 0.23003268886266715,
         "method": "quantile_trees",
         "range_coverage": 1.0,
@@ -1624,7 +1626,7 @@
         "excess_qqq_net": -0.2152745237417097,
         "excess_spy_net": -0.149567242052502,
         "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.18953673532223925,
+        "maximum_drawdown": -0.18953673532223902,
         "median_absolute_error": 0.2417229407804693,
         "method": "momentum",
         "range_coverage": 0.6,
@@ -1643,7 +1645,7 @@
         "excess_qqq_net": -0.33920646427838996,
         "excess_spy_net": -0.27349918258918227,
         "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.2597577042355662,
+        "maximum_drawdown": -0.2597577042355661,
         "median_absolute_error": 0.3073509997531073,
         "method": "composite_60_40",
         "range_coverage": 0.4,
@@ -1700,7 +1702,7 @@
         "excess_qqq_net": -0.3956394427340872,
         "excess_spy_net": -0.295604644454694,
         "market_regime": "QQQ trailing 6M down",
-        "maximum_drawdown": -0.27566963836554537,
+        "maximum_drawdown": -0.2756696383655455,
         "median_absolute_error": 0.35885588828790504,
         "method": "composite_60_40",
         "range_coverage": 0.6,
@@ -1776,7 +1778,7 @@
         "excess_qqq_net": -0.41654163009606926,
         "excess_spy_net": -0.31605636434862594,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.24588055300899636,
+        "maximum_drawdown": -0.24588055300899647,
         "median_absolute_error": 0.3600217301092464,
         "method": "quantile_trees",
         "range_coverage": 0.2,
@@ -1871,7 +1873,7 @@
         "excess_qqq_net": 1.4053915237230499,
         "excess_spy_net": 1.419590296176203,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.2962676270676422,
+        "maximum_drawdown": -0.2962676270676423,
         "median_absolute_error": 1.5574470825722033,
         "method": "composite_60_40",
         "range_coverage": 0.6,
@@ -1909,7 +1911,7 @@
         "excess_qqq_net": 0.15631985311358057,
         "excess_spy_net": 0.21239953261943545,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.32106055115082033,
+        "maximum_drawdown": -0.3210605511508202,
         "median_absolute_error": 0.5458830637015029,
         "method": "momentum",
         "range_coverage": 0.4,
@@ -1928,7 +1930,7 @@
         "excess_qqq_net": 1.1305477691607797,
         "excess_spy_net": 1.1866274486666348,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.3618096960982504,
+        "maximum_drawdown": -0.3618096960982503,
         "median_absolute_error": 1.401438434195155,
         "method": "composite_60_40",
         "range_coverage": 0.4,
@@ -1985,7 +1987,7 @@
         "excess_qqq_net": 1.0408303387607953,
         "excess_spy_net": 1.1211124224985138,
         "market_regime": "QQQ trailing 6M up",
-        "maximum_drawdown": -0.38875148313907915,
+        "maximum_drawdown": -0.38875148313907937,
         "median_absolute_error": 1.2001609860837736,
         "method": "composite_60_40",
         "range_coverage": 0.4,
@@ -2168,7 +2170,7 @@
         "selected_mean_absolute_error": 0.5808445047656993,
         "selected_range_coverage": 0.512,
         "worst_cohort_return_net": -0.24373119396070955,
-        "worst_holding_drawdown": -0.4066967571800245
+        "worst_holding_drawdown": -0.4066967571800244
       },
       "momentum": {
         "beat_qqq_fraction": 0.64,
