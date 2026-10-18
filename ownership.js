@@ -72,6 +72,21 @@ function pct(value, digits = 1) {
   const v = Number(value) * 100;
   return `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}%`;
 }
+function capPct(value, cap) {
+  const v = Number(value) || 0, c = Number(cap) || 0;
+  if (v <= 0 || c <= 0) return "";
+  const p = (v / c) * 100;
+  return p < 0.01 ? "<0.01%" : `${p.toFixed(2)}%`;
+}
+function move1m(ctx) {
+  if (!ctx) return null;
+  if (ctx.move_1m !== null && ctx.move_1m !== undefined && Number.isFinite(Number(ctx.move_1m))) return Number(ctx.move_1m);
+  const c = ctx.chart;
+  if (Array.isArray(c) && c.length >= 22 && c[c.length - 22] && c[c.length - 1]) {
+    return c[c.length - 1] / c[c.length - 22] - 1;
+  }
+  return null;
+}
 function day(iso) {
   const [, month, date] = String(iso || "").split("-");
   return month ? `${Number(date)} ${MONTHS[Number(month) - 1]}` : "";
@@ -818,7 +833,9 @@ function overview(company, data, sig) {
   const tiles = el("div", "os-tiles");
   const tile = (value, label) => { const t = el("div", "os-tile"); t.append(el("b", signCls(value), value), el("span", "", label)); tiles.append(t); };
   const value = amount(company, sig);
-  if (value) tile(money(value), sig.kind === "buy" ? "total bought" : sig.kind === "other" ? "moved" : sig.kind === "holder" ? "traded" : "total sold");
+  const baseLabel = sig.kind === "buy" ? "total bought" : sig.kind === "other" ? "moved" : sig.kind === "holder" ? "traded" : "total sold";
+  const shareOfCap = sig.kind !== "other" ? capPct(value, company.market_cap) : "";
+  if (value) tile(money(value), shareOfCap ? `${baseLabel} · ${shareOfCap} of cap` : baseLabel);
   if (people.length) tile(String(people.length), people.length === 1 ? (sig.insiders === false ? "holder" : "insider") : (sig.insiders === false ? "holders" : "insiders"));
   const { first, last } = tradeSpan(people, sig.keys);
   if (first) tile(first === last ? day(first) : plural(daysBetween(first, last) + 1, "day"), first === last ? "traded" : `traded ${span(first, last)}`);
@@ -994,7 +1011,9 @@ function openDetail(company, view, from) {
   const title = el("h2", "", company.symbol);
   title.id = "os-detail-title";
   const ctx = company.prices || {};
+  const m1 = move1m(ctx);
   const facts = withSigns("os-d-facts", [ctx.close ? `${price(ctx.close.value)} close ${day(ctx.close.day)}` : "",
+    m1 !== null ? `1-mo ${pct(m1)}` : "",
     ctx.move_3m !== null && ctx.move_3m !== undefined ? `3-mo ${pct(ctx.move_3m)}` : "",
     company.market_cap ? `${money(company.market_cap)} market cap` : ""].filter(Boolean).join(" · "));
   const chips = el("div", "os-d-chips");
