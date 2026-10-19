@@ -37,19 +37,22 @@ repository for methodology, limitations, dependencies and verification.
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
 after Market mood. It filters Yahoo's five current-month rating counts for the
 names appearing on at least two published screens, so it is a cross-screen
-shortlist, distinct from the Conviction rank across the liquid universe. Buy share is Strong Buy plus Buy over all five
-categories, including Hold, Sell, and Strong Sell. Buy share Δ is this month’s
-buy share minus the previous month’s, in percentage points; a missing month is
-shown as n/a, not zero. Target median and implied upside use the freeze Friday
-close, not Yahoo’s live price. Positive implied upside is the usual sell-side
-stance, not a cheapness signal. Counts and targets are dated by retrieval
-because Yahoo's summary carries no per-report publication dates, and a name
-whose summary is missing is excluded rather than counted as zero votes. The view
-refuses to render unless `market-mood.json`, `desk.json`, and `release.json`
-agree on the same run, and unless its coverage reconciles with the cross-screen
-count. The sortable dated Close column sits immediately before Target median
-and displays the frozen reference close used in implied upside. Its date follows
-the snapshot; unavailable closes display n/a and sort last in either direction.
+shortlist, distinct from the Conviction rank across the liquid universe. Screen-overlap
+pills filter between all cross-screen names, the three-screen core, and each
+two-screen pair. The 8-column table links each ticker to `ticker.html`, shows screen membership
+chips, a 5-segment Ratings mix bar with counts, Buy share (Strong Buy plus Buy
+over all five categories), 1m mix Δ (this month minus last month in percentage
+points, with prior-to-current analyst counts when coverage changed), 30-day
+current-year (`0y`) EPS revision counts joined from `desk.json`, a visual
+Close-versus-Target low–median–high range gauge (flagging closes below low or
+above high), and Implied upside with Target range. Target median and implied
+upside use the freeze Friday close, not Yahoo’s live price. Counts and targets
+are dated by retrieval because Yahoo's summary carries no per-report publication
+dates, and a name whose summary is missing is excluded rather than counted as
+zero votes. The view refuses to render unless `market-mood.json`, `desk.json`,
+and `release.json` agree on the same run, and unless its coverage reconciles
+with the cross-screen count. Unavailable values display n/a and sort last in
+either direction.
 
 Insights is a fourth page, `insights.html` (with `ownership.js` and
 `ownership.css`). It reads only `ownership-signals.json` (Ownership Signals):
