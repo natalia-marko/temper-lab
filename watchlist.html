@@ -7,7 +7,7 @@
     <title>Temper Lab — Watchlist</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=b7747d4533bd" />
-    <link rel="stylesheet" href="./watchlist.css?v=594ca09c0abb" />
+    <link rel="stylesheet" href="./watchlist.css?v=b22136a753b4" />
   </head>
   <body class="watchlist-page">
     <div class="desk">
@@ -60,7 +60,7 @@
           <div class="wl-timing-head">
             <div>
               <h2>Trend and momentum</h2>
-              <p id="wl-timing-sub">Weekly snapshot: 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9). Descriptions of past prices, not a buy or sell call.</p>
+              <p id="wl-timing-sub">Weekly snapshot. Colour shows three trend rules tested on Temper Lab data: price vs 200-day, 12–1 month return, 50-day vs 200-day. RSI (14, Wilder) and MACD (12, 26, 9) are context. Descriptions of past prices, not a buy or sell call.</p>
             </div>
             <div class="wl-timing-controls">
               <div id="wl-osc-switch" class="wl-osc-switch" role="group" aria-label="Oscillator panels">
@@ -75,17 +75,17 @@
           <div id="wl-timing-chart" class="wl-timing-chart"></div>
           <div class="wl-table-wrap">
             <table id="wl-timing-table" class="wl-table wl-timing-table" hidden>
-              <thead><tr><th scope="col">Company</th><th scope="col" id="wl-th-trend">50-day vs 200-day average</th><th scope="col" class="num">Close</th><th scope="col" class="num">Price vs 50-day</th><th scope="col" id="wl-th-gap" class="num">Gap, 50 vs 200</th><th scope="col" class="num">RSI (14)</th><th scope="col">MACD (12, 26, 9)</th><th scope="col" id="wl-th-cross">Last 50/200 cross</th><th scope="col">Next results</th></tr></thead>
+              <thead><tr><th scope="col">Company</th><th scope="col" id="wl-th-trend">Trend rules (tested)</th><th scope="col" class="num">Close</th><th scope="col" class="num">Price vs 50-day</th><th scope="col" id="wl-th-gap" class="num">Gap, 50 vs 200</th><th scope="col" class="num">RSI (14)</th><th scope="col">MACD (12, 26, 9)</th><th scope="col" id="wl-th-cross">Last 50/200 cross</th><th scope="col">Next results</th></tr></thead>
               <tbody id="wl-timing-rows"></tbody>
             </table>
           </div>
-          <p id="wl-timing-foot" class="wl-note">Prices are Yahoo adjusted closes (splits and dividends). These rules have not been tested on Temper Lab data and are not a buy or sell call.</p>
+          <p id="wl-timing-foot" class="wl-note">Prices are Yahoo adjusted closes (splits and dividends). RSI and MACD have not been tested on Temper Lab data. None of this is a buy or sell call.</p>
         </section>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
-    <script src="./watchlist-page.js?v=f4c119408375"></script>
+    <script src="./watchlist-page.js?v=5c0dd2c16365"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

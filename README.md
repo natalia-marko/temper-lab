@@ -112,7 +112,8 @@ rules: four significant digits; no line with fewer than half the days or a one-d
 script writes `ticker-timing.json` for the Watchlist Timing tab only (loaded when that tab opens): 452 QQQ sessions of
 adjusted closes per stock, 252 shown and 200 to start the averages, no series with a gap longer than 5 sessions. The
 tab draws the 50-day and 200-day SMA, Wilder's RSI (14) and MACD (12, 26, 9), dates every event on the day it happens, and makes
-no buy or sell call. The Ticker page
+no buy or sell call. Colour has one meaning there: the three trend rules tested in Leg D (price vs 200-day, 12-1 month
+return, 50-day vs 200-day; green all up, amber mixed, red all down, grey too little history); RSI and MACD are grey context. The Ticker page
 reads top-down: header (next results date, list ranks against last week), a summary strip with one dated line
 per section, then price and trading, the business (Research stocks only; price / earnings and EV / operating
 income are the only ratios worked out on the page, from one Research record, and not shown for a loss), and

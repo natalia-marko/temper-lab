@@ -1,7 +1,9 @@
 // The Watchlist page: names starred on any page, with facts from the latest
 // Research snapshot (desk.json) and the earnings calendar. The Timing tab draws one year of
 // daily closes with the 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
-// ticker-timing.json, loaded only when that tab opens. Descriptions of past prices, not calls.
+// ticker-timing.json, loaded only when that tab opens. Colour has one meaning on that tab: the three
+// trend rules tested in Leg D (green all up, amber mixed, red all down). RSI and MACD are context.
+// Descriptions of past prices, not calls.
 (function () {
   "use strict";
   const W = globalThis.TLWatch;
@@ -155,10 +157,24 @@
 
     const last = n - 1;
     const ratio = (a, b) => (a !== null && b ? a / b - 1 : null);
+    // The three trend rules tested in Leg D (claude/leg-d-trend-rules-2026-10-18.md), on the last close:
+    //   A price above its 200-day SMA; B 12-1 month return above zero (the close 21 sessions back
+    //   against the close 252 sessions back); C 50-day SMA above the 200-day SMA.
+    // A rule is null while the history is too short for it.
+    const mom121 = last - 252 >= firstValid ? closes[last - 21] / closes[last - 252] - 1 : null;
+    const rules = {
+      A: sma200[last] !== null ? closes[last] > sma200[last] : null,
+      B: mom121 !== null ? mom121 > 0 : null,
+      C: sma50[last] !== null && sma200[last] !== null ? sma50[last] > sma200[last] : null,
+    };
+    const known = Object.values(rules).filter((v) => v !== null);
+    const rulesUp = known.filter(Boolean).length;
+    const ruleTone = known.length < 3 ? "none" : rulesUp === 3 ? "up" : rulesUp === 0 ? "down" : "mixed";
     const lastOf = (list, kind) => [...list].reverse().find((e) => !kind || e.kind === kind) || null;
     return {
       slowPeriod,
       history: n - firstValid,
+      slowFrom: firstValid + slowPeriod - 1 < n ? allDays[firstValid + slowPeriod - 1] : null,
       days,
       close: cut(closes),
       sma50: cut(sma50),
@@ -179,6 +195,10 @@
         vsSlow: ratio(closes[last], slow[last]),
         sma50VsSlow: ratio(sma50[last], slow[last]),
         trend: sma50[last] !== null && slow[last] !== null ? (sma50[last] > slow[last] ? "up" : sma50[last] < slow[last] ? "down" : "flat") : null,
+        mom121,
+        rules,
+        rulesUp,
+        ruleTone,
         rsi14: rsi[last],
         macd: macd[last],
         signal: signal[last],
@@ -256,6 +276,28 @@
   // last year cannot be read as next month.
   const eventDay = (iso) => (timing && timing.as_of && String(iso).slice(0, 4) !== String(timing.as_of).slice(0, 4) ? longDay(iso) : shortDay(iso));
   const rsiZone = (r) => (r === null ? "—" : r >= RSI_HIGH ? `${RSI_HIGH} or above` : r <= RSI_LOW ? `${RSI_LOW} or below` : `between ${RSI_LOW} and ${RSI_HIGH}`);
+  // Trend rules: green = all three tested rules up, red = all three down, amber = they disagree,
+  // grey = too little history for all three. The rules were tested on month-end closes.
+  const RULE_NAMES = { A: "price above 200-day", B: "12–1 month return above zero", C: "50-day above 200-day" };
+  const ruleBadge = (L) => (L.ruleTone === "up" ? "Uptrend · 3 of 3" : L.ruleTone === "down" ? "Downtrend · 0 of 3"
+    : L.ruleTone === "mixed" ? `Mixed · ${L.rulesUp} of 3` : "Not enough history");
+  const ruleList = (L) => Object.entries(RULE_NAMES)
+    .map(([k, name]) => `${L.rules[k] === null ? "–" : L.rules[k] ? "✓" : "✗"} ${name}${k === "B" && L.mom121 !== null ? ` (${signedPct(L.mom121, 0)})` : ""}`)
+    .join(" · ");
+  // The month-end after the snapshot: this month's, or next month's when the snapshot is already
+  // the month's last weekday.
+  function nextMonthEnd(iso) {
+    const [y, m, d] = parts(iso);
+    if (!y || !m || !d) return "";
+    const end = new Date(Date.UTC(y, m, 0));
+    while (end.getUTCDay() === 0 || end.getUTCDay() === 6) end.setUTCDate(end.getUTCDate() - 1);
+    const roll = d >= end.getUTCDate();
+    const nm = roll ? (m % 12) + 1 : m;
+    return `end of ${MONTHS[nm - 1]} ${roll && m === 12 ? y + 1 : y}`;
+  }
+  // No 50/200 cross to name: say why, so a young listing is not read as a calm year.
+  const noCross = (ta, slowP) => (ta.slowFrom && ta.days.length && ta.slowFrom > ta.days[0]
+    ? `None since the ${slowP}-day began (${eventDay(ta.slowFrom)})` : "None in the chart year");
   const axisNumber = (v) => {
     const a = Math.abs(v);
     return v.toFixed(a >= 10 ? 0 : a >= 1 ? 1 : a >= 0.1 ? 2 : 3);
@@ -297,6 +339,8 @@
         svg("polygon", { points: pts, fill: item.color }, chart);
       } else if (item.shape === "dot") {
         svg("circle", { cx: lx + 10, cy: ly - 1, r: 3.6, fill: item.color, stroke: "#ffffff", "stroke-width": "1" }, chart);
+      } else if (item.shape === "ring") {
+        svg("circle", { cx: lx + 10, cy: ly - 1, r: 3.4, fill: "#ffffff", stroke: item.color, "stroke-width": "1.5" }, chart);
       } else if (item.shape === "bar") {
         svg("rect", { x: lx + 5, y: ly - 6, width: 10, height: 9, fill: item.color }, chart);
       } else {
@@ -399,8 +443,8 @@
         { color: "#1d4ed8", label: "MACD" },
         { color: "#d97706", label: "Signal" },
         { shape: "bar", color: "#9ca3af", label: "Histogram" },
-        { shape: "dot", color: "#15803d", label: "crossed above signal" },
-        { shape: "dot", color: "#dc2626", label: "crossed below signal" },
+        { shape: "dot", color: "#4b5563", label: "crossed above signal" },
+        { shape: "ring", color: "#4b5563", label: "crossed below signal" },
       ], narrow ? 140 : 158, "MACD ($)");
       const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v)).map(Math.abs);
       const mMax = (Math.max(0, ...mVals) || 1) * 1.15;
@@ -416,12 +460,12 @@
         const h = ta.hist[i];
         if (h === null || !Number.isFinite(h)) continue;
         const yy = yMacd(h);
-        svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#86efac" : "#fca5a5" }, chart);
+        svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#9ca3af" : "#d1d5db" }, chart);
       }
       svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
       svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
       for (const e of ta.events.macd) {
-        svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1" }, chart);
+        svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#4b5563" : "#ffffff", stroke: e.kind === "up" ? "#ffffff" : "#4b5563", "stroke-width": e.kind === "up" ? "1" : "1.5" }, chart);
       }
     }
 
@@ -496,23 +540,29 @@
     if (!panelEl) return;
     const slowP = 200;
     if ($("wl-timing-sub")) {
-      $("wl-timing-sub").textContent = `${timing && timing.as_of ? `Close on ${longDay(timing.as_of)} (the weekly snapshot)` : "Weekly snapshot"}: `
-        + `50-day and ${slowP}-day averages, RSI (14, Wilder) and MACD (12, 26, 9). Descriptions of past prices, not a buy or sell call.`;
+      const asOf = timing && timing.as_of;
+      $("wl-timing-sub").textContent = `${asOf ? `Close on ${longDay(asOf)} (the weekly snapshot)` : "Weekly snapshot"}. `
+        + `Colour shows three trend rules tested on Temper Lab data: price vs ${slowP}-day, 12–1 month return, 50-day vs ${slowP}-day. `
+        + `They were tested on month-end closes${asOf ? ` (next: ${nextMonthEnd(asOf)})` : ""}. `
+        + `RSI (14, Wilder) and MACD (12, 26, 9) are context. Descriptions of past prices, not a buy or sell call.`;
     }
-    if ($("wl-th-trend")) $("wl-th-trend").textContent = `50-day vs ${slowP}-day average`;
+    if ($("wl-th-trend")) $("wl-th-trend").textContent = "Trend rules (tested)";
     if ($("wl-th-gap")) $("wl-th-gap").textContent = `Gap, 50 vs ${slowP}`;
     if ($("wl-th-cross")) $("wl-th-cross").textContent = `Last 50/${slowP} cross`;
     if ($("wl-timing-foot")) {
-      $("wl-timing-foot").textContent = `How these are made: prices are Yahoo adjusted closes (splits and dividends), four significant digits, so past levels can sit below the prices traded then. `
+      $("wl-timing-foot").textContent = `Trend rules: in a Leg D test of US stocks with $1B+ market value and $10M+ daily trading, signals on month-end closes, entries Jul 2021 – Apr 2026, `
+        + `stocks with each rule up beat those with it down by 3.0% to 3.6% over the next 6 months (size-neutral, before costs, survivors only, past results). `
+        + `Green = all three up, amber = they disagree, red = all three down, grey = too little history. `
+        + `How these are made: prices are Yahoo adjusted closes (splits and dividends), four significant digits, so past levels can sit below the prices traded then. `
         + `Averages are simple moving averages; ▲/▼ mark the day the 50-day crossed the ${slowP}-day. RSI is Wilder's 14-day RSI; dots mark the first day at ${RSI_HIGH} or above or at ${RSI_LOW} or below. `
         + `MACD is 12/26/9 on exponential averages, in dollars, so it cannot be compared across stocks; every crossover of the signal line is drawn. `
-        + `Up to 200 sessions before the chart are used to start the averages; a younger listing starts later. These rules have not been tested on Temper Lab data and are not a buy or sell call.`;
+        + `Up to 200 sessions before the chart are used to start the averages; a younger listing starts later. RSI and MACD have not been tested on Temper Lab data. None of this is a buy or sell call.`;
     }
 
     const starredSyms = items.map((x) => x.symbol);
     const symbols = starredSyms.length ? starredSyms : outlookPicks.slice();
     if (!activeSymbol || (!symbols.includes(activeSymbol) && !outlookPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
-    const tone = (ta) => (!ta ? "" : ta.last.trend === "up" ? "up" : ta.last.trend === "down" ? "down" : "none");
+    const tone = (ta) => (!ta ? "" : ta.last.ruleTone);
 
     const picksBar = $("wl-timing-picks");
     if (picksBar) {
@@ -552,16 +602,18 @@
         };
         const since = L.lastMa
           ? `Since ${longDay(L.lastMa.date)}, when the 50-day crossed ${L.lastMa.kind === "up" ? "above" : "below"} the ${slowP}-day.`
-          : L.trend ? "No cross in the chart year." : `${activeTa.history} sessions of history; the ${slowP}-day average needs ${slowP}.`;
+          : L.trend ? `${noCross(activeTa, slowP).replace("None", "No cross")}.` : `${activeTa.history} sessions of history; the ${slowP}-day average needs ${slowP}.`;
         const levels = [`50-day ${p4(L.sma50)}`, `${slowP}-day ${p4(L.slow)}`];
         const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? eventDay(L.lastRsiHigh.date) : "not in the chart year"}`,
           `last fell to ${RSI_LOW}: ${L.lastRsiLow ? eventDay(L.lastRsiLow.date) : "not in the chart year"}`];
         summary.replaceChildren(
-          card(`Trend · 50-day vs ${slowP}-day`, trendText(L, slowP), `${since}${L.sma50VsSlow !== null ? ` Gap ${signedPct(L.sma50VsSlow)}.` : ""}`, tone(activeTa)),
+          card("Trend rules (tested)", ruleBadge(L), `${ruleList(L)}.`, tone(activeTa)),
+          card(`50-day vs ${slowP}-day`, trendText(L, slowP), `${since}${L.sma50VsSlow !== null ? ` Gap ${signedPct(L.sma50VsSlow)}.` : ""}`),
           card("Price vs averages", `${closeText(activeSymbol, activeTa)} · ${signedPct(L.vsSma50)} vs 50-day`, `${levels.join(" · ")} · price ${signedPct(L.vsSlow)} vs ${slowP}-day`),
-          card("RSI (14, Wilder)", L.rsi14 !== null ? `${L.rsi14.toFixed(1)} · ${rsiZone(L.rsi14)}` : "—", `${rsiLast.join(" · ")}`),
-          card("MACD (12, 26, 9)", L.hist === null ? "—" : L.hist >= 0 ? "MACD above signal" : "MACD below signal",
-            `${L.lastMacd ? `Since the ${eventDay(L.lastMacd.date)} crossover · ` : ""}Next results: ${resultsText(earnings[activeSymbol])}`),
+          card("RSI (14, Wilder) · context", L.rsi14 !== null ? `${L.rsi14.toFixed(1)} · ${rsiZone(L.rsi14)}` : "—", `${rsiLast.join(" · ")}. Not tested as a timing signal.`),
+          card("MACD (12, 26, 9) · context", L.hist === null ? "—" : L.hist >= 0 ? "MACD above signal" : "MACD below signal",
+            `${L.lastMacd ? `Since the ${eventDay(L.lastMacd.date)} crossover. ` : ""}Not tested as a timing signal.`),
+          card("Next results", resultsText(earnings[activeSymbol]), "Can move the price a lot in one day; not part of the trend rules."),
         );
       }
     }
@@ -590,12 +642,14 @@
         }
         const L = ta.last;
         const trend = el("td");
-        trend.append(el("span", `wl-badge ${tone(ta)}`, L.trend === "up" ? "Above" : L.trend === "down" ? "Below" : L.trend === "flat" ? "Equal" : "Not formed"));
-        const signed = (v) => el("td", `num ${v === null ? "" : v >= 0 ? "wl-pos" : "wl-neg"}`.trim(), signedPct(v));
-        tr.append(co, trend, el("td", "num", closeText(sym, ta)), signed(L.vsSma50), signed(L.sma50VsSlow),
+        const badge = el("span", `wl-badge ${tone(ta)}`, ruleBadge(L));
+        badge.title = ruleList(L);
+        trend.append(badge);
+        const plain = (v) => el("td", "num", signedPct(v));
+        tr.append(co, trend, el("td", "num", closeText(sym, ta)), plain(L.vsSma50), plain(L.sma50VsSlow),
           el("td", "num", L.rsi14 !== null ? L.rsi14.toFixed(1) : "—"),
           el("td", "", L.hist === null ? "—" : `${L.hist >= 0 ? "Above" : "Below"} signal${L.lastMacd ? ` since ${eventDay(L.lastMacd.date)}` : ""}`),
-          el("td", "", L.lastMa ? `${L.lastMa.kind === "up" ? "▲ above" : "▼ below"} · ${eventDay(L.lastMa.date)}` : "None in the chart year"),
+          el("td", "", L.lastMa ? `${L.lastMa.kind === "up" ? "▲ above" : "▼ below"} · ${eventDay(L.lastMa.date)}` : L.trend ? noCross(ta, slowP) : `${slowP}-day not formed`),
           el("td", "", resultsText(earnings[sym])));
         return tr;
       }));
@@ -696,6 +750,6 @@
       render(W.list());
     });
   }
-  globalThis.TLWatchTiming = { computeIndicators };
+  globalThis.TLWatchTiming = { computeIndicators, nextMonthEnd };
   if (W && $("wl-rows")) setup();
 })();
