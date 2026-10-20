@@ -553,7 +553,7 @@ function resultsCell(symbol) {
   if (!calendar) return `<td><span class="na" title="The results calendar is not available">—</span></td>`;
   const next = calendar.companies?.[symbol];
   if (next?.date && next.date >= todayIso()) {
-    return `<td class="results">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}<small>${escapeHtml(next.timing || "")}${next.unsure ? " · may move" : ""}</small></td>`;
+    return `<td class="results"><span class="when">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}</span><small>${escapeHtml(next.timing || "")}${next.unsure ? " · may move" : ""}</small></td>`;
   }
   if (next?.date) {
     return `<td class="results past">Reported ${escapeHtml(weekday(next.date))}</td>`;
@@ -1251,6 +1251,19 @@ function bind() {
 
 let controlsBound = false;
 
+// Present only when the week's SEC download was incomplete (tools/export_public_desk.py
+// sec_download_note): those companies keep the filings saved earlier, each with its date.
+function renderInputsStatus() {
+  const target = $("inputs-status");
+  const sec = state.desk?.sec_download;
+  if (!target) return;
+  target.hidden = !sec;
+  if (!sec) return;
+  const failed = (sec.failed || []).slice(0, 5).join(", ");
+  const more = (sec.failed || []).length > 5 ? ", …" : "";
+  target.textContent = `SEC filings: this week's download was incomplete, so ${sec.kept_earlier ? `${sec.kept_earlier} companies keep` : "some companies keep"} the filings saved earlier${failed ? ` (failed: ${failed}${more})` : ""}.`;
+}
+
 async function start() {
   try {
     const response = await fetch("./desk.json", { cache: "no-store" });
@@ -1278,6 +1291,7 @@ async function start() {
     } catch (releaseError) {
       console.warn("Temper Lab release status is unavailable:", releaseError);
     }
+    renderInputsStatus();
     const asOf = `Data as of ${day(state.desk.as_of)}`;
     $("heading-copy").textContent = state.desk.heading;
     $("week-chip").textContent = asOf;
