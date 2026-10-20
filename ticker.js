@@ -1353,8 +1353,19 @@ function volumeBox(c) {
     row("Last month (21 sessions)", v.volume_x_21, v.up_share_21, v.return_21), scale);
 }
 function insightsBox(c) {
+  if (!c.insiders) return null;
   const ins = c.insights;
-  if (!ins) return null;
+  if (!ins) {
+    const w = c.insiders.window || {};
+    const when = w.since && w.until
+      ? `filed ${w.since.slice(0, 4) === w.until.slice(0, 4) ? day(w.since) : longDay(w.since)} – ${longDay(w.until)}`
+      : "";
+    const routine = c.insiders.routine
+      ? ` (${c.insiders.routine} routine award/exercise row${c.insiders.routine === 1 ? "" : "s"} not counted)`
+      : "";
+    return section("Insights", when,
+      note(`No open-market buys, sales, or 5%+ filings in these ${w.sessions || 21} sessions${routine}.`));
+  }
   const top = el("div", "tk-ins-top");
   top.append(el("span", `tk-sig ${ins.side || ""}`, ins.signal));
   if (ins.amount) {
