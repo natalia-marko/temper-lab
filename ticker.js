@@ -792,11 +792,20 @@ function copyCard(cardOrSymbol) {
   const c = typeof cardOrSymbol === "string" ? { symbol: cardOrSymbol } : cardOrSymbol || {};
   const text = reportText(c);
   if (navigator.clipboard && window.isSecureContext && navigator.clipboard.write && typeof ClipboardItem === "function") {
-    return reportPng(c).then((blob) => {
-      const items = { "image/png": blob };
-      if (typeof Blob === "function") items["text/plain"] = new Blob([text], { type: "text/plain" });
-      return navigator.clipboard.write([new ClipboardItem(items)]);
-    }).catch(() => copyText(text));
+    const canvas = document.createElement("canvas");
+    if (drawReport(canvas, c) && typeof canvas.toBlob === "function") {
+      const png = new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("png encoding failed"))), "image/png");
+      });
+      const writeBlob = () => png.then((blob) => navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]));
+      try {
+        // Call clipboard.write synchronously in the click gesture (required by Safari) with image/png only
+        // so Cmd+V into Telegram, Slack, iMessage, Cursor, or Notes pastes the image card rather than plain text.
+        return navigator.clipboard.write([new ClipboardItem({ "image/png": png })]).catch(writeBlob).catch(() => copyText(text));
+      } catch {
+        return writeBlob().catch(() => copyText(text));
+      }
+    }
   }
   return copyText(text);
 }
@@ -1563,6 +1572,10 @@ function setup() {
   render();
 }
 function start() {
+  if (typeof location === "object" && location.protocol === "http:" && /(^|\.)temper-lab\.com$/i.test(location.hostname || "") && typeof location.replace === "function") {
+    location.replace(`https://${location.host}${location.pathname || ""}${location.search || ""}${location.hash || ""}`);
+    return;
+  }
   const names = Object.keys(FILES);
   Promise.allSettled(names.map((k) => fetch(FILES[k], { cache: "no-cache" }).then((r) => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
