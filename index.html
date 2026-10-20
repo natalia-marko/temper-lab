@@ -6,8 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Research</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=b7747d4533bd" />
-    <link rel="stylesheet" href="./outlook.css?v=f1c44cb52d00" />
+    <link rel="stylesheet" href="./desk.css?v=e33bc98eced6" />
     <link rel="stylesheet" href="./fscore.css?v=266f5db2334d" />
     <link rel="stylesheet" href="./watchlist.css?v=b22136a753b4" />
   </head>
@@ -41,7 +40,7 @@
           <div class="search-block">
             <label class="search">
               <span>Find</span>
-              <input id="query" type="search" placeholder="Find a company, ticker or industry" autocomplete="off" aria-describedby="search-status" />
+              <input id="query" type="search" placeholder="Find a company, ticker, industry or sector" autocomplete="off" aria-describedby="search-status" />
             </label>
             <p id="search-status" class="search-status" role="status" aria-live="polite" hidden></p>
           </div>
@@ -50,7 +49,7 @@
           <div>
             <div class="eyebrow">FIND &amp; CONSIDER</div>
             <h1>Research</h1>
-            <p id="heading-copy">Growth, price strength, valuation and analyst sentiment.</p>
+            <p id="heading-copy">Which companies deserve a closer look this week. The lists describe; they do not forecast.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status"></span>
@@ -59,29 +58,12 @@
             <small>Weekly refresh: Sat 08:00 · Copenhagen<br>New results are published manually after refresh.</small>
           </div>
         </section>
-        <div class="page-switch" role="tablist" aria-label="Research">
-          <button type="button" id="show-screener" class="on" role="tab" aria-selected="true" aria-controls="screener-panel">Screener</button>
-          <button type="button" id="show-experiment" role="tab" aria-selected="false" aria-controls="experiment-switch">Experiment</button>
-        </div>
-        <div id="experiment-switch" class="page-switch sub" role="tablist" aria-label="Experiment" hidden>
-          <button type="button" id="show-outlook" class="on" role="tab" aria-selected="true" aria-controls="outlook">12-month outlook</button>
-          <button type="button" id="show-potential" role="tab" aria-selected="false" aria-controls="screener-panel">Potential research</button>
-        </div>
-        <section id="outlook" class="surface" aria-label="12-month research outlook" aria-live="polite" hidden>Loading the 12-month outlook…</section>
+        <div id="screen-switch" class="page-switch list-switch" role="group" aria-label="List"></div>
         <section id="screener-panel" class="surface">
-          <div id="screener-tools">
           <div class="toolbar">
-            <label>
-              This list
-              <select id="screen" aria-label="This list: who is ranked, and in what order"></select>
-            </label>
             <p id="caption" class="caption"></p>
             <p id="screen-gates" class="screen-gates"></p>
-            <div class="count"><strong id="ranked-n">0</strong> ranked<span id="of-n"></span></div>
-            <div class="scope" role="group" aria-label="Company eligibility">
-              <button type="button" id="this-screen" class="on">This screen</button>
-              <button type="button" id="all-liquid">All liquid</button>
-            </div>
+            <div class="count"><strong id="ranked-n">0</strong> on this list<span id="of-n"></span></div>
           </div>
           <details class="method-info">
             <summary>How this list is ranked</summary>
@@ -89,41 +71,13 @@
             <p id="method-version"></p>
             <p>Score is a rank in this list, not a probability.</p>
           </details>
-          <div class="tabs" id="tabs" aria-label="Numbers to inspect for the same names">
-            <span>Inspect</span>
-          </div>
+          <p id="column-note" class="column-note list-note" role="status"></p>
           <div class="evidence-filters">
-            <label>Accounts
-              <select id="evidence-status" aria-label="Filter by whether the accounts add up, not by profit">
-                <option value="default">Usual: hide statements that do not add up</option>
-                <option value="all">Everyone, including broken statements</option>
-                <option value="complete">Only statements that add up</option>
-                <option value="review">Only statements that need a look</option>
-                <option value="broken">Only statements that do not add up</option>
-                <option value="unknown">Only ungraded statements</option>
-              </select>
-            </label>
-            <label><input id="required-metrics" type="checkbox"> Only names with the numbers on screen</label>
+            <label id="show-broken-label"><input id="show-broken" type="checkbox"> Show statements that don't add up</label>
+            <label><input id="hide-loss" type="checkbox"> Hide loss-making</label>
             <button id="reset-filters" type="button">Reset filters</button>
           </div>
-          </div>
-          <div id="potential-tools" class="toolbar" hidden>
-            <label>Status
-              <select id="potential-status" aria-label="Filter by unranked research status">
-                <option value="">All companies</option>
-                <option value="tracked">All tracked research</option>
-                <option value="emerging">Emerging</option>
-                <option value="speculative">Speculative</option>
-                <option value="inactive">Inactive / evidence needed</option>
-              </select>
-            </label>
-            <div class="count"><strong id="potential-n">0</strong> tracked<span id="potential-of"></span></div>
-            <button id="reset-potential" type="button">Reset</button>
-          </div>
-          <p id="column-note" class="column-note" role="status"></p>
           <p id="trajectory-note" class="column-note" role="status"></p>
-          <p id="evidence-hint" class="column-note" role="status"></p>
-          <p id="coverage-note" class="column-note" role="status"></p>
           <div class="order" id="order"></div>
           <div class="table-wrap">
             <table>
@@ -131,6 +85,7 @@
               <tbody id="body"><tr><td class="empty" role="status">Loading companies…</td></tr></tbody>
             </table>
           </div>
+          <p id="held-note" class="held-note" hidden></p>
           <noscript><p class="empty">Enable JavaScript to load the screener.</p></noscript>
           <div class="foot">
             <span id="range" role="status" aria-live="polite"></span>
@@ -142,6 +97,7 @@
               <span class="trust review">Review</span> a number needs a look.
               <span class="trust broken">Broken</span> the statement does not add up.
               <span class="flag loss">Lossmaking</span> negative profit, not a broken statement.
+              <span class="trend up">Up · 3/3</span> all three tested trend rules up; <span class="trend mixed">Mixed</span> they disagree; <span class="trend down">Down · 0/3</span> none up.
               <span class="na">n/a</span> hover the cell.
             </p>
           </div>
@@ -161,8 +117,7 @@
     </dialog>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
     <script src="./sectors.js?v=19639ede4b17"></script>
-    <script src="./desk.js?v=f5b82be16177"></script>
-    <script src="./outlook.js?v=00e32c26cb48"></script>
+    <script src="./desk.js?v=27c294f098f8"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

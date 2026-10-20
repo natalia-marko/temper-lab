@@ -9,7 +9,7 @@
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FILES = { desk: "./desk.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
   own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json" };
-const LISTS = [["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
+const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
 const MONEY_LABEL = {
   buy: "bought", buy_plan: "bought under a 10b5-1 plan", buy_private: "bought privately or in an offering",
   sell_no_plan: "sold without a 10b5-1 plan", sell_plan: "sold under a 10b5-1 plan", sell_tax: "sold to cover tax",
@@ -51,6 +51,7 @@ const num = (v) => v !== null && v !== undefined && v !== "" && Number.isFinite(
 function money(value) {
   if (!num(value)) return "n/a";
   const v = Number(value);
+  if (v < 0) return `−${money(-v)}`;
   if (v >= 1e12) return `$${(v / 1e12).toFixed(1)}T`;
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
   if (v >= 999500) return `$${(v / 1e6).toFixed(1)}M`;
@@ -298,6 +299,7 @@ function card(data, query) {
     funds: fundsOf(data.funds, symbol),
     fscore: fscoreOf(data, symbol),
     earnings: calendar ? { window: calendar.window || {}, next: (calendar.companies || {})[symbol] || null } : null,
+    potential: (desk && desk.potential) || null,
   };
 }
 function untilText(iso, today) {
@@ -1050,18 +1052,107 @@ function render() {
     ...research,
     ...band("tk-owners", "Who owns and trades it", "SEC Form 4, 13D/13G and 13F filings", "own",
       stack(insidersBox(c), stakesBox(c)), fundsBox(c)),
+    ...(c.potential ? band("tk-early", "Early-stage research file", `Week of ${longDay(c.potential.as_of || c.research?.as_of)}`, "early", earlyStageBox(c)) : []),
     aboutBox(c), note("Facts with their dates, not a buy or sell call."));
 }
 function starters() {
   const box = el("div", "tk-start");
-  const names = globalThis.TLWatch ? globalThis.TLWatch.list().map((i) => i.symbol).sort() : [];
-  box.append(note(names.length ? "Type a ticker, or pick one of your starred names:" : "Type a ticker, e.g. UBER."));
-  for (const s of names) {
-    const b = el("button", "tk-chip-btn", s);
+  const chip = (symbol) => {
+    const b = el("button", "tk-chip-btn", symbol);
     b.type = "button";
-    b.addEventListener("click", () => go(s));
-    box.append(b);
+    b.addEventListener("click", () => go(symbol));
+    return b;
+  };
+  const names = globalThis.TLWatch ? globalThis.TLWatch.list().map((i) => i.symbol).sort() : [];
+  box.append(note(names.length ? "Type a ticker, or pick one from your watchlist:" : "Type a ticker, e.g. UBER."));
+  box.append(...names.map(chip));
+  // Early-stage research files moved here from Research (Oct 2026): unranked,
+  // so they are listed by status and ticker, not in an order.
+  const tracked = trackedEarlyStage(state.data.desk);
+  if (tracked.length) {
+    const byStatus = new Map();
+    for (const row of tracked) byStatus.set(row.status, [...(byStatus.get(row.status) || []), row.symbol]);
+    const counts = [...byStatus].map(([status, list]) => `${list.length} ${status}`).join(" · ");
+    const list = el("div", "tk-early-list");
+    for (const [status, symbols] of byStatus) {
+      list.append(el("h3", "", `${status[0].toUpperCase()}${status.slice(1)} (${symbols.length})`), ...symbols.map(chip));
+    }
+    box.append(more(`Early-stage names with a research file: ${counts}. No rank, no score.`, list));
   }
+  return box;
+}
+function trackedEarlyStage(desk) {
+  return Object.entries((desk && desk.companies) || {})
+    .filter(([, company]) => company && company.potential && company.potential.status)
+    .map(([symbol, company]) => ({ symbol, status: String(company.potential.status) }))
+    .sort((a, b) => a.status.localeCompare(b.status) || a.symbol.localeCompare(b.symbol));
+}
+// The early-stage research file (moved from the Research page's Potential view):
+// funding, dilution, sourced reviews and milestones for a tracked company that
+// is usually loss-making. Context only; no rank, score or predictive claim.
+function earlyStageBox(c) {
+  const p = c.potential;
+  const f = p.funding || {};
+  const box = el("div", "tk-box tk-early");
+  box.append(el("p", "tk-note", `Status: ${p.status || "unknown"}. ${p.validation || "Experimental research context; no predictive validation claimed."}`));
+  const facts = el("dl", "tk-facts");
+  const fact = (label, value) => facts.append(el("dt", "", label), el("dd", "", value));
+  const runway = num(f.runway_months) ? `${Number(f.runway_months).toFixed(1)} months` : f.complete === false ? "Not computed: inputs incomplete" : "Not applicable";
+  fact("Revenue, last 12 months", money(p.ttm_revenue));
+  fact("Operating cash flow, last 12 months", money(p.ttm_operating_cash_flow));
+  fact("Cash only (an incomplete funding measure)", money(p.cash_only));
+  if (num(f.available_funds)) fact("Cash + short-term investments, less restrictions and near-term debt", money(f.available_funds));
+  if (num(f.monthly_burn)) fact("Monthly operating burn + cash capex", money(f.monthly_burn));
+  fact("Months of funding at a constant burn", runway);
+  if (num(f.long_term_investments)) fact("Long-term investments (left out of the months)", money(f.long_term_investments));
+  if (f.period_end) fact("Funding figures to", longDay(f.period_end));
+  fact("Shares outstanding vs a year before", p.shares && num(p.shares.change)
+    ? `${pct(p.shares.change)} (${longDay(p.shares.from)} → ${longDay(p.shares.to)})` : "Unknown: needs comparable counts and no split between them");
+  const review = p.review || null;
+  fact("Sourced review of debt, dilution and going concern", review
+    ? [review.debt_review, review.dilution_review, review.going_concern_review].filter(Boolean).join(" · ") || "Recorded without detail"
+    : "Not reviewed yet");
+  fact("Growth graduation", p.growth_promotion && p.growth_promotion.confirmed
+    ? "Passed the Growth gates two quarters running" : "Not confirmed for two quarters running");
+  box.append(facts);
+  if (review && review.notes) box.append(el("p", "tk-note", review.notes));
+  if (review && /^https:\/\//.test(review.source_url || "")) {
+    const line = el("p", "tk-note");
+    const link = el("a", "", "Review source");
+    link.href = review.source_url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    line.append(link, el("span", "", review.source_date ? ` · ${longDay(review.source_date)}` : ""));
+    box.append(line);
+  }
+  const milestones = (review && review.milestones) || [];
+  if (milestones.length) {
+    const ul = el("ul", "tk-list");
+    for (const m of milestones) {
+      const li = el("li", "", `${m.target_date || "No date"} · ${m.state || ""} · ${m.description || ""}${m.date_basis ? ` (${m.date_basis})` : ""}`);
+      if (/^https:\/\//.test(m.source_url || "")) {
+        const link = el("a", "", " Source");
+        link.href = m.source_url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        li.append(link);
+      }
+      ul.append(li);
+    }
+    box.append(el("h3", "", "Milestones"), ul);
+  }
+  const reasons = p.reasons || [];
+  box.append(el("h3", "", "Evidence still needed"));
+  const need = el("ul", "tk-list");
+  need.append(...(reasons.length ? reasons : ["No rule flagged; still experimental."]).map((r) => el("li", "", r)));
+  box.append(need);
+  const history = p.history || [];
+  if (history.length) {
+    const ul = el("ul", "tk-list");
+    ul.append(...history.map((h) => el("li", "", `${day(h.period_end)} · revenue ${money(h.revenue)} · ${num(h.revenue_yoy) ? `${pct(h.revenue_yoy)} year on year` : "no comparison"} · gross margin ${level(h.gross_margin)} · filed ${day(h.filed)}`)));
+    box.append(more(`Revenue by quarter (${history.length})`, ul));
+  }
+  box.append(el("p", "tk-note", [f.basis, f.commitments_note].filter(Boolean).join(" ")));
   return box;
 }
 function go(query) {

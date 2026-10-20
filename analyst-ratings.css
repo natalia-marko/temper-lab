@@ -91,3 +91,10 @@
   .analyst-count { padding: 10px 14px; }
   .analyst-method { margin: 12px 14px 0; }
 }
+
+/* Analyst conviction view (moved from Research, Oct 2026). */
+.conviction-title { margin: 0; padding: 18px 22px 0; font-size: 18px; }
+@media (max-width: 860px) { .conviction-title { padding: 16px 14px 0; } }
+#conviction-results td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+#conviction-results td.num small { display: block; color: #6a7b70; font-size: 11px; }
+#conviction-results td.conviction-rank { color: #5e7066; font-variant-numeric: tabular-nums; }

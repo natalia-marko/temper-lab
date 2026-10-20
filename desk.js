@@ -1,67 +1,49 @@
+// Research page. Four lists, one table each, the same three fact columns on
+// every list (Trend, Shorted, Next results). The Shortlist (Composite) opens
+// the page. Conviction lives on Analyst ratings and early-stage research files
+// on the Ticker page; both keep their data in desk.json.
 const SCREENS = [
+  ["composite", "Shortlist"],
   ["growth", "Growth"],
+  ["undervalued", "Cheap"],
   ["strength", "Hot tape"],
-  ["undervalued", "Cheap on operating profit"],
-  ["conviction", "Conviction · analysts"],
 ];
-const VIEWS = [
-  ["overview", "Summary"],
-  ["quality", "Quality & cash flow"],
-  ["price", "Price"],
-  ["revenue", "Revenue"],
-  ["valuation", "Valuation"],
-  ["analysts", "Analysts"],
-];
-const OVERVIEW = {
-  strength: [
-    ["momentum_63", "63-session return", "percent"],
-    ["momentum_252", "252-session return", "percent"],
-    ["operating_earnings_yield_ev", "OI / EV", "percent"],
+// The numbers that explain each list's order. LEAD marks the one a list ranks
+// on; the Shortlist, Growth and Hot tape rank on a blend, shown as Score.
+const COLUMNS = {
+  composite: [
+    ["part_strength", "Price strength", "pctile"],
+    ["part_growth", "Profitability", "pctile"],
+    ["part_undervalued", "Cheapness · OI / EV", "pctile"],
   ],
   growth: [
     ["roe", "Return on equity", "percent"],
-    ["revenue_yoy", "Revenue YoY", "percent"],
-    ["relative_strength_6m", "6-month vs QQQ", "percent"],
+    ["revenue_yoy", "Revenue vs year ago", "percent"],
+    ["relative_strength_6m", "6 months vs QQQ", "percent"],
   ],
   undervalued: [
     ["operating_earnings_yield_ev", "OI / EV", "percent"],
     ["operating_earnings_yield", "OI / equity cap", "percent"],
     ["operating_margin", "TTM operating margin", "percent"],
   ],
-  conviction: [
-    ["strong_buy", "Strong-buy share", "share"],
-    ["analyst_total", "Ratings", "count"],
-    ["up_last_30_days", "EPS up · 30d", "count"],
-    ["down_last_30_days", "EPS down · 30d", "count"],
-    ["revision_breadth", "Revision breadth", "percent"],
-  ],
-};
-const COLUMNS = {
-  potential: [["research_revenue", "TTM revenue", "money"], ["research_burn", "TTM operating cash flow", "money"], ["research_runway", "Funding coverage · months", "months"], ["research_dilution", "Shares outstanding · YoY", "percent"]],
-  analysts: OVERVIEW.conviction,
-  quality: [
-    ["roe", "TTM return on equity", "percent"],
-    ["net_margin", "TTM net margin", "percent"],
-    ["gross_margin", "TTM gross margin", "percent"],
-    ["operating_margin", "TTM operating margin", "percent"],
-    ["cash_conversion", "TTM cash / profit", "multiple"],
-    ["leverage", "Liabilities / assets", "percent"],
-  ],
-  price: [
+  strength: [
     ["momentum_63", "63-session return", "percent"],
     ["momentum_252", "252-session return", "percent"],
   ],
-  revenue: [
-    ["revenue_yoy", "Revenue YoY", "percent"],
-    ["acceleration", "Revenue acceleration", "points"],
-  ],
-  valuation: [
-    ["operating_earnings_yield_ev", "OI / EV", "percent"],
-    ["operating_earnings_yield", "OI / equity cap", "percent"],
-    ["roe", "Return on equity", "percent"],
-    ["net_margin", "Net margin", "percent"],
-  ],
 };
+const LEAD = { undervalued: "operating_earnings_yield_ev" };
+const SCORED = new Set(["composite", "growth", "strength"]);
+// Growth's score (growth-v2) averages these five percentiles inside the list;
+// the same average, ranked across the market, is the Shortlist's Profitability.
+const PROFITABILITY_PARTS = [
+  ["return_on_equity", "return on equity"],
+  ["return_on_assets", "return on assets"],
+  ["operating_income_to_assets", "operating income / assets"],
+  ["cash_flow_to_assets", "cash flow / assets"],
+  ["gross_profit_to_assets", "gross profit / assets"],
+];
+// The Shortlist shows its first ten (at most 3 per sector) until asked for all.
+const SHORTLIST_TOP = 10;
 // Two named steers, deliberately not a scoring engine. Both are minority
 // signals on the week they were set: liabilities above 75% of assets flags 26
 // of 242 Growth names, cash conversion under 0.7 flags 29. They point at a
@@ -71,21 +53,24 @@ const COLUMNS = {
 // which is why the note says so rather than pretending otherwise.
 const LEVERAGE_STEER = 0.75;
 const CASH_CONVERSION_STEER = 0.7;
+// The three trend rules tested in Leg D (claude/leg-d-trend-rules-2026-10-18.md);
+// share/trend-rules.json holds each stock's answer at the freeze close, built in
+// Python by tools/build_ticker_volume.py from the Watchlist's own closes.
+const TREND_RULES = [
+  ["A", "price above its 200-day average"],
+  ["B", "12-month return, skipping the last month, above zero"],
+  ["C", "50-day average above the 200-day"],
+];
 const state = {
   desk: null,
-  screen: "growth",
-  view: "overview",
+  screen: "composite",
   query: "",
   sector: "",
-  evidenceStatus: "default",
-  requiredMetrics: false,
-  potentialStatus: "",
-  thisScreen: true,
-  sortKey: "score",
+  showBroken: false,
+  hideLoss: false,
+  showAll: false,
+  sortKey: "rank",
   sortDir: "desc",
-  panel: "screener",
-  experiment: "outlook",
-  screenerView: "overview",
   page: 0,
   pageSize: 25,
 };
@@ -95,10 +80,6 @@ const $ = (id) => document.getElementById(id);
 function pct(value) {
   if (value == null || Number.isNaN(value)) return "—";
   return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(2)}%`;
-}
-function points(value) {
-  if (value == null || Number.isNaN(value)) return "—";
-  return `${(value * 100).toFixed(1)} pp`;
 }
 function money(value) {
   if (value == null) return "—";
@@ -122,12 +103,16 @@ function day(iso) {
     timeZone: "UTC",
   });
 }
+function shortDay(iso) {
+  if (!iso) return "";
+  return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric", month: "short", timeZone: "UTC",
+  });
+}
 function fmt(value, kind) {
   if (kind === "money") return money(value);
-  if (kind === "months") return value == null ? "—" : value.toFixed(1);
-  if (kind === "share") return value == null ? "—" : `${(value * 100).toFixed(2)}%`;
   if (kind === "percent") return pct(value);
-  if (kind === "points") return points(value);
+  if (kind === "pctile") return value == null ? "—" : value.toFixed(1);
   if (kind === "multiple") return value == null ? "—" : `${value.toFixed(2)}×`;
   return value == null ? "—" : String(value);
 }
@@ -141,19 +126,21 @@ function scoreCell(idea) {
 }
 
 function metricTd(symbol, key, kind) {
-  const lead =
-    (state.screen === "undervalued" && key === "operating_earnings_yield_ev") ||
-    (state.screen === "growth" && key === "roe");
+  const lead = LEAD[state.screen] === key;
   return `<td class="metric${lead ? " lead" : ""}">${metricCell(symbol, key, kind)}</td>`;
 }
 
 function rankedMap(key) {
   return new Map((state.desk.setups[key]?.results || []).map((row) => [row.symbol, row]));
 }
+// A Shortlist pillar ("part_growth") is the company's market-wide percentile
+// stored on its Composite row; everything else is a company factor.
 function factor(symbol, key) {
-  const p = state.desk.companies[symbol]?.potential;
-  if (key.startsWith("research_")) return ({ research_revenue: p?.ttm_revenue, research_burn: p?.ttm_operating_cash_flow, research_runway: p?.funding?.runway_months, research_dilution: p?.shares?.change })[key];
+  if (key.startsWith("part_")) return rankedMap("composite").get(symbol)?.parts?.[key.slice(5)];
   return state.desk.companies[symbol]?.factors?.[key];
+}
+function neutralPart(symbol, key) {
+  return key.startsWith("part_") && (rankedMap("composite").get(symbol)?.neutral || []).includes(key.slice(5));
 }
 
 // Week-over-week movement. The snapshot carries a comparison against the
@@ -190,12 +177,13 @@ function movementChip(symbol) {
   const up = row.rank_change > 0;
   return `<span class="move ${up ? "up" : "down"}" title="Was rank ${row.previous_rank} on ${since}">${up ? "▲" : "▼"}${Math.abs(row.rank_change)}</span>`;
 }
+// Counts in the line; the dropped names fold away, since Hot tape can drop 45.
 function renderTrajectory() {
   const element = $("trajectory-note");
   const track = trajectoryFor(state.screen);
   if (!track) {
     element.textContent = state.desk.trajectory
-      ? "This screen has no comparison in the previous published week."
+      ? "This list has no comparison in the previous published week."
       : "No earlier week is published yet, so nothing is compared.";
     return;
   }
@@ -203,13 +191,15 @@ function renderTrajectory() {
   const rows = Object.values(track.rows);
   const entered = rows.filter((row) => row.change === "entered").length;
   const moved = rows.filter((row) => row.rank_change).length;
-  const dropped = track.exited.map((row) => `${row.symbol} (was ${row.previous_rank})`).join(", ");
-  element.textContent =
+  const lead =
     `Since ${since}: ${entered} new, ${track.exited.length} dropped, ` +
     (track.comparable
       ? `${moved} changed rank. No marker means the rank did not move.`
-      : "and the method changed between the two weeks, so their ranks are not compared.") +
-    (dropped ? ` Dropped: ${dropped}.` : "");
+      : "and the ranking method changed between the two weeks, so ranks are not compared.");
+  const dropped = track.exited.map((row) => `${row.symbol} (was ${row.previous_rank})`).join(", ");
+  element.innerHTML = escapeHtml(lead) + (dropped
+    ? ` <details class="dropped"><summary>Dropped names</summary>${escapeHtml(dropped)}.</details>`
+    : "");
 }
 
 function industryKey(company) {
@@ -329,6 +319,14 @@ function compactIndustry(name) {
 // live in share/sectors.js so Research and Analyst ratings share one
 // taxonomy. That file is loaded before this one on every page that needs it.
 
+// On the Shortlist a company's sector is the one its Composite row was capped
+// by (reviewed corrections, e.g. a tanker company counted as energy); elsewhere
+// it is the site taxonomy of its Nasdaq industry.
+function rowSector(symbol) {
+  const capped = state.screen === "composite" ? rankedMap("composite").get(symbol)?.sector : null;
+  return capped || sectorFor(industryKey(state.desk.companies[symbol]));
+}
+
 function liquidCount() {
   return state.desk.universe_count || Object.keys(state.desk.companies || {}).length;
 }
@@ -351,13 +349,14 @@ function searchNotice(visible) {
   const symbol = matchedSymbol(q);
   if (symbol) {
     if (rankedMap(state.screen).has(symbol)) return "";
-    return `${symbol} is in the liquid universe, not on this published list.`;
+    const elsewhere = SCREENS.filter(([key]) => key !== state.screen && rankedMap(key).has(symbol)).map(([, label]) => label);
+    return `${symbol} is in the liquid universe, not on this list.${elsewhere.length ? ` It is on ${elsewhere.join(", ")}.` : ""} The Ticker page has everything on it.`;
   }
   if (visible.length) return "";
   if (looksLikeTicker(q)) {
     return `${q.toUpperCase()} is not among this week's ${n} liquid names.`;
   }
-  return "No companies match. Reset filters to clear search, sector and evidence filters.";
+  return "No companies match. Reset filters to clear search, sector and the two boxes.";
 }
 
 function setSearchStatus(message) {
@@ -367,51 +366,32 @@ function setSearchStatus(message) {
   node.hidden = !message;
 }
 
+// The list's own members; an exact ticker typed in search is shown even when
+// it is not on the list, so the panel can say why.
 function scopeRows() {
   const ranked = rankedMap(state.screen);
   const exact = matchedSymbol(state.query);
   if (exact) return [exact];
   const needle = state.query.trim().toLowerCase();
-  return Object.keys(state.desk.companies).filter((symbol) => {
+  return [...ranked.keys()].filter((symbol) => {
+    if (!needle) return true;
     const company = state.desk.companies[symbol];
-    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)} ${sectorLabel(sectorFor(company?.industry))} ${(company?.potential?.tags || []).join(" ")}`.toLowerCase();
-    return (!state.thisScreen || ranked.has(symbol)) && (!needle || hay.includes(needle));
+    const hay = `${symbol} ${company?.name ?? ""} ${company?.industry ?? ""} ${compactIndustry(company?.industry)} ${sectorLabel(rowSector(symbol))}`.toLowerCase();
+    return hay.includes(needle);
   });
 }
 
 function rows() {
   const ranked = rankedMap(state.screen);
   return scopeRows()
-    .filter((symbol) => !state.sector || sectorFor(industryKey(state.desk.companies[symbol])) === state.sector)
-    .filter((symbol) => {
-      const p = state.desk.companies[symbol]?.potential;
-      return !state.potentialStatus || (state.potentialStatus === "tracked" ? !!p : p?.status === state.potentialStatus);
-    })
+    .filter((symbol) => !state.sector || rowSector(symbol) === state.sector)
     .filter(passesEvidence)
-    .filter((symbol) => !state.requiredMetrics || hasRequiredMetrics(symbol))
+    .filter((symbol) => !state.hideLoss || state.desk.companies[symbol]?.profitable !== false)
     .sort((a, b) => {
       const dir = state.sortDir === "asc" ? 1 : -1;
-      let va;
-      let vb;
-      if (state.sortKey === "score") {
-        va = ranked.get(a)?.score;
-        vb = ranked.get(b)?.score;
-      } else if (state.sortKey === "company") {
-        va = a;
-        vb = b;
-      } else if (state.sortKey === "price") {
-        va = state.desk.companies[a]?.price;
-        vb = state.desk.companies[b]?.price;
-      } else if (state.sortKey === "fscore") {
-        va = fscoreValue(a);
-        vb = fscoreValue(b);
-      } else if (state.sortKey === "market_cap") {
-        va = state.desk.companies[a]?.market_cap;
-        vb = state.desk.companies[b]?.market_cap;
-      } else {
-        va = factor(a, state.sortKey);
-        vb = factor(b, state.sortKey);
-      }
+      const value = (symbol) => sortValue(symbol, ranked);
+      const va = value(a);
+      const vb = value(b);
       if (va == null && vb == null) return a.localeCompare(b);
       if (va == null) return 1;
       if (vb == null) return -1;
@@ -421,20 +401,31 @@ function rows() {
     });
 }
 
-function currentMetrics() {
-  if (state.view === "overview") return OVERVIEW[state.screen];
-  if (state.view === "quality" && state.screen === "undervalued") {
-    // Cheap ranks on operating income / equity cap. ROE is NI / book — leverage
-    // lifts both — so it is not a quality stamp here. Gross margin is mostly
-    // unfiled on this list. Operating margin shares the ranking numerator.
-    return [
-      ["operating_margin", "TTM operating margin", "percent"],
-      ["net_margin", "TTM net margin", "percent"],
-      ["cash_conversion", "TTM cash / profit", "multiple"],
-      ["leverage", "Liabilities / assets", "percent"],
-    ];
+function sortValue(symbol, ranked) {
+  const key = state.sortKey;
+  // Rank, not score, is the list order: the Shortlist's sector limit puts some
+  // higher scores below rank ten.
+  if (key === "rank") return ranked.has(symbol) ? -ranked.get(symbol).rank : null;
+  if (key === "score") return ranked.get(symbol)?.score;
+  if (key === "company") return symbol;
+  if (key === "trend") return trendOf(symbol)?.up ?? null;
+  if (key === "short") return shortOf(symbol)?.daysToCover ?? null;
+  if (key === "results") {
+    const next = upcomingResults(symbol);
+    return next ? -Date.parse(`${next.date}T12:00:00Z`) : null;
   }
-  return COLUMNS[state.view];
+  return factor(symbol, key);
+}
+
+// The Shortlist's first ten carry the sector limit; the rest follow. Searching
+// or filtering shows every match instead of cutting at ten.
+function limitedToTop() {
+  return state.screen === "composite" && !state.showAll && !state.query.trim() && !state.sector
+    && state.sortKey === "rank" && state.sortDir === "desc";
+}
+
+function currentMetrics() {
+  return COLUMNS[state.screen] || [];
 }
 
 function trustStatus(symbol) {
@@ -446,26 +437,19 @@ function trustLabel(status) {
   return { complete: "No flagged issue", review: "Needs review", broken: "Broken statement", unknown: "Unknown" }[status];
 }
 
+// Hot tape is a price list: everyone stays, broken statements included.
 function priceOnlyView() {
-  return state.view === "price" || (state.view === "overview" && state.screen === "strength");
-}
-
-function analystView() {
-  return state.view === "analysts" || (state.view === "overview" && state.screen === "conviction");
+  return state.screen === "strength";
 }
 
 function passesEvidence(symbol) {
-  const status = trustStatus(symbol);
-  if (state.evidenceStatus === "all") return true;
-  if (state.evidenceStatus === "default") return priceOnlyView() || analystView() || status !== "broken";
-  return status === state.evidenceStatus;
+  return state.showBroken || priceOnlyView() || trustStatus(symbol) !== "broken";
 }
 
 // Why a metric is absent, when the snapshot records it. A property-casualty
-// insurer files no gross-profit line, so it has no gross margin to be missing;
-// requiring one deleted 137 of 242 Growth names — every insurer, most energy —
-// from a comparison their other ratios could have joined. A snapshot published
-// before coverage existed carries none, and is read exactly as it was before.
+// insurer files no gross-profit line, so it has no gross margin to be missing.
+// A snapshot published before coverage existed carries none, and is read
+// exactly as it was before.
 function coverageFor(symbol, key) {
   return state.desk.companies[symbol]?.coverage?.[key] || null;
 }
@@ -487,89 +471,93 @@ function missingMetricTitle(symbol, key) {
 }
 
 function metricCell(symbol, key, kind) {
+  if (neutralPart(symbol, key)) {
+    return `<span class="na" title="This number cannot be computed for this company; the Shortlist counts it as a neutral 50">none · 50</span>`;
+  }
   if (Number.isFinite(factor(symbol, key))) return fmt(factor(symbol, key), kind);
   return `<span class="na" title="${missingMetricTitle(symbol, key)}">n/a</span>`;
 }
 
-function hasRequiredMetrics(symbol) {
-  // A line the company never files is not a gap in the evidence. Anything
-  // else absent still is: a trailing year we failed to build, or a ratio a
-  // rule declined to publish, both of which do block a comparison.
-  return currentMetrics().every(
-    ([key]) => Number.isFinite(factor(symbol, key)) || notReported(symbol, key),
-  );
+function renderFilters() {
+  $("show-broken").checked = state.showBroken;
+  $("show-broken-label").hidden = priceOnlyView();
+  $("hide-loss").checked = state.hideLoss;
 }
 
-function evidenceScope() {
-  return scopeRows().filter((symbol) => !state.sector || sectorFor(industryKey(state.desk.companies[symbol])) === state.sector);
+// ---------- the three fact columns ----------
+// Optional files. Each is shown only when it belongs to this release; a stale
+// or missing file leaves a dash with the reason on hover, never an old value.
+// The trend file belongs to this release and holds at least one stock; an
+// empty file (no Timing series that week) is unavailable, not "too short".
+function trendReady() {
+  const file = state.trend;
+  return Boolean(file && file.desk_run_id === state.desk.run_id && Object.keys(file.rules || {}).length);
 }
 
-function usualAccountsLabel() {
-  if (analystView()) return "Usual: show everyone (analyst view)";
-  return priceOnlyView()
-    ? "Usual: show everyone (price list)"
-    : "Usual: hide statements that do not add up";
+function trendOf(symbol) {
+  const file = state.trend;
+  if (!trendReady()) return null;
+  const answers = file.rules?.[symbol];
+  if (!Array.isArray(answers) || answers.length !== 3) return null;
+  const known = answers.filter((value) => value === 0 || value === 1);
+  return { answers, known: known.length, up: known.length === 3 ? known.filter((value) => value === 1).length : null };
 }
 
-function evidenceHint() {
-  const prefix = "This is the accounts, not profit. A loss-making company can still add up.";
-  if (state.evidenceStatus === "default") {
-    if (analystView()) return "Analyst sentiment does not grade the accounts. Statement flags remain visible; use Quality & cash flow to inspect them.";
-    return priceOnlyView()
-      ? `${prefix} On a price list, everyone stays, including broken statements.`
-      : `${prefix} On these columns, statements that do not add up are hidden.`;
-  }
-  if (state.evidenceStatus === "all") {
-    return `${prefix} Everyone is shown.`;
-  }
-  if (state.evidenceStatus === "complete") {
-    return `${prefix} Only statements with no flag. That is not the same as every ratio being present.`;
-  }
-  if (state.evidenceStatus === "review") {
-    return `${prefix} Only statements that need a look (thin equity, mixed dates, or stale revenue).`;
-  }
-  if (state.evidenceStatus === "broken") {
-    return `${prefix} Only statements that do not add up.`;
-  }
-  if (state.evidenceStatus === "unknown") {
-    return `${prefix} Only names with no statement grade in this snapshot.`;
-  }
-  return prefix;
+function trendText(trend) {
+  if (!trend || trend.known < 3) return "Too little history";
+  if (trend.up === 3) return "Up · 3/3";
+  if (trend.up === 0) return "Down · 0/3";
+  return `Mixed · ${trend.up}/3`;
 }
 
-function renderEvidenceControls() {
-  const base = evidenceScope();
-  const accepted = base.filter(passesEvidence);
-  const available = accepted.filter(hasRequiredMetrics).length;
-  const notApplicable = accepted.filter((symbol) =>
-    currentMetrics().some(([key]) => notReported(symbol, key)),
-  ).length;
-  const naNote = notApplicable
-    ? ` ${notApplicable} of them do not report at least one of these lines at all; that is shown as n/a and is not counted as missing.`
-    : "";
-  const hidden = base.length - accepted.length;
-  const select = $("evidence-status");
-  const options = [
-    ["default", usualAccountsLabel()],
-    ["all", "Everyone, including broken statements"],
-    ["complete", "Only statements that add up"],
-    ["review", "Only statements that need a look"],
-    ["broken", "Only statements that do not add up"],
-    ["unknown", "Only ungraded statements"],
-  ];
-  select.innerHTML = options
-    .map(([value, label]) => `<option value="${value}">${label}</option>`)
-    .join("");
-  select.value = state.evidenceStatus;
-  $("evidence-hint").textContent = evidenceHint();
-  $("evidence-hint").hidden = state.view === "potential" || state.evidenceStatus === "default";
-  $("coverage-note").textContent =
-    `Numbers on screen: ${currentMetrics().map(([, label]) => label).join(", ")}. ` +
-    `Available for ${available} of ${accepted.length}; ` +
-    `${state.requiredMetrics ? "filter removes" : "the filter would remove"} ${accepted.length - available}.` +
-    naNote;
-  $("coverage-note").hidden = state.view === "potential" || (hidden === 0 && !state.requiredMetrics && notApplicable === 0);
-  $("required-metrics").checked = state.requiredMetrics;
+function trendDetail(trend) {
+  return TREND_RULES.map(([, name], index) => {
+    const value = trend?.answers?.[index];
+    return `${value === 1 ? "✓" : value === 0 ? "✗" : "–"} ${name}`;
+  }).join("; ");
+}
+
+function trendCell(symbol) {
+  if (!trendReady()) {
+    return `<td><span class="na" title="The trend file for this week is not available">—</span></td>`;
+  }
+  const trend = trendOf(symbol);
+  const tone = !trend || trend.known < 3 ? "none" : trend.up === 3 ? "up" : trend.up === 0 ? "down" : "mixed";
+  const title = trend ? `${trendDetail(trend)}. At the ${shortDay(state.desk.as_of)} close.` : "No price history for this stock in the trend file";
+  return `<td><span class="trend ${tone}" title="${escapeHtml(title)}">${trendText(trend)}</span></td>`;
+}
+
+function shortOf(symbol) {
+  const row = state.shorts?.rows?.[symbol];
+  if (!row || !Number.isFinite(row[0])) return null;
+  return { daysToCover: row[0], change: row[1], rank: row[2] };
+}
+
+function shortCell(symbol) {
+  const short = shortOf(symbol);
+  if (!short) return `<td class="metric quiet"><span class="na" title="No FINRA short-interest figure for this stock">—</span></td>`;
+  const tag = short.rank === "heavily" ? `<span class="tag heavy" title="Top 10% of eligible stocks of similar size">Heavy</span>`
+    : short.rank === "lightly" ? `<span class="tag light" title="Bottom 10% of eligible stocks of similar size">Light</span>` : "";
+  return `<td class="metric quiet">${short.daysToCover.toFixed(1)}${tag}</td>`;
+}
+
+function upcomingResults(symbol) {
+  const next = state.earnings?.companies?.[symbol];
+  return next?.date && next.date >= todayIso() ? next : null;
+}
+
+function resultsCell(symbol) {
+  const calendar = state.earnings;
+  if (!calendar) return `<td><span class="na" title="The results calendar is not available">—</span></td>`;
+  const next = calendar.companies?.[symbol];
+  if (next?.date && next.date >= todayIso()) {
+    return `<td class="results">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}<small>${escapeHtml(next.timing || "")}${next.unsure ? " · may move" : ""}</small></td>`;
+  }
+  if (next?.date) {
+    return `<td class="results past">Reported ${escapeHtml(weekday(next.date))}</td>`;
+  }
+  const to = calendar.window?.to;
+  return `<td class="results past" title="The calendar looks about four weeks ahead; a date beyond it is not shown yet">${to ? `None to ${escapeHtml(shortDay(to))}` : "—"}</td>`;
 }
 
 // ---------- company panel ----------
@@ -640,10 +628,23 @@ function screenName(key) {
 function scoreInputs(screen, symbol) {
   const f = state.desk.companies[symbol]?.factors || {};
   const has = (key) => Number.isFinite(f[key]);
+  if (screen === "composite") {
+    const row = rankedMap("composite").get(symbol);
+    if (!row?.parts) return "Score is the average of three market-wide percentiles.";
+    const part = (key, label) => `${label} ${(row.neutral || []).includes(key) ? "none, counted as 50" : row.parts[key].toFixed(1)}`;
+    const held = row.held_back ? " Held back from the first ten by the 3-per-sector limit." : "";
+    return `Score is the average of three market-wide percentiles: ${part("strength", "price strength")}, ${part("growth", "profitability (five measures)")}, ${part("undervalued", "OI / EV")}.${held}`;
+  }
   if (screen === "growth") {
     const parts = [has("revenue_yoy") ? `revenue ${oneDecimal(f.revenue_yoy, "change")} year on year` : "",
       has("relative_strength_6m") ? `6 months vs QQQ ${oneDecimal(f.relative_strength_6m, "change")}` : ""].filter(Boolean);
-    return `Ranked by return on equity${has("roe") ? ` (${oneDecimal(f.roe, "level")})` : ""}; revenue growth is an entry gate, not the score.${parts.length ? ` Now ${parts.join(", ")}.` : ""}`;
+    const now = parts.length ? ` Now ${parts.join(", ")}.` : "";
+    const row = rankedMap("growth").get(symbol);
+    if (!row?.parts) {
+      return `Ranked by return on equity${has("roe") ? ` (${oneDecimal(f.roe, "level")})` : ""}; revenue growth is an entry gate, not the score.${now}`;
+    }
+    const pieces = PROFITABILITY_PARTS.map(([key, label]) => `${label} ${Number.isFinite(row.parts[key]) ? row.parts[key].toFixed(1) : "none"}`);
+    return `Score ranks profitability inside Growth: the average of five percentiles, ${pieces.join(", ")}. Revenue growth is an entry gate, not the score.${now}`;
   }
   if (screen === "strength") {
     const now = [has("momentum_63") ? `63 sessions ${oneDecimal(f.momentum_63, "change")}` : "",
@@ -653,21 +654,10 @@ function scoreInputs(screen, symbol) {
   if (screen === "undervalued") {
     return `Ranked by operating income / EV${has("operating_earnings_yield_ev") ? ` (${oneDecimal(f.operating_earnings_yield_ev, "level")})` : ""}${has("operating_earnings_yield") ? `; on equity market cap it is ${oneDecimal(f.operating_earnings_yield, "level")}` : ""}. Cheap is not a quality grade.`;
   }
-  if (screen === "conviction") {
-    const ratings = has("strong_buy_count") && has("analyst_total")
-      ? `${f.strong_buy_count} of ${f.analyst_total} ratings strong buy${has("strong_buy") ? ` (${oneDecimal(f.strong_buy, "level")})` : ""}` : "";
-    const revisions = has("up_last_30_days") || has("down_last_30_days")
-      ? `EPS estimates in 30 days: ${has("up_last_30_days") ? f.up_last_30_days : 0} up, ${has("down_last_30_days") ? f.down_last_30_days : 0} down${has("revision_breadth") ? ` (breadth ${oneDecimal(f.revision_breadth, "change")})` : ""}` : "";
-    const now = [ratings, revisions].filter(Boolean).join("; ");
-    return `Score blends two percentiles equally: strong-buy share and EPS-revision breadth.${now ? ` Now ${now}.` : ""}`;
-  }
   return "";
 }
 
 function whyHere(symbol) {
-  if (state.view === "potential") {
-    return `<h3>Potential research</h3><p>Unranked research context: no list rank, score or predictive claim.</p>`;
-  }
   const key = state.screen;
   const row = rankedMap(key).get(symbol);
   const moved = movementLabel(key, symbol);
@@ -687,7 +677,7 @@ function whyHere(symbol) {
     if (ranked) return `${label} (rank ${ranked.rank}${change ? `, ${change}` : ""})`;
     return change ? `${label} (${change})` : "";
   }).filter(Boolean);
-  return `<h3>${row ? "Why it's on" : "Not on"} ${escapeHtml(screenName(key))}</h3>
+  return `<h3>${row ? "Why it's on" : "Not on"} ${key === "composite" ? "the " : ""}${escapeHtml(screenName(key))}</h3>
     <p class="qv-lead">${lead} ${escapeHtml(scoreInputs(key, symbol))}</p>
     <p>${others.length ? `Other lists: ${escapeHtml(others.join(" · "))}.` : "Not on any other list."}</p>`;
 }
@@ -742,6 +732,12 @@ function shortLine(symbol) {
   return `Short interest ${facts}; not in the top or bottom 10% of eligible stocks of similar size.`;
 }
 
+function trendLine(symbol) {
+  const trend = trendOf(symbol);
+  if (!trend) return "";
+  return `Trend ${trendText(trend)} at the ${shortDay(state.desk.as_of)} close: ${trendDetail(trend)}.`;
+}
+
 function checkFirst(symbol) {
   const status = trustStatus(symbol);
   const reasons = state.desk.companies[symbol]?.trust?.reasons || [];
@@ -751,6 +747,10 @@ function checkFirst(symbol) {
   }
   const results = earningsLine(symbol);
   if (results) items.push(`<li>${escapeHtml(results)}</li>`);
+  const trend = trendLine(symbol);
+  if (trend) {
+    items.push(`<li title="In our Leg D test (2021–26), stocks with each rule up beat those with it down by about 3–3.6% over six months.">${escapeHtml(trend)}</li>`);
+  }
   const notes = standoutNotes(symbol);
   for (const note of notes) items.push(`<li class="qv-steer">${escapeHtml(note)}</li>`);
   const short = shortLine(symbol);
@@ -780,14 +780,14 @@ function metricsTable(symbol) {
 }
 
 function analystLine(symbol) {
-  if (state.screen === "conviction") return "";
   const f = state.desk.companies[symbol]?.factors || {};
   if (!Number.isFinite(f.analyst_total)) return "";
   const parts = [Number.isFinite(f.strong_buy_count) ? `${f.strong_buy_count} of ${f.analyst_total} ratings strong buy` : `${f.analyst_total} ratings`];
   if (Number.isFinite(f.up_last_30_days) || Number.isFinite(f.down_last_30_days)) {
     parts.push(`EPS estimates in 30 days ${f.up_last_30_days ?? 0} up, ${f.down_last_30_days ?? 0} down`);
   }
-  return `Analysts: ${parts.join("; ")}.`;
+  const conviction = rankedMap("conviction").get(symbol);
+  return `Analysts: ${parts.join("; ")}.${conviction ? ` Analyst conviction rank ${conviction.rank} (Analyst ratings page).` : ""}`;
 }
 
 function dataDates(symbol, company) {
@@ -853,7 +853,7 @@ function panelPosition() {
 // Opening from the table remembers its current order, so ‹ › walk the same
 // filtered, sorted list across pages without closing the panel.
 function openCompany(symbol) {
-  state.panelRows = rows();
+  state.panelRows = shownRows();
   showEvidence(symbol);
 }
 
@@ -871,13 +871,14 @@ function showEvidence(symbol) {
   $("evidence-title").textContent = `${symbol} · ${company.name || symbol}`;
   const fscore = fscoreLine(symbol);
   const analysts = analystLine(symbol);
+  const early = company.potential ? `<p class="qv-more">An early-stage research file for this company is on the <a href="./ticker.html?t=${encodeURIComponent(symbol)}">ticker page</a>.</p>` : "";
   $("evidence-content").innerHTML = `${panelHeader(symbol, company)}
     ${whyHere(symbol)}
     ${checkFirst(symbol)}
     ${metricsTable(symbol)}
     ${fscore || analysts ? `<p class="qv-more">${[fscore, analysts].filter(Boolean).map(escapeHtml).join("<br>")}</p>` : ""}
     <p class="qv-more">Insiders, 13F funds, the price chart and analyst targets are on the <a href="./ticker.html?t=${encodeURIComponent(symbol)}">full ticker page</a>.</p>
-    ${potentialEvidence(company.potential)}
+    ${early}
     ${dataDates(symbol, company)}`;
   panelPosition();
   const dialog = $("company-evidence");
@@ -912,9 +913,9 @@ function standoutNotes(symbol) {
   return notes;
 }
 
-// Optional files for the panel. The page works without them; a panel already
-// open is redrawn when they arrive.
-async function loadPanelExtras() {
+// Optional files for the table's fact columns and the panel. The page works
+// without them; the table and an open panel are redrawn when they arrive.
+async function loadExtras() {
   const load = async (file, check) => {
     try {
       const response = await fetch(`./${file}`, { cache: "no-store" });
@@ -926,17 +927,21 @@ async function loadPanelExtras() {
       return null;
     }
   };
-  const [earnings, shorts] = await Promise.all([
+  const [earnings, shorts, trend] = await Promise.all([
     load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
     load("short-interest.json", (data) => data.schema === "short-interest-1"),
+    load("trend-rules.json", (data) => data.schema === "trend-rules-1"),
   ]);
   state.earnings = earnings;
   state.shorts = shorts;
+  state.trend = trend;
+  render();
   if ($("company-evidence").open && state.panelSymbol) showEvidence(state.panelSymbol);
 }
 
-// Piotroski F-Score in one line; the nine checks are on the Ticker page.
-// Context, not a signal: Leg D 2021-26 found no reliable return edge.
+// Piotroski F-Score in one line of the company panel; the nine checks are on
+// the Ticker page. Context, not a signal: Leg D 2021-26 found no reliable
+// return edge, so it is not a table column.
 function fscoreLine(symbol) {
   if (!state.fscore) return "";
   const f = fscoreOf(symbol);
@@ -945,99 +950,56 @@ function fscoreLine(symbol) {
   const missing = f.computed < 9 ? `; ${9 - f.computed} not available, counted as not passed` : "";
   return `F-Score ${f.passed}/9${f.computed < 9 ? "*" : ""}: ${f.passed} of 9 financial-health checks passed (Piotroski), 10-K for the year to ${day(f.fy_end)}${missing}. Context, not a signal; the nine checks are on the ticker page.`;
 }
+function fscoreOf(symbol) {
+  return state.fscore?.companies?.[symbol] || null;
+}
+
 function renderScreenGates() {
-  // A screen's entry gates are a fact about the screen, so they are stated
-  // once here rather than repeated on every row. They used to be a per-row
-  // column, which showed the same three chips 242 times on Growth and told
-  // the reader nothing: a company is only in the list once it has passed
-  // every gate, so the value never varied. Rank already shows non-membership
-  // as an em dash when the scope is widened to all companies.
-  //
-  // Labels still come from desk.json's setups.<screen>.gates, generated from
-  // the real gate definitions in build_lake_ideas.py, never hardcoded here -
-  // hardcoded English drifted from the actual gates once before.
+  // A list's entry gates are a fact about the list, so they are stated once
+  // here rather than repeated on every row. Labels come from desk.json's
+  // setups.<screen>.gates, generated from the real gate definitions in
+  // build_lake_ideas.py, never hardcoded here - hardcoded English drifted
+  // from the actual gates once before. The Shortlist's rule is its membership.
   const element = $("screen-gates");
-  if (state.view === "potential") {
-    element.innerHTML = "";
-    element.textContent = "Unranked research context. Statuses have no Potential score or predictive claim.";
-    return;
-  }
-  const labels = state.desk.setups?.[state.screen]?.gates || [];
+  const labels = state.screen === "composite"
+    ? ["On 2+ of Growth, Cheap, Hot tape", "Top 10: at most 3 per sector"]
+    : state.desk.setups?.[state.screen]?.gates || [];
   if (!labels.length) {
     element.innerHTML = "";
     element.textContent = "No entry gates: every eligible company is scored.";
     return;
   }
   element.innerHTML =
-    `<span class="gates-label">Entry gates</span>` +
+    `<span class="gates-label">${state.screen === "composite" ? "Rule" : "Entry gates"}</span>` +
     labels.map((label) => `<span class="chip">${escapeHtml(label)}</span>`).join("");
 }
 
 function alsoOn(symbol) {
-  return SCREENS.filter(([key]) => key !== state.screen && rankedMap(key).has(symbol)).map(
-    ([key, label]) => (key === "undervalued" ? "Value" : label),
-  );
+  if (state.screen === "composite") {
+    const lists = rankedMap("composite").get(symbol)?.lists || [];
+    return SCREENS.filter(([key]) => lists.includes(key)).map(([, label]) => label);
+  }
+  return SCREENS.filter(([key]) => key !== state.screen && rankedMap(key).has(symbol)).map(([, label]) => label);
 }
 
-// Piotroski F-Score as a financial-health checklist (share/fscore.json, built weekly by
-// tools/build_fscore.py). Context, not a signal: Leg D 2021-26 found no reliable return edge.
-const FSCORE_CHECKS = [
-  ["roa_positive", "Net income positive"],
-  ["cfo_positive", "Operating cash flow positive"],
-  ["roa_up", "Return on assets up on the year before"],
-  ["cfo_above_income", "Operating cash flow above net income"],
-  ["leverage_not_up", "Long-term debt / assets not up"],
-  ["current_ratio_up", "Current ratio up"],
-  ["no_new_shares", "No more shares outstanding than a year before"],
-  ["gross_margin_up", "Gross margin up"],
-  ["turnover_up", "Asset turnover (revenue / assets) up"],
-];
-function fscoreOf(symbol) {
-  return state.fscore?.companies?.[symbol] || null;
-}
-// The standard 0-9 scale: a check that cannot be computed counts as not passed, so 7 of 7
-// computable reads 7/9* and sorts below 8/9. Ties: more checks available first.
-function fscoreValue(symbol) {
-  const f = fscoreOf(symbol);
-  return f?.scored ? f.passed + f.computed / 100 : null;
-}
-function fscoreBand(f) {
-  if (!f?.scored) return "";
-  return f.passed >= 8 ? "high" : f.passed <= 2 ? "low" : "";
-}
-function fscoreMissing(f) {
-  return FSCORE_CHECKS.filter(([key]) => f.checks?.[key] == null).map(([, label]) => label);
-}
-function fscoreCell(symbol) {
-  const f = fscoreOf(symbol);
-  if (!f) return `<td class="fscore-cell"><span class="fscore none" title="No F-Score: no 10-K in the last 15 months in this snapshot">—</span></td>`;
-  if (!f.scored) return `<td class="fscore-cell"><span class="fscore none" title="Only ${f.computed} of 9 checks can be computed (needs 7); open the company for the checks">—</span></td>`;
-  const band = fscoreBand(f);
-  const missing = fscoreMissing(f);
-  const title = `${f.passed} of 9 financial-health checks passed (Piotroski), 10-K for the year ending ${day(f.fy_end)}.`
-    + (f.computed < 9 ? ` * Not available: ${missing.length ? missing.join(", ") : `${9 - f.computed} checks`}.` : "") + " Context, not a signal.";
-  return `<td class="fscore-cell"><span class="fscore ${band}" title="${escapeHtml(title)}">${f.passed}/9${f.computed < 9 ? "*" : ""}</span></td>`;
-}
-function sortHeader(key, label) {
+function sortHeader(key, label, title = "") {
   const sorted = state.sortKey === key ? " sorted" : "";
   const direction = state.sortDir === "asc" ? "ascending" : "descending";
-  return `<th scope="col" class="${sorted}"${sorted ? ` aria-sort="${direction}"` : ""}><button type="button" data-sort="${key}">${label}${sorted ? ` <span aria-hidden="true">${state.sortDir === "asc" ? "↑" : "↓"}</span>` : ""}</button></th>`;
+  return `<th scope="col" class="${sorted}"${sorted ? ` aria-sort="${direction}"` : ""}${title ? ` title="${escapeHtml(title)}"` : ""}><button type="button" data-sort="${key}">${label}${sorted ? ` <span aria-hidden="true">${state.sortDir === "asc" ? "↑" : "↓"}</span>` : ""}</button></th>`;
 }
 
 function renderHead() {
-  const metrics = currentMetrics();
-  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">List rank</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>${sortHeader("fscore", "F-Score")}`;
-  if (state.view === "overview") {
-    for (const [key, label] of metrics) html += sortHeader(key, label);
-    html += `${sortHeader("score", "Score")}<th>Also on</th>${sortHeader("price", "Price")}${sortHeader("market_cap", "Market cap")}`;
-  } else {
-    for (const [key, label] of metrics) html += sortHeader(key, label);
-    html += sortHeader("score", "Score");
+  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">#</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>`;
+  for (const [key, label] of currentMetrics()) {
+    const [main, sub] = label.split(" · ");
+    html += sortHeader(key, sub ? `${main} <small>${sub}</small>` : main);
   }
-  if (state.view === "potential") {
-    html = html.replace(/<th class="rank"[^>]*>.*?<\/th>/, "<th>Research status</th>");
-    html = html.replace(sortHeader("score", "Score"), "");
-  }
+  if (SCORED.has(state.screen)) html += sortHeader("score", "Score");
+  html += `<th scope="col">${state.screen === "composite" ? "On lists" : "Also on"}</th>`;
+  const shortsDate = state.shorts?.date ? `FINRA, ${shortDay(state.shorts.date)}` : "FINRA";
+  html += sortHeader("trend", "Trend", "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Check at month-end.");
+  html += sortHeader("short", `Shorted <small>days to cover</small><small>${escapeHtml(shortsDate)}</small>`, "Days to cover from FINRA short interest. Heavy and Light mark the top and bottom 10% of eligible stocks of similar size, the split our test backed.");
+  html += sortHeader("results", "Next results");
   html += `</tr>`;
   $("head").innerHTML = html;
   renderIndustries();
@@ -1063,15 +1025,14 @@ function companyCell(symbol) {
     (status !== "complete"
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
       : "") + lossmakingChip(symbol);
-  const researchChip = company?.potential ? `<span class="flag">${escapeHtml(company.potential.status)}</span>` : "";
-  return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}${researchChip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></div></td>`;
+  return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></div></td>`;
 }
 
 function industryCell(symbol) {
   const industry = state.desk.companies[symbol]?.industry?.trim() || "";
   const label = compactIndustry(industry);
-  const sector = sectorLabel(sectorFor(industry));
-  const title = industry ? `${sector} · ${industry}` : "Industry unavailable";
+  const sector = sectorLabel(rowSector(symbol));
+  const title = industry ? `${sector} · ${industry}` : sector;
   return `<td class="industry-column"><span class="industry" title="${escapeHtml(title)}">${escapeHtml(label)}</span></td>`;
 }
 
@@ -1081,184 +1042,91 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function columnCount() {
+  return 3 + currentMetrics().length + (SCORED.has(state.screen) ? 1 : 0) + 4;
+}
+
 function renderBody(pageRows) {
   const ranked = rankedMap(state.screen);
   const metrics = currentMetrics();
   if (!pageRows.length) {
-    const columnCount = 4 + metrics.length + (state.view === "overview" ? 4 : state.view === "potential" ? 0 : 1);
-    const message = searchNotice([])
-      || (state.screen === "conviction" && state.thisScreen && !ranked.size
-        ? "No Conviction names were published for this snapshot. Analyst inputs may be unavailable or below the coverage requirements; inspect a company for its exclusion reason."
-        : "No companies match. Reset filters to clear search, sector and evidence filters.");
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount}">${escapeHtml(message)}</td></tr>`;
+    const message = searchNotice([]) || "No companies match. Reset filters to clear search, sector and the two boxes.";
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columnCount()}">${escapeHtml(message)}</td></tr>`;
     return;
   }
   $("body").innerHTML = pageRows
     .map((symbol) => {
       const idea = ranked.get(symbol);
-      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}${fscoreCell(symbol)}`;
-      if (state.view === "overview") {
-        for (const [key, , kind] of metrics) {
-          cells += metricTd(symbol, key, kind);
-        }
-        cells += scoreCell(idea);
-        cells += `<td><span class="chips">${alsoOn(symbol)
-          .map((label) => `<span class="chip also">${label}</span>`)
-          .join("")}</span></td>`;
-        cells += `<td>${price(state.desk.companies[symbol]?.price)}</td>`;
-        cells += `<td>${money(state.desk.companies[symbol]?.market_cap)}</td>`;
-      } else {
-        for (const [key, , kind] of metrics) {
-          cells += metricTd(symbol, key, kind);
-        }
-        if (state.view !== "potential") cells += scoreCell(idea);
-      }
-      if (state.view === "potential") cells = cells.replace(/<td class="rank">.*?<\/td>/, `<td>${escapeHtml(state.desk.companies[symbol]?.potential?.status || "Not tracked")}</td>`);
+      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
+      for (const [key, , kind] of metrics) cells += metricTd(symbol, key, kind);
+      if (SCORED.has(state.screen)) cells += scoreCell(idea);
+      cells += `<td><span class="chips">${alsoOn(symbol).map((label) => `<span class="chip also">${label}</span>`).join("")}</span></td>`;
+      cells += trendCell(symbol) + shortCell(symbol) + resultsCell(symbol);
       return `<tr>${cells}</tr>`;
     })
     .join("");
 }
 
-function screenLabel(key) {
-  return SCREENS.find(([id]) => id === key)?.[1] ?? key;
+// Names the 3-per-sector limit kept out of the first ten, with their score.
+function heldBackNote() {
+  const element = $("held-note");
+  if (state.screen !== "composite") {
+    element.hidden = true;
+    return;
+  }
+  const held = (state.desk.setups.composite?.results || []).filter((row) => row.held_back);
+  const total = state.desk.setups.composite?.results?.length || 0;
+  const toggle = limitedToTop() || state.showAll
+    ? ` <button type="button" id="show-all" class="link-button">${state.showAll ? "Show the first ten" : `Show all ${total}`}</button>`
+    : "";
+  element.hidden = false;
+  element.innerHTML = held.length
+    ? `Held back by the 3-per-sector limit: ${held.map((row) => `<strong>${escapeHtml(row.symbol)}</strong> ${row.score.toFixed(1)}`).join(" · ")}. They follow from rank ${SHORTLIST_TOP + 1}.${toggle}`
+    : `No company was held back by the sector limit this week.${toggle}`;
 }
 
-function rankedByPhrase(key) {
-  return {
-    strength: "recent 63- and 252-session return",
-    growth: "return on equity, after the profit and growth gates",
-    undervalued: "operating income divided by EV (equity cap + interest-bearing debt − cash)",
-    conviction: "50% strong-buy-share percentile + 50% EPS-revision-breadth percentile",
-  }[key];
+function shownRows() {
+  const all = rows();
+  return limitedToTop() ? all.slice(0, SHORTLIST_TOP) : all;
 }
 
-function inspectNote() {
-  if (state.view === "potential") return "No score. Funding coverage is a constant-burn scenario, not a forecast.";
-  const list = screenLabel(state.screen);
-  const rankedBy = rankedByPhrase(state.screen);
-  if (analystView()) {
-    const dates = state.desk.setups.conviction?.analyst_dates;
-    const collected = dates ? `Collected ${day(dates.first)}${day(dates.last) !== day(dates.first) ? `–${day(dates.last)}` : ""}; price reference ${day(state.desk.as_of)}.` : "No dated analyst capture is available for this price week.";
-    return `${list} rank stays ${rankedBy}. ${collected} One upward revision can have the same breadth as ten.`;
+function listNote() {
+  if (state.screen === "composite") {
+    return "Forward test: each week's top 10 is recorded and checked against QQQ after 6 and 12 months.";
   }
-  if (state.view === "overview" && state.screen === "growth") {
-    return "Six-month vs QQQ is the tape, not the rank.";
-  }
-  if (state.view === "overview" && state.screen === "strength") {
-    return "This list is Hot tape. OI / EV is not the Hot tape rank. Inspect does not pick a different set of companies.";
-  }
-  if (state.view === "overview" && state.screen === "undervalued") {
-    return "Rank is operating income divided by EV. OI / equity cap is not the rank.";
-  }
-  if (state.screen === "strength" && state.view !== "overview" && state.view !== "price") {
-    return "Same Hot tape names. Rank is still the tape. Loss-making leaders are expected.";
-  }
-  if (state.screen === "undervalued" && state.view === "quality") {
-    return "Same Cheap names. Gross margin is omitted: most Cheap names never file a gross-profit line. ROE is net income over book, so it stays on Valuation.";
-  }
-  if (state.screen === "undervalued" && state.view === "valuation") {
-    return "Same Cheap names. ROE here is net income over book, not a Cheap quality grade.";
-  }
-  if (state.view === "overview") return `This list is ${list}. Rank is ${rankedBy}.`;
-  return `Same ${list} names. Rank is still ${rankedBy}.`;
-}
-
-function markTab(id, on) {
-  const button = $(id);
-  button.classList.toggle("on", on);
-  if (typeof button.setAttribute === "function") button.setAttribute("aria-selected", on ? "true" : "false");
-}
-
-function applyPanels() {
-  const experiment = state.panel === "experiment";
-  const potential = experiment && state.experiment === "potential";
-  const outlook = experiment && !potential;
-  $("experiment-switch").hidden = !experiment;
-  $("outlook").hidden = !outlook;
-  $("screener-panel").hidden = outlook;
-  $("screener-tools").hidden = potential;
-  $("potential-tools").hidden = !potential;
-  markTab("show-screener", !experiment);
-  markTab("show-experiment", experiment);
-  markTab("show-outlook", outlook);
-  markTab("show-potential", potential);
-}
-
-function setResearchPanel(panel, experiment) {
-  if (panel === "experiment") {
-    state.panel = "experiment";
-    state.experiment = experiment === "potential" ? "potential" : (experiment || state.experiment || "outlook");
-    if (state.experiment === "potential" && state.view !== "potential") {
-      state.screenerView = state.view;
-      state.savedEvidence = state.evidenceStatus;
-      state.savedRequired = state.requiredMetrics;
-      state.savedThisScreen = state.thisScreen;
-      state.view = "potential";
-      state.thisScreen = false;
-      if (!state.potentialStatus) state.potentialStatus = "tracked";
-      state.requiredMetrics = false;
-      state.evidenceStatus = "all";
-      state.sortKey = "company";
-      state.sortDir = "asc";
-      state.page = 0;
-    }
-  } else {
-    state.panel = "screener";
-    if (state.view === "potential") {
-      state.view = state.screenerView && state.screenerView !== "potential" ? state.screenerView : "overview";
-      state.thisScreen = state.savedThisScreen !== false;
-      state.evidenceStatus = state.savedEvidence || "default";
-      state.requiredMetrics = Boolean(state.savedRequired);
-      state.potentialStatus = "";
-      state.sortKey = "score";
-      state.sortDir = "desc";
-      state.page = 0;
-    }
-  }
-  applyPanels();
+  if (state.screen === "growth") return "Score ranks profitability: five measures, each a percentile inside the list, averaged. Six months vs QQQ is the tape, not the rank.";
+  if (state.screen === "undervalued") return "Rank is operating income divided by EV. OI / equity cap is shown so leverage is visible; it is not the rank.";
+  return "Recent price, not a forecast. Loss-making leaders are expected; broken statements stay on a price list.";
 }
 
 function render() {
   const setup = state.desk.setups[state.screen];
   $("method-copy").textContent = setup.method || "Method not recorded in this snapshot.";
   $("method-version").textContent = `Method version: ${setup.version || "not recorded"}`;
-  renderEvidenceControls();
-  $("potential-status").value = state.potentialStatus;
-  $("caption").textContent = state.view === "potential"
-    ? "Research context — revenue, funding, dilution and milestones; no rank."
-    : state.desk.captions[state.screen];
+  $("caption").textContent = state.desk.captions?.[state.screen] || "";
   renderScreenGates();
   renderTrajectory();
-  const potentialCount = Object.values(state.desk.companies).filter((company) => company.potential).length;
-  const research = state.view === "potential";
-  $("ranked-n").textContent = (research ? potentialCount : setup.results.length).toLocaleString();
-  $("of-n").textContent = research
-    ? `tracked research entries of ${state.desk.universe_count.toLocaleString()} liquid companies`
-    : `of ${state.desk.universe_count.toLocaleString()} companies`;
-  $("potential-n").textContent = potentialCount.toLocaleString();
-  $("potential-of").textContent = ` of ${state.desk.universe_count.toLocaleString()} liquid companies`;
-  $("trajectory-note").hidden = research;
-  $("this-screen").classList.toggle("on", state.thisScreen);
-  $("all-liquid").classList.toggle("on", !state.thisScreen);
-  for (const button of document.querySelectorAll("#tabs button")) {
-    button.classList.toggle("on", button.dataset.view === state.view);
+  renderFilters();
+  $("ranked-n").textContent = setup.results.length.toLocaleString();
+  $("of-n").textContent = ` of ${state.desk.universe_count.toLocaleString()} liquid companies`;
+  for (const button of $("screen-switch").querySelectorAll?.("button") || []) {
+    const on = button.dataset.screen === state.screen;
+    button.classList.toggle("on", on);
+    button.setAttribute("aria-pressed", on ? "true" : "false");
   }
-  const note = $("column-note");
-  note.hidden = false;
-  note.textContent = inspectNote();
-  note.classList.toggle(
-    "tape-warning",
-    state.screen === "strength" && state.view !== "overview" && state.view !== "price",
-  );
-  const all = rows();
+  $("column-note").textContent = listNote();
+  const all = shownRows();
   const pages = Math.max(1, Math.ceil(all.length / state.pageSize));
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
-  const sortLabel = { score: "Score", company: "Company", price: "Price", market_cap: "Market cap", fscore: "F-Score (checks passed)" }[state.sortKey] || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
+  const sortLabel = { rank: "List rank", score: "Score", company: "Company", trend: "Trend", short: "Days to cover", results: "Next results" }[state.sortKey]
+    || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
   const sortDirection = state.sortKey === "company"
     ? (state.sortDir === "asc" ? "A to Z" : "Z to A")
-    : (state.sortDir === "desc" ? "High to low" : "Low to high");
+    : state.sortKey === "rank" ? (state.sortDir === "desc" ? "first to last" : "last to first")
+    : state.sortKey === "results" ? (state.sortDir === "desc" ? "soonest first" : "latest first")
+      : (state.sortDir === "desc" ? "High to low" : "Low to high");
   $("order").textContent = `Sorted by ${sortLabel} · ${sortDirection}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
@@ -1268,13 +1136,13 @@ function render() {
   setSearchStatus(searchNotice(all));
   renderHead();
   renderBody(shown);
-  applyPanels();
+  heldBackNote();
 }
 
 function renderIndustries() {
   const counts = new Map();
   for (const symbol of scopeRows()) {
-    const key = sectorFor(industryKey(state.desk.companies[symbol]));
+    const key = rowSector(symbol);
     counts.set(key, (counts.get(key) || 0) + 1);
   }
   const keys = SECTORS.map(([key]) => key).filter((key) => key !== "unclassified" || counts.get("unclassified"));
@@ -1286,10 +1154,25 @@ function renderIndustries() {
   $("sector").classList.toggle("active", Boolean(state.sector));
 }
 
+function setScreen(screen) {
+  state.screen = screen;
+  state.sortKey = "rank";
+  state.sortDir = "desc";
+  state.page = 0;
+  state.showAll = false;
+  render();
+}
+
 function bind() {
   $("body").addEventListener("click", (event) => {
     const button = event.target.closest("button[data-company]");
     if (button) openCompany(button.dataset.company);
+  });
+  $("held-note").addEventListener("click", (event) => {
+    if (!event.target.closest("#show-all")) return;
+    state.showAll = !state.showAll;
+    state.page = 0;
+    render();
   });
   $("evidence-prev").addEventListener("click", () => stepCompany(-1));
   $("evidence-next").addEventListener("click", () => stepCompany(1));
@@ -1299,48 +1182,26 @@ function bind() {
     event.preventDefault();
     stepCompany(event.key === "ArrowLeft" ? -1 : 1);
   });
-  $("evidence-status").addEventListener("change", (event) => {
-    state.evidenceStatus = event.target.value;
+  $("show-broken").addEventListener("change", (event) => {
+    state.showBroken = event.target.checked;
     state.page = 0;
     render();
   });
-  $("potential-status").addEventListener("change", (event) => {
-    state.potentialStatus = event.target.value;
-    if (state.potentialStatus) {
-      state.thisScreen = false; state.view = "potential";
-      state.sortKey = "company"; state.sortDir = "asc";
-      state.requiredMetrics = false; state.evidenceStatus = "all";
-    }
-    state.page = 0; render();
-  });
-  $("required-metrics").addEventListener("change", (event) => {
-    state.requiredMetrics = event.target.checked;
+  $("hide-loss").addEventListener("change", (event) => {
+    state.hideLoss = event.target.checked;
     state.page = 0;
     render();
   });
-  const resetQuery = () => {
+  $("reset-filters").addEventListener("click", () => {
     state.query = "";
     state.sector = "";
+    state.showBroken = false;
+    state.hideLoss = false;
     state.page = 0;
     $("query").value = "";
-  };
-  $("reset-filters").addEventListener("click", () => {
-    resetQuery();
-    state.evidenceStatus = "default";
-    state.requiredMetrics = false;
-    state.potentialStatus = "";
     render();
   });
-  $("reset-potential").addEventListener("click", () => {
-    resetQuery();
-    state.potentialStatus = "tracked";
-    state.requiredMetrics = false;
-    state.evidenceStatus = "all";
-    state.sortKey = "company";
-    state.sortDir = "asc";
-    render();
-  });
-  // The column heading is rebuilt on sorting, paging and screen changes.
+  // The column heading is rebuilt on sorting, paging and list changes.
   $("head").addEventListener("change", (event) => {
     if (event.target.id !== "sector") return;
     state.sector = event.target.value;
@@ -1348,47 +1209,15 @@ function bind() {
     render();
     $("sector").focus();
   });
-  const select = $("screen");
-  select.innerHTML = SCREENS.filter(([key]) => state.desk.setups[key]).map(
-    ([key, label]) => `<option value="${key}">${label}</option>`,
-  ).join("");
-  select.value = state.screen;
-  select.addEventListener("change", () => {
-    state.screen = select.value;
-    state.view = "overview";
-    state.screenerView = "overview";
-    state.sortKey = "score";
-    state.sortDir = "desc";
-    state.page = 0;
-    render();
-  });
-  const tabs = $("tabs");
-  for (const [key, label] of VIEWS) {
+  const switcher = $("screen-switch");
+  for (const [key, label] of SCREENS.filter(([key]) => state.desk.setups[key])) {
     const button = document.createElement("button");
     button.type = "button";
-    button.dataset.view = key;
-    button.textContent = label;
-    if (key === "overview") button.classList.add("on");
-    button.addEventListener("click", () => {
-      state.view = key;
-      state.screenerView = key;
-      state.sortKey = "score";
-      state.sortDir = "desc";
-      state.page = 0;
-      render();
-    });
-    tabs.append(button);
+    button.dataset.screen = key;
+    button.innerHTML = `${escapeHtml(label)} <span class="n">${(state.desk.setups[key].results?.length || 0).toLocaleString()}</span>`;
+    button.addEventListener("click", () => setScreen(key));
+    switcher.append(button);
   }
-  $("this-screen").addEventListener("click", () => {
-    state.thisScreen = true;
-    state.page = 0;
-    render();
-  });
-  $("all-liquid").addEventListener("click", () => {
-    state.thisScreen = false;
-    state.page = 0;
-    render();
-  });
   $("query").addEventListener("input", (event) => {
     state.query = event.target.value;
     state.page = 0;
@@ -1400,22 +1229,6 @@ function bind() {
   });
   $("next").addEventListener("click", () => {
     state.page += 1;
-    render();
-  });
-  $("show-screener").addEventListener("click", () => {
-    setResearchPanel("screener");
-    render();
-  });
-  $("show-experiment").addEventListener("click", () => {
-    setResearchPanel("experiment", state.experiment);
-    render();
-  });
-  $("show-outlook").addEventListener("click", () => {
-    setResearchPanel("experiment", "outlook");
-    render();
-  });
-  $("show-potential").addEventListener("click", () => {
-    setResearchPanel("experiment", "potential");
     render();
   });
   $("head").addEventListener("click", (event) => {
@@ -1440,8 +1253,10 @@ async function start() {
     const response = await fetch("./desk.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
+    // A snapshot from before the Shortlist was published opens on Growth.
+    if (!state.desk.setups[state.screen]) state.screen = SCREENS.find(([key]) => state.desk.setups[key])?.[0] || "growth";
     try {
-      // Optional: the F-Score checklist column; the page works without it.
+      // Optional: the F-Score line in the company panel; the page works without it.
       const fscoreResponse = await fetch("./fscore.json", { cache: "no-store" });
       if (fscoreResponse.ok) {
         const fscore = await fscoreResponse.json();
@@ -1463,7 +1278,7 @@ async function start() {
     const asOf = `Data as of ${day(state.desk.as_of)}`;
     $("heading-copy").textContent = state.desk.heading;
     $("week-chip").textContent = asOf;
-    $("week-chip").title = "Price reference and fundamental signals use this date. Analyst observations use their separately displayed collection dates.";
+    $("week-chip").title = "Price reference and fundamental signals use this date. Short interest and the results calendar carry their own dates.";
     $("snapshot-built").textContent = `${state.desk.universe_count.toLocaleString()} liquid names${state.desk.recorded_at ? ` · Snapshot built ${day(state.desk.recorded_at)}` : ""}`;
     $("aside-week").textContent = asOf;
     if (!controlsBound) {
@@ -1477,7 +1292,7 @@ async function start() {
       controlsBound = true;
     }
     render();
-    loadPanelExtras();
+    loadExtras();
   } catch (error) {
     console.error("Temper Lab could not load the screener:", error);
     $("body").innerHTML = `<tr><td class="empty" colspan="${$("head").querySelectorAll("th").length || 1}" role="alert">The screener could not load. <button type="button" id="retry-load">Try again</button></td></tr>`;
@@ -1487,40 +1302,6 @@ async function start() {
       start();
     });
   }
-}
-
-
-function potentialEvidence(p) {
-  if (!p) return "";
-  const f = p.funding || {};
-  const link = (url, label) => typeof url === "string" && url.startsWith("https://")
-    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : escapeHtml(label);
-  const fields = [
-    ["Status", p.status], ["Tags", (p.tags || []).join(", ") || "None"],
-    ["Research review recorded · may be after the price date", p.review?.reviewed_at || "Not reviewed"],
-    ["Review due", p.review?.review_due || "Not set"],
-    ["TTM revenue", money(p.ttm_revenue)], ["TTM operating cash flow", money(p.ttm_operating_cash_flow)],
-    ["Cash only · incomplete funding measure", money(p.cash_only)],
-    ["Cash + short-term investments less restrictions and near-term debt", money(f.available_funds)],
-    ["Long-term investments · excluded from coverage", money(f.long_term_investments)],
-    ["Monthly operating burn + cash capex", money(f.monthly_burn)],
-    ["Funding period end", f.period_end || "Unknown"],
-    ["Funding coverage · constant-burn months", f.runway_months == null ? "Unknown / not applicable" : f.runway_months.toFixed(1)],
-    ["Shares outstanding · YoY", p.shares ? `${pct(p.shares.change)} (${p.shares.from} to ${p.shares.to})` : "Unknown; requires comparable counts and no intervening split"],
-    ["Debt review", p.review?.debt_review || "Unknown"],
-    ["Dilution review", p.review?.dilution_review || "Unknown"],
-    ["Going-concern review", p.review?.going_concern_review || "Unknown"],
-    ["Growth research graduation", p.growth_promotion?.confirmed ? "Confirmed for two consecutive reporting periods" : "Not confirmed for two consecutive reporting periods"],
-  ];
-  return `<h3>Potential / research status</h3><p>${escapeHtml(p.validation)}</p>
-    <dl>${fields.map(([k,v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join("")}</dl>
-    <p>${escapeHtml(f.basis || "Funding evidence unavailable")}</p><p>${escapeHtml(f.commitments_note || "")}</p>
-    <p>${escapeHtml(p.review?.notes || "Operating milestones and funding require a sourced review.")}</p>
-    ${p.review ? `<p>${link(p.review.source_url, "Review source")} · source date ${escapeHtml(p.review.source_date)}</p>` : ""}
-    <p>${escapeHtml(p.growth_promotion?.meaning || "")}</p>
-    <h4>Evidence still needed / risks</h4><ul>${(p.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join("") || "<li>No rule flagged; still experimental.</li>"}</ul>
-    <h4>Revenue history and TTM gross margin at each filing</h4><ul>${(p.history || []).map(r => `<li>${escapeHtml(r.period_end)} · revenue ${money(r.revenue)} · YoY ${pct(r.revenue_yoy)} · TTM gross margin ${pct(r.gross_margin)} · filed ${escapeHtml(r.filed)}</li>`).join("")}</ul>
-    <h4>Milestones</h4><ul>${(p.review?.milestones || []).map(m => `<li>${escapeHtml(m.target_date)} · ${escapeHtml(m.state)} · ${escapeHtml(m.description)} (${escapeHtml(m.date_basis)}) · ${link(m.source_url, "Source")}</li>`).join("") || "<li>No dated milestone reviewed.</li>"}</ul>`;
 }
 
 start();

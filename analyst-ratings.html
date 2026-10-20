@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Analyst ratings</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=b7747d4533bd" />
-    <link rel="stylesheet" href="./analyst-ratings.css?v=c2a67b8d9b09" />
+    <link rel="stylesheet" href="./desk.css?v=e33bc98eced6" />
+    <link rel="stylesheet" href="./analyst-ratings.css?v=38b77b4f4430" />
     <link rel="stylesheet" href="./watchlist.css?v=b22136a753b4" />
   </head>
   <body>
@@ -33,7 +33,7 @@
           <div>
             <div class="eyebrow">OPINION SCREEN</div>
             <h1 id="analyst-title">Analyst ratings</h1>
-            <p>Filter the dated Yahoo analyst summaries for names on at least two published Temper Lab screens. This is not a rank across all liquid stocks.</p>
+            <p>Published Yahoo analyst opinion, dated. Shortlist names covers every name on two or more Research lists; Analyst conviction ranks liquid names by strong-buy share and earnings revisions.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status">Loading…</span>
@@ -41,7 +41,11 @@
             <small id="analyst-dates"></small>
           </div>
         </section>
-        <section class="surface analyst-surface" aria-labelledby="analyst-title">
+        <div id="analyst-view-switch" class="page-switch list-switch" role="group" aria-label="View">
+          <button type="button" id="show-shortlist-names" class="on" aria-pressed="true">Shortlist names <span class="n" id="shortlist-n"></span></button>
+          <button type="button" id="show-conviction" aria-pressed="false">Analyst conviction <span class="n" id="conviction-n"></span></button>
+        </div>
+        <section id="shortlist-view" class="surface analyst-surface" aria-labelledby="analyst-title">
           <p class="analyst-explanation"><strong>Buy share</strong> = (Strong Buy + Buy) ÷ all 5 labels · <strong>1m mix Δ</strong> = this month − last month (with coverage <em>n</em>) · <strong>EPS 30d</strong> = current-year revisions · <strong>Implied upside</strong> = median target vs frozen Friday close (not a rank).</p>
           <div id="analyst-overlap-pills" class="analyst-overlap-pills" role="group" aria-label="Filter by screen overlap"></div>
           <div class="analyst-controls">
@@ -61,12 +65,22 @@
             <p><strong>EPS 30d (0y):</strong> Current fiscal-year upward and downward EPS estimate revisions over the last 30 days from the matching weekly Research snapshot. <strong>Price targets &amp; Implied upside:</strong> Target median, low, high and implied upside use the frozen Friday close, not a live quote. Range is (high − low) / median. Positive implied upside is the usual sell-side stance, not cheapness or a Temper Lab rank. Every column header and category label sorts the table (high–low first, click again to flip; ties break by Buy share, then ticker; n/a sinks last).</p>
           </details>
         </section>
+        <section id="conviction-view" class="surface analyst-surface" aria-labelledby="conviction-title" hidden>
+          <h2 id="conviction-title" class="conviction-title">Analyst conviction</h2>
+          <p id="conviction-method" class="analyst-explanation"></p>
+          <p class="analyst-explanation">Thin coverage can lead the list: a company with six ratings can outrank one with forty. One upward revision gives the same breadth as ten, so read the counts. Moved here from Research in October 2026; the Ticker page and Market mood still show it.</p>
+          <div class="analyst-controls">
+            <label>Find a company<input id="conviction-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
+          </div>
+          <p id="conviction-count" class="analyst-count" role="status"></p>
+          <div class="analyst-table-wrap"><table><thead><tr><th scope="col">#</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Strong Buy<small class="th-sub">of all ratings</small></th><th scope="col">EPS estimates, 30 days<small class="th-sub">up · down</small></th><th scope="col">Revision breadth</th><th scope="col">Score</th></tr></thead><tbody id="conviction-results"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div>
+        </section>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
     <script src="./sectors.js?v=19639ede4b17"></script>
-    <script src="./analyst-ratings.js?v=92d0bb97e586"></script>
+    <script src="./analyst-ratings.js?v=e8f4620cd09d"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

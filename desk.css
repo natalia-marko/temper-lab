@@ -309,3 +309,40 @@ dialog .qv-more { margin: 14px 0 0; font-size: 13px; }
   .qv-spacer { display: none; }
   .qv-metrics td { width: 30%; }
 }
+
+/* Research redesign (Oct 2026): list switch, the three fact columns, Shortlist note. */
+.list-switch { flex-wrap: wrap; padding-top: 4px; padding-bottom: 12px; }
+.list-switch button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+.list-switch .n { font-weight: 500; font-size: 12px; color: #5d7263; font-variant-numeric: tabular-nums; }
+.list-switch button.on .n { color: #d6e6dc; }
+.list-note { font-size: 12.5px; color: #3f5247; }
+.trend { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 650; white-space: nowrap; }
+.trend.up { background: #ddefe4; color: #174a31; }
+.trend.mixed { background: #f8e8c6; color: #6b4100; }
+.trend.down { background: #f6dcdc; color: #7e1c1c; }
+.trend.none { background: #eef0ee; color: #56625b; font-weight: 500; }
+.trust-legend .trend { margin: 0 4px 0 6px; }
+.tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 650; }
+.tag.heavy { background: #f8e8c6; color: #6b4100; }
+.tag.light { background: #dce9f5; color: #1a4770; }
+.metric.quiet { font-weight: 500; color: var(--ink); white-space: nowrap; }
+td.results { white-space: nowrap; }
+td.results small { display: block; color: var(--muted); font-size: 11px; }
+td.results.past { color: var(--muted); font-size: 12px; }
+th small { display: block; font-weight: 400; font-size: 10.5px; color: #6f7f75; }
+.held-note { margin: 0; padding: 12px 22px; font-size: 12.5px; color: #3f5247; background: #f7f8f5; border-top: 1px solid var(--line); }
+.held-note strong { color: var(--ink); }
+.link-button { margin-left: 8px; min-height: 36px; padding: 0 12px; border: 1px solid var(--green); border-radius: 8px; background: #fff; color: var(--green); font-weight: 650; }
+.link-button:hover, .link-button:focus-visible { background: var(--chip); }
+details.dropped { display: inline; }
+details.dropped summary { display: inline; cursor: pointer; color: var(--green); text-decoration: underline; }
+details.dropped[open] { display: block; margin-top: 4px; }
+.table-wrap th, .table-wrap td { padding: 10px; }
+.table-wrap th { white-space: normal; }
+.table-wrap th small { white-space: nowrap; }
+.table-wrap .industry-column { width: 160px; min-width: 155px; }
+.table-wrap th button { text-align: left; }
+.table-wrap .name { max-width: 170px; }
+.table-wrap .industry { max-width: 150px; }
+.table-wrap td.results { white-space: normal; min-width: 84px; max-width: 110px; }
+@media (max-width: 860px) { .list-switch { padding-left: 14px; padding-right: 14px; } }

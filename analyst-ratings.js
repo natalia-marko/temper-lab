@@ -459,6 +459,10 @@ async function loadAnalystSnapshot() {
     ]);
     if (!moodResponse.ok || !deskResponse.ok) throw new Error("The weekly analyst snapshot is unavailable.");
     const [mood, desk] = await Promise.all([moodResponse.json(), deskResponse.json()]);
+    // Analyst conviction needs only the Research snapshot, so it renders even
+    // while the shortlist view waits for its matching market-mood file.
+    analystState.desk = desk;
+    renderConvictionView();
     if (mood.schema !== "market-mood-1" || mood.run_id !== desk.run_id || mood.as_of !== desk.as_of || !mood.analyst_votes) {
       throw new Error("The analyst screen is awaiting the matching weekly snapshot.");
     }
@@ -477,6 +481,7 @@ async function loadAnalystSnapshot() {
     analystEl("week-chip").textContent = `Data as of ${analystDate(mood.as_of)}`;
     analystEl("aside-week").textContent = analystDate(mood.as_of);
     analystEl("analyst-coverage").textContent = `${votes.covered_count} of ${votes.attempted_count} summaries available`;
+    analystEl("shortlist-n").textContent = String(votes.attempted_count);
     analystEl("analyst-dates").textContent = `Screens: ${analystDate(mood.as_of)} · Analyst counts retrieved: ${analystDate(votes.retrieved_at)}`;
     renderAnalystResults();
   } catch (error) {
@@ -526,7 +531,74 @@ function startAnalystView() {
     button.focus();
   });
   syncAnalystSortHeaders();
+  analystEl("show-shortlist-names").addEventListener("click", () => showAnalystView("shortlist"));
+  analystEl("show-conviction").addEventListener("click", () => showAnalystView("conviction"));
+  analystEl("conviction-query").addEventListener("input", (event) => {
+    analystState.convictionQuery = event.target.value;
+    renderConvictionView();
+  });
+  if (new URLSearchParams(location.search).get("view") === "conviction") showAnalystView("conviction");
   void loadAnalystSnapshot();
+}
+
+// ---------- Analyst conviction (moved from Research, Oct 2026) ----------
+// The weekly Conviction list from desk.json: rank, strong-buy share and 30-day
+// EPS revisions, as frozen with the screens. Nothing is fetched or re-ranked.
+function showAnalystView(view) {
+  const conviction = view === "conviction";
+  analystEl("shortlist-view").hidden = conviction;
+  analystEl("conviction-view").hidden = !conviction;
+  for (const [id, on] of [["show-shortlist-names", !conviction], ["show-conviction", conviction]]) {
+    analystEl(id).classList.toggle("on", on);
+    analystEl(id).setAttribute("aria-pressed", on ? "true" : "false");
+  }
+}
+
+function convictionRows(desk = analystState.desk, query = analystState.convictionQuery || "") {
+  const needle = query.trim().toLowerCase();
+  return (desk?.setups?.conviction?.results || []).filter((row) => (
+    !needle || `${row.symbol} ${row.name || ""}`.toLowerCase().includes(needle)
+  ));
+}
+
+function renderConvictionView() {
+  const desk = analystState.desk;
+  const setup = desk?.setups?.conviction;
+  const target = analystEl("conviction-results");
+  target.replaceChildren();
+  analystEl("conviction-n").textContent = setup ? String(setup.results.length) : "";
+  if (!setup) {
+    analystEl("conviction-count").textContent = "This snapshot has no Analyst conviction list.";
+    return;
+  }
+  analystEl("conviction-method").textContent = setup.method || "";
+  const dates = setup.analyst_dates;
+  const collected = dates ? `Collected ${analystDate(dates.first)}; prices ${analystDate(desk.as_of)}.` : `Prices ${analystDate(desk.as_of)}; collection date not recorded.`;
+  const rows = convictionRows(desk);
+  analystEl("conviction-count").textContent = `${rows.length} of ${setup.results.length} companies. ${collected}`;
+  if (!rows.length) {
+    const tr = analystText(target, "tr", "");
+    analystText(tr, "td", setup.results.length ? "No company matches." : "No Conviction names were published for this snapshot.", "empty").colSpan = 7;
+    return;
+  }
+  for (const row of rows) {
+    const company = desk.companies?.[row.symbol] || {};
+    const f = company.factors || {};
+    const tr = analystText(target, "tr", "");
+    analystText(tr, "td", String(row.rank), "conviction-rank");
+    const cell = analystText(tr, "td", "", "analyst-company-cell");
+    if (globalThis.TLWatch) cell.appendChild(Object.assign(globalThis.TLWatch.button(row.symbol, row.name), { className: "tl-star lead" }));
+    const link = analystText(cell, "a", row.symbol, "analyst-symbol-link");
+    link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(row.symbol)}`);
+    analystText(cell, "small", row.name || row.symbol);
+    analystText(tr, "td", typeof sectorFor === "function" ? sectorLabel(sectorFor((company.industry || "").trim() || "__unclassified")) : "");
+    const share = analystText(tr, "td", Number.isFinite(f.strong_buy) ? formatShare(f.strong_buy) : "n/a", "num");
+    if (Number.isFinite(f.strong_buy_count) && Number.isFinite(f.analyst_total)) analystText(share, "small", `${f.strong_buy_count} of ${f.analyst_total}`);
+    const eps = rowEpsRevisions(row, desk);
+    analystText(tr, "td", eps ? `${eps.up} · ${eps.down}` : "n/a", "num");
+    analystText(tr, "td", Number.isFinite(f.revision_breadth) ? formatSignedShare(f.revision_breadth) : "n/a", "num");
+    analystText(tr, "td", Number.isFinite(row.score) ? row.score.toFixed(1) : "n/a", "num");
+  }
 }
 
 startAnalystView();

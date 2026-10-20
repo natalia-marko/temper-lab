@@ -242,3 +242,11 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
   .tk-facts { grid-template-columns: 1fr; }
   .tk-tick { font-size: 17px; }  /* the chart scales to about half size on a phone */
 }
+
+/* Early-stage research file (moved from Research, Oct 2026). */
+.tk-band.early { grid-template-columns: minmax(0, 1fr); }
+.tk-early h3 { margin: 14px 0 6px; font-size: 13px; }
+.tk-early .tk-facts { margin: 10px 0; }
+.tk-list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; }
+.tk-early-list h3 { margin: 12px 0 6px; font-size: 12px; color: var(--muted); }
+.tk-early-list .tk-chip-btn { margin: 0 6px 6px 0; }

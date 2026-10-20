@@ -8,7 +8,6 @@
   "use strict";
   const W = globalThis.TLWatch;
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const DEFAULT_OUTLOOK = ["MPC", "EOG", "HRMY", "EXEL", "EXPD"];
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => {
     const node = document.createElement(tag);
@@ -215,7 +214,8 @@
   let earnings = {};
   let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
   let timingState = "idle"; // idle → loading → ready | failed
-  let outlookPicks = DEFAULT_OUTLOOK.slice();
+  // The Research Shortlist's first ten (desk.json), offered when nothing is starred.
+  let shortlistPicks = [];
   let bulkRows = []; // Keep bulk-unselected rows here so Select all can restore them this visit.
   let displayed = [];
   let activeTab = "saved";
@@ -560,8 +560,8 @@
     }
 
     const starredSyms = items.map((x) => x.symbol);
-    const symbols = starredSyms.length ? starredSyms : outlookPicks.slice();
-    if (!activeSymbol || (!symbols.includes(activeSymbol) && !outlookPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
+    const symbols = starredSyms.length ? starredSyms : shortlistPicks.slice();
+    if (!activeSymbol || (!symbols.includes(activeSymbol) && !shortlistPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
     const tone = (ta) => (!ta ? "" : ta.last.ruleTone);
 
     const picksBar = $("wl-timing-picks");
@@ -576,10 +576,10 @@
         });
         return btn;
       };
-      const nodes = [el("span", "wl-timing-picks-label", starredSyms.length ? "Your watchlist:" : "12-month outlook names (star any ticker to add your own):"), ...symbols.map(pick)];
+      const nodes = [el("span", "wl-timing-picks-label", starredSyms.length ? "Your watchlist:" : "Research Shortlist, first ten (star any ticker to add your own):"), ...symbols.map(pick)];
       if (starredSyms.length) {
-        const extra = outlookPicks.filter((s) => !starredSyms.includes(s));
-        if (extra.length) nodes.push(el("span", "wl-timing-picks-label", "12-month outlook:"), ...extra.map(pick));
+        const extra = shortlistPicks.filter((s) => !starredSyms.includes(s));
+        if (extra.length) nodes.push(el("span", "wl-timing-picks-label", "Research Shortlist:"), ...extra.map(pick));
       }
       picksBar.replaceChildren(...nodes);
     }
@@ -739,12 +739,11 @@
     W.onChange(render);
     render(W.list());
     const get = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./outlook.json")]).then(([deskData, calendar, outlookData]) => {
+    Promise.all([get("./desk.json"), get("./earnings-calendar.json")]).then(([deskData, calendar]) => {
       desk = (deskData && deskData.companies) || {};
       earnings = (calendar && calendar.companies) || {};
-      if (outlookData && Array.isArray(outlookData.candidates) && outlookData.candidates.length) {
-        outlookPicks = outlookData.candidates.map((c) => c.symbol).filter(Boolean);
-      }
+      const shortlist = deskData && deskData.setups && deskData.setups.composite && deskData.setups.composite.results;
+      shortlistPicks = Array.isArray(shortlist) ? shortlist.slice(0, 10).map((row) => row.symbol).filter(Boolean) : [];
       const asOf = Object.values(desk).find((c) => c && c.price_date);
       $("wl-source").textContent = asOf ? `Price and market value: close on ${longDay(asOf.price_date)} (Research snapshot).` : "";
       render(W.list());
