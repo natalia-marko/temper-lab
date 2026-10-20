@@ -59,12 +59,12 @@
               <tr><th scope="row">Trend (Research, Watchlist)</th><td>After each month's last close</td><td>The same closes, at the month-end. The date is in the column.</td></tr>
               <tr><th scope="row">Shorted</th><td>Twice a month</td><td>FINRA counts short positions mid-month and at month-end and publishes about 7 business days later, so the figure is 1½–3½ weeks older than the prices. The date is in the column.</td></tr>
               <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead. A later date is not shown yet; the cell says so.</td></tr>
-              <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings, SEC 13F data sets.</td></tr>
-              <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries, dated when they were collected.</td></tr>
+              <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings (with 12-month and 3-month chart markers and 21-day Insights activity), SEC 13F data sets, and a one-page PNG/text report card.</td></tr>
+              <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries and price targets, dated when they were collected, for companies on two or more lists.</td></tr>
               <tr><th scope="row">Market mood</th><td>Saturday</td><td>Friday's closes and the Cboe VIX.</td></tr>
               <tr><th scope="row">Insights</th><td>Tuesday and Friday</td><td>SEC Forms 3, 4 and 5 (insiders) and Schedules 13D and 13G (5%+ holders).</td></tr>
               <tr><th scope="row">Jev reads</th><td>Saturday</td><td>The week's earnings releases filed with the SEC (8-K, Item 2.02), read by AI.</td></tr>
-              <tr><th scope="row">Watchlist</th><td>Your stars: at once, in this browser only. Prices: Saturday. Trend colour: monthly.</td><td>The same snapshot as Research.</td></tr>
+              <tr><th scope="row">Watchlist</th><td>Your stars: at once, in this browser only. Prices and Timing chart (50/200-day averages, RSI, MACD): Saturday. Trend colour: monthly.</td><td>The same snapshot as Research.</td></tr>
             </tbody>
           </table></div>
           <p class="how-note">The jobs run on a Mac in Copenhagen: Saturday at 06:00 and Tuesday and Friday at 08:00. The site is published after the weekly checks pass.</p>
@@ -73,9 +73,9 @@
         <section class="surface how-section" aria-labelledby="how-use">
           <h2 id="how-use">How to use it</h2>
           <ul class="how-list">
-            <li><strong>Once a month</strong>, after the month's last close, open Research. The Shortlist is the review queue: companies on two or more lists, with positive shareholders' equity. A click shows the one-year price shape against QQQ; the Ticker page states both returns in dollars and percent. Read that page, decide, and plan to hold 6–12 months.</li>
+            <li><strong>Once a month</strong>, after the month's last close, open Research. The Shortlist is the review queue: companies on two or more of Growth, Cheap and Hot tape, with positive shareholders' equity, ordered by the average of three market-wide percentiles (price strength, five-measure profitability, and operating income / EV; at most three per sector in the first ten). A click shows the one-year price shape against QQQ; the Ticker page states both returns in dollars and percent, adds a 12-month / 3-month chart with SEC filing markers and a 21-day Insights box, and copies a one-page report. Read that page, decide, and plan to hold 6–12 months.</li>
             <li><strong>Between reviews</strong>, do not act on weekly reshuffles. A name entering or leaving the Shortlist's first ten for a week or two is usually noise: in a 2022–26 replay, half of all stays lasted two weeks or less.</li>
-            <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), Jev reads (results), next results dates, Market mood.</li>
+            <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), Jev reads (results), next results dates, Market mood, and the Watchlist Timing tab (50/200-day averages and cross dates, with RSI and MACD as context).</li>
             <li><strong>The trend colour</strong> changes once a month. In our test a change between month-ends did not predict returns; the month-end state did.</li>
           </ul>
         </section>
@@ -83,7 +83,8 @@
         <section class="surface how-section" aria-labelledby="how-built">
           <h2 id="how-built">How the data is built</h2>
           <ul class="how-list">
-            <li><strong>Universe:</strong> US-listed common stocks. A company counts as liquid with a market value of at least $1B, average daily trading of at least $10M over 63 sessions and a price of at least $5.</li>
+            <li><strong>Universe:</strong> US-listed common stocks. A company counts as liquid with a market value of at least $1B, average daily trading of at least $10M over 63 sessions, a price of at least $5, a fresh SEC filing within 180 days (period within 300 days), and an SEC share count no more than 400 days old.</li>
+            <li><strong>Lists:</strong> <strong>Growth</strong> ranks profitable companies with double-digit revenue growth on five profitability measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets). <strong>Cheap</strong> ranks non-financial companies with positive operating income on operating income to enterprise value. <strong>Hot tape</strong> ranks liquid stocks above their 50- and 200-day averages on six- and twelve-month return and volume. On the <strong>Shortlist</strong>, financials and missing inputs take a neutral 50 on a missing pillar, while a non-financial operating loss scores 0 on operating income / EV.</li>
             <li><strong>Prices:</strong> Yahoo daily closes, adjusted for splits and dividends.</li>
             <li><strong>Company numbers:</strong> SEC filings (XBRL company facts), each used only from the day it was filed — point in time, never back-dated. Twelve-month figures add up four quarters.</li>
             <li><strong>If a week's SEC download is incomplete,</strong> the companies it missed keep the filings saved earlier, and the Research page says so.</li>
@@ -96,9 +97,9 @@
           <ul class="how-list">
             <li><strong>Trend rules</strong> (price above its 200-day average; 12-month return, skipping the last month, above zero; 50-day above 200-day): stocks with each rule up beat those with it down by 3.0–3.6% over six months (entries 2021–26, stocks of similar size compared, before costs).</li>
             <li><strong>Short interest:</strong> lightly shorted stocks (days to cover) led, and heavily shorted ones trailed, stocks of similar size over six months (2023–26).</li>
-            <li><strong>Profitability:</strong> Growth ranks on five measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets), not on return on equity alone, which rewards thin equity. On 2021–26 data it ranked as well, with less leverage.</li>
-            <li><strong>F-Score</strong> did not pass, so it is shown as a checklist only.</li>
-            <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist are recorded and checked against QQQ after 6 and 12 months.</li>
+            <li><strong>Profitability and negative equity:</strong> Growth ranks on five measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets), not on return on equity alone, which rewards thin equity; on 2021–26 data it ranked as well, with less leverage. Excluding negative-equity companies from the Shortlist cost no return across 216 weekly cohorts (2022–26).</li>
+            <li><strong>What did not pass:</strong> <strong>F-Score</strong>, 13F fund holder counts, and post-earnings drift did not pass their tests, so they are shown as checklists or facts only. Learned-pattern and tabular rankers (chart/temporal CNNs, Kronos-small, TabPFN-v2, LightGBM) neither beat simple 12–1 momentum nor improved ordering inside momentum's top fifth, so no AI ranker is on the site.</li>
+            <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist (plus a 60/40 strength–ROE challenger on the same Shortlist members) and each month-end's top twenty by 12–1 momentum are recorded and checked against QQQ and SPY after 6 and 12 months.</li>
           </ul>
           <p class="how-note">Past results, not a forecast, and not a buy or sell call.</p>
         </section>
