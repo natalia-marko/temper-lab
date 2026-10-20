@@ -711,8 +711,18 @@ function priceBox(c) {
         : `${c.symbol} closed at $${close.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${day(p.last_day)}.`}`);
     }
   }
-  const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, legend, wrap,
-    note(["Hover, or focus the chart and use the arrow keys, to read each day.", ...notes].join(" ")));
+  const returns = el("dl", "tk-returns");
+  const row = (name, close0, close1, change) => {
+    const dd = el("dd", "");
+    if (num(close0) && num(close1) && num(change)) {
+      dd.append(el("span", "", `${dollars(close0)} → ${dollars(close1)}`), el("b", "", pct(change)));
+    } else dd.textContent = "n/a";
+    returns.append(el("dt", "", name), dd);
+  };
+  row(c.symbol, p.stock[p.first], p.stock[p.last], p.change);
+  row("QQQ", p.qqq && p.qqq[p.first], p.qqq && p.qqq[p.last], p.qqq_change);
+  const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, returns, legend, wrap,
+    note(["Both lines start at their own first close. Hover, or focus the chart and use the arrow keys, to read each day.", ...notes].join(" ")));
   if (p.can_switch) {
     const periods = el("div", "tk-periods");
     periods.setAttribute("role", "group");

@@ -76,6 +76,10 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-facts dt { color: #5d7263; font-size: 12px; }
 .tk-facts dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
 .tk-facts dd small { display: block; font-weight: 400; color: #6d7d72; font-size: 11px; }
+.tk-returns { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+.tk-returns dt { color: #5d7263; font-size: 12px; }
+.tk-returns dd { margin: 0; font-size: 13px; }
+.tk-returns b { margin-left: 8px; }
 .tk-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: #3f5047; font-size: 12px; font-variant-numeric: tabular-nums; }
 .tk-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .tk-sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }

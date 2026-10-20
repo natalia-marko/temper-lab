@@ -303,6 +303,17 @@ dialog .qv-more { margin: 14px 0 0; font-size: 13px; }
 .qv-more a { color: var(--green); }
 .qv-dates { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
 .qv-dates summary { font-size: 13px; }
+.qv-plot-box { margin: 14px 0 2px; }
+.qv-plot-box h3 { margin-bottom: 2px; }
+.qv-plot { display: block; width: 100%; height: auto; }
+.qv-plot-zero { stroke: var(--line); stroke-width: 1; }
+.qv-plot-stock { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.qv-plot-qqq { fill: none; stroke: #9fb0a5; stroke-width: 1.5; stroke-dasharray: 4 3; stroke-linejoin: round; stroke-linecap: round; }
+.qv-plot-tick { fill: #7b8c81; font-size: 11px; }
+.qv-legend { display: flex; gap: 14px; margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.qv-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.qv-sw { display: inline-block; width: 16px; border-top: 2px solid var(--ink); }
+.qv-sw.qqq { border-top: 1.5px dashed #9fb0a5; }
 @media (max-width: 480px) {
   dialog { padding: 18px 16px; }
   .qv-bar { top: -18px; margin: -18px -16px 6px; padding: 10px 10px 8px; }

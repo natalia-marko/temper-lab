@@ -111,7 +111,10 @@ status, 13D/13G stakes, FINRA short interest for every issuer) — plus `ticker-
 63 sessions before the last 21, and the share of volume traded on up days (above 50% = OBV rose), cut at the
 freeze Friday because a later bar can be a partial day. The same file carries the 12-month / 3-month price chart: QQQ's
 last 253 sessions (last 64 for 3 months) to the freeze Friday as the date axis, QQQ's and each stock's adjusted closes on it (Insights
-rules: four significant digits; no line with fewer than half the active days or an unblanked one-day move beyond 3x). The same
+rules: four significant digits; no line with fewer than half the active days or an unblanked one-day move beyond 3x).
+The Ticker page states both returns in dollars and percent, from each line's own first close to its last.
+Research's company panel draws the same one-year lines as a static image (shape only; no percents) and loads
+`ticker-volume.json` when a panel opens, only when its `as_of` matches `desk.json`. The same
 script writes `ticker-timing.json` for the Watchlist Timing tab only (loaded when that tab opens): 452 QQQ sessions of
 adjusted closes per stock, 252 shown and 200 to start the averages, no series with a gap longer than 5 sessions. The
 tab draws the 50-day and 200-day SMA, Wilder's RSI (14) and MACD (12, 26, 9), dates every event on the day it happens, and makes

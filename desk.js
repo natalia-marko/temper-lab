@@ -75,6 +75,9 @@ const state = {
   sortDir: "desc",
   page: 0,
   pageSize: 25,
+  // One-year price lines from ticker-volume.json, loaded when a panel opens.
+  volume: null,
+  volumeState: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -875,6 +878,7 @@ function showEvidence(symbol) {
   const analysts = analystLine(symbol);
   const early = company.potential ? `<p class="qv-more">An early-stage research file for this company is on the <a href="./ticker.html?t=${encodeURIComponent(symbol)}">ticker page</a>.</p>` : "";
   $("evidence-content").innerHTML = `${panelHeader(symbol, company)}
+    ${yearPlotHtml(symbol)}
     ${whyHere(symbol)}
     ${checkFirst(symbol)}
     ${metricsTable(symbol)}
@@ -886,6 +890,90 @@ function showEvidence(symbol) {
   const dialog = $("company-evidence");
   dialog.scrollTop = 0;
   if (!dialog.open) dialog.showModal();
+  if (!state.volume && state.volumeState !== "loading" && state.volumeState !== "missing") loadYearChart();
+}
+
+// The one-year plot in the brief report. Same saved closes as the Ticker page
+// (QQQ's last 253 sessions, adjusted). An image only: the dollar closes and
+// both returns are on the full ticker page.
+const YEAR_SESSIONS = 253;
+function yearLine(volume, symbol) {
+  const chart = volume && volume.chart;
+  const days = chart && chart.days;
+  const stock = volume && volume.closes && volume.closes[symbol];
+  const qqq = chart && chart.qqq;
+  if (!Array.isArray(days) || days.length !== YEAR_SESSIONS) return null;
+  if (!Array.isArray(stock) || stock.length !== days.length) return null;
+  if (!Array.isArray(qqq) || qqq.length !== days.length) return null;
+  if (volume.as_of && state.desk?.as_of && volume.as_of !== state.desk.as_of) return null;
+  const ok = (v) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v)) && Number(v) > 0;
+  const first = stock.findIndex(ok);
+  const last = stock.length - 1 - [...stock].reverse().findIndex(ok);
+  if (first < 0 || last <= first || !ok(qqq[first]) || !ok(qqq[last])) return null;
+  return {
+    days, stock, qqq, first, last,
+    firstDay: days[first], lastDay: days[last],
+    asOf: volume.as_of || days[days.length - 1],
+  };
+}
+function yearPlotSvg(line, symbol) {
+  const W = 640, H = 168, L = 8, R = 8, T = 10, B = 22;
+  const rebase = (series) => series.map((v, i) => (
+    i >= line.first && Number(v) > 0 && Number(series[line.first]) > 0 ? Number(v) / Number(series[line.first]) - 1 : null
+  ));
+  const stock = rebase(line.stock);
+  const qqq = rebase(line.qqq);
+  const known = [...stock, ...qqq].filter((v) => v !== null);
+  const lo = Math.min(0, ...known);
+  const hi = Math.max(0, ...known);
+  const x = (i) => L + (i / (line.days.length - 1)) * (W - L - R);
+  const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+  const path = (vals) => {
+    let d = "";
+    vals.forEach((v, i) => {
+      if (v !== null) d += `${d && vals[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`;
+    });
+    return d;
+  };
+  const y0 = y(0).toFixed(1);
+  return `<svg class="qv-plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(symbol)} and QQQ, one-year adjusted closes, ${escapeHtml(day(line.firstDay))} to ${escapeHtml(day(line.lastDay))}. Both returns are on the full ticker page.">
+    <line x1="${L}" x2="${W - R}" y1="${y0}" y2="${y0}" class="qv-plot-zero"/>
+    <path d="${path(qqq)}" class="qv-plot-qqq"/>
+    <path d="${path(stock)}" class="qv-plot-stock"/>
+    <text x="${L}" y="${H - 6}" class="qv-plot-tick">${escapeHtml(shortDay(line.days[0]))}</text>
+    <text x="${W - R}" y="${H - 6}" text-anchor="end" class="qv-plot-tick">${escapeHtml(shortDay(line.lastDay))}</text>
+  </svg>`;
+}
+function yearPlotHtml(symbol) {
+  if (state.volumeState === "missing") return "";
+  if (!state.volume) return `<section class="qv-plot-box" aria-busy="true"><h3>One year vs QQQ</h3><p class="qv-note">Loading the one-year plot.</p></section>`;
+  const line = yearLine(state.volume, symbol);
+  if (!line) return `<section class="qv-plot-box"><h3>One year vs QQQ</h3><p class="qv-note">No one-year price line for ${escapeHtml(symbol)} in this week's snapshot. The ticker page says why.</p></section>`;
+  return `<section class="qv-plot-box">
+    <h3>One year vs QQQ</h3>
+    <p class="qv-note">${escapeHtml(day(line.firstDay))} – ${escapeHtml(day(line.lastDay))}, adjusted closes, each line from its own first close. The plot is the shape; both returns, in dollars and percent, are on the full ticker page.</p>
+    ${yearPlotSvg(line, symbol)}
+    <p class="qv-legend"><span><i class="qv-sw stock"></i>${escapeHtml(symbol)}</span><span><i class="qv-sw qqq"></i>QQQ</span></p>
+  </section>`;
+}
+async function loadYearChart() {
+  if (state.volumeState === "loading" || state.volumeState === "missing" || state.volume) return;
+  state.volumeState = "loading";
+  const opened = state.panelSymbol;
+  try {
+    const response = await fetch("./ticker-volume.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (data.schema !== "ticker-volume-2" || !data.chart || !Array.isArray(data.chart.days)) throw new Error("unexpected chart file");
+    if (state.desk?.as_of && data.as_of !== state.desk.as_of) throw new Error("chart is for another week");
+    state.volume = data;
+    state.volumeState = "ready";
+  } catch (error) {
+    console.warn("Temper Lab one-year chart is unavailable:", error);
+    state.volume = null;
+    state.volumeState = "missing";
+  }
+  if ($("company-evidence")?.open && state.panelSymbol === opened) showEvidence(state.panelSymbol);
 }
 
 // One line about a number already on the page, when that number is unusual
