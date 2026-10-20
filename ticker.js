@@ -27,6 +27,18 @@ const SELL_KEYS = ["sell_no_plan", "sell_plan"];
 const TRADE_KINDS = [["buy", "Bought", "k-buy", "Buy"], ["buy_plan", "Bought under a plan", "k-buyplan", "Plan buy"],
   ["sell_no_plan", "Sold, no plan", "k-noplan", "No plan"], ["sell_plan", "Sold under a plan", "k-plan", "Plan"],
   ["sell_tax", "Sold for tax", "k-tax", "Tax"]];
+const KIND_COLOR = { "k-report": "#27332e", "k-stake": "#526e5b", "k-buy": "#0f7a49", "k-buyplan": "#52ad7c",
+  "k-noplan": "#7a3f05", "k-plan": "#c98a2e", "k-tax": "#2f78c0" };
+const INSIDER_ROLES = new Set(["CEO", "CFO", "Officer", "Director"]);
+const EXEC_ROLES = new Set(["CEO", "CFO", "Officer"]);
+const ROLE_ORDER = ["CEO", "CFO", "Officer", "Director", "10% owner", "Other"];
+const ROLE_WORD = { Officer: "officer", Director: "director", "10% owner": "10% owner", Other: "other filer" };
+const INS_KEYS = {
+  buy: ["buy", "buy_plan"], discretionary: ["sell_no_plan"],
+  planned: ["sell_plan", "sell_tax"], holder: ["buy", "buy_plan", "sell_no_plan", "sell_plan"],
+};
+const STAKE_RANK = { "New stake, active (13D)": 0, "Switched to active (13D)": 0, "Stake change (13D)": 1,
+  "New stake, passive (13G)": 2, "Stake change (13G)": 3, "Below 5%": 4 };
 // Average reported prices per kind, as on Insights.
 const PAID_LABEL = [["buy", "bought"], ["buy_plan", "bought under a plan"], ["sell_no_plan", "sold without a plan"], ["sell_plan", "sold under a plan"]];
 const FSCORE_CHECKS = [
@@ -193,6 +205,141 @@ function insidersOf(own, company) {
     trade_days: prices.trade_days || {}, filed_days: prices.filed_days || {}, paid: prices.paid || {}, close: prices.close || null,
     split_after: Boolean(prices.split_after_trades) };
 }
+function sumKeys(m, keys) {
+  return keys.reduce((s, k) => s + Number((m && m[k]) || 0), 0);
+}
+function sumPeopleMoney(company, insider) {
+  const out = {};
+  for (const p of (company && company.people) || []) {
+    if (INSIDER_ROLES.has(p.role) !== insider) continue;
+    for (const [k, v] of Object.entries(p.money || {})) out[k] = (out[k] || 0) + (Number(v) || 0);
+  }
+  return out;
+}
+function medianVal(values) {
+  const s = values.filter(num).map(Number).sort((a, b) => a - b);
+  if (!s.length) return null;
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function roleSummary(people) {
+  const counts = {};
+  for (const p of people) counts[p.role] = (counts[p.role] || 0) + 1;
+  return ROLE_ORDER.filter((r) => counts[r]).map((r) => {
+    const n = counts[r];
+    if (r === "CEO" || r === "CFO") return n === 1 ? r : `${n} ${r}s`;
+    const w = ROLE_WORD[r] || "insider";
+    return `${n} ${w}${n === 1 ? "" : "s"}`;
+  }).join(", ");
+}
+function holdingSummary(people) {
+  const changes = people.map((p) => p.holding).filter((h) => h && h.status !== "new_position" && num(h.change_pct))
+    .map((h) => (h.side === "sale" ? -1 : 1) * Math.abs(Number(h.change_pct)));
+  const newCount = people.filter((p) => p.holding && p.holding.status === "new_position").length;
+  if (!changes.length) return newCount ? { text: "new holding", detail: `${newCount} new holding${newCount === 1 ? "" : "s"}` } : { text: "", detail: "" };
+  const med = medianVal(changes);
+  const s = pct(med / 100, 1);
+  return people.length === 1 ? { text: `${s} holding`, detail: `holding ${s}` } : { text: `${s} median`, detail: `median holding ${s}` };
+}
+function historySummary(own, people, kind) {
+  const h = own && own.history;
+  if (!h || !people.length || (kind !== "buy" && kind !== "discretionary")) return "";
+  const isBuy = kind === "buy";
+  const field = isBuy ? "last_buy" : "last_sell";
+  const since = `first ${isBuy ? "buy" : "sale"} since ${monthYear(h.filed_from)}`;
+  const gap = own.window && daysBetween(h.filed_until, own.window.since) > 1 ? ` (data to ${monthYear(h.filed_until)})` : "";
+  const none = people.filter((p) => !(p.history && p.history[field]));
+  const out = [];
+  if (people.length === 1) {
+    const x = people[0].history;
+    if (none.length) out.push(since + gap);
+    else if (isBuy && x && x.last_buy) out.push(`last bought ${monthYear(x.last_buy)}`);
+    else if (!isBuy && x && x.last_sell) out.push(`last sold ${monthYear(x.last_sell)}`);
+    if (x && x.label) out.push(x.label === "routine" ? "trades in the same month every year" : "no yearly trading pattern");
+  } else if (none.length) {
+    out.push(`${since} for ${none.length} of ${people.length}${gap}`);
+  }
+  return out.join(" · ");
+}
+function insightsOf(own, company) {
+  if (!own || !company) return null;
+  const insM = (company.money_by && company.money_by.insider) || sumPeopleMoney(company, true);
+  const holdM = (company.money_by && company.money_by.holder) || sumPeopleMoney(company, false);
+  const buys = sumKeys(insM, INS_KEYS.buy);
+  const disc = sumKeys(insM, INS_KEYS.discretionary);
+  const plan = sumKeys(insM, INS_KEYS.planned);
+  const held = sumKeys(holdM, INS_KEYS.holder);
+  const kind = buys > 0 ? "buy" : disc > 0 ? "discretionary" : held > 0 ? "holder" : plan > 0 ? "planned" : (company.stakes || []).length ? "stake" : null;
+  if (!kind) return null;
+  if (kind === "stake") {
+    const stakes = [...(company.stakes || [])].sort((a, b) => (STAKE_RANK[a.event] ?? 9) - (STAKE_RANK[b.event] ?? 9) || Number(b.pct || 0) - Number(a.pct || 0));
+    const top = stakes[0];
+    if (!top) return null;
+    const lead = top.lead || ((top.holders || [])[0] || {}).name || "Outside holder";
+    const pctStr = num(top.pct) ? `${Number(top.pct).toFixed(1)}%` : "";
+    const verb = top.exit ? `dropped below 5%${pctStr ? ` (now ${pctStr})` : ""}`
+      : top.event === "Switched to active (13D)" ? `switched from passive 13G to active 13D${pctStr ? ` at ${pctStr}` : ""}`
+      : `reported ${pctStr || "a stake"} on Form ${top.form}`;
+    const purpose = top.kind === "13D" && top.purpose ? String(top.purpose).slice(0, 140) + (String(top.purpose).length > 140 ? "…" : "") : "";
+    const filed = stakes.map((s) => s.day).filter(Boolean).sort().pop() || company.latest_filing_day || company.last_filed || "";
+    const isNew = Boolean(filed && own.window && own.window.until && daysBetween(filed, own.window.until) <= 6);
+    return { kind, signal: top.event || `Schedule ${top.kind}`, side: "holder", headline: `${lead} ${verb}`,
+      explanation: [stakes.length > 1 ? `${stakes.length} Schedule 13 filings in period` : `Schedule ${top.kind}`, purpose].filter(Boolean).join(" · "),
+      amount: pctStr || top.form, sub: `Schedule ${top.kind}`, filed, is_new: isNew, checks: "" };
+  }
+  const keys = INS_KEYS[kind] || [];
+  const people = (company.people || []).filter((p) => INSIDER_ROLES.has(p.role) === (kind !== "holder") && keys.some((k) => Number((p.money || {})[k]) > 0));
+  const total = people.reduce((s, p) => s + sumKeys(p.money, keys), 0);
+  const first = people.map((p) => p.first_trade).filter(Boolean).sort()[0] || "";
+  const last = people.map((p) => p.last_trade).filter(Boolean).sort().pop() || "";
+  const filed = company.latest_filing_day || ((company.prices && company.prices.filed_days) ? keys.flatMap((k) => company.prices.filed_days[k] || []) : []).sort().pop() || last || company.last_filed || "";
+  const isNew = Boolean(filed && own.window && own.window.until && daysBetween(filed, own.window.until) <= 6);
+  const hold = holdingSummary(people);
+  let signal = "Plan or tax sale", side = "routine";
+  if (kind === "buy") {
+    const dripOnly = !(Number(insM.buy) > 0) && Number(insM.buy_plan) > 0;
+    const hasExec = people.some((p) => EXEC_ROLES.has(p.role));
+    signal = dripOnly ? "Automatic dividend reinvestment" : people.length >= 2 ? (hasExec ? "Group buy, incl. officer" : "Group buy, directors") : (hasExec ? "Officer buy" : "Director buy");
+    side = dripOnly ? "routine" : "buy";
+  } else if (kind === "discretionary") {
+    signal = "Sale, no plan"; side = "sell";
+  } else if (kind === "holder") {
+    const hb = sumKeys(holdM, ["buy", "buy_plan"]), hs = sumKeys(holdM, ["sell_no_plan", "sell_plan"]);
+    signal = hb >= hs ? "Fund/10% owner buy" : "Fund/10% owner sale"; side = "holder";
+  }
+  const who = people.length === 1 ? `${(people[0].names || [])[0] || "1 insider"} (${people[0].role})`
+    : `${people.length} ${kind === "holder" ? (people.length === 1 ? "large holder" : "large holders") : "insiders"}`;
+  let headline = `${who} sold ${money(total)} under a plan or for tax`;
+  if (kind === "buy") {
+    const b = Number(insM.buy || 0), bp = Number(insM.buy_plan || 0);
+    headline = b > 0 && bp > 0 ? `${who} bought ${money(b)} open-market (+${money(bp)} DRIP)` : b > 0 ? `${who} bought ${money(b)} in the open market` : `${who} reinvested ${money(bp)} via dividend plan`;
+  } else if (kind === "discretionary") {
+    headline = `${who} sold ${money(total)} without a 10b5-1 plan`;
+  } else if (kind === "holder") {
+    const hb = sumKeys(holdM, ["buy", "buy_plan"]), hs = sumKeys(holdM, ["sell_no_plan", "sell_plan"]);
+    headline = hb > 0 && hs > 0 ? `${who}: bought ${money(hb)}, sold ${money(hs)}` : hb > 0 ? `${who} bought ${money(hb)} in the open market` : `${who} sold ${money(hs)}`;
+  }
+  const roles = people.length === 1 ? ((people[0].titles || []).find((t) => t && t !== "See Remarks") || ROLE_WORD[people[0].role] || "") : roleSummary(people);
+  const hist = (kind === "buy" || kind === "discretionary") ? historySummary(own, people, kind) : "";
+  let other = "";
+  if (kind === "buy" && disc + plan > 0) other = `also ${money(disc + plan)} sold`;
+  else if (kind === "discretionary" && plan > 0) other = `also ${money(plan)} under 10b5-1 plans`;
+  else if (kind === "holder" && buys + disc + plan > 0) other = `company officers/directors: ${[buys ? `${money(buys)} bought` : "", disc + plan ? `${money(disc + plan)} sold` : ""].filter(Boolean).join(", ")}`;
+  let checks = "";
+  if (kind === "buy" && !(Number(insM.buy) === 0 && Number(insM.buy_plan) > 0)) {
+    const c1 = people.length >= 2 || people.some((p) => EXEC_ROLES.has(p.role));
+    const c2 = total >= 100000;
+    const c3 = disc === 0;
+    checks = `Checks ${[c1, c2, c3].map((ok) => (ok ? "●" : "○")).join("")}`;
+  }
+  return {
+    kind, signal, side, headline,
+    explanation: [roles, hold.detail, hist, other].filter(Boolean).join(" · "),
+    amount: money(total),
+    sub: [hold.text, `${people.length} ${kind === "holder" ? (people.length === 1 ? "holder" : "holders") : (people.length === 1 ? "insider" : "insiders")}`].filter(Boolean).join(" · "),
+    dates: span(first, last), filed, is_new: isNew, checks,
+  };
+}
 function stakesOf(own, company) {
   const rows = ((company && company.stakes) || []).map((s) => ({
     form: s.form, kind: s.kind, holder: s.lead || ((s.holders || [])[0] || {}).name || "", pct: s.pct, shares: s.shares,
@@ -303,6 +450,7 @@ function card(data, query, sessions = state.period) {
     industry: (desk && desk.industry) || (company && company.industry) || "",
     eligible: Boolean(desk), filer: checked ? checked.symbol : null, cik: company ? company.cik : null,
     research,
+    insights: own ? insightsOf(own, company) : null,
     insiders: own ? insidersOf(own, company) : null,
     stakes: own ? stakesOf(own, company) : null,
     short: own ? shortOf(own, company, checked) : null,
@@ -482,6 +630,9 @@ function reportText(cardOrSymbol) {
     c.earnings && c.earnings.next ? `Next results ${longDay(c.earnings.next.date)}${c.earnings.next.timing ? ` (${c.earnings.next.timing})` : ""}` : "",
   ].filter(Boolean).join(" · ");
   const lines = [head, meta, ...glance(c).map((g) => `${g.title}: ${g.value}${g.context ? ` (${g.context})` : ""}`)];
+  if (c.insights) {
+    lines.push(`Insights: ${c.insights.is_new ? "NEW · " : ""}${c.insights.signal} — ${c.insights.headline}${c.insights.explanation ? ` (${c.insights.explanation})` : ""}`);
+  }
   if (c.insiders && c.insiders.headline) lines.push(`Insiders: ${c.insiders.headline}`);
   lines.push(`Temper Lab · facts with their dates, not a buy or sell call · ${url}`);
   return lines.filter(Boolean).join("\n");
@@ -489,7 +640,7 @@ function reportText(cardOrSymbol) {
 function drawReport(canvas, c) {
   const ctx = canvas && typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
   if (!ctx) return false;
-  const W = 920, H = 680, S = 2;
+  const W = 920, H = 720, S = 2;
   canvas.width = W * S;
   canvas.height = H * S;
   ctx.scale(S, S);
@@ -517,6 +668,27 @@ function drawReport(canvas, c) {
     ctx.fillStyle = color;
     ctx.textAlign = align;
     ctx.fillText(maxW ? clipText(str, maxW) : String(str || ""), x, y);
+  };
+  const wrapLines = (str, f, maxW, maxLines) => {
+    ctx.font = f;
+    const words = String(str || "").split(/\s+/).filter(Boolean);
+    const out = [];
+    let cur = "";
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
+      const next = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(next).width <= maxW || !cur) {
+        cur = next;
+      } else if (out.length + 1 >= maxLines) {
+        out.push(clipText(`${cur} ${words.slice(i).join(" ")}`, maxW));
+        return out;
+      } else {
+        out.push(cur);
+        cur = w;
+      }
+    }
+    if (cur) out.push(clipText(cur, maxW));
+    return out;
   };
   const hline = (x1, x2, y, color = "#eef1ee", dashed = false) => {
     ctx.beginPath();
@@ -562,10 +734,17 @@ function drawReport(canvas, c) {
   for (const m of (c.research && c.research.moves) || []) {
     chips.push({ text: m.note ? `${m.label} · ${m.note}` : m.label, bg: "#eef5ed", bd: "#d0dfd2", fg: "#245e42" });
   }
+  if (c.insights) {
+    const ins = c.insights;
+    const style = ins.side === "buy" ? { bg: "#eef5ed", bd: "#b8d4be", fg: "#1e6547" }
+      : ins.side === "sell" ? { bg: "#fbf3e6", bd: "#ecd3a8", fg: "#7a4a06" }
+      : { bg: "#f1f3f1", bd: "#dbe3de", fg: "#4c5d53" };
+    chips.push({ text: `${ins.is_new ? "NEW · " : ""}${ins.signal}${ins.amount ? ` · ${ins.amount}` : ""}${ins.filed ? ` (${day(ins.filed)})` : ""}`, ...style });
+  }
   let cx = 28;
-  for (const ch of chips.slice(0, 5)) {
+  for (const ch of chips.slice(0, 6)) {
     ctx.font = font(600, 11);
-    const label = clipText(ch.text, 260);
+    const label = clipText(ch.text, 270);
     const pw = Math.ceil(ctx.measureText(label).width) + 18;
     if (cx + pw > 892) break;
     rrect(cx, 94, pw, 22, 6, ch.bg, ch.bd);
@@ -594,14 +773,42 @@ function drawReport(canvas, c) {
     txt("No summary figures available for this ticker.", 44, gy + 56, font(400, 12), "#5d7263");
   }
 
-  // Left column: Price vs QQQ chart + Volume & Short interest.
-  const by = 242, lx = 28, lw = 516;
-  rrect(lx, by, lw, 266, 10, "#ffffff", "#dbe3de");
+  // Left column: Price vs QQQ chart (with SEC filing tracks) + Volume & Short interest.
+  const by = 242, bh = 310, lx = 28, lw = 516;
+  rrect(lx, by, lw, bh, 10, "#ffffff", "#dbe3de");
   const p = c.price;
-  txt(`Price vs QQQ${p ? `, ${p.label || "3 months"}` : ""}`, lx + 14, by + 22, font(700, 13.5), "#27332e");
+  txt(`Price vs QQQ${p ? `, ${p.label || "3 months"}` : ""}`, lx + 14, by + 20, font(700, 13.5), "#27332e");
   if (p) {
-    txt(`daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, lx + lw - 14, by + 22, font(400, 10.5), "#7b8c81", "right");
-    const cl = lx + 46, cr = lx + lw - 86, ct = by + 40, cb = by + 222;
+    txt(`daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, lx + lw - 14, by + 20, font(400, 10.5), "#7b8c81", "right");
+    const marks = filingMarks(c);
+    const trackRows = [
+      ...(marks.reports.length ? [["Report", "k-report", marks.reports]] : []),
+      ...(marks.stakes.length ? [["13D/G", "k-stake", marks.stakes]] : []),
+      ...TRADE_KINDS.filter(([k]) => marks.form4[k]).map(([k, , cls, rowLabel]) => [rowLabel, cls, marks.form4[k]]),
+    ];
+    const paidParts = c.insiders ? PAID_LABEL.filter(([k]) => c.insiders.paid && c.insiders.paid[k] && num(c.insiders.paid[k].avg)).map(([k, label]) => {
+      const pp = c.insiders.paid[k];
+      return `${MONEY_SHORT[k] || label} $${Number(pp.avg).toFixed(2)}${pp.low !== pp.high ? ` ($${Number(pp.low).toFixed(2)}–$${Number(pp.high).toFixed(2)})` : ""}`;
+    }) : [];
+    const paidLine = paidParts.length ? `Avg insider price: ${paidParts.join(" · ")}` : "";
+
+    // Legend row under chart header.
+    let kx = lx + 14;
+    const ky = by + 35;
+    hline(kx, kx + 10, ky - 3, "#27332e", false);
+    txt(c.symbol || "", kx + 14, ky, font(500, 9.5), "#3d5346");
+    kx += 18 + Math.ceil(ctx.measureText(c.symbol || "").width) + 8;
+    hline(kx, kx + 10, ky - 3, "#9fb0a5", true);
+    txt("QQQ", kx + 14, ky, font(500, 9.5), "#5d7263");
+    kx += 46;
+    for (const [label, cls] of trackRows) {
+      rrect(kx, ky - 6.5, 7, 7, 2, KIND_COLOR[cls] || "#5d7263");
+      txt(label, kx + 10, ky, font(500, 9.5), "#5d7263");
+      kx += 14 + Math.ceil(ctx.measureText(label).width) + 8;
+    }
+
+    const cl = lx + 48, cr = lx + lw - 86, ct = by + 48;
+    const cb = by + Math.min(272, 288 - trackRows.length * 14 - (paidLine ? 20 : 0));
     const n = p.days.length;
     const rebase = (series, i0) => (series ? series.map((v, k) => (k >= i0 && num(v) && v > 0 && num(series[i0]) ? v / series[i0] - 1 : null)) : null);
     const a = rebase(p.stock, p.first);
@@ -617,6 +824,18 @@ function drawReport(canvas, c) {
       const v = Math.abs(t) < 1e-9 ? 0 : t;
       hline(cl, cr, py(v), v === 0 ? "#dbe3de" : "#eef1ee");
       txt(v === 0 ? "0%" : pct(v, 0), cl - 6, py(v) + 3.5, font(400, 9.5), "#7b8c81", "right");
+    }
+    for (const d of marks.reports) {
+      const at = p.days.indexOf(d);
+      if (at < 0) continue;
+      ctx.beginPath();
+      ctx.setLineDash([2, 3]);
+      ctx.strokeStyle = "#c5d0c9";
+      ctx.lineWidth = 1;
+      ctx.moveTo(px(at), ct);
+      ctx.lineTo(px(at), cb);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
     let start = null;
     ctx.fillStyle = "rgba(39, 51, 46, 0.055)";
@@ -657,31 +876,44 @@ function drawReport(canvas, c) {
     }
     ctx.beginPath(); ctx.arc(px(p.last), py(a[p.last]), 3.5, 0, Math.PI * 2); ctx.fillStyle = "#27332e"; ctx.fill();
     txt(`${c.symbol} ${pct(a[p.last])}`, cr + 6, ya + 3.5, font(700, 9.5), "#27332e", "left", 78);
-    txt(day(p.first_day), cl, cb + 15, font(400, 9.5), "#7b8c81", "left");
+    txt(day(p.first_day), cl, cb + 13, font(400, 9.5), "#7b8c81", "left");
     const edge = Math.max(5, Math.ceil(n * 0.08));
     p.days.forEach((d, k) => {
       if (k > edge && k < n - edge && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) {
-        txt(MONTHS[Number(d.slice(5, 7)) - 1], px(k), cb + 15, font(400, 9.5), "#7b8c81", "center");
+        txt(MONTHS[Number(d.slice(5, 7)) - 1], px(k), cb + 13, font(400, 9.5), "#7b8c81", "center");
       }
     });
-    txt(day(p.last_day), cr, cb + 15, font(400, 9.5), "#7b8c81", "right");
+    txt(day(p.last_day), cr, cb + 13, font(400, 9.5), "#7b8c81", "right");
+    trackRows.forEach(([label, cls, list], idx) => {
+      const ty = cb + 26 + idx * 14;
+      txt(label, cl - 6, ty + 3, font(500, 9), "#5d7263", "right");
+      hline(cl, cr, ty, "#eef1ee");
+      for (const d of list) {
+        const at = p.days.indexOf(d);
+        if (at >= 0) rrect(px(at) - 2.25, ty - 4.5, 4.5, 9, 2, KIND_COLOR[cls] || "#5d7263");
+      }
+    });
+    if (paidLine) {
+      hline(lx + 14, lx + lw - 14, by + bh - 22, "#eef1ee");
+      txt(paidLine, lx + 14, by + bh - 8, font(400, 9.5), "#5d7263", "left", lw - 28);
+    }
   } else {
     txt("No reliable price line for this ticker this week.", lx + 14, by + 56, font(400, 11.5), "#5d7263");
   }
 
   // Volume & Short interest boxes below chart.
-  const vy = 518, vh = 118, vw = 252;
+  const vy = 562, vh = 122, vw = 252;
   rrect(lx, vy, vw, vh, 10, "#ffffff", "#dbe3de");
   txt("Volume", lx + 14, vy + 20, font(700, 13), "#27332e");
   const v = c.volume;
   if (v) {
     txt(`normal ${count(v.normal_volume)}/d`, lx + vw - 14, vy + 20, font(400, 10), "#7b8c81", "right");
-    txt("5 sessions", lx + 14, vy + 44, font(500, 11), "#5d7263");
-    txt(`${num(v.volume_x_5) ? `${Number(v.volume_x_5).toFixed(2)}×` : "n/a"} · ${pct(v.return_5)}`, lx + vw - 14, vy + 44, font(600, 11), "#27332e", "right");
-    txt(`${share(v.up_share_5)} volume on up days`, lx + 14, vy + 58, font(400, 10), "#7b8c81");
-    txt("21 sessions", lx + 14, vy + 82, font(500, 11), "#5d7263");
-    txt(`${num(v.volume_x_21) ? `${Number(v.volume_x_21).toFixed(2)}×` : "n/a"} · ${pct(v.return_21)}`, lx + vw - 14, vy + 82, font(600, 11), "#27332e", "right");
-    txt(`${share(v.up_share_21)} volume on up days`, lx + 14, vy + 96, font(400, 10), "#7b8c81");
+    txt("5 sessions", lx + 14, vy + 46, font(500, 11), "#5d7263");
+    txt(`${num(v.volume_x_5) ? `${Number(v.volume_x_5).toFixed(2)}×` : "n/a"} · ${pct(v.return_5)}`, lx + vw - 14, vy + 46, font(600, 11), "#27332e", "right");
+    txt(`${share(v.up_share_5)} volume on up days`, lx + 14, vy + 61, font(400, 10), "#7b8c81");
+    txt("21 sessions", lx + 14, vy + 86, font(500, 11), "#5d7263");
+    txt(`${num(v.volume_x_21) ? `${Number(v.volume_x_21).toFixed(2)}×` : "n/a"} · ${pct(v.return_21)}`, lx + vw - 14, vy + 86, font(600, 11), "#27332e", "right");
+    txt(`${share(v.up_share_21)} volume on up days`, lx + 14, vy + 101, font(400, 10), "#7b8c81");
   } else {
     txt("No full 84-session volume history.", lx + 14, vy + 48, font(400, 11), "#5d7263");
   }
@@ -692,13 +924,13 @@ function drawReport(canvas, c) {
   const s = c.short;
   if (s) {
     txt(`FINRA ${day(s.date)}`, sx + vw - 14, vy + 20, font(400, 10), "#7b8c81", "right");
-    txt("Days to cover", sx + 14, vy + 44, font(500, 11), "#5d7263");
-    txt(num(s.days_to_cover) ? `${Number(s.days_to_cover).toFixed(1)} days` : "n/a", sx + vw - 14, vy + 44, font(700, 11.5), "#27332e", "right");
-    txt("Shares short", sx + 14, vy + 68, font(500, 11), "#5d7263");
-    txt(`${count(s.short_shares)}${num(s.change_pct) ? ` (${pct(s.change_pct / 100)})` : ""}`, sx + vw - 14, vy + 68, font(600, 11), "#27332e", "right");
+    txt("Days to cover", sx + 14, vy + 46, font(500, 11), "#5d7263");
+    txt(num(s.days_to_cover) ? `${Number(s.days_to_cover).toFixed(1)} days` : "n/a", sx + vw - 14, vy + 46, font(700, 11.5), "#27332e", "right");
+    txt("Shares short", sx + 14, vy + 72, font(500, 11), "#5d7263");
+    txt(`${count(s.short_shares)}${num(s.change_pct) ? ` (${pct(s.change_pct / 100)})` : ""}`, sx + vw - 14, vy + 72, font(600, 11), "#27332e", "right");
     if (s.rank) {
-      txt("vs peers", sx + 14, vy + 92, font(500, 11), "#5d7263");
-      txt(`${s.rank} shorted`, sx + vw - 14, vy + 92, font(600, 11), "#27332e", "right");
+      txt("vs peers", sx + 14, vy + 98, font(500, 11), "#5d7263");
+      txt(`${s.rank} shorted`, sx + vw - 14, vy + 98, font(600, 11), "#27332e", "right");
     }
   } else {
     txt("No FINRA figure for this ticker.", sx + 14, vy + 48, font(400, 11), "#5d7263");
@@ -706,8 +938,8 @@ function drawReport(canvas, c) {
 
   // Right column: The business & analysts + Who owns and trades it.
   const rx = 556, rw = 336;
-  rrect(rx, by, rw, 232, 10, "#ffffff", "#dbe3de");
-  txt("The business & analysts", rx + 14, by + 22, font(700, 13.5), "#27332e");
+  rrect(rx, by, rw, 224, 10, "#ffffff", "#dbe3de");
+  txt("The business & analysts", rx + 14, by + 20, font(700, 13.5), "#27332e");
   if (c.research) {
     const r = c.research, f = r.factors || {}, val = r.valuation || {};
     const fs = c.fscore && c.fscore.scored ? `${c.fscore.passed}/9${c.fscore.computed < 9 ? "*" : ""}` : "n/a";
@@ -724,7 +956,7 @@ function drawReport(canvas, c) {
       ["EPS 30d · Targets", `${up !== null || down !== null ? `${up ?? 0}↑ ${down ?? 0}↓` : "n/a"}${num(f.target_low) && num(f.target_high) ? ` · ${dollars(f.target_low)}–${dollars(f.target_high)}` : ""}`],
     ];
     rows.forEach(([k, vStr], idx) => {
-      const ry = by + 44 + idx * 23;
+      const ry = by + 42 + idx * 22.5;
       if (idx > 0) hline(rx + 14, rx + rw - 14, ry - 14, "#eef1ee");
       txt(k, rx + 14, ry, font(400, 11), "#5d7263");
       txt(vStr, rx + rw - 14, ry, font(600, 11), "#27332e", "right", 190);
@@ -735,28 +967,53 @@ function drawReport(canvas, c) {
     txt("$10M+ daily trading, price ≥ $5).", rx + 14, by + 86, font(400, 11), "#5d7263");
   }
 
-  const oy = 484, oh = 152;
+  const oy = 476, oh = 208;
   rrect(rx, oy, rw, oh, 10, "#ffffff", "#dbe3de");
-  txt("Who owns and trades it", rx + 14, oy + 22, font(700, 13.5), "#27332e");
+  txt("Who owns and trades it", rx + 14, oy + 20, font(700, 13.5), "#27332e");
   const ins = c.insiders;
-  txt("Insiders (Form 4)", rx + 14, oy + 44, font(600, 10.5), "#7b8c81");
-  txt(ins && ins.headline ? ins.headline : "No open-market buys or sales in window", rx + 14, oy + 60, font(500, 11), "#27332e", "left", rw - 28);
-  hline(rx + 14, rx + rw - 14, oy + 70, "#eef1ee");
+  if (c.insights) {
+    const sig = c.insights;
+    if (sig.filed) {
+      const filedStr = `filed ${day(sig.filed)}`;
+      const rxRight = sig.is_new ? rx + rw - 48 : rx + rw - 14;
+      txt(filedStr, rxRight, oy + 20, font(400, 10), "#7b8c81", "right");
+      if (sig.is_new) {
+        rrect(rx + rw - 44, oy + 9, 30, 14, 7, "#27332e");
+        txt("NEW", rx + rw - 29, oy + 19, font(700, 8.5), "#ffffff", "center");
+      }
+    }
+    const sigColor = sig.side === "buy" ? "#1e6547" : sig.side === "sell" ? "#9a5b0c" : "#5d7263";
+    ctx.beginPath(); ctx.arc(rx + 18, oy + 36.5, 3.5, 0, Math.PI * 2); ctx.fillStyle = sigColor; ctx.fill();
+    txt(`${sig.signal}${sig.amount ? ` · ${sig.amount}` : ""}`, rx + 26, oy + 40, font(700, 11.5), sigColor, "left", 160);
+    if (sig.sub) txt(sig.sub, rx + rw - 14, oy + 40, font(500, 10), "#5d7263", "right", 155);
+    txt(sig.headline || "", rx + 14, oy + 57, font(600, 11), "#27332e", "left", rw - 28);
+    const why = [sig.explanation, sig.checks].filter(Boolean).join(" · ");
+    const expLines = wrapLines(why, font(400, 10), rw - 28, 2);
+    expLines.forEach((ln, idx) => txt(ln, rx + 14, oy + 72 + idx * 13, font(400, 10), "#5d7263"));
+  } else {
+    txt("Insiders (Form 4)", rx + 14, oy + 44, font(600, 10.5), "#7b8c81");
+    txt(ins && ins.headline ? ins.headline : "No open-market buys or sales in window", rx + 14, oy + 62, font(500, 11), "#27332e", "left", rw - 28);
+  }
+  hline(rx + 14, rx + rw - 14, oy + 96, "#eef1ee");
   const stakes = (c.stakes && c.stakes.rows) || [];
-  txt("5%+ holders (13D/13G)", rx + 14, oy + 86, font(600, 10.5), "#7b8c81");
+  txt("5%+ holders (13D/13G)", rx + 14, oy + 112, font(600, 10.5), "#7b8c81");
   txt(stakes.length ? `${stakes[0].holder} · ${stakes[0].form} · ${num(stakes[0].pct) ? `${Number(stakes[0].pct).toFixed(1)}%` : "n/a"}` : "None filed in window",
-    rx + 14, oy + 102, font(500, 11), "#27332e", "left", rw - 28);
-  hline(rx + 14, rx + rw - 14, oy + 112, "#eef1ee");
+    rx + 14, oy + 128, font(500, 11), "#27332e", "left", rw - 28);
+  hline(rx + 14, rx + rw - 14, oy + 140, "#eef1ee");
   const fd = c.funds;
-  txt(`Funds (13F${fd && fd.quarter ? ` · ${day(fd.quarter)}` : ""})`, rx + 14, oy + 128, font(600, 10.5), "#7b8c81");
+  txt(`Funds (13F${fd && fd.quarter ? ` · ${day(fd.quarter)}` : ""})`, rx + 14, oy + 156, font(600, 10.5), "#7b8c81");
   const fdLine = fd && fd.linked && num(fd.holders_now)
     ? `${whole(fd.holders_now)} managers${num(fd.new) ? ` · +${whole(fd.new)} new, +${whole(fd.added)} added, −${whole(fd.cut)} cut, −${whole(fd.exited)} out` : ""}`
     : "Not linked in this quarter's 13F";
-  txt(fdLine, rx + 14, oy + 144, font(500, 11), "#27332e", "left", rw - 28);
+  txt(fdLine, rx + 14, oy + 172, font(500, 11), "#27332e", "left", rw - 28);
+  if (fd && fd.linked && num(fd.shares_now)) {
+    const chg = num(fd.shares_prev) && fd.shares_prev > 0 ? ` (${pct(fd.shares_now / fd.shares_prev - 1)} vs ${day(fd.previous)})` : "";
+    txt(`Shares held: ${count(fd.shares_now)}${chg}${num(fd.value_now) ? ` · ${money(fd.value_now)}` : ""}`, rx + 14, oy + 188, font(400, 10), "#5d7263", "left", rw - 28);
+  }
 
   // Footer.
-  txt("Facts with their dates, not a buy or sell call.", 28, 660, font(400, 11), "#5d7263");
-  txt(`temper-lab.com/ticker.html?t=${encodeURIComponent(c.symbol || "")}`, 892, 660, font(600, 11), "#1e6547", "right");
+  txt("Facts with their dates, not a buy or sell call.", 28, 704, font(400, 11), "#5d7263");
+  txt(`temper-lab.com/ticker.html?t=${encodeURIComponent(c.symbol || "")}`, 892, 704, font(600, 11), "#1e6547", "right");
   return true;
 }
 function reportPng(cardOrSymbol) {
@@ -1094,6 +1351,27 @@ function volumeBox(c) {
   return section("Volume", `to ${longDay(v.as_of)} · normal ${count(v.normal_volume)} shares a day`,
     row("Last week (5 sessions)", v.volume_x_5, v.up_share_5, v.return_5),
     row("Last month (21 sessions)", v.volume_x_21, v.up_share_21, v.return_21), scale);
+}
+function insightsBox(c) {
+  const ins = c.insights;
+  if (!ins) return null;
+  const top = el("div", "tk-ins-top");
+  top.append(el("span", `tk-sig ${ins.side || ""}`, ins.signal));
+  if (ins.amount) {
+    const amt = el("span", "tk-ins-amt", ins.amount);
+    if (ins.sub) amt.append(el("small", "", ` · ${ins.sub}`));
+    top.append(amt);
+  }
+  const why = [ins.explanation, ins.checks].filter(Boolean).join(" · ");
+  const box = section("Insights", ins.filed ? `filed ${longDay(ins.filed)}` : "",
+    top,
+    ins.headline ? el("p", "tk-lead", ins.headline) : null,
+    why ? el("p", "tk-note", why) : null);
+  if (ins.is_new && box.children[0]) {
+    const target = box.children[0].children[1] || box.children[0];
+    target.append(el("span", "tk-new", "NEW"));
+  }
+  return box;
 }
 function shortBox(c) {
   const s = c.short;
@@ -1441,7 +1719,7 @@ function render() {
       financialsBox(c), stack(fscoreBox(c), analystsBox(c)))
     : [];
   out.replaceChildren(headerBox(c), ...[glanceBox(c)].filter(Boolean),
-    ...band("tk-price", "Price and trading", "", "wide", priceBox(c), stack(volumeBox(c), shortBox(c))),
+    ...band("tk-price", "Price and trading", "", "wide", priceBox(c), stack(volumeBox(c), insightsBox(c), shortBox(c))),
     ...research,
     ...band("tk-owners", "Who owns and trades it", "SEC Form 4, 13D/13G and 13F filings", "own",
       stack(insidersBox(c), stakesBox(c)), fundsBox(c)),
