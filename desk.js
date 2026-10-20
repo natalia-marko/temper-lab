@@ -964,7 +964,7 @@ function renderScreenGates() {
   // from the actual gates once before. The Shortlist's rule is its membership.
   const element = $("screen-gates");
   const labels = state.screen === "composite"
-    ? ["On 2+ of Growth, Cheap, Hot tape", "Top 10: at most 3 per sector"]
+    ? ["On 2+ of Growth, Cheap, Hot tape", "Positive equity", "Top 10: at most 3 per sector"]
     : state.desk.setups?.[state.screen]?.gates || [];
   if (!labels.length) {
     element.innerHTML = "";

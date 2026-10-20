@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Research</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=092ffa82ca8c" />
+    <link rel="stylesheet" href="./desk.css?v=4b7db6afe37e" />
     <link rel="stylesheet" href="./fscore.css?v=266f5db2334d" />
     <link rel="stylesheet" href="./watchlist.css?v=b22136a753b4" />
   </head>
@@ -37,15 +37,6 @@
       <button id="nav-open" class="nav-open" type="button" aria-label="Open menu" aria-controls="site-sidebar" aria-expanded="false" hidden><span aria-hidden="true">☰</span> Menu</button>
       <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close menu" tabindex="-1" hidden></button>
       <main id="main-content">
-        <header class="top">
-          <div class="search-block">
-            <label class="search">
-              <span>Find</span>
-              <input id="query" type="search" placeholder="Find a company, ticker, industry or sector" autocomplete="off" aria-describedby="search-status" />
-            </label>
-            <p id="search-status" class="search-status" role="status" aria-live="polite" hidden></p>
-          </div>
-        </header>
         <section class="heading">
           <div>
             <div class="eyebrow">FIND &amp; CONSIDER</div>
@@ -76,10 +67,15 @@
           </details>
           <p id="column-note" class="column-note list-note" role="status"></p>
           <div class="evidence-filters">
+            <label class="search">
+              <span>Find</span>
+              <input id="query" type="search" placeholder="Find a company, ticker, industry or sector" autocomplete="off" aria-describedby="search-status" />
+            </label>
             <label id="show-broken-label"><input id="show-broken" type="checkbox"> Show statements that don't add up</label>
             <label><input id="hide-loss" type="checkbox"> Hide loss-making</label>
             <button id="reset-filters" type="button">Reset filters</button>
           </div>
+          <p id="search-status" class="search-status" role="status" aria-live="polite" hidden></p>
           <p id="trajectory-note" class="column-note" role="status"></p>
           <div class="order" id="order"></div>
           <div class="table-wrap">
@@ -120,7 +116,7 @@
     </dialog>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
     <script src="./sectors.js?v=19639ede4b17"></script>
-    <script src="./desk.js?v=c0bcbe0d6cc9"></script>
+    <script src="./desk.js?v=518066b8f669"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>
