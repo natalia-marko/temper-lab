@@ -219,19 +219,20 @@ function priceOf(volume, symbol, sessions = state.period) {
   const fullStock = volume && volume.closes && volume.closes[symbol];
   const fullDays = chart && chart.days;
   if (!Array.isArray(fullDays) || fullDays.length < 2 || !Array.isArray(fullStock) || fullStock.length !== fullDays.length) return null;
-  const canSwitch = fullDays.length > 64;
-  const target = sessions === 63 ? 63 : 252;
-  const cut = canSwitch && fullDays.length > target + 1 ? fullDays.length - (target + 1) : 0;
+  const ok = (v) => num(v) && Number(v) > 0;
+  const fullFirst = fullStock.findIndex(ok);
+  if (fullFirst < 0) return null;
+  const canSwitch = fullDays.length > 64 && fullFirst < fullDays.length - 64;
+  const period = canSwitch && sessions !== 63 ? 252 : 63;
+  const cut = fullDays.length > period + 1 ? fullDays.length - (period + 1) : 0;
   const days = cut ? fullDays.slice(cut) : fullDays;
   const stock = cut ? fullStock.slice(cut) : fullStock;
-  const ok = (v) => num(v) && Number(v) > 0;
   const first = stock.findIndex(ok);
   const last = stock.length - 1 - [...stock].reverse().findIndex(ok);
   if (first < 0 || last <= first) return null;
   const fullQqq = Array.isArray(chart.qqq) && chart.qqq.length === fullDays.length ? chart.qqq : null;
   const qqq = fullQqq ? (cut ? fullQqq.slice(cut) : fullQqq) : null;
   const change = (series) => (series && ok(series[first]) && ok(series[last]) ? series[last] / series[first] - 1 : null);
-  const period = canSwitch && target === 252 ? 252 : 63;
   const label = period === 252 ? "12 months" : "3 months";
   return { as_of: volume.as_of, period, label, can_switch: canSwitch, days, stock, qqq, first, last,
     first_day: days[first], last_day: days[last], close: stock[last], change: change(stock), qqq_change: change(qqq) };
@@ -605,8 +606,21 @@ function priceBox(c) {
     vals.forEach((v, k) => { if (v !== null) d += `${d && vals[k - 1] !== null ? "L" : "M"}${x(k).toFixed(1)},${y(v).toFixed(1)}`; });
     return d;
   };
-  const known = a.map((v, k) => (v === null ? null : k)).filter((k) => k !== null);
-  svg("path", { d: `${path(a)}L${x(known[known.length - 1]).toFixed(1)},${y(0).toFixed(1)}L${x(known[0]).toFixed(1)},${y(0).toFixed(1)}Z`, class: "tk-area" }, chart);
+  const area = (vals) => {
+    let d = "", start = null;
+    vals.forEach((v, k) => {
+      if (v !== null) {
+        d += `${start === null ? "M" : "L"}${x(k).toFixed(1)},${y(v).toFixed(1)}`;
+        if (start === null) start = k;
+        if (vals[k + 1] === null || k === vals.length - 1) {
+          d += `L${x(k).toFixed(1)},${y(0).toFixed(1)}L${x(start).toFixed(1)},${y(0).toFixed(1)}Z`;
+          start = null;
+        }
+      }
+    });
+    return d;
+  };
+  svg("path", { d: area(a), class: "tk-area" }, chart);
   if (q) svg("path", { d: path(q), class: "tk-ln qqq" }, chart);
   svg("path", { d: path(a), class: "tk-ln stock" }, chart);
   // End labels, pushed apart when the two lines finish close together.
@@ -697,7 +711,7 @@ function priceBox(c) {
         : `${c.symbol} closed at $${close.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${day(p.last_day)}.`}`);
     }
   }
-  const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.days[0])} – ${longDay(lastDay)}`, legend, wrap,
+  const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, legend, wrap,
     note(["Hover, or focus the chart and use the arrow keys, to read each day.", ...notes].join(" ")));
   if (p.can_switch) {
     const periods = el("div", "tk-periods");
