@@ -109,9 +109,9 @@ date differs from `desk.json`), `earnings-calendar.json`, `ownership-signals.jso
 status, 13D/13G stakes, FINRA short interest for every issuer) — plus `ticker-volume.json`, written by
 `tools/build_ticker_volume.py` in the weekly job: last week's and last month's average volume against the
 63 sessions before the last 21, and the share of volume traded on up days (above 50% = OBV rose), cut at the
-freeze Friday because a later bar can be a partial day. The same file carries the 3-month price chart: QQQ's
-last 64 sessions to the freeze Friday as the date axis, QQQ's and each stock's adjusted closes on it (Insights
-rules: four significant digits; no line with fewer than half the days or a one-day move beyond 3x). The same
+freeze Friday because a later bar can be a partial day. The same file carries the 12-month / 3-month price chart: QQQ's
+last 253 sessions (last 64 for 3 months) to the freeze Friday as the date axis, QQQ's and each stock's adjusted closes on it (Insights
+rules: four significant digits; no line with fewer than half the active days or an unblanked one-day move beyond 3x). The same
 script writes `ticker-timing.json` for the Watchlist Timing tab only (loaded when that tab opens): 452 QQQ sessions of
 adjusted closes per stock, 252 shown and 200 to start the averages, no series with a gap longer than 5 sessions. The
 tab draws the 50-day and 200-day SMA, Wilder's RSI (14) and MACD (12, 26, 9), dates every event on the day it happens, and makes

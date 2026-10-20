@@ -66,6 +66,11 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
 .tk-head h3 { margin: 0; font-size: 15px; }
 .tk-head small { color: var(--tk-faint); font-size: 11px; }
+.tk-periods { display: inline-flex; gap: 4px; margin-left: auto; }
+.tk-period { padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: #526e5b; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.tk-period:hover { border-color: #8cab95; }
+.tk-period.on { border-color: #214d36; background: #214d36; color: #fff; }
+.tk-period:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
 .tk-lead { margin: 0; font-weight: 600; }
 .tk-facts { display: grid; grid-template-columns: minmax(120px, auto) 1fr; gap: 6px 14px; margin: 0; }
 .tk-facts dt { color: #5d7263; font-size: 12px; }

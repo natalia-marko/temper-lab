@@ -1,7 +1,7 @@
 // Ticker page: everything saved about one ticker, each fact with its date.
 // Reads only files the weekly and Tue/Fri jobs already publish (desk.json,
 // fscore.json, earnings-calendar.json, ownership-signals.json) plus
-// ticker-volume.json (weekly: volume facts and the 3-month price chart) and ticker-funds.json (13F, quarterly).
+// ticker-volume.json (weekly: volume facts and the 12-month / 3-month price chart) and ticker-funds.json (13F, quarterly).
 // Nothing is computed here beyond lookups, formatting, changes along the saved price line, sums of the
 // dollar amounts shown, and two ratios of figures from one Research record (price / earnings, EV / operating income).
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
@@ -37,7 +37,8 @@ const FSCORE_CHECKS = [
   ["turnover_up", "Asset turnover (revenue / assets) up"],
 ];
 const VOLUME_FIELDS = ["normal_volume", "volume_x_5", "volume_x_21", "up_share_5", "up_share_21", "return_5", "return_21"];
-const state = { data: {}, missing: [] };
+const CHART_PERIODS = [[252, "12 months"], [63, "3 months"]];
+const state = { data: {}, missing: [], period: 252 };
 const $ = (id) => document.getElementById(id);
 
 // ---------- formatting ----------
@@ -211,20 +212,29 @@ function volumeOf(volume, symbol) {
   const fields = volume.fields || VOLUME_FIELDS;
   return { as_of: volume.as_of, ...Object.fromEntries(fields.map((f, i) => [f, row[i]])) };
 }
-// The 3-month line from ticker-volume.json: the stock and QQQ on one date axis, null on a day without a bar.
-function priceOf(volume, symbol) {
+// The price line from ticker-volume.json (252 sessions = 12 months, last 63 = 3 months):
+// the stock and QQQ on one date axis, null on a day without a bar.
+function priceOf(volume, symbol, sessions = state.period) {
   const chart = volume && volume.chart;
-  const stock = volume && volume.closes && volume.closes[symbol];
-  const days = chart && chart.days;
-  if (!Array.isArray(days) || days.length < 2 || !Array.isArray(stock) || stock.length !== days.length) return null;
+  const fullStock = volume && volume.closes && volume.closes[symbol];
+  const fullDays = chart && chart.days;
+  if (!Array.isArray(fullDays) || fullDays.length < 2 || !Array.isArray(fullStock) || fullStock.length !== fullDays.length) return null;
+  const canSwitch = fullDays.length > 64;
+  const target = sessions === 63 ? 63 : 252;
+  const cut = canSwitch && fullDays.length > target + 1 ? fullDays.length - (target + 1) : 0;
+  const days = cut ? fullDays.slice(cut) : fullDays;
+  const stock = cut ? fullStock.slice(cut) : fullStock;
   const ok = (v) => num(v) && Number(v) > 0;
   const first = stock.findIndex(ok);
   const last = stock.length - 1 - [...stock].reverse().findIndex(ok);
   if (first < 0 || last <= first) return null;
-  const qqq = Array.isArray(chart.qqq) && chart.qqq.length === days.length ? chart.qqq : null;
+  const fullQqq = Array.isArray(chart.qqq) && chart.qqq.length === fullDays.length ? chart.qqq : null;
+  const qqq = fullQqq ? (cut ? fullQqq.slice(cut) : fullQqq) : null;
   const change = (series) => (series && ok(series[first]) && ok(series[last]) ? series[last] / series[first] - 1 : null);
-  return { as_of: volume.as_of, days, stock, qqq, first, last, first_day: days[first], last_day: days[last],
-    close: stock[last], change: change(stock), qqq_change: change(qqq) };
+  const period = canSwitch && target === 252 ? 252 : 63;
+  const label = period === 252 ? "12 months" : "3 months";
+  return { as_of: volume.as_of, period, label, can_switch: canSwitch, days, stock, qqq, first, last,
+    first_day: days[first], last_day: days[last], close: stock[last], change: change(stock), qqq_change: change(qqq) };
 }
 function fundsOf(funds, symbol) {
   const row = funds && funds.rows && funds.rows[symbol];
@@ -271,14 +281,14 @@ function filingMarks(c) {
     .map((d) => String(d || "").slice(0, 10)).filter((d) => d > last)).size;
   return { reports: marks(reportDays), stakes: marks(stakeDays), form4, later };
 }
-function card(data, query) {
+function card(data, query, sessions = state.period) {
   const symbol = norm(query);
   if (!symbol) return null;
   const own = data.own || null;
   const checked = checkedRow(own, symbol);
   const desk = (data.desk && data.desk.companies && data.desk.companies[symbol]) || null;
   const volume = volumeOf(data.volume, symbol);
-  const price = priceOf(data.volume, symbol);
+  const price = priceOf(data.volume, symbol, sessions);
   if (!checked && !desk && !volume && !price) return { symbol, found: false };
   const company = checked ? (own.companies || []).find((c) => c.symbol === checked.symbol) || null : null;
   const calendar = data.earnings || null;
@@ -312,8 +322,11 @@ function glance(c) {
   const out = [];
   const p = c.price;
   if (p && num(p.change)) {
-    out.push({ key: "price", title: "Price · 3 months", value: pct(p.change), target: "tk-price",
-      context: [p.qqq_change !== null ? `QQQ ${pct(p.qqq_change)}` : "", `${day(p.first_day)} – ${day(p.last_day)}`].filter(Boolean).join(" · ") });
+    const span = p.first_day.slice(0, 4) === p.last_day.slice(0, 4)
+      ? `${day(p.first_day)} – ${day(p.last_day)}`
+      : `${longDay(p.first_day)} – ${longDay(p.last_day)}`;
+    out.push({ key: "price", title: `Price · ${p.label || "3 months"}`, value: pct(p.change), target: "tk-price",
+      context: [p.qqq_change !== null ? `QQQ ${pct(p.qqq_change)}` : "", span].filter(Boolean).join(" · ") });
   }
   const r = c.research;
   if (r) {
@@ -556,10 +569,10 @@ function glanceBox(c) {
 
 function priceBox(c) {
   const p = c.price;
-  if (!p) return section("Price vs QQQ, 3 months", "", missing("ticker-volume.json") || note("No reliable 3-month price line for this ticker this week (fewer than half the days, or a split mix-up in the price data)."));
+  if (!p) return section("Price vs QQQ", "", missing("ticker-volume.json") || note("No reliable price line for this ticker this week (fewer than half the days, or a split mix-up in the price data)."));
   const W = 720, L = 54, R = 96, T = 26, PB = 196;
   const n = p.days.length;
-  const rebase = (series, i0) => (series ? series.map((v) => (num(v) && v > 0 && num(series[i0]) ? v / series[i0] - 1 : null)) : null);
+  const rebase = (series, i0) => (series ? series.map((v, k) => (k >= i0 && num(v) && v > 0 && num(series[i0]) ? v / series[i0] - 1 : null)) : null);
   const a = rebase(p.stock, p.first);
   const q = rebase(p.qqq, p.first);
   const all = [...a, ...(q || [])].filter((v) => v !== null);
@@ -606,9 +619,10 @@ function priceBox(c) {
   if (yq !== null) svg("text", { x: x(n - 1) + 9, y: yq + 4, class: "tk-tick" }, chart, `QQQ ${pct(q[p.last])}`);
   const next = c.earnings && c.earnings.next;
   if (next && next.date > lastDay) svg("text", { x: W - R, y: T - 12, "text-anchor": "end", class: "tk-tick event" }, chart, `Next results ${day(next.date)} →`);
+  const edge = Math.max(5, Math.ceil(n * 0.075));
   svg("text", { x: x(0), y: PB + 16, class: "tk-tick" }, chart, day(p.days[0]));
   p.days.forEach((d, k) => {
-    if (k > 4 && k < n - 6 && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) svg("text", { x: x(k), y: PB + 16, "text-anchor": "middle", class: "tk-tick" }, chart, MONTHS[Number(d.slice(5, 7)) - 1]);
+    if (k > edge && k < n - edge && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) svg("text", { x: x(k), y: PB + 16, "text-anchor": "middle", class: "tk-tick" }, chart, MONTHS[Number(d.slice(5, 7)) - 1]);
   });
   svg("text", { x: x(n - 1), y: PB + 16, "text-anchor": "end", class: "tk-tick" }, chart, day(lastDay));
   // Filing days on the same date axis; the company's own reports also get a line through the price.
@@ -683,8 +697,27 @@ function priceBox(c) {
         : `${c.symbol} closed at $${close.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${day(p.last_day)}.`}`);
     }
   }
-  return section("Price vs QQQ, 3 months", `daily closes, ${longDay(p.days[0])} – ${longDay(lastDay)}`, legend, wrap,
+  const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.days[0])} – ${longDay(lastDay)}`, legend, wrap,
     note(["Hover, or focus the chart and use the arrow keys, to read each day.", ...notes].join(" ")));
+  if (p.can_switch) {
+    const periods = el("div", "tk-periods");
+    periods.setAttribute("role", "group");
+    periods.setAttribute("aria-label", "Chart window");
+    for (const [sessions, text] of CHART_PERIODS) {
+      const active = p.period === sessions;
+      const btn = el("button", `tk-period${active ? " on" : ""}`, text);
+      btn.type = "button";
+      btn.setAttribute("aria-pressed", String(active));
+      btn.addEventListener("click", () => {
+        if (state.period === sessions) return;
+        state.period = sessions;
+        render();
+      });
+      periods.append(btn);
+    }
+    box.children[0].append(periods);
+  }
+  return box;
 }
 function volumeBox(c) {
   const v = c.volume;
