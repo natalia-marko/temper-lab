@@ -200,11 +200,11 @@
   let timingState = "idle"; // idle → loading → ready | failed
   // The Research Shortlist's first ten (desk.json), offered when nothing is starred.
   let shortlistPicks = [];
+  let shortlistRanks = {};
   let bulkRows = []; // Keep bulk-unselected rows here so Select all can restore them this visit.
   let displayed = [];
   let activeTab = "saved";
   let activeSymbol = "";
-  let oscMode = "both";
   const computed = new Map();
 
   function seriesFor(symbol) {
@@ -305,8 +305,6 @@
         : timingState === "failed" ? "The price history could not be loaded." : `Loading the price history for ${symbol}…`));
       return;
     }
-    const showRsi = oscMode === "both" || oscMode === "rsi";
-    const showMacd = oscMode === "both" || oscMode === "macd";
     const slowP = ta.slowPeriod;
     const W_SVG = host.clientWidth ? Math.max(340, Math.min(920, host.clientWidth - 40)) : 920;
     const narrow = W_SVG < 560;
@@ -319,7 +317,7 @@
       class: "wl-ta-svg",
       role: "img",
       tabindex: "0",
-      "aria-label": `${symbol}: daily close with 50-day and ${slowP}-day averages${showRsi ? ", RSI (14)" : ""}${showMacd ? ", MACD (12, 26, 9)" : ""}, ${longDay(ta.days[0])} to ${longDay(ta.days[n - 1])}`,
+      "aria-label": `${symbol}: daily close with 50-day and ${slowP}-day averages, RSI (14), MACD (12, 26, 9), ${longDay(ta.days[0])} to ${longDay(ta.days[n - 1])}`,
     });
 
     let cursor = 0;
@@ -370,14 +368,19 @@
     const vLine = (top, bottom, i, color) => svg("line", { x1: x(i).toFixed(1), x2: x(i).toFixed(1), y1: top + 1, y2: bottom - 1, stroke: color, "stroke-width": "1", "stroke-dasharray": "3,3", "stroke-opacity": "0.45" }, chart);
 
     // --- Price panel ---
+    const upMa = ta.events.ma.filter((e) => e.kind === "up");
+    const downMa = ta.events.ma.filter((e) => e.kind === "down");
+    const maCrossNote = ta.last.lastMa
+      ? ` · 50-day crossed ${ta.last.lastMa.kind === "up" ? "above" : "below"} ${slowP}-day ${eventDay(ta.last.lastMa.date)}`
+      : ta.last.trend ? ` · ${noCross(ta, slowP).replace(/^None/, `no 50/${slowP} cross`)}` : "";
     const priceItems = [
       { color: "#1d4ed8", label: `${symbol} close` },
       { color: "#15803d", label: "50-day average" },
       { color: "#dc2626", label: `${slowP}-day average` },
-      { shape: "up", color: "#15803d", label: `50-day crossed above ${slowP}-day` },
-      { shape: "down", color: "#dc2626", label: `50-day crossed below ${slowP}-day` },
+      ...(upMa.length ? [{ shape: "up", color: "#15803d", label: `50-day crossed above ${slowP}-day (${upMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
+      ...(downMa.length ? [{ shape: "down", color: "#dc2626", label: `50-day crossed below ${slowP}-day (${downMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
     ];
-    const p1 = panel(narrow ? `${symbol} · adjusted close` : `${symbol} · daily close, adjusted for splits and dividends`, priceItems, narrow ? 190 : 225, "Price (USD)");
+    const p1 = panel(narrow ? `${symbol} · adjusted close${maCrossNote}` : `${symbol} · daily close, adjusted for splits and dividends${maCrossNote}`, priceItems, narrow ? 190 : 225, "Price (USD)");
     const priceVals = [...ta.close, ...ta.sma50, ...ta.slow].filter((v) => v !== null && Number.isFinite(v));
     const pMin = Math.min(...priceVals);
     const pMax = Math.max(...priceVals);
@@ -397,81 +400,76 @@
     svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#15803d", "stroke-width": "1.6" }, chart);
     svg("path", { d: buildPath(ta.slow, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
     for (const e of ta.events.ma) {
+      vLine(p1.top, p1.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
       const cx = x(e.index);
-      const cy = yPrice(e.price);
+      const maLevel = ta.sma50[e.index] !== null && ta.slow[e.index] !== null ? (ta.sma50[e.index] + ta.slow[e.index]) / 2 : e.price;
+      const cy = yPrice(maLevel);
       const pts = e.kind === "up"
         ? `${cx.toFixed(1)},${(cy - 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy + 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy + 5).toFixed(1)}`
         : `${cx.toFixed(1)},${(cy + 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy - 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy - 5).toFixed(1)}`;
-      svg("polygon", { points: pts, fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1" }, chart);
+      svg("polygon", { points: pts, fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1.2" }, chart);
     }
 
     // --- RSI panel ---
-    let p2 = null;
-    let yRsi = null;
-    if (showRsi) {
-      p2 = panel(`${symbol} · RSI (14, Wilder)`, [
-        { color: "#7e22ce", label: "RSI (14)" },
-        { color: "#6b7280", dash: "5,4", label: `${RSI_HIGH} and ${RSI_LOW} lines` },
-        { shape: "dot", color: "#7e22ce", label: `first day at ${RSI_HIGH}+ or at ${RSI_LOW} or below` },
-      ], narrow ? 120 : 135, "RSI");
-      yRsi = (v) => p2.top + (1 - v / 100) * (p2.bottom - p2.top);
-      for (const tick of [0, 30, 50, 70, 100]) {
-        const yy = yRsi(tick);
-        svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 30 || tick === 70 ? "#6b7280" : "#f3f4f6", "stroke-width": tick === 30 || tick === 70 ? "1.2" : "0.8", "stroke-dasharray": tick === 30 || tick === 70 ? "5,4" : undefined }, chart);
-        svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, String(tick));
-      }
-      svg("path", { d: buildPath(ta.rsi14, yRsi), fill: "none", stroke: "#7e22ce", "stroke-width": "1.6" }, chart);
-      for (const e of ta.events.rsi) svg("circle", { cx: x(e.index).toFixed(1), cy: yRsi(e.value).toFixed(1), r: "3.6", fill: "#7e22ce", stroke: "#ffffff", "stroke-width": "1" }, chart);
+    const p2 = panel(`${symbol} · RSI (14, Wilder)`, [
+      { color: "#7e22ce", label: "RSI (14)" },
+      { color: "#6b7280", dash: "5,4", label: `${RSI_HIGH} and ${RSI_LOW} lines` },
+      { shape: "dot", color: "#7e22ce", label: `first day at ${RSI_HIGH}+ or at ${RSI_LOW} or below` },
+    ], narrow ? 120 : 135, "RSI");
+    const yRsi = (v) => p2.top + (1 - v / 100) * (p2.bottom - p2.top);
+    for (const tick of [0, 30, 50, 70, 100]) {
+      const yy = yRsi(tick);
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 30 || tick === 70 ? "#6b7280" : "#f3f4f6", "stroke-width": tick === 30 || tick === 70 ? "1.2" : "0.8", "stroke-dasharray": tick === 30 || tick === 70 ? "5,4" : undefined }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, String(tick));
     }
+    svg("path", { d: buildPath(ta.rsi14, yRsi), fill: "none", stroke: "#7e22ce", "stroke-width": "1.6" }, chart);
+    for (const e of ta.events.rsi) svg("circle", { cx: x(e.index).toFixed(1), cy: yRsi(e.value).toFixed(1), r: "3.6", fill: "#7e22ce", stroke: "#ffffff", "stroke-width": "1" }, chart);
 
     // --- MACD panel ---
-    let p3 = null;
-    if (showMacd) {
-      const latest = ta.last.lastMacd;
-      const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${eventDay(latest.date)}` : "";
-      p3 = panel(narrow ? `MACD (12, 26, 9)${crossNote.replace(" signal", "")}` : `${symbol} · MACD (12, 26, 9)${crossNote}`, [
-        { color: "#1d4ed8", label: "MACD" },
-        { color: "#d97706", label: "Signal" },
-        { shape: "bar", color: "#9ca3af", label: "Histogram" },
-        { shape: "dot", color: "#4b5563", label: "crossed above signal" },
-        { shape: "ring", color: "#4b5563", label: "crossed below signal" },
-      ], narrow ? 140 : 158, "MACD ($)");
-      const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v)).map(Math.abs);
-      const mMax = (Math.max(0, ...mVals) || 1) * 1.15;
-      const yMacd = (v) => p3.top + (1 - (v + mMax) / (2 * mMax)) * (p3.bottom - p3.top);
-      const yZero = yMacd(0);
-      for (const tick of [-mMax * 0.75, 0, mMax * 0.75]) {
-        const yy = yMacd(tick);
-        svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#9ca3af" : "#f3f4f6", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
-        svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, tick === 0 ? "0" : axisNumber(tick));
-      }
-      const barW = Math.max(1, (PW / n) * 0.65);
-      for (let i = 0; i < n; i++) {
-        const h = ta.hist[i];
-        if (h === null || !Number.isFinite(h)) continue;
-        const yy = yMacd(h);
-        svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#9ca3af" : "#d1d5db" }, chart);
-      }
-      svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
-      svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
-      for (const e of ta.events.macd) {
-        svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#4b5563" : "#ffffff", stroke: e.kind === "up" ? "#ffffff" : "#4b5563", "stroke-width": e.kind === "up" ? "1" : "1.5" }, chart);
-      }
+    const latest = ta.last.lastMacd;
+    const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${eventDay(latest.date)}` : "";
+    const p3 = panel(narrow ? `MACD (12, 26, 9)${crossNote.replace(" signal", "")}` : `${symbol} · MACD (12, 26, 9)${crossNote}`, [
+      { color: "#1d4ed8", label: "MACD" },
+      { color: "#d97706", label: "Signal" },
+      { shape: "bar", color: "#9ca3af", label: "Histogram" },
+      { shape: "dot", color: "#4b5563", label: "crossed above signal" },
+      { shape: "ring", color: "#4b5563", label: "crossed below signal" },
+    ], narrow ? 140 : 158, "MACD ($)");
+    const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v)).map(Math.abs);
+    const mMax = (Math.max(0, ...mVals) || 1) * 1.15;
+    const yMacd = (v) => p3.top + (1 - (v + mMax) / (2 * mMax)) * (p3.bottom - p3.top);
+    const yZero = yMacd(0);
+    for (const tick of [-mMax * 0.75, 0, mMax * 0.75]) {
+      const yy = yMacd(tick);
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#9ca3af" : "#f3f4f6", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, tick === 0 ? "0" : axisNumber(tick));
+    }
+    const barW = Math.max(1, (PW / n) * 0.65);
+    for (let i = 0; i < n; i++) {
+      const h = ta.hist[i];
+      if (h === null || !Number.isFinite(h)) continue;
+      const yy = yMacd(h);
+      svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#9ca3af" : "#d1d5db" }, chart);
+    }
+    svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
+    svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
+    for (const e of ta.events.macd) {
+      svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#4b5563" : "#ffffff", stroke: e.kind === "up" ? "#ffffff" : "#4b5563", "stroke-width": e.kind === "up" ? "1" : "1.5" }, chart);
     }
 
     // --- Shared month axis along the bottom panel ---
-    const bottomY = (p3 || p2 || p1).bottom;
+    const bottomY = p3.bottom;
     let lastLabelX = -100;
     for (let i = 1; i < n; i++) {
       const ym = ta.days[i].slice(0, 7);
       if (ym === ta.days[i - 1].slice(0, 7)) continue;
       const xx = x(i);
       if (xx - lastLabelX < (narrow ? 58 : 70) || xx > L + PW - 22) continue;
-      for (const p of [p1, p2, p3]) if (p) svg("line", { x1: xx, x2: xx, y1: p.top, y2: p.bottom, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
+      for (const p of [p1, p2, p3]) svg("line", { x1: xx, x2: xx, y1: p.top, y2: p.bottom, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
       svg("text", { x: xx, y: bottomY + 15, "text-anchor": "middle", fill: "#1f2937", "font-size": "10.5" }, chart, `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(2, 4)}`);
       lastLabelX = xx;
     }
-    for (const e of ta.events.ma) for (const p of [p2, p3]) if (p) vLine(p.top, p.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
+    for (const e of ta.events.ma) for (const p of [p2, p3]) vLine(p.top, p.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
     const H_SVG = bottomY + 24;
     chart.setAttribute("viewBox", `0 0 ${W_SVG} ${H_SVG}`);
 
@@ -558,22 +556,36 @@
 
     const picksBar = $("wl-timing-picks");
     if (picksBar) {
-      const pick = (sym) => {
+      const pick = (sym, rank) => {
         const btn = el("button", `wl-pick-btn${sym === activeSymbol ? " on" : ""}`);
         btn.type = "button";
-        btn.append(el("span", `wl-pick-dot ${tone(sym)}`), el("span", "", sym));
+        btn.append(el("span", `wl-pick-dot ${tone(sym)}`));
+        if (rank) btn.append(el("small", "wl-pick-rank", `#${rank}`));
+        btn.append(el("span", "", sym));
         btn.addEventListener("click", () => {
           activeSymbol = sym;
           renderTiming(W.list());
         });
         return btn;
       };
-      const nodes = [el("span", "wl-timing-picks-label", starredSyms.length ? "Your watchlist:" : "Research Shortlist, first ten (star any ticker to add your own):"), ...symbols.map(pick)];
+      const makeRow = (labelText, buttons) => {
+        const rowEl = el("div", "wl-timing-picks-row");
+        const listEl = el("div", "wl-timing-picks-list");
+        listEl.append(...buttons);
+        rowEl.append(el("span", "wl-timing-picks-label", labelText), listEl);
+        return rowEl;
+      };
+      const rows = [];
       if (starredSyms.length) {
+        rows.push(makeRow("Your watchlist:", symbols.map((s) => pick(s))));
         const extra = shortlistPicks.filter((s) => !starredSyms.includes(s));
-        if (extra.length) nodes.push(el("span", "wl-timing-picks-label", "Research Shortlist:"), ...extra.map(pick));
+        if (extra.length) {
+          rows.push(makeRow("Shortlist top 10 (not starred):", extra.map((s) => pick(s, shortlistRanks[s]))));
+        }
+      } else if (symbols.length) {
+        rows.push(makeRow("Research Shortlist, first ten (star any ticker to add your own):", symbols.map((s) => pick(s, shortlistRanks[s]))));
       }
-      picksBar.replaceChildren(...nodes);
+      picksBar.replaceChildren(...rows);
     }
 
     const summary = $("wl-timing-summary");
@@ -715,17 +727,6 @@
       $("wl-tab-saved").addEventListener("click", () => setTab("saved"));
       $("wl-tab-timing").addEventListener("click", () => setTab("timing"));
     }
-    if ($("wl-osc-switch") && $("wl-osc-switch").querySelectorAll) {
-      for (const btn of $("wl-osc-switch").querySelectorAll("button[data-osc]")) {
-        btn.addEventListener("click", () => {
-          oscMode = btn.dataset.osc || "both";
-          for (const b of $("wl-osc-switch").querySelectorAll("button[data-osc]")) {
-            b.classList.toggle("on", b === btn);
-          }
-          renderTiming(W.list());
-        });
-      }
-    }
     if (globalThis.location && globalThis.location.hash === "#timing") {
       setTab("timing");
     }
@@ -736,7 +737,12 @@
       desk = (deskData && deskData.companies) || {};
       earnings = (calendar && calendar.companies) || {};
       const shortlist = deskData && deskData.setups && deskData.setups.composite && deskData.setups.composite.results;
-      shortlistPicks = Array.isArray(shortlist) ? shortlist.slice(0, 10).map((row) => row.symbol).filter(Boolean) : [];
+      const topTen = Array.isArray(shortlist) ? shortlist.slice(0, 10) : [];
+      shortlistPicks = topTen.map((row) => row.symbol).filter(Boolean);
+      shortlistRanks = {};
+      topTen.forEach((row, idx) => {
+        if (row && row.symbol) shortlistRanks[row.symbol] = row.rank || idx + 1;
+      });
       const asOf = Object.values(desk).find((c) => c && c.price_date);
       $("wl-source").textContent = asOf ? `Price and market value: close on ${longDay(asOf.price_date)} (Research snapshot).` : "";
       render(W.list());

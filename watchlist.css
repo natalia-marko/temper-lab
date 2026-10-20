@@ -43,19 +43,19 @@
 .watchlist-page .insights-label { color: #6e7f72; font-size: 12px; letter-spacing: .03em; }
 
 /* Timing tab & Technical Analysis chart */
-.wl-timing-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 20px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line, #e3e8e3); }
+.wl-timing-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 20px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line, #e3e8e3); }
 .wl-timing-head h2 { margin: 0 0 4px; color: #1d3528; font-size: 18px; font-weight: 650; }
-.wl-timing-head p { margin: 0; color: #5d7263; font-size: 13px; line-height: 1.45; }
-.wl-timing-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.wl-osc-switch { display: inline-flex; border: 1px solid var(--line, #d9e0da); border-radius: 8px; overflow: hidden; background: #f7f9f6; }
-.wl-osc-switch button { min-height: 32px; padding: 0 11px; border: 0; border-right: 1px solid var(--line, #d9e0da); background: transparent; color: #4c6253; font: inherit; font-size: 12px; cursor: pointer; }
-.wl-osc-switch button:last-child { border-right: 0; }
-.wl-osc-switch button.on { background: #1e6547; color: #fff; font-weight: 600; }
-.wl-timing-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line, #e3e8e3); background: #fafbf9; }
-.wl-timing-picks-label { color: #5d7263; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-right: 4px; }
-.wl-pick-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 11px; border: 1px solid #d5ded6; border-radius: 999px; background: #fff; color: #243e2f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.wl-timing-head p { margin: 0; max-width: 88ch; color: #5d7263; font-size: 13px; line-height: 1.45; }
+.wl-timing-picks { display: flex; flex-direction: column; gap: 8px; padding: 11px 20px; border-bottom: 1px solid var(--line, #e3e8e3); background: #fafbf9; }
+.wl-timing-picks-row { display: flex; align-items: baseline; gap: 8px 12px; }
+.wl-timing-picks-row + .wl-timing-picks-row { padding-top: 8px; border-top: 1px dashed #e2e8e2; }
+.wl-timing-picks-label { flex: none; min-width: 195px; color: #5d7263; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.wl-timing-picks-list { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-width: 0; }
+.wl-pick-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 11px; border: 1px solid #d5ded6; border-radius: 999px; background: #fff; color: #243e2f; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .wl-pick-btn:hover { border-color: #1e6547; background: #f2f7f3; }
 .wl-pick-btn.on { border-color: #1e6547; background: #1e6547; color: #fff; }
+.wl-pick-rank { color: #6c7f72; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wl-pick-btn.on .wl-pick-rank { color: #d6ebe0; }
 .wl-pick-dot { width: 7px; height: 7px; border-radius: 50%; background: #8a978e; }
 .wl-pick-dot.up { background: #16a34a; }
 .wl-pick-dot.down { background: #dc2626; }
@@ -81,4 +81,6 @@
 .wl-timing-table tbody tr.on td { background: #eef6f0; }
 @media (max-width: 860px) {
   .wl-timing-head, .wl-timing-picks, .wl-timing-summary, .wl-timing-chart { padding-left: 14px; padding-right: 14px; }
+  .wl-timing-picks-row { flex-direction: column; gap: 6px; }
+  .wl-timing-picks-label { min-width: 0; }
 }
