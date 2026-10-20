@@ -54,8 +54,10 @@ const SHORTLIST_TOP = 10;
 const LEVERAGE_STEER = 0.75;
 const CASH_CONVERSION_STEER = 0.7;
 // The three trend rules tested in Leg D (claude/leg-d-trend-rules-2026-10-18.md);
-// share/trend-rules.json holds each stock's answer at the freeze close, built in
-// Python by tools/build_ticker_volume.py from the Watchlist's own closes.
+// share/trend-rules.json holds each stock's answer at the last month-end close
+// (signal_date), built in Python by tools/build_ticker_volume.py; the Watchlist reads
+// the same file. A change between month-ends did not predict returns, so the
+// month-end state is shown (claude/platform-architecture-review-2026-10-20.md).
 const TREND_RULES = [
   ["A", "price above its 200-day average"],
   ["B", "12-month return, skipping the last month, above zero"],
@@ -491,7 +493,7 @@ function renderFilters() {
 // empty file (no Timing series that week) is unavailable, not "too short".
 function trendReady() {
   const file = state.trend;
-  return Boolean(file && file.desk_run_id === state.desk.run_id && Object.keys(file.rules || {}).length);
+  return Boolean(file && file.desk_run_id === state.desk.run_id && file.signal_date && Object.keys(file.rules || {}).length);
 }
 
 function trendOf(symbol) {
@@ -523,7 +525,7 @@ function trendCell(symbol) {
   }
   const trend = trendOf(symbol);
   const tone = !trend || trend.known < 3 ? "none" : trend.up === 3 ? "up" : trend.up === 0 ? "down" : "mixed";
-  const title = trend ? `${trendDetail(trend)}. At the ${shortDay(state.desk.as_of)} close.` : "No price history for this stock in the trend file";
+  const title = trend ? `${trendDetail(trend)}. At the ${shortDay(state.trend.signal_date)} month-end close.` : "No price history for this stock in the trend file";
   return `<td><span class="trend ${tone}" title="${escapeHtml(title)}">${trendText(trend)}</span></td>`;
 }
 
@@ -735,7 +737,7 @@ function shortLine(symbol) {
 function trendLine(symbol) {
   const trend = trendOf(symbol);
   if (!trend) return "";
-  return `Trend ${trendText(trend)} at the ${shortDay(state.desk.as_of)} close: ${trendDetail(trend)}.`;
+  return `Trend ${trendText(trend)} at the ${shortDay(state.trend.signal_date)} month-end close: ${trendDetail(trend)}.`;
 }
 
 function checkFirst(symbol) {
@@ -930,7 +932,7 @@ async function loadExtras() {
   const [earnings, shorts, trend] = await Promise.all([
     load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
     load("short-interest.json", (data) => data.schema === "short-interest-1"),
-    load("trend-rules.json", (data) => data.schema === "trend-rules-1"),
+    load("trend-rules.json", (data) => data.schema === "trend-rules-2"),
   ]);
   state.earnings = earnings;
   state.shorts = shorts;
@@ -997,7 +999,8 @@ function renderHead() {
   if (SCORED.has(state.screen)) html += sortHeader("score", "Score");
   html += `<th scope="col">${state.screen === "composite" ? "On lists" : "Also on"}</th>`;
   const shortsDate = state.shorts?.date ? `FINRA, ${shortDay(state.shorts.date)}` : "FINRA";
-  html += sortHeader("trend", "Trend", "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Tested on weekly and on month-end closes; both passed.");
+  const trendDate = trendReady() ? `<small>month-end</small><small>${escapeHtml(shortDay(state.trend.signal_date))}</small>` : "";
+  html += sortHeader("trend", `Trend ${trendDate}`, "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Shown at the last month-end close, the signal that passed; a change between month-ends did not predict returns.");
   html += sortHeader("short", `Shorted <small>days to cover</small><small>${escapeHtml(shortsDate)}</small>`, "Days to cover from FINRA short interest. Heavy and Light mark the top and bottom 10% of eligible stocks of similar size, the split our test backed.");
   html += sortHeader("results", "Next results");
   html += `</tr>`;

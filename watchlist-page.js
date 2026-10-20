@@ -156,19 +156,6 @@
 
     const last = n - 1;
     const ratio = (a, b) => (a !== null && b ? a / b - 1 : null);
-    // The three trend rules tested in Leg D (claude/leg-d-trend-rules-2026-10-18.md), on the last close:
-    //   A price above its 200-day SMA; B 12-1 month return above zero (the close 21 sessions back
-    //   against the close 252 sessions back); C 50-day SMA above the 200-day SMA.
-    // A rule is null while the history is too short for it.
-    const mom121 = last - 252 >= firstValid ? closes[last - 21] / closes[last - 252] - 1 : null;
-    const rules = {
-      A: sma200[last] !== null ? closes[last] > sma200[last] : null,
-      B: mom121 !== null ? mom121 > 0 : null,
-      C: sma50[last] !== null && sma200[last] !== null ? sma50[last] > sma200[last] : null,
-    };
-    const known = Object.values(rules).filter((v) => v !== null);
-    const rulesUp = known.filter(Boolean).length;
-    const ruleTone = known.length < 3 ? "none" : rulesUp === 3 ? "up" : rulesUp === 0 ? "down" : "mixed";
     const lastOf = (list, kind) => [...list].reverse().find((e) => !kind || e.kind === kind) || null;
     return {
       slowPeriod,
@@ -194,10 +181,6 @@
         vsSlow: ratio(closes[last], slow[last]),
         sma50VsSlow: ratio(sma50[last], slow[last]),
         trend: sma50[last] !== null && slow[last] !== null ? (sma50[last] > slow[last] ? "up" : sma50[last] < slow[last] ? "down" : "flat") : null,
-        mom121,
-        rules,
-        rulesUp,
-        ruleTone,
         rsi14: rsi[last],
         macd: macd[last],
         signal: signal[last],
@@ -213,6 +196,7 @@
   let desk = {};
   let earnings = {};
   let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
+  let trend = null; // share/trend-rules.json: the tested rules at the last month-end close, same file as Research
   let timingState = "idle"; // idle → loading → ready | failed
   // The Research Shortlist's first ten (desk.json), offered when nothing is starred.
   let shortlistPicks = [];
@@ -232,11 +216,13 @@
   function loadTiming() {
     if (timingState !== "idle") return;
     timingState = "loading";
-    fetch("./ticker-timing.json", { cache: "no-cache" })
+    const load = (file) => fetch(`./${file}`, { cache: "no-cache" })
       .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null)
-      .then((data) => {
+      .catch(() => null);
+    Promise.all([load("ticker-timing.json"), load("trend-rules.json")])
+      .then(([data, rules]) => {
         timing = data && data.schema === "ticker-timing-1" && Array.isArray(data.days) ? data : null;
+        trend = rules && rules.schema === "trend-rules-2" && rules.signal_date && rules.rules ? rules : null;
         timingState = timing ? "ready" : "failed";
         computed.clear();
         if (activeTab === "timing") renderTiming(W.list());
@@ -277,14 +263,28 @@
   const eventDay = (iso) => (timing && timing.as_of && String(iso).slice(0, 4) !== String(timing.as_of).slice(0, 4) ? longDay(iso) : shortDay(iso));
   const rsiZone = (r) => (r === null ? "—" : r >= RSI_HIGH ? `${RSI_HIGH} or above` : r <= RSI_LOW ? `${RSI_LOW} or below` : `between ${RSI_LOW} and ${RSI_HIGH}`);
   // Trend rules: green = all three tested rules up, red = all three down, amber = they disagree,
-  // grey = too little history for all three. The rules passed the same test on weekly and on month-end
-  // closes (tools/leg_d_trend.py, tools/leg_d_trend_weekly.py), so the weekly badge is a tested signal.
+  // grey = too little history for all three. The state at the last month-end close, read from
+  // share/trend-rules.json - the file the Research page reads, built in Python - so both pages always
+  // agree and nothing is computed here. A change between month-ends did not predict returns
+  // (claude/platform-architecture-review-2026-10-20.md), so the month-end state is the signal shown.
   const RULE_NAMES = { A: "price above 200-day", B: "12–1 month return above zero", C: "50-day above 200-day" };
-  const ruleBadge = (L) => (L.ruleTone === "up" ? "Uptrend · 3 of 3" : L.ruleTone === "down" ? "Downtrend · 0 of 3"
-    : L.ruleTone === "mixed" ? `Mixed · ${L.rulesUp} of 3` : "Not enough history");
-  const ruleList = (L) => Object.entries(RULE_NAMES)
-    .map(([k, name]) => `${L.rules[k] === null ? "–" : L.rules[k] ? "✓" : "✗"} ${name}${k === "B" && L.mom121 !== null ? ` (${signedPct(L.mom121, 0)})` : ""}`)
-    .join(" · ");
+  function trendFor(symbol) {
+    if (!trend || !timing || trend.desk_run_id !== timing.desk_run_id) return null;
+    const a = trend.rules[symbol];
+    if (!Array.isArray(a) || a.length !== 3) return null;
+    const rules = { A: a[0] === null ? null : a[0] === 1, B: a[1] === null ? null : a[1] === 1, C: a[2] === null ? null : a[2] === 1 };
+    const known = a.filter((v) => v === 0 || v === 1);
+    const rulesUp = known.filter((v) => v === 1).length;
+    const m = trend.momentum_12_1 ? trend.momentum_12_1[symbol] : null;
+    return { rules, rulesUp, ruleTone: known.length < 3 ? "none" : rulesUp === 3 ? "up" : rulesUp === 0 ? "down" : "mixed",
+      mom121: Number.isFinite(m) ? m : null };
+  }
+  const ruleBadge = (T) => (!T ? "Not available" : T.ruleTone === "up" ? "Uptrend · 3 of 3" : T.ruleTone === "down" ? "Downtrend · 0 of 3"
+    : T.ruleTone === "mixed" ? `Mixed · ${T.rulesUp} of 3` : "Not enough history");
+  const ruleList = (T) => (!T ? "The trend file for this snapshot is not available" : `At the ${longDay(trend.signal_date)} month-end close: `
+    + Object.entries(RULE_NAMES)
+      .map(([k, name]) => `${T.rules[k] === null ? "–" : T.rules[k] ? "✓" : "✗"} ${name}${k === "B" && T.mom121 !== null ? ` (${signedPct(T.mom121, 0)})` : ""}`)
+      .join(" · "));
   // No 50/200 cross to name: say why, so a young listing is not read as a calm year.
   const noCross = (ta, slowP) => (ta.slowFrom && ta.days.length && ta.slowFrom > ta.days[0]
     ? `None since the ${slowP}-day began (${eventDay(ta.slowFrom)})` : "None in the chart year");
@@ -532,16 +532,18 @@
     if ($("wl-timing-sub")) {
       const asOf = timing && timing.as_of;
       $("wl-timing-sub").textContent = `${asOf ? `Close on ${longDay(asOf)} (the weekly snapshot)` : "Weekly snapshot"}. `
-        + `Colour shows three trend rules tested on Temper Lab data: price vs ${slowP}-day, 12–1 month return, 50-day vs ${slowP}-day. `
-        + `They passed the same test on weekly closes and on month-end closes. `
+        + `Colour shows three trend rules tested on Temper Lab data: price vs ${slowP}-day, 12–1 month return, 50-day vs ${slowP}-day, `
+        + `at the last month-end close${trend ? ` (${longDay(trend.signal_date)})` : ""}, the signal that passed our test; a change between month-ends did not predict returns. `
+        + `Charts and the other numbers are at the weekly close. `
         + `RSI (14, Wilder) and MACD (12, 26, 9) are context. Descriptions of past prices, not a buy or sell call.`;
     }
     if ($("wl-th-trend")) $("wl-th-trend").textContent = "Trend rules (tested)";
     if ($("wl-th-gap")) $("wl-th-gap").textContent = `Gap, 50 vs ${slowP}`;
     if ($("wl-th-cross")) $("wl-th-cross").textContent = `Last 50/${slowP} cross`;
     if ($("wl-timing-foot")) {
-      $("wl-timing-foot").textContent = `Trend rules: in a Leg D test of US stocks with $1B+ market value and $10M+ daily trading, signals on weekly closes and, separately, on month-end closes, entries Jun 2021 – Apr 2026, `
-        + `stocks with each rule up beat those with it down by 3.0% to 3.6% over the next 6 months in both (size-neutral, before costs, survivors only, past results). `
+      $("wl-timing-foot").textContent = `Trend rules: in a Leg D test of US stocks with $1B+ market value and $10M+ daily trading, signals on month-end closes, entries Jul 2021 – Apr 2026, `
+        + `stocks with each rule up beat those with it down by 3.0% to 3.6% over the next 6 months (size-neutral, before costs, survivors only, past results). `
+        + `On weekly closes the result was the same, but a change between month-ends did not predict returns, so the colour is the month-end state. `
         + `Green = all three up, amber = they disagree, red = all three down, grey = too little history. `
         + `How these are made: prices are Yahoo adjusted closes (splits and dividends), four significant digits, so past levels can sit below the prices traded then. `
         + `Averages are simple moving averages; ▲/▼ mark the day the 50-day crossed the ${slowP}-day. RSI is Wilder's 14-day RSI; dots mark the first day at ${RSI_HIGH} or above or at ${RSI_LOW} or below. `
@@ -552,14 +554,14 @@
     const starredSyms = items.map((x) => x.symbol);
     const symbols = starredSyms.length ? starredSyms : shortlistPicks.slice();
     if (!activeSymbol || (!symbols.includes(activeSymbol) && !shortlistPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
-    const tone = (ta) => (!ta ? "" : ta.last.ruleTone);
+    const tone = (sym) => (trendFor(sym) || {}).ruleTone || "";
 
     const picksBar = $("wl-timing-picks");
     if (picksBar) {
       const pick = (sym) => {
         const btn = el("button", `wl-pick-btn${sym === activeSymbol ? " on" : ""}`);
         btn.type = "button";
-        btn.append(el("span", `wl-pick-dot ${tone(seriesFor(sym))}`), el("span", "", sym));
+        btn.append(el("span", `wl-pick-dot ${tone(sym)}`), el("span", "", sym));
         btn.addEventListener("click", () => {
           activeSymbol = sym;
           renderTiming(W.list());
@@ -597,7 +599,7 @@
         const rsiLast = [`last reached ${RSI_HIGH}: ${L.lastRsiHigh ? eventDay(L.lastRsiHigh.date) : "not in the chart year"}`,
           `last fell to ${RSI_LOW}: ${L.lastRsiLow ? eventDay(L.lastRsiLow.date) : "not in the chart year"}`];
         summary.replaceChildren(
-          card("Trend rules (tested)", ruleBadge(L), `${ruleList(L)}.`, tone(activeTa)),
+          card("Trend rules (tested)", ruleBadge(trendFor(activeSymbol)), `${ruleList(trendFor(activeSymbol))}.`, tone(activeSymbol) || "none"),
           card(`50-day vs ${slowP}-day`, trendText(L, slowP), `${since}${L.sma50VsSlow !== null ? ` Gap ${signedPct(L.sma50VsSlow)}.` : ""}`),
           card("Price vs averages", `${closeText(activeSymbol, activeTa)} · ${signedPct(L.vsSma50)} vs 50-day`, `${levels.join(" · ")} · price ${signedPct(L.vsSlow)} vs ${slowP}-day`),
           card("RSI (14, Wilder) · context", L.rsi14 !== null ? `${L.rsi14.toFixed(1)} · ${rsiZone(L.rsi14)}` : "—", `${rsiLast.join(" · ")}. Not tested as a timing signal.`),
@@ -632,8 +634,9 @@
         }
         const L = ta.last;
         const trend = el("td");
-        const badge = el("span", `wl-badge ${tone(ta)}`, ruleBadge(L));
-        badge.title = ruleList(L);
+        const T = trendFor(sym);
+        const badge = el("span", `wl-badge ${tone(sym) || "none"}`, ruleBadge(T));
+        badge.title = ruleList(T);
         trend.append(badge);
         const plain = (v) => el("td", "num", signedPct(v));
         tr.append(co, trend, el("td", "num", closeText(sym, ta)), plain(L.vsSma50), plain(L.sma50VsSlow),
