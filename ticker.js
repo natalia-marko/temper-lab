@@ -464,46 +464,373 @@ function sparkline(p) {
   return s;
 }
 
-// The address a recipient can open. A local preview still copies the public page.
+// The address a recipient can open. A local preview still links to the public page.
 function cardLink(symbol, coarse) {
   return { url: `https://temper-lab.com/ticker.html?t=${encodeURIComponent(symbol)}`, share: Boolean(coarse) };
 }
-function copyCard(url) {
-  if (navigator.clipboard && window.isSecureContext && navigator.clipboard.writeText) return navigator.clipboard.writeText(url);
-  const field = document.createElement("textarea");
-  field.value = url;
-  field.setAttribute("readonly", "");
-  field.style.position = "fixed";
-  field.style.left = "-9999px";
-  document.body.append(field);
-  field.select();
-  const ok = document.execCommand("copy");
-  field.remove();
-  return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
+function reportText(cardOrSymbol) {
+  const c = typeof cardOrSymbol === "string" ? { symbol: cardOrSymbol } : cardOrSymbol || {};
+  const url = cardLink(c.symbol || "", false).url;
+  const close = c.research && num(c.research.price)
+    ? `$${Number(c.research.price).toFixed(2)} (${longDay(c.research.price_date)} close)`
+    : c.price && num(c.price.close) ? `$${Number(c.price.close).toFixed(2)} (${longDay(c.price.last_day)} close)` : "";
+  const head = [`${c.symbol || ""}${c.name ? ` — ${c.name}` : ""}`, close].filter(Boolean).join(" · ");
+  const meta = [
+    c.industry,
+    c.research && num(c.research.market_cap) ? `market value ${money(c.research.market_cap)}` : "",
+    ...((c.research && c.research.moves) || []).map((m) => (m.note ? `${m.label} (${m.note})` : m.label)),
+    c.earnings && c.earnings.next ? `Next results ${longDay(c.earnings.next.date)}${c.earnings.next.timing ? ` (${c.earnings.next.timing})` : ""}` : "",
+  ].filter(Boolean).join(" · ");
+  const lines = [head, meta, ...glance(c).map((g) => `${g.title}: ${g.value}${g.context ? ` (${g.context})` : ""}`)];
+  if (c.insiders && c.insiders.headline) lines.push(`Insiders: ${c.insiders.headline}`);
+  lines.push(`Temper Lab · facts with their dates, not a buy or sell call · ${url}`);
+  return lines.filter(Boolean).join("\n");
 }
-// Phone: the system share sheet. A computer copies the link. Dismissing the sheet is not a failure.
-function sendCard(symbol, coarse) {
-  const link = cardLink(symbol, coarse);
+function drawReport(canvas, c) {
+  const ctx = canvas && typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
+  if (!ctx) return false;
+  const W = 920, H = 680, S = 2;
+  canvas.width = W * S;
+  canvas.height = H * S;
+  ctx.scale(S, S);
+  const font = (weight, size) => `${weight} ${size}px "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif`;
+  const rrect = (x, y, w, h, r, fill, stroke) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+  };
+  const clipText = (str, maxW) => {
+    const s = String(str || "");
+    if (!maxW || ctx.measureText(s).width <= maxW) return s;
+    let out = s;
+    while (out.length > 1 && ctx.measureText(`${out}…`).width > maxW) out = out.slice(0, -1);
+    return `${out}…`;
+  };
+  const txt = (str, x, y, f, color, align = "left", maxW = 0) => {
+    ctx.font = f;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.fillText(maxW ? clipText(str, maxW) : String(str || ""), x, y);
+  };
+  const hline = (x1, x2, y, color = "#eef1ee", dashed = false) => {
+    ctx.beginPath();
+    ctx.setLineDash(dashed ? [4, 3] : []);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+
+  ctx.fillStyle = "#f6f7f4";
+  ctx.fillRect(0, 0, W, H);
+
+  // Header: brand, symbol, company, close price, and chips.
+  rrect(28, 20, 22, 22, 5, "#2d4c38");
+  txt("t", 39, 36, font(700, 14), "#f0e6bf", "center");
+  txt("temper lab · ticker report", 58, 35, font(600, 12), "#5d7263");
+  const snapDate = (c.research && c.research.as_of) || (c.price && c.price.as_of) || "";
+  if (snapDate) txt(`Snapshot ${longDay(snapDate)}`, 892, 35, font(500, 11.5), "#7b8c81", "right");
+
+  txt(c.symbol || "", 28, 66, font(700, 26), "#27332e");
+  const symW = ctx.measureText(c.symbol || "").width;
+  if (c.name) txt(c.name, 28 + symW + 10, 65, font(500, 15), "#5d7263", "left", 560 - symW);
+  const sub = [c.industry, c.research && num(c.research.market_cap) ? `market value ${money(c.research.market_cap)}` : ""].filter(Boolean).join(" · ");
+  txt(sub || "US stock", 28, 84, font(500, 12), "#3d5346", "left", 620);
+
+  const closeVal = c.research && num(c.research.price) ? c.research.price : c.price && num(c.price.close) ? c.price.close : null;
+  const closeDay = (c.research && c.research.price_date) || (c.price && c.price.last_day) || "";
+  if (closeVal !== null) {
+    txt(`$${Number(closeVal).toFixed(2)}`, 892, 66, font(700, 25), "#27332e", "right");
+    if (closeDay) txt(`${longDay(closeDay)} close`, 892, 84, font(500, 11.5), "#5d7263", "right");
+  }
+
+  const chips = [];
+  if (c.earnings && c.earnings.next) {
+    chips.push({ text: [`Next results ${longDay(c.earnings.next.date)}`, c.earnings.next.timing].filter(Boolean).join(" · "),
+      bg: "#fff8ec", bd: "#ecd3a8", fg: "#7a4a06" });
+  } else if (c.eligible && c.earnings && c.earnings.window && c.earnings.window.to) {
+    chips.push({ text: `No results date to ${longDay(c.earnings.window.to)}`, bg: "#ffffff", bd: "#dbe3de", fg: "#5d7263" });
+  }
+  for (const m of (c.research && c.research.moves) || []) {
+    chips.push({ text: m.note ? `${m.label} · ${m.note}` : m.label, bg: "#eef5ed", bd: "#d0dfd2", fg: "#245e42" });
+  }
+  let cx = 28;
+  for (const ch of chips.slice(0, 5)) {
+    ctx.font = font(600, 11);
+    const label = clipText(ch.text, 260);
+    const pw = Math.ceil(ctx.measureText(label).width) + 18;
+    if (cx + pw > 892) break;
+    rrect(cx, 94, pw, 22, 6, ch.bg, ch.bd);
+    txt(label, cx + 9, 109, font(600, 11), ch.fg);
+    cx += pw + 6;
+  }
+
+  // Summary strip (glance).
+  const items = glance(c);
+  const gy = 126, gh = 104;
+  rrect(28, gy, 864, gh, 10, "#ffffff", "#dbe3de");
+  if (items.length) {
+    const cols = items.length <= 3 ? items.length : 3;
+    const rows = items.length <= 3 ? 1 : 2;
+    const cw = 864 / cols, ch = gh / rows;
+    items.slice(0, 6).forEach((item, idx) => {
+      const col = idx % cols, row = Math.floor(idx / cols);
+      const x = 28 + col * cw, y = gy + row * ch;
+      if (col > 0) { ctx.beginPath(); ctx.strokeStyle = "#eef1ee"; ctx.moveTo(x, y + 6); ctx.lineTo(x, y + ch - 6); ctx.stroke(); }
+      if (row > 0) hline(x + 8, x + cw - 8, y, "#eef1ee");
+      txt(String(item.title || "").toUpperCase(), x + 12, y + 16, font(600, 9.5), "#7b8c81", "left", cw - 24);
+      txt(item.value || "n/a", x + 12, y + 34, font(700, 15.5), "#27332e", "left", cw - 24);
+      txt(item.context || "", x + 12, y + 47, font(400, 10.5), "#5d7263", "left", cw - 24);
+    });
+  } else {
+    txt("No summary figures available for this ticker.", 44, gy + 56, font(400, 12), "#5d7263");
+  }
+
+  // Left column: Price vs QQQ chart + Volume & Short interest.
+  const by = 242, lx = 28, lw = 516;
+  rrect(lx, by, lw, 266, 10, "#ffffff", "#dbe3de");
+  const p = c.price;
+  txt(`Price vs QQQ${p ? `, ${p.label || "3 months"}` : ""}`, lx + 14, by + 22, font(700, 13.5), "#27332e");
+  if (p) {
+    txt(`daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, lx + lw - 14, by + 22, font(400, 10.5), "#7b8c81", "right");
+    const cl = lx + 46, cr = lx + lw - 86, ct = by + 40, cb = by + 222;
+    const n = p.days.length;
+    const rebase = (series, i0) => (series ? series.map((v, k) => (k >= i0 && num(v) && v > 0 && num(series[i0]) ? v / series[i0] - 1 : null)) : null);
+    const a = rebase(p.stock, p.first);
+    const q = rebase(p.qqq, p.first);
+    const all = [...a, ...(q || [])].filter((v) => v !== null);
+    const range = Math.max(...all, 0) - Math.min(...all, 0);
+    const step = [0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10].find((s) => range / s <= 5) || 20;
+    const lo = Math.min(0, Math.floor(Math.min(...all) / step) * step);
+    const hi = Math.max(0, Math.ceil(Math.max(...all) / step) * step);
+    const px = (i) => cl + (i / (n - 1)) * (cr - cl);
+    const py = (v) => ct + (1 - (v - lo) / (hi - lo || 1)) * (cb - ct);
+    for (let t = Math.ceil(lo / step - 1e-9) * step; t <= hi + 1e-9; t += step) {
+      const v = Math.abs(t) < 1e-9 ? 0 : t;
+      hline(cl, cr, py(v), v === 0 ? "#dbe3de" : "#eef1ee");
+      txt(v === 0 ? "0%" : pct(v, 0), cl - 6, py(v) + 3.5, font(400, 9.5), "#7b8c81", "right");
+    }
+    let start = null;
+    ctx.fillStyle = "rgba(39, 51, 46, 0.055)";
+    a.forEach((v, k) => {
+      if (v !== null) {
+        if (start === null) { ctx.beginPath(); ctx.moveTo(px(k), py(v)); start = k; }
+        else ctx.lineTo(px(k), py(v));
+        if (a[k + 1] === null || k === a.length - 1) {
+          ctx.lineTo(px(k), py(0));
+          ctx.lineTo(px(start), py(0));
+          ctx.closePath();
+          ctx.fill();
+          start = null;
+        }
+      }
+    });
+    const strokeSeries = (vals, color, width, dash) => {
+      ctx.beginPath();
+      ctx.setLineDash(dash);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      vals.forEach((v, k) => {
+        if (v === null) return;
+        if (k === 0 || vals[k - 1] === null) ctx.moveTo(px(k), py(v));
+        else ctx.lineTo(px(k), py(v));
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    if (q) strokeSeries(q, "#9fb0a5", 1.5, [4, 3]);
+    strokeSeries(a, "#27332e", 2, []);
+    let ya = py(a[p.last]);
+    let yq = q && q[p.last] !== null ? py(q[p.last]) : null;
+    if (yq !== null && Math.abs(ya - yq) < 12) { const m = (ya + yq) / 2; [ya, yq] = ya <= yq ? [m - 6, m + 6] : [m + 6, m - 6]; }
+    if (yq !== null) {
+      ctx.beginPath(); ctx.arc(px(p.last), py(q[p.last]), 3, 0, Math.PI * 2); ctx.fillStyle = "#9fb0a5"; ctx.fill();
+      txt(`QQQ ${pct(q[p.last])}`, cr + 6, yq + 3.5, font(500, 9.5), "#7b8c81", "left", 78);
+    }
+    ctx.beginPath(); ctx.arc(px(p.last), py(a[p.last]), 3.5, 0, Math.PI * 2); ctx.fillStyle = "#27332e"; ctx.fill();
+    txt(`${c.symbol} ${pct(a[p.last])}`, cr + 6, ya + 3.5, font(700, 9.5), "#27332e", "left", 78);
+    txt(day(p.first_day), cl, cb + 15, font(400, 9.5), "#7b8c81", "left");
+    const edge = Math.max(5, Math.ceil(n * 0.08));
+    p.days.forEach((d, k) => {
+      if (k > edge && k < n - edge && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) {
+        txt(MONTHS[Number(d.slice(5, 7)) - 1], px(k), cb + 15, font(400, 9.5), "#7b8c81", "center");
+      }
+    });
+    txt(day(p.last_day), cr, cb + 15, font(400, 9.5), "#7b8c81", "right");
+  } else {
+    txt("No reliable price line for this ticker this week.", lx + 14, by + 56, font(400, 11.5), "#5d7263");
+  }
+
+  // Volume & Short interest boxes below chart.
+  const vy = 518, vh = 118, vw = 252;
+  rrect(lx, vy, vw, vh, 10, "#ffffff", "#dbe3de");
+  txt("Volume", lx + 14, vy + 20, font(700, 13), "#27332e");
+  const v = c.volume;
+  if (v) {
+    txt(`normal ${count(v.normal_volume)}/d`, lx + vw - 14, vy + 20, font(400, 10), "#7b8c81", "right");
+    txt("5 sessions", lx + 14, vy + 44, font(500, 11), "#5d7263");
+    txt(`${num(v.volume_x_5) ? `${Number(v.volume_x_5).toFixed(2)}×` : "n/a"} · ${pct(v.return_5)}`, lx + vw - 14, vy + 44, font(600, 11), "#27332e", "right");
+    txt(`${share(v.up_share_5)} volume on up days`, lx + 14, vy + 58, font(400, 10), "#7b8c81");
+    txt("21 sessions", lx + 14, vy + 82, font(500, 11), "#5d7263");
+    txt(`${num(v.volume_x_21) ? `${Number(v.volume_x_21).toFixed(2)}×` : "n/a"} · ${pct(v.return_21)}`, lx + vw - 14, vy + 82, font(600, 11), "#27332e", "right");
+    txt(`${share(v.up_share_21)} volume on up days`, lx + 14, vy + 96, font(400, 10), "#7b8c81");
+  } else {
+    txt("No full 84-session volume history.", lx + 14, vy + 48, font(400, 11), "#5d7263");
+  }
+
+  const sx = lx + vw + 12;
+  rrect(sx, vy, vw, vh, 10, "#ffffff", "#dbe3de");
+  txt("Short interest", sx + 14, vy + 20, font(700, 13), "#27332e");
+  const s = c.short;
+  if (s) {
+    txt(`FINRA ${day(s.date)}`, sx + vw - 14, vy + 20, font(400, 10), "#7b8c81", "right");
+    txt("Days to cover", sx + 14, vy + 44, font(500, 11), "#5d7263");
+    txt(num(s.days_to_cover) ? `${Number(s.days_to_cover).toFixed(1)} days` : "n/a", sx + vw - 14, vy + 44, font(700, 11.5), "#27332e", "right");
+    txt("Shares short", sx + 14, vy + 68, font(500, 11), "#5d7263");
+    txt(`${count(s.short_shares)}${num(s.change_pct) ? ` (${pct(s.change_pct / 100)})` : ""}`, sx + vw - 14, vy + 68, font(600, 11), "#27332e", "right");
+    if (s.rank) {
+      txt("vs peers", sx + 14, vy + 92, font(500, 11), "#5d7263");
+      txt(`${s.rank} shorted`, sx + vw - 14, vy + 92, font(600, 11), "#27332e", "right");
+    }
+  } else {
+    txt("No FINRA figure for this ticker.", sx + 14, vy + 48, font(400, 11), "#5d7263");
+  }
+
+  // Right column: The business & analysts + Who owns and trades it.
+  const rx = 556, rw = 336;
+  rrect(rx, by, rw, 232, 10, "#ffffff", "#dbe3de");
+  txt("The business & analysts", rx + 14, by + 22, font(700, 13.5), "#27332e");
+  if (c.research) {
+    const r = c.research, f = r.factors || {}, val = r.valuation || {};
+    const fs = c.fscore && c.fscore.scored ? `${c.fscore.passed}/9${c.fscore.computed < 9 ? "*" : ""}` : "n/a";
+    const up = num(f.up_last_30_days) ? Number(f.up_last_30_days) : null;
+    const down = num(f.down_last_30_days) ? Number(f.down_last_30_days) : null;
+    const rows = [
+      ["Revenue YoY", `${pct(f.revenue_yoy)}${num(f.acceleration) ? ` (${points(f.acceleration)})` : ""}`],
+      ["Operating / net margin", `${level(f.operating_margin)} / ${level(f.net_margin)}`],
+      ["ROE · Cash conv.", `${level(f.roe)} · ${num(f.cash_conversion) ? `${Number(f.cash_conversion).toFixed(2)}×` : "n/a"}`],
+      ["P/E · EV / OI", `${val.pe !== null ? times(val.pe) : val.net_income !== null && val.net_income <= 0 ? "loss" : "n/a"} · ${val.ev_oi !== null ? times(val.ev_oi) : val.oi_ev !== null ? "loss" : "n/a"}`],
+      ["Liabilities / assets", level(f.leverage)],
+      ["Trend 63d · 252d", `${pct(f.momentum_63)} · ${pct(f.momentum_252)}`],
+      ["F-Score · Strong buy", `${fs} · ${num(f.analyst_total) ? `${f.strong_buy_count ?? "n/a"}/${f.analyst_total}` : "n/a"}`],
+      ["EPS 30d · Targets", `${up !== null || down !== null ? `${up ?? 0}↑ ${down ?? 0}↓` : "n/a"}${num(f.target_low) && num(f.target_high) ? ` · ${dollars(f.target_low)}–${dollars(f.target_high)}` : ""}`],
+    ];
+    rows.forEach(([k, vStr], idx) => {
+      const ry = by + 44 + idx * 23;
+      if (idx > 0) hline(rx + 14, rx + rw - 14, ry - 14, "#eef1ee");
+      txt(k, rx + 14, ry, font(400, 11), "#5d7263");
+      txt(vStr, rx + rw - 14, ry, font(600, 11), "#27332e", "right", 190);
+    });
+  } else {
+    txt("Outside the Research universe", rx + 14, by + 50, font(600, 11.5), "#3d5346");
+    txt("Not one of this week's liquid stocks ($1B+ cap,", rx + 14, by + 70, font(400, 11), "#5d7263");
+    txt("$10M+ daily trading, price ≥ $5).", rx + 14, by + 86, font(400, 11), "#5d7263");
+  }
+
+  const oy = 484, oh = 152;
+  rrect(rx, oy, rw, oh, 10, "#ffffff", "#dbe3de");
+  txt("Who owns and trades it", rx + 14, oy + 22, font(700, 13.5), "#27332e");
+  const ins = c.insiders;
+  txt("Insiders (Form 4)", rx + 14, oy + 44, font(600, 10.5), "#7b8c81");
+  txt(ins && ins.headline ? ins.headline : "No open-market buys or sales in window", rx + 14, oy + 60, font(500, 11), "#27332e", "left", rw - 28);
+  hline(rx + 14, rx + rw - 14, oy + 70, "#eef1ee");
+  const stakes = (c.stakes && c.stakes.rows) || [];
+  txt("5%+ holders (13D/13G)", rx + 14, oy + 86, font(600, 10.5), "#7b8c81");
+  txt(stakes.length ? `${stakes[0].holder} · ${stakes[0].form} · ${num(stakes[0].pct) ? `${Number(stakes[0].pct).toFixed(1)}%` : "n/a"}` : "None filed in window",
+    rx + 14, oy + 102, font(500, 11), "#27332e", "left", rw - 28);
+  hline(rx + 14, rx + rw - 14, oy + 112, "#eef1ee");
+  const fd = c.funds;
+  txt(`Funds (13F${fd && fd.quarter ? ` · ${day(fd.quarter)}` : ""})`, rx + 14, oy + 128, font(600, 10.5), "#7b8c81");
+  const fdLine = fd && fd.linked && num(fd.holders_now)
+    ? `${whole(fd.holders_now)} managers${num(fd.new) ? ` · +${whole(fd.new)} new, +${whole(fd.added)} added, −${whole(fd.cut)} cut, −${whole(fd.exited)} out` : ""}`
+    : "Not linked in this quarter's 13F";
+  txt(fdLine, rx + 14, oy + 144, font(500, 11), "#27332e", "left", rw - 28);
+
+  // Footer.
+  txt("Facts with their dates, not a buy or sell call.", 28, 660, font(400, 11), "#5d7263");
+  txt(`temper-lab.com/ticker.html?t=${encodeURIComponent(c.symbol || "")}`, 892, 660, font(600, 11), "#1e6547", "right");
+  return true;
+}
+function reportPng(cardOrSymbol) {
+  const c = typeof cardOrSymbol === "string" ? { symbol: cardOrSymbol } : cardOrSymbol || {};
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    if (!drawReport(canvas, c) || typeof canvas.toBlob !== "function") {
+      reject(new Error("report image unavailable"));
+      return;
+    }
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("png encoding failed"))), "image/png");
+  });
+}
+function copyText(text) {
+  const fallback = () => {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.left = "-9999px";
+    document.body.append(field);
+    field.select();
+    const ok = document.execCommand("copy");
+    field.remove();
+    return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
+  };
+  if (navigator.clipboard && window.isSecureContext && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(fallback);
+  }
+  return fallback();
+}
+function copyCard(cardOrSymbol) {
+  const c = typeof cardOrSymbol === "string" ? { symbol: cardOrSymbol } : cardOrSymbol || {};
+  const text = reportText(c);
+  if (navigator.clipboard && window.isSecureContext && navigator.clipboard.write && typeof ClipboardItem === "function") {
+    return reportPng(c).then((blob) => {
+      const items = { "image/png": blob };
+      if (typeof Blob === "function") items["text/plain"] = new Blob([text], { type: "text/plain" });
+      return navigator.clipboard.write([new ClipboardItem(items)]);
+    }).catch(() => copyText(text));
+  }
+  return copyText(text);
+}
+// Phone: the system share sheet (with the PNG report when supported). A computer copies the report image + text.
+function sendCard(cardOrSymbol, coarse) {
+  const c = typeof cardOrSymbol === "string" ? { symbol: cardOrSymbol } : cardOrSymbol || {};
+  const link = cardLink(c.symbol, coarse);
+  const text = reportText(c);
   if (link.share && navigator.share) {
-    return navigator.share({ title: `${symbol} — Temper Lab`, url: link.url }).then(() => "shared").catch((error) => {
+    return reportPng(c).then((blob) => {
+      const file = typeof File === "function" && blob ? new File([blob], `${c.symbol}-temper-lab.png`, { type: "image/png" }) : null;
+      const payload = file && (!navigator.canShare || navigator.canShare({ files: [file] }))
+        ? { title: `${c.symbol} — Temper Lab`, text, url: link.url, files: [file] }
+        : { title: `${c.symbol} — Temper Lab`, text, url: link.url };
+      return navigator.share(payload);
+    }, () => navigator.share({ title: `${c.symbol} — Temper Lab`, text, url: link.url })).then(() => "shared").catch((error) => {
       if (error && error.name === "AbortError") return "dismissed";
-      return copyCard(link.url).then(() => "copied");
+      return copyCard(c).then(() => "copied");
     });
   }
-  return copyCard(link.url).then(() => "copied");
+  return copyCard(c).then(() => "copied");
 }
-function shareButton(symbol) {
-  const button = el("button", "tk-link", "Copy link");
+function shareButton(c) {
+  const button = el("button", "tk-link", "Copy report");
   button.type = "button";
   button.addEventListener("click", () => {
     const coarse = window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : false;
-    sendCard(symbol, coarse).then((result) => {
+    sendCard(c, coarse).then((result) => {
       if (result !== "copied") return;
-      button.textContent = "Link copied";
-      setTimeout(() => { button.textContent = "Copy link"; }, 2000);
+      button.textContent = "Report copied";
+      setTimeout(() => { button.textContent = "Copy report"; }, 2000);
     }).catch(() => {
       button.textContent = "Copy failed";
-      setTimeout(() => { button.textContent = "Copy link"; }, 2000);
+      setTimeout(() => { button.textContent = "Copy report"; }, 2000);
     });
   });
   return button;
@@ -533,7 +860,7 @@ function headerBox(c) {
   if (c.eligible) chips.append(link(`Open ${c.symbol} in Research →`, `./?q=${encodeURIComponent(c.symbol)}`));
   const sec = secUrl(`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(c.cik || c.filer || c.symbol)}&owner=include&count=40`);
   if (sec) chips.append(link("SEC filings ↗", sec, true));
-  chips.append(shareButton(c.symbol));
+  chips.append(shareButton(c));
   left.append(chips);
   left.append(note(c.eligible
     ? `In Research, week of ${longDay(c.research.as_of)}${c.research.lists.length ? "" : "; not on a published list"}.`
