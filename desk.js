@@ -997,7 +997,7 @@ function renderHead() {
   if (SCORED.has(state.screen)) html += sortHeader("score", "Score");
   html += `<th scope="col">${state.screen === "composite" ? "On lists" : "Also on"}</th>`;
   const shortsDate = state.shorts?.date ? `FINRA, ${shortDay(state.shorts.date)}` : "FINRA";
-  html += sortHeader("trend", "Trend", "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Check at month-end.");
+  html += sortHeader("trend", "Trend", "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Tested on weekly and on month-end closes; both passed.");
   html += sortHeader("short", `Shorted <small>days to cover</small><small>${escapeHtml(shortsDate)}</small>`, "Days to cover from FINRA short interest. Heavy and Light mark the top and bottom 10% of eligible stocks of similar size, the split our test backed.");
   html += sortHeader("results", "Next results");
   html += `</tr>`;

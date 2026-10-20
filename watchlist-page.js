@@ -277,24 +277,14 @@
   const eventDay = (iso) => (timing && timing.as_of && String(iso).slice(0, 4) !== String(timing.as_of).slice(0, 4) ? longDay(iso) : shortDay(iso));
   const rsiZone = (r) => (r === null ? "—" : r >= RSI_HIGH ? `${RSI_HIGH} or above` : r <= RSI_LOW ? `${RSI_LOW} or below` : `between ${RSI_LOW} and ${RSI_HIGH}`);
   // Trend rules: green = all three tested rules up, red = all three down, amber = they disagree,
-  // grey = too little history for all three. The rules were tested on month-end closes.
+  // grey = too little history for all three. The rules passed the same test on weekly and on month-end
+  // closes (tools/leg_d_trend.py, tools/leg_d_trend_weekly.py), so the weekly badge is a tested signal.
   const RULE_NAMES = { A: "price above 200-day", B: "12–1 month return above zero", C: "50-day above 200-day" };
   const ruleBadge = (L) => (L.ruleTone === "up" ? "Uptrend · 3 of 3" : L.ruleTone === "down" ? "Downtrend · 0 of 3"
     : L.ruleTone === "mixed" ? `Mixed · ${L.rulesUp} of 3` : "Not enough history");
   const ruleList = (L) => Object.entries(RULE_NAMES)
     .map(([k, name]) => `${L.rules[k] === null ? "–" : L.rules[k] ? "✓" : "✗"} ${name}${k === "B" && L.mom121 !== null ? ` (${signedPct(L.mom121, 0)})` : ""}`)
     .join(" · ");
-  // The month-end after the snapshot: this month's, or next month's when the snapshot is already
-  // the month's last weekday.
-  function nextMonthEnd(iso) {
-    const [y, m, d] = parts(iso);
-    if (!y || !m || !d) return "";
-    const end = new Date(Date.UTC(y, m, 0));
-    while (end.getUTCDay() === 0 || end.getUTCDay() === 6) end.setUTCDate(end.getUTCDate() - 1);
-    const roll = d >= end.getUTCDate();
-    const nm = roll ? (m % 12) + 1 : m;
-    return `end of ${MONTHS[nm - 1]} ${roll && m === 12 ? y + 1 : y}`;
-  }
   // No 50/200 cross to name: say why, so a young listing is not read as a calm year.
   const noCross = (ta, slowP) => (ta.slowFrom && ta.days.length && ta.slowFrom > ta.days[0]
     ? `None since the ${slowP}-day began (${eventDay(ta.slowFrom)})` : "None in the chart year");
@@ -543,15 +533,15 @@
       const asOf = timing && timing.as_of;
       $("wl-timing-sub").textContent = `${asOf ? `Close on ${longDay(asOf)} (the weekly snapshot)` : "Weekly snapshot"}. `
         + `Colour shows three trend rules tested on Temper Lab data: price vs ${slowP}-day, 12–1 month return, 50-day vs ${slowP}-day. `
-        + `They were tested on month-end closes${asOf ? ` (next: ${nextMonthEnd(asOf)})` : ""}. `
+        + `They passed the same test on weekly closes and on month-end closes. `
         + `RSI (14, Wilder) and MACD (12, 26, 9) are context. Descriptions of past prices, not a buy or sell call.`;
     }
     if ($("wl-th-trend")) $("wl-th-trend").textContent = "Trend rules (tested)";
     if ($("wl-th-gap")) $("wl-th-gap").textContent = `Gap, 50 vs ${slowP}`;
     if ($("wl-th-cross")) $("wl-th-cross").textContent = `Last 50/${slowP} cross`;
     if ($("wl-timing-foot")) {
-      $("wl-timing-foot").textContent = `Trend rules: in a Leg D test of US stocks with $1B+ market value and $10M+ daily trading, signals on month-end closes, entries Jul 2021 – Apr 2026, `
-        + `stocks with each rule up beat those with it down by 3.0% to 3.6% over the next 6 months (size-neutral, before costs, survivors only, past results). `
+      $("wl-timing-foot").textContent = `Trend rules: in a Leg D test of US stocks with $1B+ market value and $10M+ daily trading, signals on weekly closes and, separately, on month-end closes, entries Jun 2021 – Apr 2026, `
+        + `stocks with each rule up beat those with it down by 3.0% to 3.6% over the next 6 months in both (size-neutral, before costs, survivors only, past results). `
         + `Green = all three up, amber = they disagree, red = all three down, grey = too little history. `
         + `How these are made: prices are Yahoo adjusted closes (splits and dividends), four significant digits, so past levels can sit below the prices traded then. `
         + `Averages are simple moving averages; ▲/▼ mark the day the 50-day crossed the ${slowP}-day. RSI is Wilder's 14-day RSI; dots mark the first day at ${RSI_HIGH} or above or at ${RSI_LOW} or below. `
@@ -749,6 +739,6 @@
       render(W.list());
     });
   }
-  globalThis.TLWatchTiming = { computeIndicators, nextMonthEnd };
+  globalThis.TLWatchTiming = { computeIndicators };
   if (W && $("wl-rows")) setup();
 })();
