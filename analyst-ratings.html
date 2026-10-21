@@ -7,7 +7,7 @@
     <title>Temper Lab — Analyst ratings</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
-    <link rel="stylesheet" href="./analyst-ratings.css?v=38b77b4f4430" />
+    <link rel="stylesheet" href="./analyst-ratings.css?v=a64c9ed376ae" />
     <link rel="stylesheet" href="./watchlist.css?v=2062a2b1f201" />
   </head>
   <body>
@@ -34,54 +34,74 @@
           <div>
             <div class="eyebrow">OPINION SCREEN</div>
             <h1 id="analyst-title">Analyst ratings</h1>
-            <p>Published Yahoo analyst opinion, dated. Shortlist names covers every name on two or more Research lists; Analyst conviction ranks liquid names by strong-buy share and earnings revisions.</p>
+            <p>What sell-side analysts say about every company on this week’s Research lists: Hot tape, Growth and Cheap, with the Shortlist marked. Yahoo counts and price targets, one retrieval for every name. Opinion, not a forecast and not a Temper Lab rank.</p>
           </div>
           <div class="snapshot-status">
             <span id="week-chip" class="week" role="status">Loading…</span>
-            <small id="analyst-coverage">Loading…</small>
             <small id="analyst-dates"></small>
+            <small id="analyst-coverage"></small>
           </div>
         </section>
-        <div id="analyst-view-switch" class="page-switch list-switch" role="group" aria-label="View">
-          <button type="button" id="show-shortlist-names" class="on" aria-pressed="true">Shortlist names <span class="n" id="shortlist-n"></span></button>
-          <button type="button" id="show-conviction" aria-pressed="false">Analyst conviction <span class="n" id="conviction-n"></span></button>
+        <div id="analyst-lists" class="page-switch list-switch analyst-lists" role="group" aria-label="Research list">
+          <button type="button" data-analyst-list="all" class="on" aria-pressed="true">All lists <span class="n" data-list-count="all"></span></button>
+          <button type="button" data-analyst-list="shortlist" aria-pressed="false">Shortlist <span class="n" data-list-count="shortlist"></span></button>
+          <button type="button" data-analyst-list="strength" aria-pressed="false">Hot tape <span class="n" data-list-count="strength"></span></button>
+          <button type="button" data-analyst-list="growth" aria-pressed="false">Growth <span class="n" data-list-count="growth"></span></button>
+          <button type="button" data-analyst-list="undervalued" aria-pressed="false">Cheap <span class="n" data-list-count="undervalued"></span></button>
         </div>
-        <section id="shortlist-view" class="surface analyst-surface" aria-labelledby="analyst-title">
-          <p class="analyst-explanation"><strong>Buy share</strong> = (Strong Buy + Buy) ÷ all 5 labels · <strong>1m mix Δ</strong> = this month − last month (with coverage <em>n</em>) · <strong>EPS 30d</strong> = current-year revisions · <strong>Implied upside</strong> = median target vs frozen Friday close (not a rank).</p>
-          <div id="analyst-overlap-pills" class="analyst-overlap-pills" role="group" aria-label="Filter by screen overlap"></div>
+        <section class="analyst-tiles" aria-label="Summary of the names shown">
+          <div class="analyst-tile"><span class="k">Names shown</span><span class="v" id="tile-shown">—</span><span class="s" id="tile-shown-sub"></span></div>
+          <div class="analyst-tile"><span class="k">Median Buy share</span><span class="v" id="tile-buy">—</span><span class="s">Strong Buy + Buy, of all ratings; names with 3+ ratings</span></div>
+          <div class="analyst-tile"><span class="k">Mix vs last month</span><span class="v"><span class="tone-up" id="tile-mix-up">—</span> <span class="sep">·</span> <span class="tone-down" id="tile-mix-down">—</span></span><span class="s" id="tile-mix-sub">more bullish · less bullish</span></div>
+          <div class="analyst-tile"><span class="k">EPS estimates, 30 days</span><span class="v"><span class="tone-up" id="tile-eps-up">—</span> <span class="sep">·</span> <span class="tone-down" id="tile-eps-down">—</span></span><span class="s" id="tile-eps-sub">more raised · more cut (current year)</span></div>
+          <div class="analyst-tile"><span class="k">Median implied upside</span><span class="v" id="tile-upside">—</span><span class="s" id="tile-upside-sub"></span></div>
+        </section>
+        <section class="analyst-cards">
+          <div class="analyst-card bylist">
+            <div class="analyst-card-head"><h2>By list, this week</h2><small>Medians; Buy share needs 3+ ratings</small></div>
+            <div class="bylist-wrap"><table class="bylist-table"><thead><tr><th scope="col">List</th><th scope="col">Names</th><th scope="col">Buy share</th><th scope="col">Implied upside</th><th scope="col">EPS more raised</th><th scope="col">EPS more cut</th><th scope="col">Below lowest target</th></tr></thead><tbody id="analyst-bylist"></tbody></table></div>
+          </div>
+          <div class="analyst-card movers">
+            <div class="movers-col"><h2 class="tone-up">More bullish this month</h2><ul class="movers-list" id="analyst-movers-up"></ul></div>
+            <div class="movers-col"><h2 class="tone-down">Less bullish this month</h2><ul class="movers-list" id="analyst-movers-down"></ul></div>
+            <p class="analyst-card-note">Change in Buy share, this month vs last, for names with 5+ ratings in both months among the names shown. Coverage can change between months.</p>
+          </div>
+        </section>
+        <section class="surface analyst-surface" aria-labelledby="analyst-title">
           <div class="analyst-controls">
             <label>Find a company<input id="analyst-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
-            <label>At least this many ratings<select id="analyst-min-total"><option value="1">1 rating</option><option value="3" selected>3 ratings</option><option value="5">5 ratings</option><option value="10">10 ratings</option></select></label>
-            <label>At least one rating of<select id="analyst-category"><option value="any">Any label</option><option value="strong_buy">Strong Buy</option><option value="buy">Buy</option><option value="hold">Hold</option><option value="sell">Sell</option><option value="strong_sell">Strong Sell</option></select></label>
-            <label>Minimum Buy share<select id="analyst-min-share"><option value="0">Any</option><option value="0.5">50%</option><option value="0.7">70%</option><option value="0.9">90%</option></select></label>
             <label>Sector<select id="analyst-sector"><option value="">All sectors</option></select></label>
+            <label>At least this many ratings<select id="analyst-min-total"><option value="0">Any, including none</option><option value="1">1 rating</option><option value="3" selected>3 ratings</option><option value="5">5 ratings</option><option value="10">10 ratings</option></select></label>
             <button type="button" id="analyst-reset">Reset</button>
           </div>
+          <div id="analyst-flags" class="analyst-flags" role="group" aria-label="Show only"></div>
           <p id="analyst-count" class="analyst-count" role="status"></p>
-          <div class="analyst-table-wrap"><table><thead><tr><th scope="col"><button type="button" data-analyst-sort="company" data-label="Company">Company</button></th><th scope="col" class="sorted" aria-sort="descending"><button type="button" data-analyst-sort="overlap" data-label="On screens">On screens</button></th><th scope="col"><button type="button" data-analyst-sort="total" data-label="All ratings">All ratings</button><div class="th-sub th-mix-sub"><button type="button" data-analyst-sort="strong_buy" data-label="SB" title="Sort by Strong Buy count">SB</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="buy" data-label="B" title="Sort by Buy count">B</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="hold" data-label="H" title="Sort by Hold count">H</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="sell" data-label="S" title="Sort by Sell count">S</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="strong_sell" data-label="SS" title="Sort by Strong Sell count">SS</button></div></th><th scope="col"><button type="button" data-analyst-sort="buy_share" data-label="Buy share">Buy share</button></th><th scope="col"><button type="button" data-analyst-sort="buy_share_delta" data-label="1m mix Δ">1m mix Δ</button><small class="th-sub">vs −1m · n</small></th><th scope="col"><button type="button" data-analyst-sort="eps_revisions" data-label="EPS 30d (0y)">EPS 30d (0y)</button><small class="th-sub">up · down</small></th><th scope="col"><div class="th-dual"><button type="button" data-analyst-sort="friday_close" data-label="Reference close" title="Closing price on the snapshot date, used to calculate implied upside">Reference close</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="target_median" data-label="Target median">Target median</button></div><small class="th-sub">Low ── ● Close · ◆ Med ── High</small></th><th scope="col"><div class="th-dual th-dual-end"><button type="button" data-analyst-sort="implied_upside" data-label="Implied upside">Implied upside</button><span class="th-sep" aria-hidden="true">·</span><button type="button" data-analyst-sort="target_range" data-label="Range" title="Target range: (high − low) / median">Range</button></div><small class="th-sub">(high − low) ÷ med</small></th></tr></thead><tbody id="analyst-results"><tr><td colspan="8" class="empty">Loading analyst summaries…</td></tr></tbody></table></div>
+          <div class="analyst-table-wrap"><table><thead><tr>
+            <th scope="col" class="l"><button type="button" data-analyst-sort="company" data-label="Company">Company</button><small class="th-sub">Results within 30 days</small></th>
+            <th scope="col" class="l"><button type="button" data-analyst-sort="rank" data-label="Lists · rank">Lists · rank</button><small class="th-sub" id="rank-hint">Shortlist first, by its rank</small></th>
+            <th scope="col"><button type="button" data-analyst-sort="total" data-label="All ratings">All ratings</button><small class="th-sub">SB · B · H · S · SS (n)</small></th>
+            <th scope="col"><button type="button" data-analyst-sort="buy_share" data-label="Buy share">Buy share</button><small class="th-sub">SB + B of all</small></th>
+            <th scope="col"><button type="button" data-analyst-sort="buy_share_delta" data-label="Mix vs −1m">Mix vs −1m</button><small class="th-sub">change · n</small></th>
+            <th scope="col"><button type="button" data-analyst-sort="eps_revisions" data-label="EPS 30d, this year">EPS 30d, this year</button><small class="th-sub">up · down · est. vs 3m</small></th>
+            <th scope="col" class="l">Close vs targets<small class="th-sub">Low ─ ● Close · ◆ Median ─ High</small></th>
+            <th scope="col"><button type="button" data-analyst-sort="implied_upside" data-label="Implied upside">Implied upside</button><small class="th-sub">to median · range</small></th>
+          </tr></thead><tbody id="analyst-results"><tr><td colspan="8" class="empty">Loading analyst summaries…</td></tr></tbody></table></div>
           <noscript><p class="empty">Enable JavaScript to load the analyst summaries.</p></noscript>
           <details class="analyst-method">
-            <summary>How to read these numbers &amp; limits</summary>
-            <p><strong>Ratings mix &amp; Buy share:</strong> Hold is Yahoo’s label—not “Keep.” Buy share divides Strong Buy plus Buy by all five categories. <strong>1m mix Δ</strong> is this month’s Buy share minus last month’s, in percentage points; total coverage can change between months (shown as <em>n: prior → current</em>), so it reflects mix drift, not a count of upgrades. A missing summary or month is shown as n/a, never counted as zero votes.</p>
-            <p><strong>EPS 30d (0y):</strong> Current fiscal-year upward and downward EPS estimate revisions over the last 30 days from the matching weekly Research snapshot. <strong>Price targets &amp; Implied upside:</strong> Target median, low, high and implied upside use the frozen Friday close, not a live quote. Range is (high − low) / median. Positive implied upside is the usual sell-side stance, not cheapness or a Temper Lab rank. Every column header and category label sorts the table (high–low first, click again to flip; ties break by Buy share, then ticker; n/a sinks last).</p>
+            <summary>How to read these numbers, and their limits</summary>
+            <p><strong>Who is here.</strong> Every company on this week’s Hot tape, Growth or Cheap list, with the Shortlist marked. A company on several lists shows each list’s rank. The default order is the list’s own rank, not anything analysts say.</p>
+            <p><strong>Ratings mix and Buy share.</strong> Yahoo’s five labels: Strong Buy, Buy, Hold, Sell, Strong Sell. Hold is Yahoo’s label, not “keep”. Buy share = (Strong Buy + Buy) ÷ all five. With fewer than three ratings one analyst moves it a lot, so those names are hidden by default. <strong>Mix vs −1m</strong> is this month’s Buy share minus last month’s, in percentage points, shown when both months have 3+ ratings; coverage can change between months (n: last → now), so it is a change in mix, not a count of upgrades. A missing summary is shown as n/a, never counted as zero votes.</p>
+            <p><strong>EPS 30d.</strong> Upward and downward revisions to the current fiscal year’s EPS estimate over the last 30 days, and how far the average estimate moved against 90 days ago.</p>
+            <p><strong>Targets and implied upside.</strong> Median target against the frozen Friday close, not a live quote. Range = (high − low) ÷ median. Yahoo gives no date per target, and targets lag price moves: after a fall, many closes sit below the lowest target. Positive implied upside is the usual sell-side stance, not cheapness.</p>
+            <p><strong>Dates.</strong> Ratings, revisions and targets are dated by when Temper Lab retrieved them, not when analysts published them. Analyst opinion is shown as published; it has not passed a Leg D test as a signal, so nothing here is ranked by it. Every column with a button sorts the table (click again to flip; n/a sinks last).</p>
           </details>
-        </section>
-        <section id="conviction-view" class="surface analyst-surface" aria-labelledby="conviction-title" hidden>
-          <h2 id="conviction-title" class="conviction-title">Analyst conviction</h2>
-          <p id="conviction-method" class="analyst-explanation"></p>
-          <p class="analyst-explanation">Thin coverage can lead the list: a company with six ratings can outrank one with forty. One upward revision gives the same breadth as ten, so read the counts. Moved here from Research in October 2026; the Ticker page and Market mood still show it.</p>
-          <div class="analyst-controls">
-            <label>Find a company<input id="conviction-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
-          </div>
-          <p id="conviction-count" class="analyst-count" role="status"></p>
-          <div class="analyst-table-wrap"><table><thead><tr><th scope="col">#</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Strong Buy<small class="th-sub">of all ratings</small></th><th scope="col">EPS estimates, 30 days<small class="th-sub">up · down</small></th><th scope="col">Revision breadth</th><th scope="col">Score</th></tr></thead><tbody id="conviction-results"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div>
         </section>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=12cac3187dbf"></script>
     <script src="./sectors.js?v=19639ede4b17"></script>
-    <script src="./analyst-ratings.js?v=e8f4620cd09d"></script>
+    <script src="./analyst-ratings.js?v=1646534172ee"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

@@ -1,18 +1,20 @@
-const ANALYST_SORT_KEYS = ["company", "overlap", "total", "strong_buy", "buy", "hold", "sell", "strong_sell", "buy_share", "buy_share_delta", "eps_revisions", "friday_close", "target_median", "implied_upside", "target_range"];
-const ANALYST_SORT_DEFAULT_DIR = { company: "asc" };
-const ANALYST_DEFAULT_FILTERS = { query: "", minTotal: 3, category: "any", minShare: 0, sector: "", overlap: "all", sortKey: "overlap", sortDir: "desc" };
-const analystState = { mood: null, desk: null, filters: { ...ANALYST_DEFAULT_FILTERS } };
-const analystEl = (id) => document.getElementById(id);
+// Analyst ratings: published analyst opinion for every company on this week's
+// Research lists (Hot tape, Growth, Cheap; the Shortlist marked). Reads
+// share/analyst-ratings.json (tools/build_analyst_ratings.py) and shows it only
+// when it belongs to the current release. Opinion, not a signal: nothing is
+// ranked by it, and the default order is each list's own rank.
+const ANALYST_LISTS = [["all", "All lists"], ["shortlist", "Shortlist"], ["strength", "Hot tape"], ["growth", "Growth"], ["undervalued", "Cheap"]];
+const ANALYST_LIST_KEYS = ["shortlist", "strength", "growth", "undervalued"];
+const ANALYST_RANK_HINTS = { all: "Shortlist first, by its rank", shortlist: "Shortlist rank", strength: "Hot tape rank", growth: "Growth rank", undervalued: "Cheap rank" };
+const ANALYST_SORT_KEYS = ["company", "rank", "total", "buy_share", "buy_share_delta", "eps_revisions", "implied_upside"];
+const ANALYST_SORT_NAMES = { company: "ticker", rank: "list rank", total: "number of ratings", buy_share: "Buy share", buy_share_delta: "mix change vs last month", eps_revisions: "net EPS revisions", implied_upside: "implied upside" };
+const ANALYST_SORT_DEFAULT_DIR = { company: "asc", rank: "asc" };
+const ANALYST_DEFAULT_FILTERS = { list: "all", query: "", sector: "", minTotal: 3, flags: [], sortKey: "rank", sortDir: "asc" };
+const ANALYST_SHARE_MIN = 3;   // ratings needed for Buy share in the summary and for the month-on-month change
+const ANALYST_MOVER_MIN = 5;   // ratings needed in both months to appear among the month's movers
+const ANALYST_SOON_DAYS = 30;  // results dates shown and filtered within this many days of the freeze
 const ANALYST_COLUMNS = 8;
-
-const ANALYST_OVERLAP_GROUPS = [
-  ["all", "All cross-screen"],
-  ["triple", "All 3 screens"],
-  ["strength_growth", "Hot Tape · Growth"],
-  ["growth_undervalued", "Growth · Cheap"],
-  ["strength_undervalued", "Hot Tape · Cheap"],
-];
-const ANALYST_SCREEN_LABELS = { strength: "Hot Tape", growth: "Growth", undervalued: "Cheap" };
+const ANALYST_EPSILON = 1e-9;
 const ANALYST_MIX_SEGMENTS = [
   ["strong_buy", "sb", "Strong Buy"],
   ["buy", "buy", "Buy"],
@@ -20,146 +22,179 @@ const ANALYST_MIX_SEGMENTS = [
   ["sell", "sell", "Sell"],
   ["strong_sell", "ss", "Strong Sell"],
 ];
+const ANALYST_FLAGS = [
+  ["more_bullish", "More bullish than last month", (row) => row.delta != null && row.delta > ANALYST_EPSILON],
+  ["less_bullish", "Less bullish than last month", (row) => row.delta != null && row.delta < -ANALYST_EPSILON],
+  ["eps_cut", "EPS estimates cut more than raised", (row) => row.eps != null && row.eps.down > row.eps.up],
+  ["below_low", "Close below lowest target", (row) => row.belowLow],
+  ["results_soon", "Results in the next 30 days", (row) => row.resultsSoon],
+];
+const analystState = { data: null, rows: [], filters: { ...ANALYST_DEFAULT_FILTERS } };
+const analystEl = (id) => document.getElementById(id);
 
-function analystDate(iso) {
+function analystDate(iso, withYear = true) {
   if (!iso) return "date unavailable";
   return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
+    day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}), timeZone: "UTC",
   });
 }
 
-function buyShare(row) {
-  if (!row?.total) return null;
-  return (row.strong_buy + row.buy) / row.total;
+function addDays(iso, days) {
+  const day = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + days);
+  return day.toISOString().slice(0, 10);
 }
 
-function trendShare(row, period) {
-  const slot = row.trend?.[period];
-  if (!slot?.total) return null;
-  return (slot.strong_buy + slot.buy) / slot.total;
+function finite(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function buyShareDelta(row) {
-  const current = buyShare(row);
-  const prior = trendShare(row, "-1m");
-  if (current == null || prior == null) return null;
-  return current - prior;
+function mixShare(mix) {
+  if (!mix?.total) return null;
+  return (mix.strong_buy + mix.buy) / mix.total;
 }
 
-function analystOverlapKey(row) {
-  const screens = new Set(row?.screens || []);
-  if (screens.size === 3) return "triple";
-  if (screens.has("strength") && screens.has("growth") && !screens.has("undervalued")) return "strength_growth";
-  if (screens.has("growth") && screens.has("undervalued") && !screens.has("strength")) return "growth_undervalued";
-  if (screens.has("strength") && screens.has("undervalued") && !screens.has("growth")) return "strength_undervalued";
+// One display row per company: the shipped facts plus the few derived numbers.
+function analystRow(raw, asOf) {
+  const ratings = raw.ratings?.total > 0 ? raw.ratings : null;
+  const prior = raw.ratings_prior?.total > 0 ? raw.ratings_prior : null;
+  const total = ratings?.total ?? 0;
+  const priorTotal = prior?.total ?? 0;
+  const share = mixShare(ratings);
+  const delta = total >= ANALYST_SHARE_MIN && priorTotal >= ANALYST_SHARE_MIN ? share - mixShare(prior) : null;
+  const close = finite(raw.close);
+  const targets = raw.targets && finite(raw.targets.low) != null && finite(raw.targets.median) != null && finite(raw.targets.high) != null ? raw.targets : null;
+  const soonLimit = asOf ? addDays(asOf, ANALYST_SOON_DAYS) : null;
+  return {
+    symbol: raw.symbol,
+    name: raw.name || raw.symbol,
+    sector: raw.sector || (typeof sectorFor === "function" ? sectorFor((raw.industry || "").trim() || "__unclassified") : "unclassified"),
+    lists: raw.lists || {},
+    loss: raw.loss === true,
+    ratings, prior, total, priorTotal, share, delta,
+    eps: raw.eps_30d && finite(raw.eps_30d.up) != null && finite(raw.eps_30d.down) != null ? raw.eps_30d : null,
+    estimateChange: finite(raw.estimate_change_90d),
+    close, targets,
+    upside: targets && close ? targets.median / close - 1 : null,
+    range: targets ? (targets.high - targets.low) / targets.median : null,
+    belowLow: Boolean(targets && close != null && close < targets.low),
+    aboveHigh: Boolean(targets && close != null && close > targets.high),
+    nextResults: raw.next_results || null,
+    resultsSoon: Boolean(raw.next_results && soonLimit && raw.next_results <= soonLimit),
+  };
+}
+
+function onList(row, list) {
+  return list === "all" || row.lists?.[list] != null;
+}
+
+function listCounts(rows) {
+  const counts = { all: rows.length };
+  for (const key of ANALYST_LIST_KEYS) counts[key] = rows.filter((row) => onList(row, key)).length;
+  return counts;
+}
+
+function rankFor(row, list) {
+  return list === "all" ? row.lists?.shortlist ?? null : row.lists?.[list] ?? null;
+}
+
+function analystSortValue(row, key, list) {
+  if (key === "company") return row.symbol;
+  if (key === "rank") return rankFor(row, list);
+  if (key === "total") return row.total > 0 ? row.total : null;
+  if (key === "buy_share") return row.share;
+  if (key === "buy_share_delta") return row.delta;
+  if (key === "eps_revisions") return row.eps ? row.eps.up - row.eps.down : null;
+  if (key === "implied_upside") return row.upside;
   return null;
 }
 
-function analystOverlapCounts(votes) {
-  const rows = votes?.rows || [];
-  const counts = { all: rows.length, triple: 0, strength_growth: 0, growth_undervalued: 0, strength_undervalued: 0 };
-  for (const row of rows) {
-    const key = analystOverlapKey(row);
-    if (key && key in counts) counts[key] += 1;
-  }
-  return counts;
-}
-
-function rowEpsRevisions(row, desk = analystState.desk) {
-  const factors = desk?.companies?.[row?.symbol]?.factors;
-  const rawUp = row?.up_last_30_days ?? factors?.up_last_30_days;
-  const rawDown = row?.down_last_30_days ?? factors?.down_last_30_days;
-  const up = typeof rawUp === "number" && Number.isFinite(rawUp) && rawUp >= 0 ? rawUp : null;
-  const down = typeof rawDown === "number" && Number.isFinite(rawDown) && rawDown >= 0 ? rawDown : null;
-  if (up == null || down == null) return null;
-  const total = up + down;
-  const breadth = total > 0 ? (up - down) / total : 0;
-  return { up, down, total, net: up - down, breadth };
-}
-
-function analystSortValue(row, key, desk = analystState.desk) {
-  if (key === "company") return row.symbol;
-  if (key === "overlap") return (row.screens || []).length;
-  if (key === "buy_share") return buyShare(row);
-  if (key === "buy_share_delta") return buyShareDelta(row);
-  if (key === "eps_revisions") {
-    const rev = rowEpsRevisions(row, desk);
-    return rev ? rev.breadth : null;
-  }
-  if (key === "target_range") return row.target_dispersion ?? null;
-  if (key === "target_median" || key === "implied_upside") return row[key] ?? null;
-  return row[key] ?? null;
-}
-
-function analystCompareKey(a, b, key, direction, desk = analystState.desk) {
-  const va = analystSortValue(a, key, desk);
-  const vb = analystSortValue(b, key, desk);
+// n/a sinks last in both directions; ties break by ticker.
+function analystRowCompare(a, b, sortKey, sortDir, list) {
+  const va = analystSortValue(a, sortKey, list);
+  const vb = analystSortValue(b, sortKey, list);
   const aMissing = va == null || (typeof va === "number" && Number.isNaN(va));
   const bMissing = vb == null || (typeof vb === "number" && Number.isNaN(vb));
-  if (aMissing && bMissing) return 0;
-  if (aMissing) return 1;
-  if (bMissing) return -1;
-  if (typeof va === "string") return direction === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
-  const diff = direction === "asc" ? va - vb : vb - va;
-  if (diff !== 0) return diff;
-  if (key === "eps_revisions") {
-    const na = rowEpsRevisions(a, desk)?.net ?? 0;
-    const nb = rowEpsRevisions(b, desk)?.net ?? 0;
-    return direction === "asc" ? na - nb : nb - na;
+  if (aMissing !== bMissing) return aMissing ? 1 : -1;
+  if (!aMissing) {
+    const diff = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+    if (diff !== 0) return sortDir === "asc" ? diff : -diff;
   }
-  return 0;
+  return a.symbol.localeCompare(b.symbol);
 }
 
-function analystRowCompare(a, b, sortKey, sortDir, desk = analystState.desk) {
-  const primary = analystCompareKey(a, b, sortKey, sortDir, desk);
-  if (primary !== 0) return primary;
-  if (sortKey !== "buy_share") {
-    const secondary = analystCompareKey(a, b, "buy_share", "desc", desk);
-    if (secondary !== 0) return secondary;
-  }
-  if (sortKey !== "company") return a.symbol.localeCompare(b.symbol);
-  return 0;
-}
-
-function rowSector(row) {
-  return sectorFor(row?.industry);
-}
-
-function analystSectorCounts(votes) {
-  const rows = votes?.rows || [];
-  const counts = new Map();
-  for (const row of rows) {
-    const key = rowSector(row);
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  return counts;
-}
-
-function analystSectorOptions(votes) {
-  const counts = analystSectorCounts(votes);
-  const options = [{ value: "", label: "All sectors", count: null, disabled: false }];
-  for (const [key, label] of SECTORS) {
-    const count = counts.get(key) || 0;
-    if (key === "unclassified" && count === 0) continue;
-    options.push({ value: key, label, count, disabled: count === 0 });
-  }
-  return options;
-}
-
-function filteredAnalysts(votes, filters, desk = analystState.desk) {
+// Rows passing the list, search, sector and coverage filters, before the "Show only" chips.
+function baseAnalystRows(rows, filters) {
   const query = (filters.query || "").trim().toLowerCase();
-  const sector = filters.sector || "";
-  const overlap = filters.overlap || "all";
-  const sortKey = ANALYST_SORT_KEYS.includes(filters.sortKey) ? filters.sortKey : "overlap";
-  const sortDir = filters.sortDir === "asc" ? "asc" : "desc";
-  return (votes?.rows || [])
-    .filter((row) => overlap === "all" || analystOverlapKey(row) === overlap)
-    .filter((row) => row.total >= filters.minTotal)
-    .filter((row) => filters.category === "any" || row[filters.category] > 0)
-    .filter((row) => (buyShare(row) ?? 0) >= filters.minShare)
-    .filter((row) => !sector || rowSector(row) === sector)
-    .filter((row) => !query || `${row.symbol} ${row.name}`.toLowerCase().includes(query))
-    .sort((a, b) => analystRowCompare(a, b, sortKey, sortDir, desk));
+  return rows.filter((row) => onList(row, filters.list || "all")
+    && (!filters.sector || row.sector === filters.sector)
+    && row.total >= (filters.minTotal || 0)
+    && (!query || `${row.symbol} ${row.name}`.toLowerCase().includes(query)));
+}
+
+function filteredAnalysts(rows, filters) {
+  const active = ANALYST_FLAGS.filter(([key]) => (filters.flags || []).includes(key));
+  const sortKey = ANALYST_SORT_KEYS.includes(filters.sortKey) ? filters.sortKey : "rank";
+  const sortDir = filters.sortDir === "desc" ? "desc" : "asc";
+  return baseAnalystRows(rows, filters)
+    .filter((row) => active.every(([, , test]) => test(row)))
+    .sort((a, b) => analystRowCompare(a, b, sortKey, sortDir, filters.list || "all"));
+}
+
+function median(values) {
+  const sorted = values.filter((v) => v != null && Number.isFinite(v)).sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function analystSummary(rows) {
+  const mixed = rows.filter((row) => row.delta != null);
+  const revised = rows.filter((row) => row.eps != null);
+  const targeted = rows.filter((row) => row.targets && row.close != null);
+  return {
+    shown: rows.length,
+    buyShare: median(rows.filter((row) => row.total >= ANALYST_SHARE_MIN).map((row) => row.share)),
+    moreBullish: mixed.filter((row) => row.delta > ANALYST_EPSILON).length,
+    lessBullish: mixed.filter((row) => row.delta < -ANALYST_EPSILON).length,
+    unchanged: mixed.filter((row) => Math.abs(row.delta) <= ANALYST_EPSILON).length,
+    raised: revised.filter((row) => row.eps.up > row.eps.down).length,
+    cut: revised.filter((row) => row.eps.down > row.eps.up).length,
+    even: revised.filter((row) => row.eps.up === row.eps.down).length,
+    upside: median(targeted.map((row) => row.upside)),
+    belowLow: targeted.filter((row) => row.belowLow).length,
+    aboveHigh: targeted.filter((row) => row.aboveHigh).length,
+    targeted: targeted.length,
+  };
+}
+
+function analystByList(rows) {
+  return ANALYST_LIST_KEYS.map((key) => {
+    const members = rows.filter((row) => onList(row, key));
+    const revised = members.filter((row) => row.eps != null);
+    const targeted = members.filter((row) => row.targets && row.close != null);
+    const share = (part, whole) => (whole.length ? part.length / whole.length : null);
+    return {
+      key,
+      label: ANALYST_LISTS.find(([k]) => k === key)[1],
+      names: members.length,
+      buyShare: median(members.filter((row) => row.total >= ANALYST_SHARE_MIN).map((row) => row.share)),
+      upside: median(targeted.map((row) => row.upside)),
+      raised: share(revised.filter((row) => row.eps.up > row.eps.down), revised),
+      cut: share(revised.filter((row) => row.eps.down > row.eps.up), revised),
+      belowLow: share(targeted.filter((row) => row.belowLow), targeted),
+    };
+  });
+}
+
+function analystMovers(rows, limit = 5) {
+  const movers = rows.filter((row) => row.delta != null && Math.abs(row.delta) > ANALYST_EPSILON
+    && row.total >= ANALYST_MOVER_MIN && row.priorTotal >= ANALYST_MOVER_MIN);
+  const order = (a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.symbol.localeCompare(b.symbol);
+  return {
+    up: movers.filter((row) => row.delta > 0).sort(order).slice(0, limit),
+    down: movers.filter((row) => row.delta < 0).sort(order).slice(0, limit),
+  };
 }
 
 function analystText(parent, tag, content, className) {
@@ -171,51 +206,276 @@ function analystText(parent, tag, content, className) {
 }
 
 function formatShare(value) {
-  return `${(value * 100).toFixed(1)}%`;
+  return value == null ? "n/a" : `${(value * 100).toFixed(1)}%`;
 }
 
 function formatSignedShare(value) {
+  if (value == null) return "n/a";
   const pct = value * 100;
-  const sign = pct > 0 ? "+" : "";
-  return `${sign}${pct.toFixed(1)}%`;
+  return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
 function formatDelta(value) {
   const points = value * 100;
-  const sign = points > 0 ? "+" : "";
-  return `${sign}${points.toFixed(1)} pp`;
+  return `${points > 0.05 ? "+" : ""}${points.toFixed(1)} pp`;
+}
+
+function formatWhole(value) {
+  return value == null ? "n/a" : `${Math.round(value * 100)}%`;
 }
 
 function formatPrice(value) {
   return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function tone(value) {
+  if (value == null) return "tone-flat";
+  return value > ANALYST_EPSILON ? "tone-up" : value < -ANALYST_EPSILON ? "tone-down" : "tone-flat";
+}
+
+function tickerLink(parent, symbol, className) {
+  const link = analystText(parent, "a", symbol, className);
+  link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(symbol)}`);
+  return link;
+}
+
+function renderCompanyCell(tr, row) {
+  const td = analystText(tr, "td", "", "l analyst-company-cell");
+  if (globalThis.TLWatch) td.appendChild(Object.assign(globalThis.TLWatch.button(row.symbol, row.name), { className: "tl-star lead" }));
+  tickerLink(td, row.symbol, "analyst-symbol-link");
+  if (row.loss) {
+    const tag = analystText(td, "span", "Loss", "loss-tag");
+    tag.setAttribute("title", "Trailing twelve-month net income is negative");
+  }
+  analystText(td, "small", row.name);
+  if (row.resultsSoon) analystText(td, "span", `Results ${analystDate(row.nextResults, false)}`, "results-tag");
+}
+
+function renderListsCell(tr, row) {
+  const td = analystText(tr, "td", "", "l analyst-lists-cell");
+  for (const key of ANALYST_LIST_KEYS) {
+    const rank = row.lists?.[key];
+    if (rank == null) continue;
+    const label = ANALYST_LISTS.find(([k]) => k === key)[1];
+    analystText(td, "span", `${label} #${rank}`, `list-chip ${key}`);
+  }
+}
+
+function renderMixCell(tr, row) {
+  if (!row.ratings) {
+    analystText(tr, "td", "No ratings", "analyst-na");
+    return;
+  }
+  const r = row.ratings;
+  const td = analystText(tr, "td", "", "analyst-mix-cell");
+  const bar = analystText(td, "div", "", "analyst-mix-bar");
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", `${r.strong_buy} Strong Buy, ${r.buy} Buy, ${r.hold} Hold, ${r.sell} Sell, ${r.strong_sell} Strong Sell of ${r.total} ratings`);
+  for (const [key, cls, label] of ANALYST_MIX_SEGMENTS) {
+    const count = r[key] || 0;
+    if (count <= 0) continue;
+    const seg = analystText(bar, "i", "", `mix-seg ${cls}`);
+    seg.setAttribute("style", `flex:${count}`);
+    seg.setAttribute("title", `${label}: ${count}`);
+  }
+  const counts = analystText(td, "div", "", "analyst-mix-counts");
+  analystText(counts, "span", `${r.strong_buy} · ${r.buy} · ${r.hold} · ${r.sell} · ${r.strong_sell}`);
+  analystText(counts, "strong", `(${r.total})`);
+}
+
+function renderShareCell(tr, row) {
+  if (row.share == null) {
+    analystText(tr, "td", "n/a", "analyst-na");
+    return;
+  }
+  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
+  analystText(td, "strong", formatShare(row.share));
+  analystText(td, "small", `${row.ratings.strong_buy + row.ratings.buy} of ${row.total}`);
+}
+
+function renderDeltaCell(tr, row) {
+  if (row.delta == null) {
+    const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
+    analystText(td, "strong", "n/a", "tone-flat");
+    analystText(td, "small", row.priorTotal ? `n ${row.priorTotal} → ${row.total}` : "no prior month");
+    return;
+  }
+  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
+  analystText(td, "strong", formatDelta(row.delta), tone(row.delta));
+  if (row.priorTotal !== row.total) {
+    const note = analystText(td, "small", `n ${row.priorTotal} → ${row.total}`, "coverage-shift");
+    note.setAttribute("title", "Total analyst coverage changed from last month");
+  } else {
+    analystText(td, "small", `n = ${row.total}`);
+  }
+}
+
+function renderEpsCell(tr, row) {
+  if (!row.eps) {
+    analystText(tr, "td", "n/a", "analyst-na");
+    return;
+  }
+  const { up, down } = row.eps;
+  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell analyst-eps-cell");
+  analystText(td, "strong", `${up} up · ${down} down`);
+  const bar = analystText(td, "div", "", "analyst-rev-bar");
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", `${up} upward and ${down} downward EPS revisions in 30 days`);
+  if (up + down > 0) {
+    if (up > 0) analystText(bar, "i", "", "up").setAttribute("style", `flex:${up}`);
+    if (down > 0) analystText(bar, "i", "", "down").setAttribute("style", `flex:${down}`);
+  } else {
+    analystText(bar, "i", "", "flat").setAttribute("style", "flex:1");
+  }
+  analystText(td, "small", row.estimateChange == null ? "estimate change n/a" : `est. ${formatSignedShare(row.estimateChange)} vs 3m ago`);
+}
+
+function renderTargetCell(tr, row) {
+  const close = row.close;
+  if (!row.targets) {
+    analystText(tr, "td", close != null ? `Close ${formatPrice(close)} · no targets` : "n/a", "l analyst-na");
+    return;
+  }
+  const { low, median: med, high } = row.targets;
+  const td = analystText(tr, "td", "", "l analyst-count-cell analyst-target-cell");
+  const top = analystText(td, "div", "", "analyst-target-top");
+  const closeWrap = analystText(top, "span", "Close ");
+  analystText(closeWrap, "strong", close != null ? formatPrice(close) : "n/a");
+  analystText(top, "span", " · ");
+  const medWrap = analystText(top, "span", "Med ");
+  analystText(medWrap, "strong", formatPrice(med), "target-med-val");
+  if (row.belowLow) {
+    analystText(top, "span", "Below low", "target-flag below").setAttribute("title", `Frozen Friday close (${formatPrice(close)}) is below the lowest analyst target (${formatPrice(low)})`);
+  } else if (row.aboveHigh) {
+    analystText(top, "span", "Above high", "target-flag above").setAttribute("title", `Frozen Friday close (${formatPrice(close)}) is above the highest analyst target (${formatPrice(high)})`);
+  }
+  const points = [low, high, med, ...(close != null ? [close] : [])];
+  const lo = Math.min(...points);
+  const span = Math.max(...points) - lo || 1;
+  const pct = (v) => `${Math.max(0, Math.min(100, ((v - lo) / span) * 100)).toFixed(1)}%`;
+  const gauge = analystText(td, "div", "", "analyst-target-gauge");
+  analystText(gauge, "small", formatPrice(low), "gauge-end");
+  const track = analystText(gauge, "div", "", "gauge-track");
+  track.setAttribute("role", "img");
+  track.setAttribute("aria-label", `Targets: low ${formatPrice(low)}, median ${formatPrice(med)}, high ${formatPrice(high)}${close != null ? `; close ${formatPrice(close)}` : ""}`);
+  const left = ((low - lo) / span) * 100;
+  analystText(track, "i", "", "gauge-band").setAttribute("style", `left:${left.toFixed(1)}%;width:${Math.max(2, Math.min(100 - left, ((high - low) / span) * 100)).toFixed(1)}%`);
+  const medMark = analystText(track, "i", "", "gauge-mark med");
+  medMark.setAttribute("style", `left:${pct(med)}`);
+  medMark.setAttribute("title", `Median target: ${formatPrice(med)}`);
+  if (close != null) {
+    const closeMark = analystText(track, "i", "", "gauge-mark close");
+    closeMark.setAttribute("style", `left:${pct(close)}`);
+    closeMark.setAttribute("title", `Friday close: ${formatPrice(close)}`);
+  }
+  analystText(gauge, "small", formatPrice(high), "gauge-end");
+}
+
+function renderUpsideCell(tr, row) {
+  if (row.upside == null) {
+    analystText(tr, "td", "n/a", "analyst-na");
+    return;
+  }
+  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
+  analystText(td, "strong", formatSignedShare(row.upside), tone(row.upside));
+  analystText(td, "small", `range ${formatShare(row.range)}`);
+}
+
+function renderSummary(rows) {
+  const s = analystSummary(rows);
+  const total = analystState.rows.length;
+  analystEl("tile-shown").textContent = String(s.shown);
+  analystEl("tile-shown-sub").textContent = `of ${total} companies on this week’s Research lists`;
+  analystEl("tile-buy").textContent = formatShare(s.buyShare);
+  analystEl("tile-mix-up").textContent = String(s.moreBullish);
+  analystEl("tile-mix-down").textContent = String(s.lessBullish);
+  analystEl("tile-mix-sub").textContent = `more bullish · less bullish · ${s.unchanged} unchanged`;
+  analystEl("tile-eps-up").textContent = String(s.raised);
+  analystEl("tile-eps-down").textContent = String(s.cut);
+  analystEl("tile-eps-sub").textContent = `more raised · more cut (current year) · ${s.even} even`;
+  analystEl("tile-upside").textContent = formatSignedShare(s.upside);
+  analystEl("tile-upside-sub").textContent = `${s.belowLow} below the lowest target · ${s.aboveHigh} above the highest`;
+}
+
+function renderByList() {
+  const body = analystEl("analyst-bylist");
+  body.replaceChildren();
+  for (const item of analystByList(analystState.rows)) {
+    const tr = analystText(body, "tr", "");
+    const first = analystText(tr, "td", "");
+    analystText(first, "span", item.label, `list-chip ${item.key}`);
+    analystText(tr, "td", String(item.names));
+    analystText(tr, "td", formatShare(item.buyShare));
+    analystText(tr, "td", formatSignedShare(item.upside));
+    analystText(tr, "td", formatWhole(item.raised), "tone-up");
+    analystText(tr, "td", formatWhole(item.cut), "tone-down");
+    analystText(tr, "td", formatWhole(item.belowLow));
+  }
+}
+
+function renderMovers(rows) {
+  const movers = analystMovers(rows);
+  for (const [id, list] of [["analyst-movers-up", movers.up], ["analyst-movers-down", movers.down]]) {
+    const ul = analystEl(id);
+    ul.replaceChildren();
+    if (!list.length) {
+      analystText(ul, "li", "None among the names shown.", "none");
+      continue;
+    }
+    for (const row of list) {
+      const li = analystText(ul, "li", "");
+      const left = analystText(li, "span", "");
+      tickerLink(left, row.symbol);
+      analystText(left, "small", row.priorTotal === row.total ? `n ${row.total}` : `n ${row.priorTotal}→${row.total}`);
+      analystText(li, "span", formatDelta(row.delta), tone(row.delta));
+    }
+  }
+}
+
+function renderFlags(base) {
+  const container = analystEl("analyst-flags");
+  container.replaceChildren();
+  analystText(container, "span", "Show only", "analyst-flags-label");
+  const active = analystState.filters.flags || [];
+  for (const [key, label, test] of ANALYST_FLAGS) {
+    const on = active.includes(key);
+    const button = analystText(container, "button", label, `flag-chip${on ? " on" : ""}`);
+    button.type = "button";
+    button.dataset.flag = key;
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+    analystText(button, "span", String(base.filter(test).length), "c");
+  }
+}
+
+function syncListButtons() {
+  const counts = listCounts(analystState.rows);
+  for (const button of document.querySelectorAll("[data-analyst-list]")) {
+    const on = button.dataset.analystList === analystState.filters.list;
+    button.classList.toggle("on", on);
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  for (const span of document.querySelectorAll("[data-list-count]")) {
+    span.textContent = analystState.rows.length ? String(counts[span.dataset.listCount] ?? "") : "";
+  }
+  const hint = analystEl("rank-hint");
+  if (hint) hint.textContent = ANALYST_RANK_HINTS[analystState.filters.list] || "";
+}
+
 function syncAnalystSortHeaders() {
   const { sortKey, sortDir } = analystState.filters;
-  const buttons = [...document.querySelectorAll("[data-analyst-sort]")];
-  const activeHeadings = new Set();
-  for (const button of buttons) {
-    const key = button.dataset.analystSort;
-    const active = key === sortKey;
+  for (const button of document.querySelectorAll("[data-analyst-sort]")) {
+    const active = button.dataset.analystSort === sortKey;
     const heading = button.closest("th");
     button.classList.toggle("sorted-btn", active);
-    if (active && heading) activeHeadings.add(heading);
-    button.textContent = key === "friday_close" && analystState.mood?.as_of
-      ? `Close · ${analystDate(analystState.mood.as_of)}`
-      : button.dataset.label;
+    button.textContent = button.dataset.label;
     if (active) {
       const mark = document.createElement("span");
       mark.setAttribute("aria-hidden", "true");
       mark.textContent = sortDir === "asc" ? " ↑" : " ↓";
       button.appendChild(mark);
     }
-  }
-  for (const button of buttons) {
-    const heading = button.closest("th");
     if (!heading) continue;
-    const isSorted = activeHeadings.has(heading);
-    heading.classList.toggle("sorted", isSorted);
-    if (isSorted) heading.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending");
+    if (active) heading.setAttribute("aria-sort", sortDir === "asc" ? "ascending" : "descending");
     else heading.removeAttribute("aria-sort");
   }
 }
@@ -231,186 +491,35 @@ function toggleAnalystSort(key) {
   renderAnalystResults();
 }
 
-function renderMixCell(tr, row) {
-  const td = analystText(tr, "td", "", "analyst-mix-cell");
-  const bar = analystText(td, "div", "", "analyst-mix-bar");
-  bar.setAttribute("role", "img");
-  bar.setAttribute(
-    "aria-label",
-    `${row.strong_buy} Strong Buy, ${row.buy} Buy, ${row.hold} Hold, ${row.sell} Sell, ${row.strong_sell} Strong Sell of ${row.total} ratings`,
-  );
-  for (const [key, cls, label] of ANALYST_MIX_SEGMENTS) {
-    const count = row[key] || 0;
-    if (count <= 0) continue;
-    const seg = analystText(bar, "i", "", `mix-seg ${cls}`);
-    seg.setAttribute("style", `flex:${count}`);
-    seg.setAttribute("title", `${label}: ${count}`);
-  }
-  const counts = analystText(td, "div", "", "analyst-mix-counts");
-  analystText(counts, "span", `${row.strong_buy} · ${row.buy} · ${row.hold} · ${row.sell} · ${row.strong_sell}`);
-  analystText(counts, "strong", `(${row.total})`);
-}
-
-function renderShareCell(tr, row) {
-  const share = buyShare(row);
-  if (share == null || Number.isNaN(share)) {
-    analystText(tr, "td", "n/a", "analyst-na");
-    return;
-  }
-  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
-  analystText(td, "strong", formatShare(share));
-  analystText(td, "small", `${(row.strong_buy || 0) + (row.buy || 0)} of ${row.total}`);
-}
-
-function renderDeltaCell(tr, row) {
-  const delta = buyShareDelta(row);
-  if (delta == null || Number.isNaN(delta)) {
-    analystText(tr, "td", "n/a", "analyst-na");
-    return;
-  }
-  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
-  const tone = delta > 1e-9 ? "delta-up" : delta < -1e-9 ? "delta-down" : "delta-flat";
-  analystText(td, "strong", formatDelta(delta), tone);
-  const priorTotal = row.trend?.["-1m"]?.total;
-  if (typeof priorTotal === "number" && Number.isFinite(priorTotal)) {
-    if (priorTotal !== row.total) {
-      const note = analystText(td, "small", `n: ${priorTotal} → ${row.total}`, "coverage-shift");
-      note.setAttribute("title", "Total analyst coverage changed from last month");
-    } else {
-      analystText(td, "small", `n = ${row.total}`);
-    }
-  }
-}
-
-function renderEpsCell(tr, row) {
-  const rev = rowEpsRevisions(row);
-  if (!rev) {
-    analystText(tr, "td", "n/a", "analyst-na");
-    return;
-  }
-  const td = analystText(tr, "td", "", "analyst-count-cell analyst-eps-cell");
-  analystText(td, "strong", `${rev.up} up · ${rev.down} down`);
-  const bar = analystText(td, "div", "", "analyst-rev-bar");
-  bar.setAttribute("role", "img");
-  bar.setAttribute("aria-label", `${rev.up} upward and ${rev.down} downward EPS revisions in 30 days`);
-  if (rev.total > 0) {
-    if (rev.up > 0) {
-      const upSeg = analystText(bar, "i", "", "up");
-      upSeg.setAttribute("style", `flex:${rev.up}`);
-    }
-    if (rev.down > 0) {
-      const downSeg = analystText(bar, "i", "", "down");
-      downSeg.setAttribute("style", `flex:${rev.down}`);
-    }
-  } else {
-    const flatSeg = analystText(bar, "i", "", "flat");
-    flatSeg.setAttribute("style", "flex:1");
-  }
-}
-
-function renderTargetCell(tr, row) {
-  const close = typeof row.friday_close === "number" && Number.isFinite(row.friday_close) ? row.friday_close : null;
-  const median = typeof row.target_median === "number" && Number.isFinite(row.target_median) ? row.target_median : null;
-  const low = typeof row.target_low === "number" && Number.isFinite(row.target_low) ? row.target_low : null;
-  const high = typeof row.target_high === "number" && Number.isFinite(row.target_high) ? row.target_high : null;
-  if (close == null && median == null) {
-    analystText(tr, "td", "n/a", "analyst-na");
-    return;
-  }
-  const td = analystText(tr, "td", "", "analyst-count-cell analyst-target-cell");
-  const top = analystText(td, "div", "", "analyst-target-top");
-  const closeWrap = analystText(top, "span", "Close ", "target-pair");
-  analystText(closeWrap, "strong", close != null ? formatPrice(close) : "n/a", "target-close-val");
-  analystText(top, "span", " · ", "target-sep");
-  const medWrap = analystText(top, "span", "Med ", "target-pair");
-  analystText(medWrap, "strong", median != null ? formatPrice(median) : "n/a", "target-med-val");
-  if (close != null && low != null && high != null && high >= low) {
-    if (close < low) {
-      const flag = analystText(top, "span", "Below low", "target-flag below");
-      flag.setAttribute("title", `Frozen Friday close (${formatPrice(close)}) is below the lowest analyst target (${formatPrice(low)})`);
-    } else if (close > high) {
-      const flag = analystText(top, "span", "Above high", "target-flag above");
-      flag.setAttribute("title", `Frozen Friday close (${formatPrice(close)}) is above the highest analyst target (${formatPrice(high)})`);
-    }
-  }
-  if (low != null && high != null && high >= low) {
-    const points = [low, high];
-    if (close != null) points.push(close);
-    if (median != null) points.push(median);
-    const lo = Math.min(...points);
-    const hi = Math.max(...points);
-    const span = hi - lo || 1;
-    const pct = (v) => `${Math.max(0, Math.min(100, ((v - lo) / span) * 100)).toFixed(1)}%`;
-    const gauge = analystText(td, "div", "", "analyst-target-gauge");
-    analystText(gauge, "small", formatPrice(low), "gauge-end");
-    const track = analystText(gauge, "div", "", "gauge-track");
-    track.setAttribute("role", "img");
-    track.setAttribute("aria-label", `Target low ${formatPrice(low)}, high ${formatPrice(high)}`);
-    const band = analystText(track, "i", "", "gauge-band");
-    const leftPct = Math.max(0, Math.min(100, ((low - lo) / span) * 100));
-    const widthPct = Math.max(2, Math.min(100 - leftPct, ((high - low) / span) * 100));
-    band.setAttribute("style", `left:${leftPct.toFixed(1)}%;width:${widthPct.toFixed(1)}%`);
-    if (median != null) {
-      const medMark = analystText(track, "i", "", "gauge-mark med");
-      medMark.setAttribute("style", `left:${pct(median)}`);
-      medMark.setAttribute("title", `Median target: ${formatPrice(median)}`);
-    }
-    if (close != null) {
-      const closeMark = analystText(track, "i", "", "gauge-mark close");
-      closeMark.setAttribute("style", `left:${pct(close)}`);
-      closeMark.setAttribute("title", `Reference close: ${formatPrice(close)}`);
-    }
-    analystText(gauge, "small", formatPrice(high), "gauge-end");
-  }
-}
-
-function renderUpsideCell(tr, row) {
-  const upside = typeof row.implied_upside === "number" && Number.isFinite(row.implied_upside) ? row.implied_upside : null;
-  const disp = typeof row.target_dispersion === "number" && Number.isFinite(row.target_dispersion) ? row.target_dispersion : null;
-  if (upside == null && disp == null) {
-    analystText(tr, "td", "n/a", "analyst-na");
-    return;
-  }
-  const td = analystText(tr, "td", "", "analyst-count-cell analyst-stack-cell");
-  const tone = upside == null ? "" : upside > 1e-9 ? "upside-pos" : upside < -1e-9 ? "upside-neg" : "";
-  analystText(td, "strong", upside != null ? formatSignedShare(upside) : "n/a", tone);
-  analystText(td, "small", disp != null ? `Range ${formatShare(disp)}` : "Range n/a");
-}
-
 function renderAnalystResults() {
+  syncListButtons();
   syncAnalystSortHeaders();
-  syncAnalystOverlapPills();
-  const votes = analystState.mood?.analyst_votes;
   const target = analystEl("analyst-results");
   target.replaceChildren();
-  if (!votes?.rows?.length) {
-    analystEl("analyst-count").textContent = "No usable analyst summaries in this snapshot.";
-    const tr = analystText(target, "tr", "");
-    analystText(tr, "td", "No dated ratings are available.", "empty").colSpan = ANALYST_COLUMNS;
+  if (!analystState.rows.length) {
+    analystEl("analyst-count").textContent = "No analyst summaries in this snapshot.";
+    analystText(analystText(target, "tr", ""), "td", "No dated ratings are available.", "empty").colSpan = ANALYST_COLUMNS;
     return;
   }
-  const rows = filteredAnalysts(votes, analystState.filters);
-  const missing = votes.missing_symbols?.length || 0;
-  analystEl("analyst-count").textContent = `${rows.length} of ${votes.covered_count} rated cross-screen names match these filters. ${missing} missing ${missing === 1 ? "summary is" : "summaries are"} excluded.`;
+  const filters = analystState.filters;
+  const base = baseAnalystRows(analystState.rows, filters);
+  const rows = filteredAnalysts(analystState.rows, filters);
+  renderFlags(base);
+  renderSummary(rows);
+  renderMovers(rows);
+  const hidden = analystState.rows.filter((row) => onList(row, filters.list) && row.total < (filters.minTotal || 0)).length;
+  const order = filters.sortKey === "rank" && filters.list === "all" ? "Shortlist rank, then A–Z" : ANALYST_SORT_NAMES[filters.sortKey];
+  analystEl("analyst-count").textContent = `Showing ${rows.length} of ${analystState.rows.length} companies · sorted by ${order}`
+    + `${filters.sortDir === "asc" ? " (low to high)" : " (high to low)"}`
+    + `${hidden ? ` · ${hidden} with fewer than ${filters.minTotal} ratings hidden` : ""}.`;
   if (!rows.length) {
-    const tr = analystText(target, "tr", "");
-    analystText(tr, "td", "No rated companies match. Change or reset the filters.", "empty").colSpan = ANALYST_COLUMNS;
+    analystText(analystText(target, "tr", ""), "td", "No companies match. Change or reset the filters.", "empty").colSpan = ANALYST_COLUMNS;
     return;
   }
   for (const row of rows) {
     const tr = analystText(target, "tr", "");
-    const company = analystText(tr, "td", "", "analyst-company-cell");
-    if (globalThis.TLWatch) company.appendChild(Object.assign(globalThis.TLWatch.button(row.symbol, row.name), { className: "tl-star lead" }));
-    const link = analystText(company, "a", row.symbol, "analyst-symbol-link");
-    link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(row.symbol)}`);
-    analystText(company, "small", row.name || row.symbol);
-
-    const screensTd = analystText(tr, "td", "", "analyst-screens");
-    const chips = analystText(screensTd, "div", "", "chips analyst-screen-chips");
-    for (const key of row.screens || []) {
-      analystText(chips, "span", ANALYST_SCREEN_LABELS[key] || key, `chip chip-${key}`);
-    }
-
+    renderCompanyCell(tr, row);
+    renderListsCell(tr, row);
     renderMixCell(tr, row);
     renderShareCell(tr, row);
     renderDeltaCell(tr, row);
@@ -420,69 +529,60 @@ function renderAnalystResults() {
   }
 }
 
-function populateAnalystOverlapPills(votes) {
-  const container = analystEl("analyst-overlap-pills");
-  if (!container) return;
-  const counts = analystOverlapCounts(votes);
-  container.replaceChildren();
-  for (const [key, label] of ANALYST_OVERLAP_GROUPS) {
-    const count = counts[key] || 0;
-    const btn = analystText(container, "button", `${label} (${count})`, "overlap-chip");
-    btn.type = "button";
-    btn.dataset.overlapKey = key;
-    if (key !== "all" && count === 0) btn.disabled = true;
-    btn.addEventListener("click", () => {
-      analystState.filters.overlap = key;
-      renderAnalystResults();
-    });
+function analystSectorOptions(rows) {
+  const counts = new Map();
+  for (const row of rows) counts.set(row.sector, (counts.get(row.sector) || 0) + 1);
+  const options = [{ value: "", label: "All sectors", count: null, disabled: false }];
+  for (const [key, label] of SECTORS) {
+    const count = counts.get(key) || 0;
+    if (key === "unclassified" && count === 0) continue;
+    options.push({ value: key, label, count, disabled: count === 0 });
   }
-  syncAnalystOverlapPills();
+  return options;
 }
 
-function syncAnalystOverlapPills() {
-  const container = analystEl("analyst-overlap-pills");
-  if (!container?.children) return;
-  const current = analystState.filters.overlap || "all";
-  for (const btn of container.children) {
-    const active = btn.dataset?.overlapKey === current;
-    btn.classList?.toggle("on", active);
-    btn.setAttribute?.("aria-pressed", active ? "true" : "false");
+function populateAnalystSectorSelect() {
+  const select = analystEl("analyst-sector");
+  if (!select) return;
+  const options = analystSectorOptions(analystState.rows);
+  select.replaceChildren();
+  for (const { value, label, count, disabled } of options) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = count == null ? label : `${label} (${count})`;
+    if (disabled) option.disabled = true;
+    select.appendChild(option);
   }
+  select.value = analystState.filters.sector || "";
+}
+
+// The page's own file must belong to the published release; otherwise it waits.
+function checkAnalystSnapshot(data, release) {
+  if (data?.schema !== "analyst-ratings-1" || !Array.isArray(data.rows)) return "The analyst snapshot has an unknown format.";
+  if (release && (release.run_id !== data.desk_run_id || release.as_of !== data.as_of)) return "The analyst screen is awaiting the current release.";
+  return null;
 }
 
 async function loadAnalystSnapshot() {
   try {
-    const [moodResponse, deskResponse, releaseResponse] = await Promise.all([
-      fetch("./market-mood.json", { cache: "no-store" }),
-      fetch("./desk.json", { cache: "no-store" }),
+    const [dataResponse, releaseResponse] = await Promise.all([
+      fetch("./analyst-ratings.json", { cache: "no-store" }),
       fetch("./release.json", { cache: "no-store" }),
     ]);
-    if (!moodResponse.ok || !deskResponse.ok) throw new Error("The weekly analyst snapshot is unavailable.");
-    const [mood, desk] = await Promise.all([moodResponse.json(), deskResponse.json()]);
-    // Analyst conviction needs only the Research snapshot, so it renders even
-    // while the shortlist view waits for its matching market-mood file.
-    analystState.desk = desk;
-    renderConvictionView();
-    if (mood.schema !== "market-mood-1" || mood.run_id !== desk.run_id || mood.as_of !== desk.as_of || !mood.analyst_votes) {
-      throw new Error("The analyst screen is awaiting the matching weekly snapshot.");
-    }
-    if (releaseResponse.ok) {
-      const release = await releaseResponse.json();
-      if (release.run_id !== mood.run_id || release.as_of !== mood.as_of) throw new Error("The analyst screen is awaiting the current release.");
-    }
-    const votes = mood.analyst_votes;
-    if (votes.attempted_count !== mood.screen_report?.multi_count || votes.covered_count !== votes.rows?.length) {
-      throw new Error("Analyst coverage does not match the cross-screen shortlist.");
-    }
-    analystState.mood = mood;
-    analystState.desk = desk;
-    populateAnalystOverlapPills(votes);
-    populateAnalystSectorSelect(votes);
-    analystEl("week-chip").textContent = `Data as of ${analystDate(mood.as_of)}`;
-    analystEl("aside-week").textContent = analystDate(mood.as_of);
-    analystEl("analyst-coverage").textContent = `${votes.covered_count} of ${votes.attempted_count} summaries available`;
-    analystEl("shortlist-n").textContent = String(votes.attempted_count);
-    analystEl("analyst-dates").textContent = `Screens: ${analystDate(mood.as_of)} · Analyst counts retrieved: ${analystDate(votes.retrieved_at)}`;
+    if (!dataResponse.ok) throw new Error("The weekly analyst snapshot is unavailable.");
+    const data = await dataResponse.json();
+    const release = releaseResponse.ok ? await releaseResponse.json() : null;
+    const problem = checkAnalystSnapshot(data, release);
+    if (problem) throw new Error(problem);
+    analystState.data = data;
+    analystState.rows = data.rows.map((row) => analystRow(row, data.as_of));
+    analystEl("week-chip").textContent = `Data as of ${analystDate(data.as_of)}`;
+    analystEl("aside-week").textContent = analystDate(data.as_of);
+    analystEl("analyst-dates").textContent = `Prices: ${analystDate(data.as_of)} close · Ratings and targets retrieved ${analystDate(data.retrieved?.last)}`;
+    const rated = analystState.rows.filter((row) => row.total >= ANALYST_SHARE_MIN).length;
+    analystEl("analyst-coverage").textContent = `${rated} of ${analystState.rows.length} companies have 3+ ratings`;
+    populateAnalystSectorSelect();
+    renderByList();
     renderAnalystResults();
   } catch (error) {
     analystEl("week-chip").textContent = "Snapshot unavailable";
@@ -492,36 +592,43 @@ async function loadAnalystSnapshot() {
   }
 }
 
-function populateAnalystSectorSelect(votes) {
-  const select = analystEl("analyst-sector");
-  if (!select) return;
-  const options = analystSectorOptions(votes);
-  const current = analystState.filters.sector;
-  select.replaceChildren();
-  for (const { value, label, count, disabled } of options) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = count == null ? label : `${label} (${count})`;
-    if (disabled) option.disabled = true;
-    select.appendChild(option);
-  }
-  const enabled = new Set(options.filter((option) => !option.disabled).map(({ value }) => value));
-  select.value = enabled.has(current) ? current : "";
-  analystState.filters.sector = select.value;
-}
-
 function startAnalystView() {
-  for (const [id, key, event] of [
-    ["analyst-query", "query", "input"], ["analyst-min-total", "minTotal", "change"],
-    ["analyst-category", "category", "change"], ["analyst-min-share", "minShare", "change"],
-    ["analyst-sector", "sector", "change"],
-  ]) analystEl(id).addEventListener(event, (change) => {
-    analystState.filters[key] = ["minTotal", "minShare"].includes(key) ? Number(change.target.value) : change.target.value;
+  const requested = new URLSearchParams(location.search).get("list");
+  if (ANALYST_LISTS.some(([key]) => key === requested)) analystState.filters.list = requested;
+  analystEl("analyst-lists").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-analyst-list]");
+    if (!button) return;
+    analystState.filters.list = button.dataset.analystList;
+    analystState.filters.sortKey = "rank";
+    analystState.filters.sortDir = "asc";
+    renderAnalystResults();
+  });
+  analystEl("analyst-query").addEventListener("input", (event) => {
+    analystState.filters.query = event.target.value;
+    renderAnalystResults();
+  });
+  analystEl("analyst-sector").addEventListener("change", (event) => {
+    analystState.filters.sector = event.target.value;
+    renderAnalystResults();
+  });
+  analystEl("analyst-min-total").addEventListener("change", (event) => {
+    analystState.filters.minTotal = Number(event.target.value);
+    renderAnalystResults();
+  });
+  analystEl("analyst-flags").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-flag]");
+    if (!button) return;
+    const flags = new Set(analystState.filters.flags || []);
+    if (flags.has(button.dataset.flag)) flags.delete(button.dataset.flag);
+    else flags.add(button.dataset.flag);
+    analystState.filters.flags = [...flags];
     renderAnalystResults();
   });
   analystEl("analyst-reset").addEventListener("click", () => {
-    analystState.filters = { ...ANALYST_DEFAULT_FILTERS };
-    for (const [id, value] of [["analyst-query", ""], ["analyst-min-total", "3"], ["analyst-category", "any"], ["analyst-min-share", "0"], ["analyst-sector", ""]]) analystEl(id).value = value;
+    analystState.filters = { ...ANALYST_DEFAULT_FILTERS, flags: [] };
+    analystEl("analyst-query").value = "";
+    analystEl("analyst-sector").value = "";
+    analystEl("analyst-min-total").value = "3";
     renderAnalystResults();
   });
   document.querySelector(".analyst-table-wrap thead").addEventListener("click", (event) => {
@@ -530,75 +637,9 @@ function startAnalystView() {
     toggleAnalystSort(button.dataset.analystSort);
     button.focus();
   });
+  syncListButtons();
   syncAnalystSortHeaders();
-  analystEl("show-shortlist-names").addEventListener("click", () => showAnalystView("shortlist"));
-  analystEl("show-conviction").addEventListener("click", () => showAnalystView("conviction"));
-  analystEl("conviction-query").addEventListener("input", (event) => {
-    analystState.convictionQuery = event.target.value;
-    renderConvictionView();
-  });
-  if (new URLSearchParams(location.search).get("view") === "conviction") showAnalystView("conviction");
   void loadAnalystSnapshot();
-}
-
-// ---------- Analyst conviction (moved from Research, Oct 2026) ----------
-// The weekly Conviction list from desk.json: rank, strong-buy share and 30-day
-// EPS revisions, as frozen with the screens. Nothing is fetched or re-ranked.
-function showAnalystView(view) {
-  const conviction = view === "conviction";
-  analystEl("shortlist-view").hidden = conviction;
-  analystEl("conviction-view").hidden = !conviction;
-  for (const [id, on] of [["show-shortlist-names", !conviction], ["show-conviction", conviction]]) {
-    analystEl(id).classList.toggle("on", on);
-    analystEl(id).setAttribute("aria-pressed", on ? "true" : "false");
-  }
-}
-
-function convictionRows(desk = analystState.desk, query = analystState.convictionQuery || "") {
-  const needle = query.trim().toLowerCase();
-  return (desk?.setups?.conviction?.results || []).filter((row) => (
-    !needle || `${row.symbol} ${row.name || ""}`.toLowerCase().includes(needle)
-  ));
-}
-
-function renderConvictionView() {
-  const desk = analystState.desk;
-  const setup = desk?.setups?.conviction;
-  const target = analystEl("conviction-results");
-  target.replaceChildren();
-  analystEl("conviction-n").textContent = setup ? String(setup.results.length) : "";
-  if (!setup) {
-    analystEl("conviction-count").textContent = "This snapshot has no Analyst conviction list.";
-    return;
-  }
-  analystEl("conviction-method").textContent = setup.method || "";
-  const dates = setup.analyst_dates;
-  const collected = dates ? `Collected ${analystDate(dates.first)}; prices ${analystDate(desk.as_of)}.` : `Prices ${analystDate(desk.as_of)}; collection date not recorded.`;
-  const rows = convictionRows(desk);
-  analystEl("conviction-count").textContent = `${rows.length} of ${setup.results.length} companies. ${collected}`;
-  if (!rows.length) {
-    const tr = analystText(target, "tr", "");
-    analystText(tr, "td", setup.results.length ? "No company matches." : "No Conviction names were published for this snapshot.", "empty").colSpan = 7;
-    return;
-  }
-  for (const row of rows) {
-    const company = desk.companies?.[row.symbol] || {};
-    const f = company.factors || {};
-    const tr = analystText(target, "tr", "");
-    analystText(tr, "td", String(row.rank), "conviction-rank");
-    const cell = analystText(tr, "td", "", "analyst-company-cell");
-    if (globalThis.TLWatch) cell.appendChild(Object.assign(globalThis.TLWatch.button(row.symbol, row.name), { className: "tl-star lead" }));
-    const link = analystText(cell, "a", row.symbol, "analyst-symbol-link");
-    link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(row.symbol)}`);
-    analystText(cell, "small", row.name || row.symbol);
-    analystText(tr, "td", typeof sectorFor === "function" ? sectorLabel(sectorFor((company.industry || "").trim() || "__unclassified")) : "");
-    const share = analystText(tr, "td", Number.isFinite(f.strong_buy) ? formatShare(f.strong_buy) : "n/a", "num");
-    if (Number.isFinite(f.strong_buy_count) && Number.isFinite(f.analyst_total)) analystText(share, "small", `${f.strong_buy_count} of ${f.analyst_total}`);
-    const eps = rowEpsRevisions(row, desk);
-    analystText(tr, "td", eps ? `${eps.up} · ${eps.down}` : "n/a", "num");
-    analystText(tr, "td", Number.isFinite(f.revision_breadth) ? formatSignedShare(f.revision_breadth) : "n/a", "num");
-    analystText(tr, "td", Number.isFinite(row.score) ? row.score.toFixed(1) : "n/a", "num");
-  }
 }
 
 startAnalystView();
