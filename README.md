@@ -274,3 +274,9 @@ research graduation flag; it does not replace Growth membership. Reviews may be
 newer than Friday prices and show their own recording time. Statuses are
 experimental and have no demonstrated predictive value. Older freezes that lack
 this evidence display no invented status.
+
+## Jev suggestion book
+
+`jev-reads.html` displays one current suggestion for every company on the selected Research Shortlist. New since Friday contains only confirmed earnings filings after the previous calendar Friday. Older suggestions remain, grouped by the AI answers and confidence; Other suggestions retains cuts, maintained or uncomparable guidance, low confidence and source gaps. Return overlays are realized QQQ context in percentage points and do not order rows.
+
+`jev-reads.json.suggestion_books` is derived from saved requests and answers. Original weekly files and tracking cohorts remain immutable. Corrections and changed input provenance are labeled. A source guard can identify gaps; it does not certify every company interpretation. Sector-relative returns and sample narratives from design references are not supplied by this implementation.

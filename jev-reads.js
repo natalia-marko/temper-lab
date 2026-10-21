@@ -1,215 +1,74 @@
-// Jev reads: Research Shortlist companies' latest earnings, read by Jev (AI), with the track record.
-// Data: jev-reads.json (index) and jev-reads/<Friday>.json or jev-reads/shortlist-<Friday>.json
-// (one frozen file per week), built by `python -m jev.public_page`. Every value is written with
-// textContent; links go to sec.gov only.
-
+// Current suggestion book. Frozen weekly selections and their tracking remain separate.
+// Text-only rendering; external links are restricted to SEC and the verified issuer.
 const INDEX_SCHEMA = "jev-reads-index-1";
-const WEEK_SCHEMA = "jev-reads-week-1";
-const GUIDANCE_ORDER = ["raised", "unchanged", "lowered", "provided_without_comparison", "not_provided", "unclear"];
-const GUIDANCE_LABEL = {
-  raised: "Raised",
-  unchanged: "Unchanged or reaffirmed",
-  lowered: "Lowered",
-  provided_without_comparison: "Given, but nothing comparable before",
-  not_provided: "Withheld or withdrawn",
-  unclear: "Unclear or no guidance",
-};
-const SETUP_LABEL = {
-  asymmetric_growth_catalyst: "growth catalyst",
-  deteriorating_operations: "deteriorating operations",
-  mixed_operating_signals: "mixed signals",
-  stable_value_drift: "stable, no catalyst",
-  unclear: "unclear",
-};
-const TIER_LABEL = {
-  A: "Raised guidance and a growth setup",
-  B: "Raised guidance",
-  C: "Growth setup",
-};
-const QUOTE_LABEL = {
-  guidance: "Guidance passage Jev read",
-  results: "Results passage (the release has no guidance section)",
-  opening: "Opening of the release (no guidance or results section found)",
-};
+const BOOK_SCHEMA = "jev-suggestion-book-1";
+const GUIDANCE_LABEL = { raised: "Raised", lowered: "Cut", unchanged: "Maintained", provided_without_comparison: "Guidance provided without comparison", not_provided: "Withheld or withdrawn", unclear: "Unclear" };
+const SETUP_LABEL = { asymmetric_growth_catalyst: "Growth setup", deteriorating_operations: "Deteriorating operations", mixed_operating_signals: "Mixed operating signals", stable_value_drift: "Stable, no catalyst", unclear: "Unclear" };
+const GROUPS = ["Both", "Raised", "Growth"];
+const jevState = { index: null, release: null, book: null, weekId: null, loadId: 0, filters: { query: "", newOnly: false } };
 
-const jevState = { index: null, release: null, week: null, weekId: null, filters: { query: "", floorOnly: false } };
-
-function weekId(entry) {
-  return (entry && (entry.id || (entry.source === "research_shortlist" ? `shortlist-${entry.as_of}` : entry.as_of))) || "";
+function weekId(entry) { return entry.id || entry.as_of; }
+function signedPp(value) { return typeof value === "number" && Number.isFinite(value) ? `${value >= 0 ? "+" : ""}${value.toFixed(1)}` : "—"; }
+function confidenceText(value) { return typeof value === "number" && Number.isFinite(value) ? value.toFixed(2) : "—"; }
+function secUrl(value) {
+  try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "www.sec.gov" && !url.username && !url.password && (!url.port || url.port === "443") ? url.href : null; } catch { return null; }
 }
-
-function weekLabel(entry) {
-  const asOf = entry && entry.as_of ? entry.as_of : "";
-  if (entry && entry.source === "research_shortlist") return `Research Shortlist · week ending ${asOf}`;
-  return `This week's filings · week ending ${asOf}`;
+function byConfidence(a, b) {
+  const ac = a.suggestion.confidence, bc = b.suggestion.confidence;
+  return (bc == null ? -1 : bc) - (ac == null ? -1 : ac) || a.ticker.localeCompare(b.ticker);
 }
-
-function signedPct(fraction, digits = 1) {
-  if (fraction == null || Number.isNaN(Number(fraction))) return "n/a";
-  const value = Number(fraction) * 100;
-  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}%`;
+function matchesQuery(row, query) {
+  const value = String(query || "").trim().toLowerCase();
+  return !value || String(row.ticker || "").toLowerCase().startsWith(value)
+    || (String(row.company || "").toLowerCase().match(/[a-z0-9]+/g) || []).some(word => word.startsWith(value));
 }
-
-function signedPp(value, digits = 1) {
-  if (value == null || Number.isNaN(Number(value))) return "n/a";
-  return `${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(digits)}`;
+function partitionBook(book, filters) {
+  const all = book.releases.filter(row => matchesQuery(row, filters.query));
+  const carried = all.filter(row => !row.is_new);
+  return {
+    newRows: all.filter(row => row.is_new).sort(byConfidence),
+    groups: filters.newOnly ? [] : GROUPS.map(label => [label, carried.filter(row => row.suggestion.group === label).sort(byConfidence)]).filter(([, rows]) => rows.length),
+    other: filters.newOnly ? [] : carried.filter(row => row.suggestion.group === "Other suggestions").sort(byConfidence),
+    shown: filters.newOnly ? all.filter(row => row.is_new).length : all.length,
+  };
 }
-
-function guidanceLabel(choice) {
-  return GUIDANCE_LABEL[choice] || "No answer";
-}
-
-function setupLabel(choice) {
-  return SETUP_LABEL[choice] || "no answer";
-}
-
-function secUrl(url) {
-  return typeof url === "string" && url.startsWith("https://www.sec.gov/") ? url : null;
-}
-
-function reactionValue(release, overlay, late) {
-  const qqq = overlay && overlay[release.event_id];
-  if (qqq && qqq.status === "ready" && qqq.excess_return_3d != null) {
-    return { status: "ready", value: qqq.excess_return_3d, late: false };
+function validateBook(book, entry) {
+  if (!book || book.schema !== BOOK_SCHEMA || book.as_of !== entry.as_of) throw new Error("Suggestion book does not match the selected snapshot.");
+  const rows = book.releases;
+  if (!Array.isArray(rows) || !rows.length || rows.length !== book.counts.companies || new Set(rows.map(row => row.ticker)).size !== rows.length) throw new Error("Suggestion book has incomplete or duplicate company membership.");
+  const previous = new Date(`${book.as_of}T00:00:00Z`); previous.setUTCDate(previous.getUTCDate() - 7);
+  if (previous.toISOString().slice(0, 10) !== book.previous_friday) throw new Error("Suggestion book has an invalid filing window.");
+  for (const row of rows) {
+    if (!row.suggestion || !row.source_check || !/^\d{4}-\d{2}-\d{2}$/.test(row.filed) || row.filed > book.as_of) throw new Error("Invalid company evidence in the suggestion book.");
+    const isNew = row.source_check.status === "supported" && row.filed > book.previous_friday;
+    if (row.is_new !== isNew) throw new Error("New reading disagrees with the filing date.");
   }
-  const filled = late && late[release.event_id];
-  if (filled && filled.excess_return_3d != null) {
-    return { status: "ready", value: filled.excess_return_3d, late: true };
-  }
-  return { status: "waiting", value: null, late: false };
+  if (rows.filter(row => row.is_new).length !== book.counts.new) throw new Error("New reading count disagrees with the book.");
+  return book;
 }
-
-function reactionText(release, overlay, late) {
-  const info = reactionValue(release, overlay, late);
-  if (info.status === "ready") {
-    const base = `3-day reaction vs QQQ ${signedPct(info.value)}`;
-    return info.late ? `${base} (completed after this week was published)` : base;
-  }
-  return "3-day reaction vs QQQ: not complete yet";
-}
-
-function laterReturnValue(release, later) {
-  const filled = later && later[release.event_id];
-  if (filled && filled.status === "ready" && filled.excess_return_1m_qqq != null) {
-    return { status: "ready", value: filled.excess_return_1m_qqq };
-  }
-  return { status: "waiting", value: null };
-}
-
-function laterReturnText(release, later) {
-  const info = laterReturnValue(release, later);
-  if (info.status === "ready") return `21 sessions vs QQQ ${signedPct(info.value)}`;
-  return "21 sessions vs QQQ: not complete yet";
-}
-
-function answersText(release) {
-  const jev = release.jev || {};
-  const bits = [
-    `Guidance: ${guidanceLabel(jev.guidance)}${jev.guidance_confidence == null ? "" : ` (confidence ${Number(jev.guidance_confidence).toFixed(2)})`}`,
-    `Operations: ${setupLabel(jev.setup)}${jev.setup_confidence == null ? "" : ` (confidence ${Number(jev.setup_confidence).toFixed(2)})`}`,
-  ];
-  if (jev.product_score != null) bits.push(`Product: ${Number(jev.product_score).toFixed(1)} of 3`);
-  return `Jev (AI) · ${bits.join(" · ")}`;
-}
-
-function floorText(release) {
-  if (release.floor) return "Passes the floor";
-  return `Fails the floor: ${(release.floor_reasons || []).join("; ")}`;
-}
-
-function guidanceDeltaClass(choice) {
-  if (choice === "raised") return "raised";
-  if (choice === "lowered") return "lowered";
-  return "neutral";
-}
-
-function guidanceDeltaText(release) {
-  if (release.guidance_review) return `Guidance review: ${release.guidance_review.reason}`;
-  const choice = (release.jev || {}).guidance;
-  const periods = release.periods || {};
-  const comparison = periods.comparison;
-  if (choice === "raised") {
-    return comparison === "same_period"
-      ? "Jev (AI): raised vs the company's previous same-period guidance"
-      : "Jev (AI): raised guidance";
-  }
-  if (choice === "lowered") return "Jev (AI): lowered guidance";
-  if (choice === "unchanged") return "Jev (AI): unchanged or reaffirmed";
-  return `Jev (AI): ${guidanceLabel(choice).toLowerCase()}`;
-}
-
-function shortListOf(releases) {
-  return (releases || []).filter((r) => r.short_list_position)
-    .slice().sort((a, b) => a.short_list_position - b.short_list_position);
-}
-
-function matchesQuery(release, query) {
-  if (!query) return true;
-  const ticker = String(release.ticker || "").toLowerCase();
-  if (ticker.startsWith(query)) return true;
-  const words = String(release.company || "").toLowerCase().match(/[a-z0-9]+/g) || [];
-  return words.some((word) => word.startsWith(query));
-}
-
-function filterReleases(releases, filters) {
-  const query = String((filters && filters.query) || "").trim().toLowerCase();
-  return (releases || []).filter((r) => (!filters || !filters.floorOnly || r.floor) && matchesQuery(r, query));
-}
-
-function groupByGuidance(releases) {
-  const groups = GUIDANCE_ORDER.map((key) => [key, (releases || []).filter((r) => (r.jev || {}).guidance === key)]);
-  const known = new Set(GUIDANCE_ORDER);
-  const other = (releases || []).filter((r) => !known.has((r.jev || {}).guidance));
-  if (other.length) groups.push(["other", other]);
-  return groups.filter(([, rows]) => rows.length);
-}
-
-function weekBanner(week, release, latest) {
-  if (!week) return null;
-  if (latest && week.as_of !== latest) return `Archived week ending ${week.as_of}. The latest published week ends ${latest}.`;
-  if (release && release.as_of && week.as_of < release.as_of) {
-    return `These reads are for the week ending ${week.as_of}. The screener snapshot is newer (${release.as_of}); that week's reads are not published yet.`;
-  }
+function weekBanner(book, release, latest) {
+  if (book.as_of !== latest) return `Archived snapshot ${book.as_of}. Latest published Jev week: ${latest}.`;
+  if (release && release.as_of > book.as_of) return `The Research snapshot is newer (${release.as_of}). This book still describes ${book.as_of}.`;
+  if (release && book.research_shortlist && release.run_id !== book.research_shortlist.run_id) return "This book and the current Research page use different saved runs. Check the selected snapshot.";
   return null;
 }
-
+function outcomeValue(row, key) {
+  const index = jevState.index || {};
+  const map = key === "3d" ? index.reactions_3d_qqq : index.later_returns_1m_qqq;
+  const result = ((map || {})[jevState.weekId] || {})[row.event_id];
+  const value = result && result[key === "3d" ? "excess_return_3d" : "excess_return_1m_qqq"];
+  if (result && result.status === "ready" && typeof value === "number" && Number.isFinite(value)) return { text: `${signedPp(100 * value)} pp`, result };
+  return { text: result && result.status === "waiting" ? "Pending" : "Unavailable", result };
+}
 function evidenceSentences(record) {
-  if (!record) return [];
-  const up = record.reaction_after_raised || {};
-  const down = record.reaction_after_lowered || {};
+  if (!record) return ["Historical test data is unavailable."];
   const one = record.raised_minus_rest_1m_qqq;
-  const range = (ci) => (ci ? `${signedPp(ci[0])} to ${signedPp(ci[1])}` : "n/a");
   return [
-    `Past test: ${record.releases} earnings releases from ${record.period}, read by Jev with the same questions.`,
-    `On average the market agreed with Jev's guidance read over the first three days (a realized reaction versus QQQ, not a Jev forecast): ${signedPp(up.mean_pct)}% after "raised" (${Math.round(100 * (up.share_up || 0))}% of them rose), ${signedPp(down.mean_pct)}% after "lowered". Many single cases went the other way.`,
-    ...(one ? [`After those three days, "raised" showed no advantage over 21 sessions versus QQQ: ${signedPp(one.difference_pp)} percentage points (95% interval ${range(one.ci_pp)}).`] : []),
+    `Historical sample: ${record.releases} releases, ${record.period}. These results are not a source-accuracy audit.`,
+    ...(one ? [`Raised versus the rest over the later 21-session window: ${signedPp(one.difference_pp)} percentage points (95% interval ${signedPp(one.ci_pp[0])} to ${signedPp(one.ci_pp[1])}). ${one.ci_pp[0] <= 0 && one.ci_pp[1] >= 0 ? "This saved test does not establish a return edge." : "An interval away from zero in this sample is not independent validation of this book."}`] : []),
     record.note || "",
   ].filter(Boolean);
 }
-
-function trackingHorizons(index) {
-  const sessions = index.tracking_horizons_sessions || { "3m": 63, "6m": 126, "12m": 252 };
-  return Object.keys(sessions);
-}
-
-function trackingRows(index) {
-  const horizons = trackingHorizons(index);
-  return (index.tracking || []).map((row) => ({
-    week: row.week,
-    group: row.group,
-    releases: row.releases,
-    values: horizons.map((h) => (
-      row[`mean_excess_vs_qqq_${h}`] == null ? row[`mean_excess_vs_universe_${h}`] : row[`mean_excess_vs_qqq_${h}`]
-    )),
-  }));
-}
-
-function trackingHeader(index) {
-  const labels = { "1m": "1 month vs QQQ", "3m": "3 months vs QQQ", "6m": "6 months vs QQQ", "12m": "12 months vs QQQ" };
-  return ["Week", "Group", "Releases", ...trackingHorizons(index).map((h) => labels[h] || h)];
-}
-
-// ---------------------------------------------------------------- DOM
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -217,393 +76,173 @@ function el(tag, className, text) {
   if (text != null) node.textContent = text;
   return node;
 }
-
-function secButton(url, text) {
-  const safe = secUrl(url);
+function filingLink(source, text) {
+  let safe = secUrl(source);
+  if (!safe) {
+    try { const url = new URL(source); if (url.protocol === "https:" && url.hostname === "investors.eogresources.com" && !url.username && !url.password && (!url.port || url.port === "443")) safe = url.href; } catch {}
+  }
   if (!safe) return null;
-  const node = el("a", "jev-sec-btn");
-  node.href = safe;
-  node.target = "_blank";
-  node.rel = "noopener noreferrer";
-  node.appendChild(document.createTextNode(text));
-  node.appendChild(el("span", "ext", "↗"));
-  return node;
+  const link = el("a", "jev-sec-link", text || (secUrl(source) ? "Open filing on SEC.gov ↗" : "Open earnings release on issuer website ↗"));
+  link.href = safe; link.target = "_blank"; link.rel = "noopener noreferrer";
+  return link;
 }
-
-function reactionChip(release, overlay, late) {
-  const info = reactionValue(release, overlay, late);
-  if (info.status !== "ready") {
-    return el("span", "jev-reaction-chip wait", "3-day vs QQQ · pending");
-  }
-  const tone = Number(info.value) >= 0 ? "up" : "down";
-  const chip = el("span", `jev-reaction-chip ${tone}`);
-  chip.appendChild(el("span", "jev-reaction-label", info.late ? "3-day vs QQQ · late" : "3-day vs QQQ"));
-  chip.appendChild(document.createTextNode(signedPct(info.value)));
-  return chip;
+function paragraph(parent, label, text, className) {
+  const p = el("p", className || ""); p.appendChild(el("strong", null, `${label} `)); p.appendChild(document.createTextNode(text)); parent.appendChild(p);
 }
-
-function laterReturnChip(release, later) {
-  const info = laterReturnValue(release, later);
-  if (info.status !== "ready") {
-    return el("span", "jev-reaction-chip wait", "21d vs QQQ · pending");
-  }
-  const tone = Number(info.value) >= 0 ? "up" : "down";
-  const chip = el("span", `jev-reaction-chip ${tone}`);
-  chip.appendChild(el("span", "jev-reaction-label", "21d vs QQQ"));
-  chip.appendChild(document.createTextNode(signedPct(info.value)));
-  return chip;
+function passageColumn(label, passage, missing) {
+  const col = el("div", "jev-passage");
+  col.appendChild(el("h4", null, label));
+  if (passage) {
+    col.appendChild(el("p", "jev-pass-meta", `${passage.published_at || "Date unavailable"} · ${passage.section || "guidance"}${passage.truncated ? " · shortened" : ""}`));
+    col.appendChild(el("blockquote", null, passage.text || "No passage extracted."));
+    const link = filingLink(passage.source); if (link) col.appendChild(link);
+  } else col.appendChild(el("p", "jev-pass-meta", missing || "No comparable guidance passage supplied."));
+  return col;
 }
-
-function meterRow(kind, valueLabel, confidence) {
-  const row = el("div", "jev-meter");
-  const claim = el("div", "jev-meter-claim");
-  claim.appendChild(el("span", "jev-meter-kind", kind));
-  claim.appendChild(el("span", "jev-meter-value", valueLabel));
-  row.appendChild(claim);
-  const track = el("div", "jev-meter-track");
-  track.setAttribute("role", "meter");
-  track.setAttribute("aria-label", `${kind} confidence`);
-  if (confidence == null || Number.isNaN(Number(confidence))) {
-    track.setAttribute("aria-valuemin", "0");
-    track.setAttribute("aria-valuemax", "1");
-    track.setAttribute("aria-valuenow", "0");
-    row.appendChild(track);
-    row.appendChild(el("span", "jev-meter-score", "—"));
-    return row;
-  }
-  const score = Math.max(0, Math.min(1, Number(confidence)));
-  const fill = el("span", `jev-meter-fill${score < 0.5 ? " low" : score < 0.75 ? " mid" : ""}`);
-  fill.style.width = `${Math.round(score * 100)}%`;
-  track.appendChild(fill);
-  track.setAttribute("aria-valuemin", "0");
-  track.setAttribute("aria-valuemax", "1");
-  track.setAttribute("aria-valuenow", String(Number(score.toFixed(2))));
-  row.appendChild(track);
-  row.appendChild(el("span", "jev-meter-score", score.toFixed(2)));
-  return row;
+function comparisonPanel(row, current, prior, label) {
+  const box = el("section", "jev-comparison");
+  box.appendChild(el("h3", null, label));
+  const columns = el("div", "jev-compare");
+  columns.appendChild(passageColumn("Prior guidance", prior.find(p => p.section === "guidance"), (row.previous || {}).reason));
+  columns.appendChild(passageColumn("This guidance", current.find(p => p.section === "guidance"), "No guidance passage extracted. See the original input below."));
+  box.appendChild(columns);
+  return box;
 }
-
-function answersPanel(release) {
-  const jev = release.jev || {};
-  const panel = el("div", "jev-answers-panel");
-  panel.appendChild(el("p", "jev-answers-label", "Jev (AI)"));
-  if (release.guidance_review) {
-    const review = release.guidance_review;
-    panel.appendChild(el("p", "insights-note",
-      `Guidance corrected after checking the source. Original AI answer: ${guidanceLabel(review.raw_guidance)}`
-      + (review.raw_confidence == null ? "." : ` (confidence ${Number(review.raw_confidence).toFixed(2)}).`)));
-    const compared = [...new Set((review.comparisons || []).map(r => r.quote))].join("\n");
-    const evidence = review.evidence || {};
-    panel.appendChild(quoteFold("Guidance evidence checked", compared
-      || `Current: ${evidence.current || "No guidance passage."}\nPrevious: ${evidence.previous || "No guidance passage."}`, false));
+function expandedRow(row) {
+  const body = el("div", "jev-row-body");
+  const suggestion = row.suggestion, ai = row.jev || {}, evidence = row.evidence || {};
+  const audit = el("div", "jev-audit");
+  audit.appendChild(el("span", null, `${row.company} · Research Shortlist #${row.shortlist_rank || "—"} · filing ${row.filed}`));
+  if (globalThis.TLWatch && row.ticker) audit.appendChild(globalThis.TLWatch.button(row.ticker, row.company));
+  const ticker = el("a", null, "Full ticker page →"); ticker.href = `./ticker.html?t=${encodeURIComponent(row.ticker)}`; audit.appendChild(ticker);
+  body.appendChild(audit);
+  body.appendChild(el("p", "jev-thesis", suggestion.label === "Source needs review" ? "A current earnings suggestion cannot be established from the saved input." : `Jev’s suggestion: ${suggestion.label}.`));
+  if (suggestion.reason) body.appendChild(el("p", "jev-review-note", suggestion.reason));
+  if (row.source_check.status !== "supported") body.appendChild(el("p", "jev-review-note", "The original AI answer is retained below for audit. It is not presented as a verified earnings read."));
+  if (row.source_repair) {
+    body.appendChild(el("p", "jev-review-note", `Source repaired: the ${row.source_repair.original_filed} input was replaced with the complete ${row.filed} earnings release and read again by Jev. The original answer remains in the frozen cohort.`));
+    const original = filingLink(row.source_repair.original_source, "Original source retained for audit ↗"); if (original) body.appendChild(original);
   }
-  const meters = el("div", "jev-meters");
-  meters.appendChild(meterRow(release.guidance_review ? "Reviewed guidance" : "Guidance", guidanceLabel(jev.guidance), jev.guidance_confidence));
-  meters.appendChild(meterRow("Operations", setupLabel(jev.setup), jev.setup_confidence));
-  if (jev.product_score != null) {
-    meters.appendChild(meterRow("Product", `${Number(jev.product_score).toFixed(1)} of 3`, null));
+  if (row.input_provenance && !row.input_provenance.matches_saved_request) body.appendChild(el("p", "jev-review-note", `This answer was reused from ${row.input_provenance.source_run} with a different saved request. The original associated input is shown below. Changed excerpts have not been attributed to that AI answer.`));
+  if (row.guidance_review) {
+    paragraph(body, "Guidance review.", row.guidance_review.reason, "jev-review-note");
+    paragraph(body, "Original AI guidance.", `${GUIDANCE_LABEL[row.guidance_review.raw_guidance] || "No answer"} · confidence ${confidenceText(row.guidance_review.raw_confidence)}. Corrections carry no replacement confidence.`);
   }
-  panel.appendChild(meters);
-  const delta = el("p", `jev-delta ${guidanceDeltaClass(jev.guidance)}`, guidanceDeltaText(release));
-  panel.appendChild(delta);
-  return panel;
+  paragraph(body, "Guidance answer.", `${GUIDANCE_LABEL[ai.guidance] || "No answer"} · confidence ${confidenceText(ai.guidance_confidence)}${row.guidance_review ? " · reviewed" : " · Jev (AI)"}.`);
+  const lines = evidence.change_lines || [];
+  const delta = el("section", "jev-delta");
+  delta.appendChild(el("h3", null, "Delta · source language"));
+  if (lines.length) lines.forEach(line => delta.appendChild(el("blockquote", null, line)));
+  else delta.appendChild(el("p", null, "No explicit change sentence was extracted. No numeric delta has been inferred."));
+  body.appendChild(delta);
+  paragraph(body, "Operating answer.", `${SETUP_LABEL[ai.setup] || "No answer"} · confidence ${confidenceText(ai.setup_confidence)}. This is separate from the guidance comparison.`);
+  const results = (evidence.current || []).find(p => p.section === "results");
+  const operations = el("details", "jev-evidence-fold"); operations.appendChild(el("summary", null, "Operating evidence · original input"));
+  operations.appendChild(el("blockquote", null, results ? results.text : "No separate operating passage was extracted. The release opening is retained below."));
+  if (results && results.truncated) operations.appendChild(el("p", "jev-pass-meta", "This passage was shortened in the model input."));
+  body.appendChild(operations);
+  body.appendChild(comparisonPanel(row, evidence.current || [], evidence.previous || [], "Guidance passages · original AI input"));
+  if (row.guidance_review) {
+    const reviewed = el("details", "jev-evidence-fold"); reviewed.appendChild(el("summary", null, "Passages used by the later guidance review"));
+    reviewed.appendChild(comparisonPanel(row, evidence.reviewed_current || [], evidence.reviewed_previous || [], "Later extraction · separate from what Jev read"));
+    body.appendChild(reviewed);
+  }
+  const original = el("details", "jev-evidence-fold"); original.appendChild(el("summary", null, "Release opening supplied to Jev")); original.appendChild(el("blockquote", null, evidence.lead || "Unavailable")); body.appendChild(original);
+  const source = filingLink((row.quote || {}).source); if (source) body.appendChild(source);
+  if (row.filing_source && row.filing_source !== (row.quote || {}).source) { const filing = filingLink(row.filing_source); if (filing) body.appendChild(filing); }
+  const context = el("aside", "jev-context"); context.appendChild(el("h3", null, "Realized context"));
+  const dataDate = jevState.index.outcome_data_as_of || "not recorded";
+  paragraph(context, "Versus QQQ.", `3 sessions: ${outcomeValue(row, "3d").text}. Later 21 sessions: ${outcomeValue(row, "21d").text}. Return data through ${dataDate}.`);
+  const reaction = outcomeValue(row, "3d").result;
+  if (reaction && reaction.window) paragraph(context, "Reaction dates.", reaction.window.join(" → "));
+  paragraph(context, "Arithmetic checks.", row.floor ? "Passes all three checks. This does not validate the AI read." : (row.floor_reasons || ["Unavailable"]).join("; "));
+  if ((row.related_filings || []).length) {
+    const related = el("details", "jev-evidence-fold"); related.appendChild(el("summary", null, "Other saved filings for this company"));
+    row.related_filings.forEach(filing => { const link = filingLink(filing.source, `${filing.filed} · ${filing.event_id}`); if (link) related.appendChild(link); });
+    context.appendChild(related);
+  }
+  body.appendChild(context);
+  return body;
 }
-
-function quoteFold(label, text, previous) {
-  const fold = el("details", "jev-quote-fold");
-  fold.appendChild(el("summary", null, label));
-  fold.appendChild(el("blockquote", previous ? "jev-quote previous" : "jev-quote", text || "No text could be extracted."));
-  return fold;
-}
-
-function quoteBlock(release) {
-  const quote = release.quote || {};
-  const previous = release.previous || {};
-  const hasPreviousText = Boolean(previous.text);
-  const box = el("div", hasPreviousText ? "jev-compare" : "jev-compare single");
-
-  const current = el("div", "jev-compare-col");
-  current.appendChild(el("p", "jev-compare-head", `This release · ${release.filed || "—"}`));
-  current.appendChild(el("p", "jev-compare-sub", `${QUOTE_LABEL[quote.section] || "Passage"} · verify against the filing`));
-  current.appendChild(quoteFold(
-    `Verbatim${quote.truncated ? ", shortened" : ""}`,
-    quote.text,
-    false,
-  ));
-  const currentActions = el("div", "jev-actions");
-  const currentLink = secButton(quote.source, "This release on SEC.gov");
-  if (currentLink) currentActions.appendChild(currentLink);
-  current.appendChild(currentActions);
-  box.appendChild(current);
-
-  const prior = el("div", "jev-compare-col previous");
-  const priorDate = previous.published_at || "—";
-  prior.appendChild(el("p", "jev-compare-head", `Previous release · ${priorDate}`));
-  if (hasPreviousText) {
-    prior.appendChild(el("p", "jev-compare-sub", "Guidance passage Jev compared against"));
-    prior.appendChild(quoteFold(
-      `Verbatim${previous.truncated ? ", shortened" : ""}`,
-      previous.text,
-      true,
-    ));
-    const priorActions = el("div", "jev-actions");
-    const priorLink = secButton(previous.source, "Previous release on SEC.gov");
-    if (priorLink) priorActions.appendChild(priorLink);
-    prior.appendChild(priorActions);
-  } else {
-    prior.appendChild(el("p", "jev-compare-sub", previous.reason || "No previous guidance passage."));
-  }
-  box.appendChild(prior);
-
-  const wrap = el("div", "jev-quotes");
-  wrap.appendChild(box);
-  const periods = release.periods || {};
-  if ((periods.current || []).length || (periods.previous || []).length) {
-    wrap.appendChild(el("p", "jev-periods",
-      `Periods named by Python: this release ${(periods.current || []).join(", ") || "none found"}; previous ${(periods.previous || []).join(", ") || "none found"}.`));
-  }
-  return wrap;
-}
-
-function floorMeta(release) {
-  const meta = el("p", release.floor ? "jev-meta jev-floor-ok" : "jev-meta jev-floor-fail",
-    `Filed ${release.filed} · ${floorText(release)}`);
-  return meta;
-}
-
-function card(release, overlay, late, later) {
-  const details = el("details", "jev-card");
-  const summary = el("summary", "jev-card-summary");
-  const top = el("div", "jev-card-top");
-  if (release.ticker && globalThis.TLWatch) top.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
-  if (release.shortlist_rank) top.appendChild(el("span", "jev-sl-rank", `SL ${release.shortlist_rank}`));
-  if (release.short_list_position) top.appendChild(el("span", "jev-card-rank", String(release.short_list_position)));
-  top.appendChild(el("strong", "jev-ticker", release.ticker || ""));
-  if (release.tier) top.appendChild(el("span", `jev-tier tier-${release.tier}`, `Tier ${release.tier}`));
-  summary.appendChild(top);
-  summary.appendChild(el("span", "jev-card-company", release.company || ""));
-  const signals = el("div", "jev-card-signals");
-  signals.appendChild(reactionChip(release, overlay, late));
-  signals.appendChild(laterReturnChip(release, later));
-  summary.appendChild(signals);
-  summary.appendChild(el("span", "jev-card-meta", `Filed ${release.filed}`));
-  summary.appendChild(el("span", "jev-card-hint", "Open for Jev read and SEC passages"));
-  details.appendChild(summary);
-  const body = el("div", "jev-card-body");
-  if (release.tier) {
-    body.appendChild(el("p", "jev-card-tier-note", TIER_LABEL[release.tier] || ""));
-  }
-  body.appendChild(floorMeta(release));
-  body.appendChild(answersPanel(release));
-  body.appendChild(quoteBlock(release));
-  details.appendChild(body);
+function companyRow(row) {
+  const details = el("details", "jev-row"); details.dataset.ticker = row.ticker;
+  const summary = el("summary", "jev-row-summary");
+  const company = el("span", "jev-company"); company.appendChild(el("strong", null, row.ticker)); company.appendChild(el("span", null, row.company)); summary.appendChild(company);
+  summary.appendChild(el("span", `jev-suggestion${row.suggestion.group === "Other suggestions" ? " other" : ""}`, row.suggestion.label));
+  const conf = el("span", "jev-number", confidenceText(row.suggestion.confidence)); conf.setAttribute("aria-label", `Model confidence ${confidenceText(row.suggestion.confidence)}`); summary.appendChild(conf);
+  for (const key of ["3d", "21d"]) { const cell = el("span", "jev-number jev-return", outcomeValue(row, key).text); cell.setAttribute("aria-label", `${key === "3d" ? "3 sessions" : "21 sessions"} versus QQQ ${cell.textContent}`); summary.appendChild(cell); }
+  summary.appendChild(el("span", "jev-filed", row.filed)); details.appendChild(summary);
+  // Expand only requested evidence. Each row keeps independent native disclosure state.
+  details.addEventListener("toggle", () => { if (details.open && !details.dataset.loaded) { details.appendChild(expandedRow(row)); details.dataset.loaded = "true"; } });
   return details;
 }
-
-function row(release, overlay, late, later) {
-  const details = el("details", "jev-row");
-  const summary = el("summary");
-  if (release.ticker && globalThis.TLWatch) summary.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
-  if (release.shortlist_rank) summary.appendChild(el("span", "jev-sl-rank", `SL ${release.shortlist_rank}`));
-  summary.appendChild(el("strong", "jev-ticker", release.ticker || ""));
-  summary.appendChild(el("span", "jev-company", release.company || ""));
-  summary.appendChild(el("span", "jev-row-meta",
-    `${release.filed} · operations: ${setupLabel((release.jev || {}).setup)}${release.floor ? "" : " · fails the floor"}`));
-  const signals = el("div", "jev-card-signals");
-  signals.appendChild(reactionChip(release, overlay, late));
-  signals.appendChild(laterReturnChip(release, later));
-  summary.appendChild(signals);
-  details.appendChild(summary);
-  details.appendChild(answersPanel(release));
-  details.appendChild(floorMeta(release));
-  details.appendChild(quoteBlock(release));
-  return details;
+function rowList(rows, empty) {
+  const list = el("div", "jev-rows");
+  if (!rows.length) { list.appendChild(el("p", "jev-empty", empty)); return list; }
+  const head = el("div", "jev-row-head"); head.setAttribute("aria-hidden", "true");
+  ["Company", "Suggestion", "Confidence", "3 sessions / QQQ", "21 sessions / QQQ", "Filed"].forEach(text => head.appendChild(el("span", null, text))); list.appendChild(head);
+  rows.forEach(row => list.appendChild(companyRow(row))); return list;
 }
-
-function renderFunnel(counts) {
-  const list = document.getElementById("jev-funnel");
-  if (!list) return;
-  list.replaceChildren();
-  const steps = counts.research_shortlist != null ? [
-    [counts.research_shortlist, "Research Shortlist"],
-    [counts.with_latest_release || counts.earnings_releases, "latest earnings releases"],
-    [counts.read_by_jev, "read by Jev"],
-    [counts.passed_floor, "pass the floor"],
-    [counts.short_list, "reading queue"],
-  ] : [
-    [counts.eightk_checked, "8-K filings checked"],
-    [counts.earnings_releases, "earnings releases"],
-    [counts.in_screener_universe, `in the screener universe (${counts.smaller_companies_not_shown} smaller companies read, not shown)`],
-    [counts.read_by_jev, "read by Jev"],
-    [counts.passed_floor, "pass the floor"],
-    [counts.short_list, "on the short list"],
-  ];
-  steps.forEach(([value, label], i) => {
-    const item = el("li");
-    item.appendChild(el("span", "k", String(i + 1).padStart(2, "0")));
-    item.appendChild(el("strong", null, value == null ? "—" : Number(value).toLocaleString("en-US")));
-    item.appendChild(el("span", null, label));
-    list.appendChild(item);
-  });
+function renderBook() {
+  const book = jevState.book; const parts = partitionBook(book, jevState.filters);
+  document.getElementById("jev-new").replaceChildren(rowList(parts.newRows, jevState.filters.query ? "No new earnings reads match this search." : "No confirmed new earnings reads in this filing window."));
+  const still = document.getElementById("jev-still"); still.replaceChildren();
+  parts.groups.forEach(([label, rows]) => { const group = el("section", "jev-group"); group.appendChild(el("h3", null, `${label} · ${rows.length}`)); group.appendChild(rowList(rows)); still.appendChild(group); });
+  if (!parts.groups.length) still.appendChild(el("p", "jev-empty", "No suggestions in these groups for the selected view."));
+  document.getElementById("jev-other").replaceChildren(rowList(parts.other, "No other suggestions match this view."));
+  document.getElementById("jev-still-section").hidden = jevState.filters.newOnly;
+  document.getElementById("jev-other-section").hidden = jevState.filters.newOnly;
+  document.getElementById("jev-all-count").textContent = `${parts.shown} of ${book.counts.companies} companies shown`;
 }
-
-function renderShortList() {
-  const box = document.getElementById("jev-short");
-  if (!box) return;
-  box.replaceChildren();
-  const overlay = (jevState.index.reactions_3d_qqq || {})[jevState.weekId]
-    || (jevState.index.reactions_3d_qqq || {})[jevState.week.as_of] || {};
-  const late = (jevState.index.late_reactions || {})[jevState.weekId]
-    || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
-  const later = (jevState.index.later_returns_1m_qqq || {})[jevState.weekId]
-    || (jevState.index.later_returns_1m_qqq || {})[jevState.week.as_of] || {};
-  const rows = shortListOf(jevState.week.releases);
-  if (!rows.length) {
-    box.appendChild(el("p", "insights-note", "No release made the short list this week."));
-    return;
-  }
-  rows.forEach((release) => box.appendChild(card(release, overlay, late, later)));
-}
-
-function renderAll() {
-  const box = document.getElementById("jev-all");
-  const count = document.getElementById("jev-all-count");
-  if (!box) return;
-  box.replaceChildren();
-  const overlay = (jevState.index.reactions_3d_qqq || {})[jevState.weekId]
-    || (jevState.index.reactions_3d_qqq || {})[jevState.week.as_of] || {};
-  const late = (jevState.index.late_reactions || {})[jevState.weekId]
-    || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
-  const later = (jevState.index.later_returns_1m_qqq || {})[jevState.weekId]
-    || (jevState.index.later_returns_1m_qqq || {})[jevState.week.as_of] || {};
-  const rows = filterReleases(jevState.week.releases, jevState.filters);
-  if (count) count.textContent = `${rows.length} of ${(jevState.week.releases || []).length} releases shown`;
-  groupByGuidance(rows).forEach(([key, members]) => {
-    const group = el("section", "jev-group");
-    group.appendChild(el("h3", null, `${key === "other" ? "Other" : guidanceLabel(key)} (${members.length})`));
-    members.forEach((release) => group.appendChild(row(release, overlay, late, later)));
-    box.appendChild(group);
-  });
-}
-
-function renderTrack() {
-  const list = document.getElementById("jev-evidence");
-  if (list) {
-    list.replaceChildren();
-    evidenceSentences(jevState.index.backtest).forEach((text) => list.appendChild(el("li", null, text)));
-  }
-  const table = document.getElementById("jev-tracking");
-  const note = document.getElementById("jev-tracking-note");
-  if (!table) return;
-  table.replaceChildren();
-  const head = el("tr");
-  trackingHeader(jevState.index).forEach((label) => head.appendChild(el("th", null, label)));
-  const thead = el("thead");
-  thead.appendChild(head);
-  table.appendChild(thead);
-  const body = el("tbody");
-  trackingRows(jevState.index).forEach((r) => {
-    const line = el("tr");
-    [r.week, r.group, String(r.releases), ...r.values.map((v) => (v == null ? "not yet" : signedPct(v)))]
-      .forEach((text) => line.appendChild(el("td", null, text)));
-    body.appendChild(line);
-  });
-  table.appendChild(body);
-  if (note) {
-    note.textContent = "Tracking: mean return of each group minus QQQ, from the first session after the week's Friday. "
-      + "These are realized outcomes, not a Jev forecast. "
-      + "Tracking retains the originally published short list when guidance is corrected later. "
-      + "\"Not yet\" means that much time has not passed. One week is noise; judge only after many weeks.";
-  }
-}
-
 function renderWeek() {
-  const week = jevState.week;
-  const chip = document.getElementById("jev-week-chip");
-  const aside = document.getElementById("aside-week");
-  const rule = document.getElementById("jev-universe-rule");
-  const banner = document.getElementById("jev-banner");
-  if (chip) chip.textContent = `Week ending ${week.as_of}`;
-  if (aside) aside.textContent = week.as_of;
-  if (rule && week.universe_rule) rule.textContent = week.universe_rule;
-  const message = [weekBanner(week, jevState.release, jevState.index.latest), week.review && week.review.note].filter(Boolean).join(" ");
-  if (banner) {
-    banner.textContent = message || "";
-    banner.hidden = !message;
-  }
-  renderFunnel(week.counts || {});
-  renderShortList();
-  renderAll();
-  renderTrack();
+  const book = jevState.book, counts = book.counts;
+  document.getElementById("jev-week-chip").textContent = `Data as of ${book.as_of}`;
+  document.getElementById("aside-week").textContent = book.as_of;
+  const summary = document.getElementById("jev-summary"); summary.replaceChildren();
+  [[counts.new, "New since Friday"], [counts.companies - counts.new - counts.source_needs_review, "Earlier earnings reads"], [counts.source_needs_review, "Sources needing review"]].forEach(([value, label]) => { const item = el("div"); item.appendChild(el("dt", null, label)); item.appendChild(el("dd", null, String(value))); summary.appendChild(item); });
+  document.getElementById("jev-book-note").textContent = `${counts.companies} Research Shortlist companies. Only an earnings filing after ${book.previous_friday} and through ${book.as_of} is new. Earlier reads remain on the book; source gaps remain visible.`;
+  document.getElementById("jev-new-note").textContent = `Earnings filings after Friday ${book.previous_friday}, through ${book.as_of}. A week with zero or two stays that short.`;
+  const banner = document.getElementById("jev-banner"), message = weekBanner(book, jevState.release, jevState.index.latest);
+  banner.textContent = message || ""; banner.hidden = !message;
+  const evidence = document.getElementById("jev-evidence"); evidence.replaceChildren(); evidenceSentences(jevState.index.backtest).forEach(text => evidence.appendChild(el("li", null, text)));
+  renderBook();
 }
-
-function loadWeek(id) {
-  const entry = (jevState.index.weeks || []).find((w) => weekId(w) === id || w.as_of === id);
-  if (!entry) return Promise.reject(new Error(`no published week ${id}`));
-  return fetch(`./${entry.file}`, { cache: "no-store" }).then((r) => r.json()).then((week) => {
-    if (week.schema !== WEEK_SCHEMA) throw new Error(`week file schema is not ${WEEK_SCHEMA}`);
-    if (week.as_of !== entry.as_of) throw new Error("week file does not match the index");
-    jevState.weekId = weekId(entry);
-    jevState.week = applyGuidanceReview(week, jevState.index.guidance_reviews, jevState.weekId);
-    renderWeek();
-  });
+async function loadWeek(id) {
+  const serial = ++jevState.loadId;
+  const entry = jevState.index.weeks.find(w => weekId(w) === id);
+  if (!entry) throw new Error("Unknown snapshot.");
+  // A book is required. Never relabel a legacy filing-window cohort as the top 50.
+  const book = validateBook((jevState.index.suggestion_books || {})[id], entry);
+  if (serial !== jevState.loadId) return;
+  jevState.weekId = id; jevState.book = book;
+  renderWeek(); document.getElementById("jev-status").hidden = true;
 }
-
-function applyGuidanceReview(week, reviews, id) {
-  const key = id || week.as_of;
-  const reviewed = reviews && (reviews[key] || (key === week.as_of ? reviews[week.as_of] : null));
-  if (!reviewed) return week;
-  const sameEvents = JSON.stringify((reviewed.releases || []).map((r) => r.event_id).sort())
-    === JSON.stringify((week.releases || []).map((r) => r.event_id).sort());
-  if (reviewed.schema !== WEEK_SCHEMA || reviewed.as_of !== week.as_of || !sameEvents) {
-    return week;
-  }
-  return reviewed;
-}
-
 function showError(error) {
-  const status = document.getElementById("jev-status");
-  if (status) {
-    status.hidden = false;
-    status.textContent = (error && error.message) || "Jev reads are unavailable.";
-  }
+  jevState.book = null; jevState.weekId = null;
+  const status = document.getElementById("jev-status"); status.hidden = false; status.textContent = error.message || "Jev reads are unavailable.";
+  for (const id of ["jev-new", "jev-still", "jev-other", "jev-summary", "jev-evidence"]) document.getElementById(id).replaceChildren();
+  document.getElementById("jev-book-note").textContent = "The selected suggestion book could not be verified.";
+  document.getElementById("jev-all-count").textContent = "";
+  document.getElementById("jev-week-chip").textContent = "Unavailable";
+  document.getElementById("aside-week").textContent = "Unavailable";
+  document.getElementById("jev-new-note").textContent = "";
+  document.getElementById("jev-banner").hidden = true;
 }
-
-function bindJev() {
-  const query = document.getElementById("jev-query");
-  const floorOnly = document.getElementById("jev-floor-only");
-  const pick = document.getElementById("jev-week");
-  if (query) query.addEventListener("input", () => { jevState.filters.query = query.value; renderAll(); });
-  if (floorOnly) floorOnly.addEventListener("change", () => { jevState.filters.floorOnly = floorOnly.checked; renderAll(); });
-  if (pick) pick.addEventListener("change", () => { loadWeek(pick.value).catch(showError); });
-}
-
-function startJevReads() {
-  bindJev();
-  Promise.all([
-    fetch("./jev-reads.json", { cache: "no-store" }).then((r) => r.json()),
-    fetch("./release.json", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
-  ]).then(([index, release]) => {
-    if (index.schema !== INDEX_SCHEMA) throw new Error(`index schema is not ${INDEX_SCHEMA}`);
-    if (!index.latest || !(index.weeks || []).length) throw new Error("No week has been published yet.");
-    jevState.index = index;
-    jevState.release = release;
-    const pick = document.getElementById("jev-week");
-    if (pick) {
-      index.weeks.forEach((w) => {
-        const option = el("option", null, weekLabel(w));
-        option.value = weekId(w);
-        pick.appendChild(option);
-      });
-      const latestEntry = index.weeks.find((w) => w.as_of === index.latest) || index.weeks[0];
-      pick.value = weekId(latestEntry);
-    }
-    const latestEntry = index.weeks.find((w) => w.as_of === index.latest) || index.weeks[0];
-    return loadWeek(weekId(latestEntry));
-  }).then(() => {
-    const status = document.getElementById("jev-status");
-    if (status) status.hidden = true;
-  }).catch(showError);
+async function fetchJson(path) { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error(`Could not load ${path} (HTTP ${response.status}).`); return response.json(); }
+async function startJevReads() {
+  document.getElementById("jev-query").addEventListener("input", event => { jevState.filters.query = event.target.value; if (jevState.book) renderBook(); });
+  document.getElementById("jev-new-only").addEventListener("change", event => { jevState.filters.newOnly = event.target.checked; if (jevState.book) renderBook(); });
+  document.getElementById("jev-week").addEventListener("change", event => loadWeek(event.target.value).catch(showError));
+  try {
+    const [index, release] = await Promise.all([fetchJson("./jev-reads.json"), fetchJson("./release.json").catch(() => null)]);
+    if (index.schema !== INDEX_SCHEMA) throw new Error("Unsupported Jev index.");
+    jevState.index = index; jevState.release = release;
+    const entries = (index.weeks || []).filter(entry => entry.source === "research_shortlist" && (index.suggestion_books || {})[weekId(entry)]);
+    if (!entries.length) throw new Error("No verified Research Shortlist book has been exported yet.");
+    const pick = document.getElementById("jev-week"); pick.replaceChildren();
+    entries.forEach(entry => { const option = el("option", null, `Research Shortlist · ${entry.as_of}`); option.value = weekId(entry); pick.appendChild(option); });
+    pick.value = weekId(entries[0]); await loadWeek(pick.value);
+  } catch (error) { showError(error); }
 }
 
 startJevReads();
