@@ -35,24 +35,16 @@ hide the estimates. See `pipeline/docs/outlook-12m.md` in the product
 repository for methodology, limitations, dependencies and verification.
 
 Analyst ratings is a third page, `analyst-ratings.html`, listed in the sidebar
-after Market mood. It filters Yahoo's five current-month rating counts for the
-names appearing on at least two published screens, so it is a cross-screen
-shortlist, distinct from the Conviction rank across the liquid universe. Screen-overlap
-pills filter between all cross-screen names, the three-screen core, and each
-two-screen pair. The 8-column table links each ticker to `ticker.html`, shows screen membership
-chips, a 5-segment Ratings mix bar with counts, Buy share (Strong Buy plus Buy
-over all five categories), 1m mix Δ (this month minus last month in percentage
-points, with prior-to-current analyst counts when coverage changed), 30-day
-current-year (`0y`) EPS revision counts joined from `desk.json`, a visual
-Close-versus-Target low–median–high range gauge (flagging closes below low or
-above high), and Implied upside with Target range. Target median and implied
-upside use the freeze Friday close, not Yahoo’s live price. Counts and targets
-are dated by retrieval because Yahoo's summary carries no per-report publication
-dates, and a name whose summary is missing is excluded rather than counted as
-zero votes. The view refuses to render unless `market-mood.json`, `desk.json`,
-and `release.json` agree on the same run, and unless its coverage reconciles
-with the cross-screen count. Unavailable values display n/a and sort last in
-either direction.
+after Market mood. It reads only `analyst-ratings.json` (built by
+`tools/build_analyst_ratings.py` from the weekly Yahoo analyst capture) and refuses a
+file from another release. Every company on the published Hot tape, Growth or Cheap
+list is on it, with the Shortlist marked; list buttons narrow it to one list. Summary
+tiles, a by-list table of medians and this month's movers follow the filters. The
+table shows list ranks, Yahoo's five-category rating mix, Buy share, the change in the
+mix against last month, current-year EPS revisions over 30 days, and the Friday close
+against the low–median–high targets with implied upside. The default order is list
+rank, never analyst opinion. Counts and targets are dated by retrieval, not by when
+analysts published them.
 
 Insights is a fourth page, `insights.html` (with `ownership.js` and
 `ownership.css`). It reads only `ownership-signals.json` (Ownership Signals):
@@ -164,20 +156,19 @@ date slider and pointer inspection show saved index observations. Stock returns
 come from frozen company factors; index paths come from the saved benchmark
 prices. Sector medians use individual stock returns and the same `sectors.js`
 industry map as Research and Analyst ratings. Missing daily prices remain gaps;
-missing observations are never filled. Cboe VIX and cross-screen changes sit
-in a compact summary below the page heading, visible in both Market desk and
-Lists. This weekly context stays above the return-window controls. VIX is
-non-directional and does not rank individual stocks.
+missing observations are never filled. Cboe VIX and the Shortlist line (its size,
+names on all three lists, and how many were kept since the last month-end freeze)
+sit in a compact summary below the page heading, above the return-window controls.
+VIX is non-directional and does not rank individual stocks.
 
-**Lists** opens with the distinct union and overlap counts, plus entries, exits
-and net change since the prior Friday. Names on all three screens form the
-shared core; the two-screen table shows membership in three aligned columns.
-Pair filters and ticker/company search work together, with 12 names initially
-and Show more for the rest. Stars save names; ticker links open the saved company
-page. Conviction's first ten sit in a separate analyst panel (beside the overlap
-on wide screens). Its score is not a probability and does not enter the overlap.
-The calendar and tape context stay inside Market desk, so Lists begins immediately
-below the tab selector. Growth and Cheap ranks stay on the Screener.
+**List check** (the second tab, `list-check.js`) describes this week's Hot tape,
+Growth, Cheap and Shortlist before the month-end decision, from `list-check.json`
+(built by `tools/build_list_check.py`; a file from another release is refused):
+each list's sector mix against the eligible universe, the three tested trend rules at
+the last month-end close, membership kept, new and dropped since the last month-end
+freeze (with a flag when a list's method changed), how many names report up to and
+right after the month-end snapshot (Yahoo's calendar), and what the forward tests have
+recorded. Descriptions, not forecasts; the names and scores stay on Research.
 
 This is a static snapshot of the research desk. It does not run the Python product, download prices, or save ideas.
 
