@@ -81,12 +81,12 @@ filed. Values are set as text and links go only to sec.gov or this site. See
 the product's `docs/ownership-signals-v1.md` for methodology and limits.
 
 Jev reads is the fifth page, `jev-reads.html`, after Insights in the sidebar.
-It shows one published week of earnings releases (SEC 8-K Item 2.02) from companies in the
-screener universe, each read by Jev, an AI model, with a short verbatim quote, the SEC link, the
-3-day reaction versus SPY and the Python floor. Smaller companies are read but only counted.
+It shows Jev's read of the latest earnings release (SEC 8-K Item 2.02) for each company on that
+week's Research Shortlist, with a short verbatim quote, the SEC link, the 3-day reaction versus
+SPY and the Python floor. Older weeks that scanned that week's new filings stay on file.
 Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test) and
-`jev-reads/<Friday>.json` (one file per week, never rewritten), written by
-`python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
+`jev-reads/<Friday>.json` or `jev-reads/shortlist-<Friday>.json` (one file per week, never rewritten),
+written by `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 
 The Research table has an F-Score column on every view (`fscore.css`, data `fscore.json`, written by
 `tools/build_fscore.py` in the weekly job): Piotroski's nine financial-health checks from the latest

@@ -1,6 +1,7 @@
-// Jev reads: one published week of earnings releases read by Jev (AI), with the track record.
-// Data: jev-reads.json (index) and jev-reads/<Friday>.json (one frozen file per week), built by
-// `python -m jev.public_page`. Every value is written with textContent; links go to sec.gov only.
+// Jev reads: Research Shortlist companies' latest earnings, read by Jev (AI), with the track record.
+// Data: jev-reads.json (index) and jev-reads/<Friday>.json or jev-reads/shortlist-<Friday>.json
+// (one frozen file per week), built by `python -m jev.public_page`. Every value is written with
+// textContent; links go to sec.gov only.
 
 const INDEX_SCHEMA = "jev-reads-index-1";
 const WEEK_SCHEMA = "jev-reads-week-1";
@@ -31,7 +32,17 @@ const QUOTE_LABEL = {
   opening: "Opening of the release (no guidance or results section found)",
 };
 
-const jevState = { index: null, release: null, week: null, filters: { query: "", floorOnly: false } };
+const jevState = { index: null, release: null, week: null, weekId: null, filters: { query: "", floorOnly: false } };
+
+function weekId(entry) {
+  return (entry && (entry.id || (entry.source === "research_shortlist" ? `shortlist-${entry.as_of}` : entry.as_of))) || "";
+}
+
+function weekLabel(entry) {
+  const asOf = entry && entry.as_of ? entry.as_of : "";
+  if (entry && entry.source === "research_shortlist") return `Research Shortlist · week ending ${asOf}`;
+  return `This week's filings · week ending ${asOf}`;
+}
 
 function signedPct(fraction, digits = 1) {
   if (fraction == null || Number.isNaN(Number(fraction))) return "n/a";
@@ -328,6 +339,7 @@ function card(release, late) {
   const summary = el("summary", "jev-card-summary");
   const top = el("div", "jev-card-top");
   if (release.ticker && globalThis.TLWatch) top.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
+  if (release.shortlist_rank) top.appendChild(el("span", "jev-sl-rank", `SL ${release.shortlist_rank}`));
   if (release.short_list_position) top.appendChild(el("span", "jev-card-rank", String(release.short_list_position)));
   top.appendChild(el("strong", "jev-ticker", release.ticker || ""));
   if (release.tier) top.appendChild(el("span", `jev-tier tier-${release.tier}`, `Tier ${release.tier}`));
@@ -354,6 +366,7 @@ function row(release, late) {
   const details = el("details", "jev-row");
   const summary = el("summary");
   if (release.ticker && globalThis.TLWatch) summary.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
+  if (release.shortlist_rank) summary.appendChild(el("span", "jev-sl-rank", `SL ${release.shortlist_rank}`));
   summary.appendChild(el("strong", "jev-ticker", release.ticker || ""));
   summary.appendChild(el("span", "jev-company", release.company || ""));
   summary.appendChild(el("span", "jev-row-meta",
@@ -370,7 +383,13 @@ function renderFunnel(counts) {
   const list = document.getElementById("jev-funnel");
   if (!list) return;
   list.replaceChildren();
-  const steps = [
+  const steps = counts.research_shortlist != null ? [
+    [counts.research_shortlist, "Research Shortlist"],
+    [counts.with_latest_release || counts.earnings_releases, "latest earnings releases"],
+    [counts.read_by_jev, "read by Jev"],
+    [counts.passed_floor, "pass the floor"],
+    [counts.short_list, "reading queue"],
+  ] : [
     [counts.eightk_checked, "8-K filings checked"],
     [counts.earnings_releases, "earnings releases"],
     [counts.in_screener_universe, `in the screener universe (${counts.smaller_companies_not_shown} smaller companies read, not shown)`],
@@ -391,7 +410,8 @@ function renderShortList() {
   const box = document.getElementById("jev-short");
   if (!box) return;
   box.replaceChildren();
-  const late = (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
+  const late = (jevState.index.late_reactions || {})[jevState.weekId]
+    || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
   const rows = shortListOf(jevState.week.releases);
   if (!rows.length) {
     box.appendChild(el("p", "insights-note", "No release made the short list this week."));
@@ -405,7 +425,8 @@ function renderAll() {
   const count = document.getElementById("jev-all-count");
   if (!box) return;
   box.replaceChildren();
-  const late = (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
+  const late = (jevState.index.late_reactions || {})[jevState.weekId]
+    || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
   const rows = filterReleases(jevState.week.releases, jevState.filters);
   if (count) count.textContent = `${rows.length} of ${(jevState.week.releases || []).length} releases shown`;
   groupByGuidance(rows).forEach(([key, members]) => {
@@ -466,19 +487,20 @@ function renderWeek() {
   renderTrack();
 }
 
-function loadWeek(asOf) {
-  const entry = (jevState.index.weeks || []).find((w) => w.as_of === asOf);
-  if (!entry) return Promise.reject(new Error(`no published week ${asOf}`));
+function loadWeek(id) {
+  const entry = (jevState.index.weeks || []).find((w) => weekId(w) === id || w.as_of === id);
+  if (!entry) return Promise.reject(new Error(`no published week ${id}`));
   return fetch(`./${entry.file}`, { cache: "no-store" }).then((r) => r.json()).then((week) => {
     if (week.schema !== WEEK_SCHEMA) throw new Error(`week file schema is not ${WEEK_SCHEMA}`);
-    if (week.as_of !== asOf) throw new Error("week file does not match the index");
-    jevState.week = applyGuidanceReview(week, jevState.index.guidance_reviews);
+    if (week.as_of !== entry.as_of) throw new Error("week file does not match the index");
+    jevState.weekId = weekId(entry);
+    jevState.week = applyGuidanceReview(week, jevState.index.guidance_reviews, jevState.weekId);
     renderWeek();
   });
 }
 
-function applyGuidanceReview(week, reviews) {
-  const reviewed = reviews && reviews[week.as_of];
+function applyGuidanceReview(week, reviews, id) {
+  const reviewed = reviews && (reviews[id] || reviews[week.as_of]);
   if (!reviewed) return week;
   if (reviewed.schema !== WEEK_SCHEMA || reviewed.as_of !== week.as_of
       || JSON.stringify(reviewed.releases.map(r => r.event_id).sort()) !== JSON.stringify(week.releases.map(r => r.event_id).sort())) {
@@ -517,13 +539,15 @@ function startJevReads() {
     const pick = document.getElementById("jev-week");
     if (pick) {
       index.weeks.forEach((w) => {
-        const option = el("option", null, `Week ending ${w.as_of}`);
-        option.value = w.as_of;
+        const option = el("option", null, weekLabel(w));
+        option.value = weekId(w);
         pick.appendChild(option);
       });
-      pick.value = index.latest;
+      const latestEntry = index.weeks.find((w) => w.as_of === index.latest) || index.weeks[0];
+      pick.value = weekId(latestEntry);
     }
-    return loadWeek(index.latest);
+    const latestEntry = index.weeks.find((w) => w.as_of === index.latest) || index.weeks[0];
+    return loadWeek(weekId(latestEntry));
   }).then(() => {
     const status = document.getElementById("jev-status");
     if (status) status.hidden = true;
