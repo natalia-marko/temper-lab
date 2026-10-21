@@ -4,28 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Temper Lab — Jev reads</title>
+    <title>Temper Lab — Earnings read by Jev</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
-    <link rel="stylesheet" href="./insights.css?v=c1656a5e2090" />
-    <link rel="stylesheet" href="./jev-reads.css?v=32abc53706a6" />
+    <link rel="stylesheet" href="./jev-reads.css?v=4ebb67703d28" />
     <link rel="stylesheet" href="./watchlist.css?v=2062a2b1f201" />
   </head>
   <body>
     <div class="desk">
       <aside id="site-sidebar" aria-label="Site menu">
         <div class="sidebar-head"><a class="brand" href="./"><span>t</span>temper<span>lab</span></a><button id="nav-close" class="nav-close" type="button" aria-label="Hide menu" aria-controls="site-sidebar" aria-expanded="true" hidden>‹</button></div>
-        <p class="aside-note">Read-only weekly snapshot. AI reads of SEC earnings releases, not advice.</p>
+        <p class="aside-note">Read-only weekly snapshot. AI reads of company earnings releases, not advice.</p>
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a href="./market-mood.html">Market mood</a>
           <a href="./">Research</a>
           <a href="./ticker.html">Ticker</a>
           <a href="./analyst-ratings.html">Analyst ratings</a>
           <a href="./insights.html">Insights</a>
-          <a class="on" href="./jev-reads.html" aria-current="page">Jev reads</a>
+          <a class="on" href="./jev-reads.html" aria-current="page">Earnings read by Jev</a>
           <a href="./watchlist.html">Watchlist<span class="tl-watch-count"></span></a>
         </nav>
-        <div class="aside-foot"><span class="dot"></span>Weekly reads<small id="aside-week">Loading…</small></div>
+        <div class="aside-foot"><span class="dot"></span>Shared snapshot<small id="aside-week">Loading…</small></div>
         <a class="aside-how" href="./how-it-works.html">How Temper Lab works</a>
       </aside>
       <button id="nav-open" class="nav-open" type="button" aria-label="Open menu" aria-controls="site-sidebar" aria-expanded="false" hidden><span aria-hidden="true">☰</span> Menu</button>
@@ -33,61 +32,75 @@
       <main id="main-content">
         <section class="heading">
           <div>
-            <div class="eyebrow">JEV READS</div>
-            <h1>Jev reads</h1>
-            <p>The Research Shortlist hands over its top 50. Jev reads each company’s latest earnings release for its own guidance and operating evidence. A book of current suggestions. Not a signal. Not a forecast.</p>
+            <div class="eyebrow">COMPANY RESULTS</div>
+            <h1>Earnings read by Jev</h1>
+            <p>What each Shortlist company said about its own outlook in its latest earnings release. Jev, an AI model, reads it; the release is quoted so you can check every read. A read of the past: not a signal, not a forecast.</p>
           </div>
           <div class="snapshot-status">
             <span id="jev-week-chip" class="week" role="status">Loading…</span>
+            <small id="jev-dates"></small>
+            <small id="jev-sources"></small>
             <label class="jev-week-pick">Week<select id="jev-week" aria-label="Published week"></select></label>
           </div>
         </section>
         <p id="jev-banner" class="jev-banner" role="status" hidden></p>
         <p id="jev-status" class="jev-status" role="status">Loading the week…</p>
 
-        <dl id="jev-summary" class="jev-summary" aria-label="The suggestion book"></dl>
-        <p id="jev-book-note" class="jev-book-note"></p>
-        <div class="jev-controls">
-          <label>Find a company<input id="jev-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
-          <label class="jev-new-filter"><input id="jev-new-only" type="checkbox" /> New only</label>
-          <p id="jev-all-count" role="status"></p>
-        </div>
+        <div id="jev-tiles" class="jev-tiles" aria-label="This week in numbers"></div>
 
-        <section class="jev-section" aria-labelledby="jev-new-title">
-          <div class="jev-section-head"><h2 id="jev-new-title">New since Friday</h2><p id="jev-new-note">Only earnings filings dated after the previous Friday. Nothing is added to fill the space.</p></div>
-          <div id="jev-new"></div>
-        </section>
-        <section id="jev-still-section" class="jev-section" aria-labelledby="jev-still-title">
-          <div class="jev-section-head"><h2 id="jev-still-title">Still the suggestion</h2><p>The latest earnings release still stands. Grouped by suggestion, then model confidence. Open a name when you want it.</p></div>
-          <div id="jev-still"></div>
-        </section>
-        <section id="jev-other-section" class="jev-section" aria-labelledby="jev-other-title">
-          <div class="jev-section-head"><h2 id="jev-other-title">Other suggestions</h2><p>Cuts, maintained guidance, comparisons that could not be made, confidence below 0.50, and evidence that needs review. Every company stays visible.</p></div>
-          <div id="jev-other"></div>
-        </section>
-
-        <details class="jev-method surface">
-          <summary>How the book is built</summary>
-          <div class="jev-method-body">
-            <p><strong>One company, one current suggestion.</strong> The book uses the Research Shortlist for the selected Friday. July stays until a later earnings release replaces it. A newly added Shortlist name with an older release is not a new filing. Source gaps are shown explicitly.</p>
-            <p><strong>Two answers.</strong> Raised and Cut describe guidance versus the company’s own previous guidance, not against what analysts expected. Growth describes the operating setup; it does not establish a guidance raise. Both means raised guidance and a growth setup. Maintained means repeated guidance. No comparison includes new guidance without a comparable baseline, withheld guidance, and unclear evidence.</p>
-            <p><strong>Confidence is the model’s own number.</strong> It is not a calibrated probability of correctness or future returns. Both uses the lower of the two confidence values. A value below 0.50 stays in Other suggestions; this is a display rule. A correction does not inherit the original answer’s confidence. Non-comparable periods stay in Other suggestions even when the operating answer describes growth.</p>
-            <p><strong>Evidence first.</strong> Delta lines are verbatim extracts, not generated explanations. The two guidance passages are shown together, with separate operating evidence and direct SEC links. Any later extraction or guidance correction is labeled separately from the input Jev originally read. Automatic checks cover selected formats; they do not certify every interpretation.</p>
-            <p><strong>Returns are realized context.</strong> Each figure is the stock’s adjusted return minus QQQ’s adjusted return in percentage points. The 3-session reaction is around the first session after the filing. The later window runs from the next session’s close for 21 session intervals. Only complete windows are shown. Prices, momentum and the arithmetic checks do not order the book.</p>
-            <p><strong>Arithmetic checks are context.</strong> Diluted share growth at most 10%, a positive operating or free-cash-flow-after-stock-pay margin, and a drawdown below 60%. Missing data is shown. These checks do not certify the guidance read or remove a company from the book.</p>
+        <section class="surface jev-list" aria-labelledby="jev-list-title">
+          <div class="jev-list-head">
+            <h2 id="jev-list-title">Every Shortlist company</h2>
+            <p>In Shortlist order. Jev’s read, its confidence, the checks and the returns never change the order. Open a company for the sentences, the passages and the SEC links.</p>
           </div>
-        </details>
-        <details class="jev-method surface">
-          <summary>What the historical test can establish</summary>
+          <div class="jev-controls">
+            <label>Find a company<input id="jev-query" type="search" placeholder="Ticker or company" autocomplete="off" /></label>
+            <button id="jev-reset" type="button">Reset</button>
+          </div>
+          <div id="jev-flags" class="jev-flags" role="group" aria-label="Show only"></div>
+          <p id="jev-count" class="jev-count" role="status"></p>
+          <div class="jev-table-wrap"><table id="jev-table" class="jev-table"></table></div>
+        </section>
+
+        <section class="surface jev-help" aria-labelledby="jev-help-title">
+          <div class="jev-list-head">
+            <h2 id="jev-help-title">Does the read help?</h2>
+            <p>The read describes a release. These are the tests of whether it says anything about returns after it.</p>
+          </div>
           <ul id="jev-evidence" class="jev-evidence"></ul>
-          <p class="jev-method-body">The legacy reading queue and its frozen tracking cohorts remain in the research record. They are a different selection rule from this suggestion book.</p>
+          <p id="jev-tracking-note" class="jev-tracking-note"></p>
+          <div class="jev-tracking-wrap"><table id="jev-tracking" class="jev-tracking" hidden></table></div>
+        </section>
+
+        <details class="surface jev-method">
+          <summary>How it works</summary>
+          <ol>
+            <li><strong>Find.</strong> Each Saturday, Python takes the Research Shortlist and each company’s latest quarterly earnings release on or before Friday. The release is checked by its content: an 8-K cover, an interim update or a personnel announcement is not taken as the earnings release.</li>
+            <li><strong>Quote.</strong> Python copies, word for word, the guidance passage (or the results when there is no guidance), the same company’s previous guidance passage, and the sentences that state a change. Passages are shortened; open the filing for the original.</li>
+            <li><strong>Read.</strong> Jev, an AI model from TypeSafe, answers two questions from those passages: what the release says about guidance against the company’s previous guidance, and what the operating evidence shows. Each answer carries Jev’s own confidence. Below 0.50 it is marked “AI unsure”; the number is not a probability of being right.</li>
+            <li><strong>Check.</strong> Python arithmetic, no AI: diluted shares up at most 10% in a year, a positive operating or free-cash-flow margin, and less than a 60% fall from the 1-year high. A missing number is marked “?” and does not pass. The checks never remove a company.</li>
+          </ol>
+          <p><strong>“Raised” means raised against the company’s own previous guidance, not against what analysts expected.</strong> A raise below expectations can still send the price down. When the two guidance passages cover different periods, a raise counts only if the release states it in a sentence.</p>
+          <p>The reaction is the stock minus QQQ, in percentage points, over the 3 sessions around the first session after the filing; the later figure covers the 21 sessions after that. Both are realized moves, not a forecast. Next results dates come from Yahoo’s calendar and can move.</p>
         </details>
-        <p class="jev-note">Jev is an AI model from TypeSafe. Its answers are generated by AI and can be wrong. Quotes are copied from SEC filings and may be shortened; tables lose their layout in plain text, so open the release for the original. Research, not advice.</p>
+
+        <p class="jev-note">Jev is an AI model from TypeSafe. Its answers are generated by AI and can be wrong. Quotes are copied from the filings and shortened; tables lose their layout in plain text, so open the release for the original. Research, not advice.</p>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
-    <script src="./watchlist.js?v=12cac3187dbf"></script>
-    <script src="./jev-reads.js?v=17e95fb1268f"></script>
+    <dialog id="jev-panel" class="jev-panel" aria-labelledby="jev-panel-title">
+      <div class="jev-panel-bar">
+        <div class="jev-step">
+          <button id="jev-prev" type="button" aria-label="Previous company">‹</button>
+          <span id="jev-step-text"></span>
+          <button id="jev-next" type="button" aria-label="Next company">›</button>
+        </div>
+        <form method="dialog"><button class="jev-close" aria-label="Close company read">✕</button></form>
+      </div>
+      <div id="jev-panel-body"></div>
+    </dialog>
+    <script src="./watchlist.js?v=85cbb096ddf1"></script>
+    <script src="./jev-reads.js?v=f8517eef9bbc"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

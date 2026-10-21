@@ -8,7 +8,7 @@
   const SYMBOL = /^[A-Z0-9][A-Z0-9.-]{0,9}$/;
   const DAY = /^\d{4}-\d{2}-\d{2}$/;
   const PAGES = { index: "Research", "market-mood": "Market mood", "analyst-ratings": "Analyst ratings",
-    insights: "Insights", "jev-reads": "Jev reads", watchlist: "Watchlist" };
+    insights: "Insights", "jev-reads": "Earnings read by Jev", watchlist: "Watchlist" };
   const page = (String(globalThis.location?.pathname || "").split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   const listeners = [];
   let stored = true; // false when the browser blocks storage: stars then last for this visit only

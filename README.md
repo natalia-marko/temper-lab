@@ -80,15 +80,15 @@ classes and implausible prices stay out of totals until checked. Names appear as
 filed. Values are set as text and links go only to sec.gov or this site. See
 the product's `docs/ownership-signals-v1.md` for methodology and limits.
 
-Jev reads is the fifth page, `jev-reads.html`, after Insights in the sidebar.
-It shows Jev's read of the latest earnings release (SEC 8-K Item 2.02) for each company on that
-week's Research Shortlist, with a short verbatim quote, the SEC link, the 3-day reaction versus
-QQQ, the 21-session return versus QQQ after that window, and the Python floor. Both return
-figures are realized tracks, not a Jev forecast. Older weeks that scanned that week's new
-filings stay on file.
-Data: `jev-reads.json` (index: weeks, 3-day and 21-session vs-QQQ overlays, tracking vs QQQ, the 2023-25 test) and
-`jev-reads/<Friday>.json` or `jev-reads/shortlist-<Friday>.json` (one file per week, never rewritten),
-written by `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
+Earnings read by Jev is the sixth page, `jev-reads.html` (file name kept), after Insights in the sidebar.
+One row per Research Shortlist company, in Shortlist order: Jev's guidance read and operations read
+as separate facts, the three arithmetic checks (pass, fail or missing), the 3-session reaction versus
+QQQ and the next results date (from `earnings-calendar.json`, with a tag when it falls before the
+month-end freeze). A side panel gives the verbatim change sentences, both guidance passages with the
+periods they name, the SEC links and the 21-session return. Returns are realized moves, not a forecast.
+Data: `jev-reads.json` (index: weeks, `suggestion_books`, 3-day and 21-session vs-QQQ overlays, tracking vs QQQ,
+the 2023-25 test) and `jev-reads/<Friday>.json` or `jev-reads/shortlist-<Friday>.json` (one file per week,
+never rewritten), written by `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 
 The Research table has an F-Score column on every view (`fscore.css`, data `fscore.json`, written by
 `tools/build_fscore.py` in the weekly job): Piotroski's nine financial-health checks from the latest
@@ -275,8 +275,8 @@ newer than Friday prices and show their own recording time. Statuses are
 experimental and have no demonstrated predictive value. Older freezes that lack
 this evidence display no invented status.
 
-## Jev suggestion book
+## Jev book (`suggestion_books`, schema `jev-suggestion-book-2`)
 
-`jev-reads.html` displays one current suggestion for every company on the selected Research Shortlist. New since Friday contains only confirmed earnings filings after the previous calendar Friday. Older suggestions remain, grouped by the AI answers and confidence; Other suggestions retains cuts, maintained or uncomparable guidance, low confidence and source gaps. Return overlays are realized QQQ context in percentage points and do not order rows.
+One row for every company on the selected Research Shortlist, shown in Shortlist order. `read` holds Jev's guidance and operations answers as separate labels, each with its confidence and an "AI unsure" flag below 0.50 (a display rule, not a calibrated accuracy). A raise read across different periods counts only when the release states the change in a sentence. `checks` gives the three arithmetic checks as pass, fail or missing. "New since" covers only confirmed earnings filings after the previous calendar Friday. `month_end_freeze` is the List check's month-end date. Nothing in the book orders the rows.
 
 `jev-reads.json.suggestion_books` is derived from saved requests and answers. Original weekly files and tracking cohorts remain immutable. Corrections and changed input provenance are labeled. A source guard can identify gaps; it does not certify every company interpretation. Sector-relative returns and sample narratives from design references are not supplied by this implementation.

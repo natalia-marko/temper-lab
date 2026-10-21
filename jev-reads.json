@@ -1,6 +1,6 @@
 {
  "schema": "jev-reads-index-1",
- "generated_at": "2026-10-21T14:43:15+00:00",
+ "generated_at": "2026-10-21T17:05:15+00:00",
  "latest": "2026-10-16",
  "weeks": [
   {
@@ -5512,7 +5512,7 @@
  },
  "suggestion_books": {
   "shortlist-2026-10-16": {
-   "schema": "jev-suggestion-book-1",
+   "schema": "jev-suggestion-book-2",
    "as_of": "2026-10-16",
    "previous_friday": "2026-10-09",
    "counts": {
@@ -5640,12 +5640,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Cut",
-      "confidence": 0.53,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Cut",
+       "confidence": 0.53,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.74,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -5770,12 +5796,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.26,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.26,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.82,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 22% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false,
      "source_repair": {
       "ticker": "BKV",
@@ -5915,12 +5967,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.73,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.96,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.73,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6039,12 +6117,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.97,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 1.0,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.97,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6168,12 +6272,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": null,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": null,
+       "unsure": false,
+       "corrected": true,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.73,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6280,12 +6410,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Maintained",
-      "confidence": 0.4,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Maintained",
+       "confidence": 0.4,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.6,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "missing",
+       "text": "Margins unknown"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6372,12 +6528,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.56,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.75,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.56,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "fail",
+       "text": "Fell 63% from its 1-year high (limit 60%)"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6499,12 +6681,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.47,
-      "group": "Other suggestions",
-      "reason": "Model confidence is below 0.50."
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.47,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.9,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6587,12 +6795,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.9,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.9,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.37,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6708,12 +6942,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.64,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.84,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.64,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 15% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "missing",
+       "text": "Margins unknown"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6832,12 +7092,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.56,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.56,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.9,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -6928,12 +7214,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.69,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.69,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": true
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.62,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7054,12 +7366,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.22,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": 0.22,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.57,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 48% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7176,12 +7514,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.47,
-      "group": "Other suggestions",
-      "reason": "Model confidence is below 0.50."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.33,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.47,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false,
      "source_repair": {
       "ticker": "EOG",
@@ -7261,12 +7625,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.79,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.94,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.79,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7388,12 +7778,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.98,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.98,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.99,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 13% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7514,12 +7930,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 1.0,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 1.0,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 1.0,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7621,12 +8063,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Maintained",
-      "confidence": 0.29,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Maintained",
+       "confidence": 0.29,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.9,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7751,12 +8219,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.87,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.87,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 1.0,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 90% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7880,12 +8374,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.88,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.88,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.99,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -7984,12 +8504,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.41,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": 0.41,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.4,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8072,12 +8618,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.87,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.9,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.87,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8193,12 +8765,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.89,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 1.0,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.89,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8318,12 +8916,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Raised",
-      "confidence": 0.92,
-      "group": "Raised",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.92,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.8,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8442,12 +9066,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.47,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.47,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.47,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8564,12 +9214,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.35,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.35,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": true
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.71,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8670,12 +9346,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Maintained",
-      "confidence": 0.39,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Maintained",
+       "confidence": 0.39,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.46,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8780,12 +9482,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.81,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.81,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": true
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.96,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -8892,12 +9620,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.95,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.26,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.95,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9015,12 +9769,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.58,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": 0.58,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.99,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9138,12 +9918,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Maintained",
-      "confidence": 0.29,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Maintained",
+       "confidence": 0.29,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.46,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9228,12 +10034,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.93,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.93,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.82,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "missing",
+       "text": "Diluted share change unknown"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9354,12 +10186,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.65,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.94,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.65,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9462,12 +10320,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.52,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": 0.52,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": true
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.7,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9552,12 +10436,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.9,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.9,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.95,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 17% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9680,12 +10590,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.99,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.18,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.99,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9806,12 +10742,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.49,
-      "group": "Other suggestions",
-      "reason": "Model confidence is below 0.50."
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.93,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.49,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9878,12 +10840,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.62,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.95,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.62,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -9989,12 +10977,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.29,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.29,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Mixed signals",
+       "confidence": 0.52,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10110,12 +11124,38 @@
        }
       }
      ],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.46,
-      "group": "Other suggestions",
-      "reason": "Model confidence is below 0.50."
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.46,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": true
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 1.0,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10187,12 +11227,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.8,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.38,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.8,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 15% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10277,12 +11343,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.39,
-      "group": "Other suggestions",
-      "reason": "Model confidence is below 0.50."
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.92,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.39,
+       "unsure": true
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "missing",
+       "text": "Margins unknown"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10405,12 +11497,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.73,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.27,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.73,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10516,12 +11634,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Maintained",
-      "confidence": 0.99,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "Maintained",
+       "confidence": 0.99,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.64,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10644,12 +11788,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.74,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.14,
+       "unsure": true,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.74,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 109% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false,
      "source_repair": {
       "ticker": "SM",
@@ -10751,12 +11921,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "No comparison",
-      "confidence": 0.99,
-      "group": "Other suggestions",
-      "reason": "Guidance was cut, maintained, withheld, or could not be compared."
+     "read": {
+      "guidance": {
+       "label": "No comparison",
+       "confidence": 0.99,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.99,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "fail",
+       "text": "Diluted shares up 11% in a year (limit 10%)"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "fail",
+       "text": "Fell 63% from its 1-year high (limit 60%)"
+      }
+     ],
      "is_new": false
     },
     {
@@ -10877,12 +12073,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.92,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.92,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.95,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -11004,12 +12226,38 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.61,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.76,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.61,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -11076,12 +12324,38 @@
       "reviewed_previous": []
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Growth",
-      "confidence": 0.59,
-      "group": "Growth",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Unclear",
+       "confidence": 0.94,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 0.59,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     },
     {
@@ -11189,15 +12463,42 @@
       ]
      },
      "related_filings": [],
-     "suggestion": {
-      "label": "Both",
-      "confidence": 0.71,
-      "group": "Both",
-      "reason": null
+     "read": {
+      "guidance": {
+       "label": "Raised",
+       "confidence": 0.71,
+       "unsure": false,
+       "corrected": false,
+       "different_periods": false
+      },
+      "operations": {
+       "label": "Growth setup",
+       "confidence": 1.0,
+       "unsure": false
+      },
+      "note": null
      },
+     "checks": [
+      {
+       "check": "dilution",
+       "state": "pass",
+       "text": "Diluted shares up at most 10% in a year"
+      },
+      {
+       "check": "margin",
+       "state": "pass",
+       "text": "A positive operating or free-cash-flow margin"
+      },
+      {
+       "check": "drawdown",
+       "state": "pass",
+       "text": "Less than a 60% fall from the 1-year high"
+      }
+     ],
      "is_new": false
     }
    ],
+   "month_end_freeze": "2026-10-30",
    "research_shortlist": {
     "run_id": "2026-10-16-3be5544cd772",
     "version": "lake-12",
