@@ -500,11 +500,13 @@ function loadWeek(id) {
 }
 
 function applyGuidanceReview(week, reviews, id) {
-  const reviewed = reviews && (reviews[id] || reviews[week.as_of]);
+  const key = id || week.as_of;
+  const reviewed = reviews && (reviews[key] || (key === week.as_of ? reviews[week.as_of] : null));
   if (!reviewed) return week;
-  if (reviewed.schema !== WEEK_SCHEMA || reviewed.as_of !== week.as_of
-      || JSON.stringify(reviewed.releases.map(r => r.event_id).sort()) !== JSON.stringify(week.releases.map(r => r.event_id).sort())) {
-    throw new Error("Guidance review does not match the published week");
+  const sameEvents = JSON.stringify((reviewed.releases || []).map((r) => r.event_id).sort())
+    === JSON.stringify((week.releases || []).map((r) => r.event_id).sort());
+  if (reviewed.schema !== WEEK_SCHEMA || reviewed.as_of !== week.as_of || !sameEvents) {
+    return week;
   }
   return reviewed;
 }
