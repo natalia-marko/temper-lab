@@ -219,7 +219,8 @@
   padding: 10px 2px; cursor: pointer; font-size: 13px;
 }
 .jev-row-meta { color: #718075; font-size: 11px; }
-.jev-row .jev-reaction-chip { margin-left: auto; }
+.jev-row .jev-card-signals { margin-left: auto; }
+.jev-row .jev-reaction-chip { margin-left: 0; }
 .jev-row[open] { padding-bottom: 12px; }
 .jev-row .jev-answers-panel { margin: 4px 0 10px; }
 .jev-row .jev-compare { margin-top: 8px; }

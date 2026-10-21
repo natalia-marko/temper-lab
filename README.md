@@ -83,8 +83,10 @@ the product's `docs/ownership-signals-v1.md` for methodology and limits.
 Jev reads is the fifth page, `jev-reads.html`, after Insights in the sidebar.
 It shows Jev's read of the latest earnings release (SEC 8-K Item 2.02) for each company on that
 week's Research Shortlist, with a short verbatim quote, the SEC link, the 3-day reaction versus
-SPY and the Python floor. Older weeks that scanned that week's new filings stay on file.
-Data: `jev-reads.json` (index: weeks, late reactions, tracking, the 2023-25 test) and
+QQQ, the 21-session return versus QQQ after that window, and the Python floor. Both return
+figures are realized tracks, not a Jev forecast. Older weeks that scanned that week's new
+filings stay on file.
+Data: `jev-reads.json` (index: weeks, 3-day and 21-session vs-QQQ overlays, tracking vs QQQ, the 2023-25 test) and
 `jev-reads/<Friday>.json` or `jev-reads/shortlist-<Friday>.json` (one file per week, never rewritten),
 written by `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
 

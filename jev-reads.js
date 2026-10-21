@@ -67,23 +67,39 @@ function secUrl(url) {
   return typeof url === "string" && url.startsWith("https://www.sec.gov/") ? url : null;
 }
 
-function reactionValue(release, late) {
-  const reaction = release.reaction || {};
-  if (reaction.status === "ready") {
-    return { status: "ready", value: reaction.excess_return_3d, late: false };
+function reactionValue(release, overlay, late) {
+  const qqq = overlay && overlay[release.event_id];
+  if (qqq && qqq.status === "ready" && qqq.excess_return_3d != null) {
+    return { status: "ready", value: qqq.excess_return_3d, late: false };
   }
   const filled = late && late[release.event_id];
-  if (filled) return { status: "ready", value: filled.excess_return_3d, late: true };
+  if (filled && filled.excess_return_3d != null) {
+    return { status: "ready", value: filled.excess_return_3d, late: true };
+  }
   return { status: "waiting", value: null, late: false };
 }
 
-function reactionText(release, late) {
-  const info = reactionValue(release, late);
+function reactionText(release, overlay, late) {
+  const info = reactionValue(release, overlay, late);
   if (info.status === "ready") {
-    const base = `3-day reaction vs SPY ${signedPct(info.value)}`;
+    const base = `3-day reaction vs QQQ ${signedPct(info.value)}`;
     return info.late ? `${base} (completed after this week was published)` : base;
   }
-  return "3-day reaction: not complete when published (filed late in the week)";
+  return "3-day reaction vs QQQ: not complete yet";
+}
+
+function laterReturnValue(release, later) {
+  const filled = later && later[release.event_id];
+  if (filled && filled.status === "ready" && filled.excess_return_1m_qqq != null) {
+    return { status: "ready", value: filled.excess_return_1m_qqq };
+  }
+  return { status: "waiting", value: null };
+}
+
+function laterReturnText(release, later) {
+  const info = laterReturnValue(release, later);
+  if (info.status === "ready") return `21 sessions vs QQQ ${signedPct(info.value)}`;
+  return "21 sessions vs QQQ: not complete yet";
 }
 
 function answersText(release) {
@@ -161,27 +177,36 @@ function evidenceSentences(record) {
   if (!record) return [];
   const up = record.reaction_after_raised || {};
   const down = record.reaction_after_lowered || {};
-  const six = record.raised_minus_rest_6m || {};
-  const twelve = record.raised_minus_rest_12m || {};
-  const split = record.market_disagreed_minus_agreed_6m || {};
+  const one = record.raised_minus_rest_1m_qqq;
   const range = (ci) => (ci ? `${signedPp(ci[0])} to ${signedPp(ci[1])}` : "n/a");
   return [
     `Past test: ${record.releases} earnings releases from ${record.period}, read by Jev with the same questions.`,
-    `On average the market agreed with Jev's guidance read over the first three days: ${signedPp(up.mean_pct)}% after "raised" (${Math.round(100 * (up.share_up || 0))}% of them rose), ${signedPp(down.mean_pct)}% after "lowered". Many single cases went the other way.`,
-    `After those three days, "raised" showed no advantage over the other releases: ${signedPp(six.difference_pp)} percentage points over 6 months (95% interval ${range(six.ci_pp)}) and ${signedPp(twelve.difference_pp)} over 12 months (${range(twelve.ci_pp)}). The test could only detect differences larger than about ${Number(six.detectable_pp).toFixed(1)} points at 6 months and ${Number(twelve.detectable_pp).toFixed(1)} at 12 months.`,
-    `Releases where the market fell despite a "raised" read showed no clear difference afterwards: ${signedPp(split.difference_pp)} points over 6 months (${range(split.ci_pp)}).`,
+    `On average the market agreed with Jev's guidance read over the first three days (a realized reaction versus QQQ, not a Jev forecast): ${signedPp(up.mean_pct)}% after "raised" (${Math.round(100 * (up.share_up || 0))}% of them rose), ${signedPp(down.mean_pct)}% after "lowered". Many single cases went the other way.`,
+    ...(one ? [`After those three days, "raised" showed no advantage over 21 sessions versus QQQ: ${signedPp(one.difference_pp)} percentage points (95% interval ${range(one.ci_pp)}).`] : []),
     record.note || "",
   ].filter(Boolean);
 }
 
+function trackingHorizons(index) {
+  const sessions = index.tracking_horizons_sessions || { "3m": 63, "6m": 126, "12m": 252 };
+  return Object.keys(sessions);
+}
+
 function trackingRows(index) {
-  const horizons = ["3m", "6m", "12m"];
+  const horizons = trackingHorizons(index);
   return (index.tracking || []).map((row) => ({
     week: row.week,
     group: row.group,
     releases: row.releases,
-    values: horizons.map((h) => row[`mean_excess_vs_universe_${h}`]),
+    values: horizons.map((h) => (
+      row[`mean_excess_vs_qqq_${h}`] == null ? row[`mean_excess_vs_universe_${h}`] : row[`mean_excess_vs_qqq_${h}`]
+    )),
   }));
+}
+
+function trackingHeader(index) {
+  const labels = { "1m": "1 month vs QQQ", "3m": "3 months vs QQQ", "6m": "6 months vs QQQ", "12m": "12 months vs QQQ" };
+  return ["Week", "Group", "Releases", ...trackingHorizons(index).map((h) => labels[h] || h)];
 }
 
 // ---------------------------------------------------------------- DOM
@@ -205,14 +230,26 @@ function secButton(url, text) {
   return node;
 }
 
-function reactionChip(release, late) {
-  const info = reactionValue(release, late);
+function reactionChip(release, overlay, late) {
+  const info = reactionValue(release, overlay, late);
   if (info.status !== "ready") {
-    return el("span", "jev-reaction-chip wait", "3-day vs SPY · pending");
+    return el("span", "jev-reaction-chip wait", "3-day vs QQQ · pending");
   }
   const tone = Number(info.value) >= 0 ? "up" : "down";
   const chip = el("span", `jev-reaction-chip ${tone}`);
-  chip.appendChild(el("span", "jev-reaction-label", info.late ? "3-day vs SPY · late" : "3-day vs SPY"));
+  chip.appendChild(el("span", "jev-reaction-label", info.late ? "3-day vs QQQ · late" : "3-day vs QQQ"));
+  chip.appendChild(document.createTextNode(signedPct(info.value)));
+  return chip;
+}
+
+function laterReturnChip(release, later) {
+  const info = laterReturnValue(release, later);
+  if (info.status !== "ready") {
+    return el("span", "jev-reaction-chip wait", "21d vs QQQ · pending");
+  }
+  const tone = Number(info.value) >= 0 ? "up" : "down";
+  const chip = el("span", `jev-reaction-chip ${tone}`);
+  chip.appendChild(el("span", "jev-reaction-label", "21d vs QQQ"));
   chip.appendChild(document.createTextNode(signedPct(info.value)));
   return chip;
 }
@@ -334,7 +371,7 @@ function floorMeta(release) {
   return meta;
 }
 
-function card(release, late) {
+function card(release, overlay, late, later) {
   const details = el("details", "jev-card");
   const summary = el("summary", "jev-card-summary");
   const top = el("div", "jev-card-top");
@@ -346,7 +383,8 @@ function card(release, late) {
   summary.appendChild(top);
   summary.appendChild(el("span", "jev-card-company", release.company || ""));
   const signals = el("div", "jev-card-signals");
-  signals.appendChild(reactionChip(release, late));
+  signals.appendChild(reactionChip(release, overlay, late));
+  signals.appendChild(laterReturnChip(release, later));
   summary.appendChild(signals);
   summary.appendChild(el("span", "jev-card-meta", `Filed ${release.filed}`));
   summary.appendChild(el("span", "jev-card-hint", "Open for Jev read and SEC passages"));
@@ -362,7 +400,7 @@ function card(release, late) {
   return details;
 }
 
-function row(release, late) {
+function row(release, overlay, late, later) {
   const details = el("details", "jev-row");
   const summary = el("summary");
   if (release.ticker && globalThis.TLWatch) summary.appendChild(globalThis.TLWatch.button(release.ticker, release.company));
@@ -371,7 +409,10 @@ function row(release, late) {
   summary.appendChild(el("span", "jev-company", release.company || ""));
   summary.appendChild(el("span", "jev-row-meta",
     `${release.filed} · operations: ${setupLabel((release.jev || {}).setup)}${release.floor ? "" : " · fails the floor"}`));
-  summary.appendChild(reactionChip(release, late));
+  const signals = el("div", "jev-card-signals");
+  signals.appendChild(reactionChip(release, overlay, late));
+  signals.appendChild(laterReturnChip(release, later));
+  summary.appendChild(signals);
   details.appendChild(summary);
   details.appendChild(answersPanel(release));
   details.appendChild(floorMeta(release));
@@ -410,14 +451,18 @@ function renderShortList() {
   const box = document.getElementById("jev-short");
   if (!box) return;
   box.replaceChildren();
+  const overlay = (jevState.index.reactions_3d_qqq || {})[jevState.weekId]
+    || (jevState.index.reactions_3d_qqq || {})[jevState.week.as_of] || {};
   const late = (jevState.index.late_reactions || {})[jevState.weekId]
     || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
+  const later = (jevState.index.later_returns_1m_qqq || {})[jevState.weekId]
+    || (jevState.index.later_returns_1m_qqq || {})[jevState.week.as_of] || {};
   const rows = shortListOf(jevState.week.releases);
   if (!rows.length) {
     box.appendChild(el("p", "insights-note", "No release made the short list this week."));
     return;
   }
-  rows.forEach((release) => box.appendChild(card(release, late)));
+  rows.forEach((release) => box.appendChild(card(release, overlay, late, later)));
 }
 
 function renderAll() {
@@ -425,14 +470,18 @@ function renderAll() {
   const count = document.getElementById("jev-all-count");
   if (!box) return;
   box.replaceChildren();
+  const overlay = (jevState.index.reactions_3d_qqq || {})[jevState.weekId]
+    || (jevState.index.reactions_3d_qqq || {})[jevState.week.as_of] || {};
   const late = (jevState.index.late_reactions || {})[jevState.weekId]
     || (jevState.index.late_reactions || {})[jevState.week.as_of] || {};
+  const later = (jevState.index.later_returns_1m_qqq || {})[jevState.weekId]
+    || (jevState.index.later_returns_1m_qqq || {})[jevState.week.as_of] || {};
   const rows = filterReleases(jevState.week.releases, jevState.filters);
   if (count) count.textContent = `${rows.length} of ${(jevState.week.releases || []).length} releases shown`;
   groupByGuidance(rows).forEach(([key, members]) => {
     const group = el("section", "jev-group");
     group.appendChild(el("h3", null, `${key === "other" ? "Other" : guidanceLabel(key)} (${members.length})`));
-    members.forEach((release) => group.appendChild(row(release, late)));
+    members.forEach((release) => group.appendChild(row(release, overlay, late, later)));
     box.appendChild(group);
   });
 }
@@ -448,7 +497,7 @@ function renderTrack() {
   if (!table) return;
   table.replaceChildren();
   const head = el("tr");
-  ["Week", "Group", "Releases", "3 months", "6 months", "12 months"].forEach((label) => head.appendChild(el("th", null, label)));
+  trackingHeader(jevState.index).forEach((label) => head.appendChild(el("th", null, label)));
   const thead = el("thead");
   thead.appendChild(head);
   table.appendChild(thead);
@@ -461,7 +510,8 @@ function renderTrack() {
   });
   table.appendChild(body);
   if (note) {
-    note.textContent = "Tracking: mean return of each group minus the average screener-universe stock, from the first session after the week's Friday. "
+    note.textContent = "Tracking: mean return of each group minus QQQ, from the first session after the week's Friday. "
+      + "These are realized outcomes, not a Jev forecast. "
       + "Tracking retains the originally published short list when guidance is corrected later. "
       + "\"Not yet\" means that much time has not passed. One week is noise; judge only after many weeks.";
   }
