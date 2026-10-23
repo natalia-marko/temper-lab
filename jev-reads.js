@@ -2,21 +2,21 @@
 // One row per company, in Shortlist order: Jev's read, its confidence, the checks and the returns never
 // order the list. Data: jev-reads.json (`suggestion_books`, built by `python -m jev.public_page`) and
 // earnings-calendar.json (next results, refreshed Tue/Fri). Every value is written as text; links go to
-// sec.gov and one verified issuer host only.
+// sec.gov and one verified issuer host only. The rows shown can be downloaded as CSV (returns as fractions).
 const INDEX_SCHEMA = "jev-reads-index-1";
-const BOOK_SCHEMA = "jev-suggestion-book-2";
+const BOOK_SCHEMA = "jev-suggestion-book-3";
 const CALENDAR_SCHEMA = "earnings-calendar-1";
 const ISSUER_HOSTS = ["investors.eogresources.com"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const TONE = { Raised: "raised", Maintained: "kept", Cut: "cut", Withheld: "cut", "No comparison": "none", Unclear: "none", "No answer": "none", "Source needs review": "review" };
-const SYMBOL = { Raised: "↑ ", Maintained: "= ", Cut: "↓ ", Withheld: "↓ " };
+const TONE = { Raised: "raised", Maintained: "kept", Lowered: "cut", Withheld: "cut", "No comparison": "none", "None or unclear": "none", "No answer": "none", "Source needs review": "review" };
+const SYMBOL = { Raised: "↑ ", Maintained: "= ", Lowered: "↓ ", Withheld: "↓ " };
 const GUIDANCE_SENTENCE = {
   Raised: "Raised its outlook against its own previous guidance.",
   Maintained: "Kept or reaffirmed its previous outlook.",
-  Cut: "Cut its outlook against its own previous guidance.",
-  Withheld: "Withheld or withdrew its outlook.",
+  Lowered: "Lowered its outlook against its own previous guidance.",
+  Withheld: "Said explicitly that it withholds or withdraws its outlook.",
   "No comparison": "Gave an outlook, but no earlier outlook for the same period could be compared.",
-  Unclear: "No outlook in the passages, or Jev could not tell.",
+  "None or unclear": "No outlook in the passages, or one too mixed or vague to call.",
   "Source needs review": "The earnings release could not be established from the saved input.",
   "No answer": "Jev gave no answer.",
 };
@@ -33,6 +33,7 @@ function day(iso, year = false) {
 }
 function daysBetween(from, to) { return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000); }
 function addDays(iso, n) { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function signedPct(value) { return typeof value === "number" && Number.isFinite(value) ? `${value >= 0 ? "+" : ""}${(100 * value).toFixed(1)}%` : null; }
 function signedPp(value) { return typeof value === "number" && Number.isFinite(value) ? `${value >= 0 ? "+" : ""}${value.toFixed(1)}` : "—"; }
 function confidenceText(value) { return typeof value === "number" && Number.isFinite(value) ? value.toFixed(2) : "—"; }
 function median(values) {
@@ -54,7 +55,7 @@ function validateBook(book, entry) {
   if (addDays(book.as_of, -7) !== book.previous_friday) throw new Error("The earnings reads have an invalid filing window.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(book.month_end_freeze || "") || book.month_end_freeze < book.as_of) throw new Error("The earnings reads have no month-end snapshot date.");
   for (const row of rows) {
-    if (!row.read || !row.read.guidance || !row.read.operations || !Array.isArray(row.checks) || row.checks.length !== 3 || !row.source_check || !/^\d{4}-\d{2}-\d{2}$/.test(row.filed) || row.filed > book.as_of) throw new Error("Invalid company evidence in the earnings reads.");
+    if (!row.read || !row.read.guidance || !Array.isArray(row.checks) || row.checks.length !== 3 || !row.source_check || !/^\d{4}-\d{2}-\d{2}$/.test(row.filed) || row.filed > book.as_of) throw new Error("Invalid company evidence in the earnings reads.");
     const isNew = row.source_check.status === "supported" && row.filed > book.previous_friday;
     if (row.is_new !== isNew) throw new Error("A new read disagrees with its filing date.");
   }
@@ -71,17 +72,16 @@ function nextResults(row, book = jevState.book, calendar = jevState.calendar) {
   if (!entry || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date || "") || entry.date <= book.as_of) return null;
   return { date: entry.date, timing: entry.timing || "", unsure: !!entry.unsure, before: entry.date <= book.month_end_freeze };
 }
-function unsure(row) { return !!(row.read.guidance.unsure || row.read.operations.unsure); }
+function unsure(row) { return !!row.read.guidance.unsure; }
 function failing(row) { return row.checks.filter(check => check.state !== "pass"); }
 function flags(book) {
   return [
-    ["new", `New since ${day(book.previous_friday)}`, row => row.is_new],
     ["raised", "Raised", row => row.read.guidance.label === "Raised"],
-    ["cut", "Cut or withheld", row => ["Cut", "Withheld"].includes(row.read.guidance.label)],
-    ["growth", "Growth setup", row => row.read.operations.label === "Growth setup"],
+    ["lowered", "Lowered or withheld", row => ["Lowered", "Withheld"].includes(row.read.guidance.label)],
     ["checks", "Checks not passed", row => failing(row).length > 0],
     ["unsure", "AI unsure", unsure],
     ["soon", `Results by ${day(book.month_end_freeze)}`, row => { const next = nextResults(row, book); return !!(next && next.before); }],
+    ["new", `New since ${day(book.previous_friday)}`, row => row.is_new],
   ];
 }
 function shortlistOrder(a, b) {
@@ -111,20 +111,20 @@ function tiles(rows, book, index, calendar) {
   const count = test => rows.filter(test).length;
   const ages = rows.map(row => daysBetween(row.filed, book.as_of));
   const label = name => count(row => row.read.guidance.label === name);
-  const rest = [["Cut", "cut"], ["Withheld", "withheld"], ["Maintained", "maintained"], ["No comparison", "no comparison"], ["Unclear", "unclear"], ["Source needs review", "source to review"]]
+  const rest = [["Lowered", "lowered"], ["Withheld", "withheld"], ["Maintained", "maintained"], ["No comparison", "no comparison"], ["None or unclear", "none or unclear"], ["Source needs review", "source to review"]]
     .map(([name, text]) => [label(name), text]).filter(([value]) => value).map(([value, text]) => `${value} ${text}`);
   const next = rows.map(row => nextResults(row, book, calendar));
   const one = index && index.backtest && index.backtest.raised_minus_rest_1m_qqq;
   const edge = one && !(one.ci_pp[0] <= 0 && one.ci_pp[1] >= 0);
   return [
-    { k: `New since ${day(book.previous_friday)}`, v: String(count(row => row.is_new)), of: n,
-      s: n ? `Releases filed ${day(addDays(book.previous_friday, 1))}–${day(book.as_of)}. The median read is ${median(ages)} days old; the oldest ${Math.max(...ages)}.` : "—" },
     { k: "Guidance raised", v: String(label("Raised")), of: n,
       s: `${rest.join(" · ") || "—"}${count(row => row.read.guidance.unsure) ? ` · AI unsure on ${count(row => row.read.guidance.unsure)}` : ""}` },
     calendar
       ? { k: `Results again by ${day(calendar.window.to)}`, v: String(next.filter(Boolean).length), of: n,
           s: `${next.filter(x => x && x.before).length} by the ${day(book.month_end_freeze)} month-end snapshot. Their read here will be replaced.` }
       : { k: "Next results", v: "—", s: "The results calendar could not be loaded." },
+    { k: "Age of the read", v: n ? String(median(ages)) : "—", unit: n ? "days, median" : null,
+      s: n ? `Oldest ${Math.max(...ages)} days. ${count(row => row.is_new)} new since ${day(book.previous_friday)} (filed ${day(addDays(book.previous_friday, 1))}–${day(book.as_of)}).` : "—" },
     { k: "Checks 3 of 3", v: String(count(row => !failing(row).length)), of: n,
       s: `${count(row => row.checks.some(c => c.state === "fail"))} fail at least one · ${count(row => !row.checks.some(c => c.state === "fail") && row.checks.some(c => c.state === "missing"))} can’t be checked (a missing number)` },
     { k: "Does the read predict?", v: one ? (edge ? "See the test" : "No edge found") : "Not tested", context: true,
@@ -146,6 +146,48 @@ function weekBanner(book, release, latest) {
   if (release && release.as_of > book.as_of) return `The Research snapshot is newer (${day(release.as_of, true)}). These reads still describe ${day(book.as_of, true)}.`;
   if (release && book.research_shortlist && release.run_id !== book.research_shortlist.run_id) return "These reads and the Research page use different saved runs. Check the selected snapshot.";
   return null;
+}
+
+// CSV of the rows shown: one line per company, raw values (returns as fractions, 0.05 = 5%).
+const CSV_COLUMNS = ["as_of", "shortlist_rank", "ticker", "company", "filed", "days_before_snapshot", "new_since_previous_friday",
+  "guidance_read", "guidance_confidence", "ai_unsure", "corrected", "periods_differ", "source_check",
+  "check_dilution", "check_margin", "check_drawdown",
+  "reaction_window_start", "reaction_window_end", "stock_return_3d", "qqq_return_3d", "stock_minus_qqq_3d", "volume_vs_prior_20_sessions",
+  "stock_minus_qqq_next_21_sessions", "next_results_date", "next_results_timing", "next_results_unconfirmed", "filing_url", "event_id"];
+function csvField(value) {
+  if (value == null) return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return Number.isFinite(value) ? String(Math.round(value * 1e6) / 1e6) : "";
+  let text = String(value);
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`; // a spreadsheet must not read a name as a formula
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+function csvText(rows, book = jevState.book) {
+  const lines = [CSV_COLUMNS.join(",")];
+  for (const row of rows) {
+    const three = outcomeValue(row, "3d"), later = outcomeValue(row, "21d"), r = three.result || {}, next = nextResults(row, book);
+    const state = key => (row.checks.find(c => c.check === key) || {}).state;
+    const g = row.read.guidance, ready = three.value != null;
+    const values = [book.as_of, row.shortlist_rank, row.ticker, row.company, row.filed, daysBetween(row.filed, book.as_of), row.is_new,
+      g.label, g.confidence, g.unsure, g.corrected, g.different_periods, (row.source_check || {}).status,
+      state("dilution"), state("margin"), state("drawdown"),
+      ready && r.window ? r.window[0] : null, ready && r.window ? r.window[1] : null,
+      ready ? r.stock_return_3d : null, ready ? r.benchmark_return_3d : null, three.value, ready ? r.abnormal_volume_3d : null,
+      later.value, next ? next.date : null, next ? next.timing : null, next ? next.unsure : null,
+      secUrl((row.quote || {}).source) || issuerUrl((row.quote || {}).source), row.event_id];
+    lines.push(values.map(csvField).join(","));
+  }
+  return `${lines.join("\r\n")}\r\n`;
+}
+function downloadCsv() {
+  if (!jevState.book) return;
+  const rows = visibleRows(jevState.book, jevState.filters);
+  const blob = new Blob([csvText(rows)], { type: "text/csv;charset=utf-8" });
+  const link = el("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `temper-lab-earnings-read-${jevState.book.as_of}.csv`;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
 }
 
 // ---------------------------------------------------------------- DOM
@@ -210,15 +252,17 @@ function tableRow(row) {
   const tags = guidanceTags(row);
   if (tags.length) { const box = el("span", "jev-tags"); tags.forEach(t => box.appendChild(t)); guidance.appendChild(box); }
   cell(tr, guidance);
-  const ops = row.read.operations;
-  cell(tr, stack(ops.label, ops.unsure ? "AI unsure" : ""), "c-ops");
   const checks = checksText(row);
   const ck = el("span", "jev-stack");
   ck.appendChild(el("strong", `jev-check ${checks.tone}`, checks.mark));
   if (checks.note) ck.appendChild(el("small", null, checks.note));
   cell(tr, ck, "c-checks");
   const reaction = outcomeValue(row, "3d");
-  cell(tr, el("span", `jev-num ${reaction.value == null ? "na" : reaction.value >= 0 ? "up" : "down"}`, reaction.text), "c-react r");
+  const react = el("span", "jev-stack");
+  react.appendChild(el("strong", `jev-num ${reaction.value == null ? "na" : reaction.value >= 0 ? "up" : "down"}`, reaction.text));
+  const own = reaction.value == null ? null : signedPct(reaction.result.stock_return_3d);
+  if (own) react.appendChild(el("small", null, `stock ${own}`));
+  cell(tr, react, "c-react r");
   const next = nextResults(row);
   const nx = el("span", "jev-stack");
   if (next) {
@@ -233,11 +277,11 @@ function renderTable(rows) {
   const table = document.getElementById("jev-table");
   table.replaceChildren();
   const head = el("tr");
-  [["#", "c-rank"], ["Company"], ["Latest results", "c-age"], ["Guidance", null, "vs its own previous outlook"], ["Operations", "c-ops"], ["Checks", "c-checks"], ["Reaction", "c-react r", "3 sessions vs QQQ"], ["Next results", "c-next"]]
+  [["#", "c-rank"], ["Company"], ["Latest results", "c-age"], ["Guidance", null, "vs its own previous outlook"], ["Checks", "c-checks"], ["Reaction", "c-react r", "3 sessions, stock minus QQQ"], ["Next results", "c-next"]]
     .forEach(([label, className, sub]) => { const th = el("th", className || null, label); th.scope = "col"; if (sub) th.appendChild(el("span", "jev-th-sub", sub)); head.appendChild(th); });
   const thead = el("thead"); thead.appendChild(head); table.appendChild(thead);
   const body = el("tbody");
-  if (!rows.length) { const tr = el("tr"); const td = cell(tr, null, "jev-empty"); td.colSpan = 8; td.textContent = "No company matches these filters."; body.appendChild(tr); }
+  if (!rows.length) { const tr = el("tr"); const td = cell(tr, null, "jev-empty"); td.colSpan = 7; td.textContent = "No company matches these filters."; body.appendChild(tr); }
   rows.forEach(row => body.appendChild(tableRow(row)));
   table.appendChild(body);
 }
@@ -249,6 +293,7 @@ function renderTiles(rows) {
     tile.appendChild(el("span", "k", t.k));
     const v = el("span", "v", t.v);
     if (t.of != null) v.appendChild(el("small", null, ` of ${t.of}`));
+    if (t.unit) v.appendChild(el("small", null, ` ${t.unit}`));
     tile.appendChild(v);
     tile.appendChild(el("span", "s", t.s));
     if (t.context) tile.appendChild(el("span", "jev-tag soon", "Context, not a signal"));
@@ -340,7 +385,7 @@ function passageBox(title, passage, periods, missing, previous) {
 }
 function panelBody(row) {
   const body = el("div");
-  const g = row.read.guidance, ops = row.read.operations, ev = row.evidence || {};
+  const g = row.read.guidance, ev = row.evidence || {};
   const head = el("header", "jev-phead");
   const top = el("div", "jev-phead-top");
   if (globalThis.TLWatch) top.appendChild(globalThis.TLWatch.button(row.ticker, row.company));
@@ -369,28 +414,23 @@ function panelBody(row) {
   guidanceTags(row).filter(t => t.textContent !== "New").forEach(t => gv.appendChild(t));
   grid.appendChild(gv);
   grid.appendChild(el("p", "jev-sentence", GUIDANCE_SENTENCE[g.label] || ""));
-  grid.appendChild(el("span", "lbl", "Operations"));
-  const ov = el("span", "val"); ov.appendChild(el("strong", null, ops.label));
-  if (ops.confidence != null) ov.appendChild(el("span", "jev-conf", `confidence ${confidenceText(ops.confidence)}`));
-  if (ops.unsure) ov.appendChild(tag("AI unsure", "unsure"));
-  grid.appendChild(ov);
-  const ai = row.jev || {};
-  if (ai.product_score != null) { grid.appendChild(el("span", "lbl", "Product")); grid.appendChild(el("span", "val", `${Number(ai.product_score).toFixed(1)} of 3`)); }
   read.appendChild(grid);
   if (row.read.note) paragraph(read, null, row.read.note, "jev-warn");
   else if (g.different_periods && g.label === "Raised") paragraph(read, null, "The two guidance passages cover different periods, so their figures are not a like-for-like comparison. The raise rests on the release’s own sentence below.", "jev-warn");
   if (row.guidance_review) paragraph(read, "Corrected after a check of the source.", `Jev first said ${(row.guidance_review.raw_guidance || "no answer").replace(/_/g, " ")}${row.guidance_review.raw_confidence == null ? "" : ` (confidence ${confidenceText(row.guidance_review.raw_confidence)})`}. Why: ${row.guidance_review.reason}`, "jev-fix");
   read.appendChild(el("p", "jev-caveat", "AI answers can be wrong. The sentences and passages below are what it read."));
 
+  const guidancePassage = (ev.current || []).find(p => p.section === "guidance");
+  const previousPassage = (ev.previous || []).find(p => p.section === "guidance");
   const says = section(body, "What the release says", "verbatim");
   const lines = ev.change_lines || [];
   if (lines.length) lines.forEach(line => says.appendChild(el("blockquote", "jev-line", line)));
-  else says.appendChild(el("p", "jev-caveat", "No sentence in the release states a change. Compare the two passages below."));
+  else says.appendChild(el("p", "jev-caveat", `No sentence in the release states a change.${guidancePassage && previousPassage ? " Compare the two passages below." : ""}`));
 
   const check = section(body, "Check it yourself", "guidance passages Jev read");
   const periods = row.periods || {};
-  check.appendChild(passageBox("This release", (ev.current || []).find(p => p.section === "guidance"), periods.current, "No guidance passage was found in this release.", false));
-  check.appendChild(passageBox("Previous release", (ev.previous || []).find(p => p.section === "guidance"), periods.previous, (row.previous || {}).reason || "No previous guidance passage.", true));
+  check.appendChild(passageBox("This release", guidancePassage, periods.current, "No guidance passage was found in this release. The text Jev read is below.", false));
+  check.appendChild(passageBox("Previous release", previousPassage, periods.previous, (row.previous || {}).reason || "No previous guidance passage.", true));
   if (row.guidance_review) {
     const fold = el("details", "jev-fold"); fold.appendChild(el("summary", null, "Passages used by the later check"));
     fold.appendChild(passageBox("This release", (ev.reviewed_current || []).find(p => p.section === "guidance"), null, "None.", false));
@@ -398,10 +438,11 @@ function panelBody(row) {
     check.appendChild(fold);
   }
   const results = (ev.current || []).find(p => p.section === "results");
-  const ops2 = el("details", "jev-fold"); ops2.appendChild(el("summary", null, "Operating evidence Jev read"));
+  // Without a guidance passage, what Jev read is the operating evidence (or the opening): shown open, not hidden.
+  const ops2 = el("details", "jev-fold"); ops2.open = !guidancePassage; ops2.appendChild(el("summary", null, "Operating evidence Jev read"));
   ops2.appendChild(el("blockquote", null, results ? results.text : "No separate results passage; the release opening is below."));
   check.appendChild(ops2);
-  const lead = el("details", "jev-fold"); lead.appendChild(el("summary", null, "Release opening Jev read"));
+  const lead = el("details", "jev-fold"); lead.open = !guidancePassage && !results; lead.appendChild(el("summary", null, "Release opening Jev read"));
   lead.appendChild(el("blockquote", null, ev.lead || "Unavailable.")); check.appendChild(lead);
   const links = el("div", "jev-links");
   [filingLink((row.quote || {}).source), row.filing_source && row.filing_source !== (row.quote || {}).source ? filingLink(row.filing_source) : null].filter(Boolean).forEach(a => links.appendChild(a));
@@ -421,10 +462,18 @@ function panelBody(row) {
   const three = outcomeValue(row, "3d"), later = outcomeValue(row, "21d");
   const span = three.result && three.result.window ? ` (${day(three.result.window[0])}–${day(three.result.window[1])})` : "";
   const grid2 = el("div", "jev-market");
-  grid2.appendChild(el("span", null, `3 sessions around the filing${span}`)); grid2.appendChild(el("span", `jev-num ${three.value == null ? "na" : three.value >= 0 ? "up" : "down"}`, `${three.text}${three.value == null ? "" : " vs QQQ"}`));
-  grid2.appendChild(el("span", null, "The 21 sessions after that")); grid2.appendChild(el("span", `jev-num ${later.value == null ? "na" : later.value >= 0 ? "up" : "down"}`, `${later.text}${later.value == null ? "" : " vs QQQ"}`));
+  const tone = value => `jev-num ${value == null ? "na" : value >= 0 ? "up" : "down"}`;
+  const pair = (label, text, value, sub) => { const l = el("span", sub ? "sub" : null, label); grid2.appendChild(l); grid2.appendChild(el("span", tone(value), text)); };
+  pair(`3 sessions around the filing${span}, stock minus QQQ`, three.text, three.value);
+  if (three.value != null) {
+    const r = three.result;
+    if (signedPct(r.stock_return_3d)) pair("The stock itself", signedPct(r.stock_return_3d), r.stock_return_3d, true);
+    if (signedPct(r.benchmark_return_3d)) pair("QQQ", signedPct(r.benchmark_return_3d), r.benchmark_return_3d, true);
+    if (typeof r.abnormal_volume_3d === "number" && Number.isFinite(r.abnormal_volume_3d)) { grid2.appendChild(el("span", "sub", "Shares traded, vs its 20 sessions before")); grid2.appendChild(el("span", "jev-num", `${r.abnormal_volume_3d.toFixed(1)}×`)); }
+  }
+  pair("The 21 sessions after that, stock minus QQQ", later.text, later.value);
   market.appendChild(grid2);
-  market.appendChild(el("p", "jev-caveat", `Prices through ${day(jevState.index.outcome_data_as_of, true)}.`));
+  market.appendChild(el("p", "jev-caveat", `QQQ is a technology-heavy index: outside technology, a large QQQ move can make up much of the difference, so compare the stock's own move. Prices through ${day(jevState.index.outcome_data_as_of, true)}.`));
 
   if ((row.related_filings || []).length) {
     const other = section(body, "Other filings that day");
@@ -500,6 +549,7 @@ async function startJevReads() {
   const query = document.getElementById("jev-query");
   query.addEventListener("input", event => { jevState.filters.query = event.target.value; if (jevState.book) renderList(); });
   document.getElementById("jev-reset").addEventListener("click", () => { jevState.filters = { query: "", flags: {} }; query.value = ""; if (jevState.book) renderList(); });
+  document.getElementById("jev-csv").addEventListener("click", downloadCsv);
   document.getElementById("jev-week").addEventListener("change", event => loadWeek(event.target.value).catch(showError));
   document.getElementById("jev-prev").addEventListener("click", () => stepPanel(-1));
   document.getElementById("jev-next").addEventListener("click", () => stepPanel(1));
