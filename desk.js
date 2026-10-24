@@ -289,6 +289,10 @@ const INDUSTRY_SHORT = {
   "Finance/Investors Services": "Investor services",
   "Savings Institutions": "Savings banks",
   "Auto Parts:O.E.M.": "Auto parts: OEM",
+  "Trusts Except Educational Religious and Charitable": "Investment trusts",
+  "Managed Health Care": "Managed care",
+  "Pharmaceuticals and Biotechnology": "Pharma & biotech",
+  "Other Transportation": "Other transportation",
 };
 
 function tidyIndustry(name) {
