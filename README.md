@@ -1,5 +1,13 @@
 # Temper Lab — Opportunities snapshot
 
+Research displays a missing valuation pillar as **valuation unavailable** and
+requires manual valuation review; the score detail still discloses its neutral
+50 substitution. Yahoo earnings dates are marked as lacking recorded company
+confirmation; conflicting vendor dates are tentative. The dated
+[Shortlist review workflow](../docs/shortlist-review-2026-10-26.md) records
+normalization work, shared-exposure budgets and sourced event review separately
+from the frozen automatic ranks.
+
 All pages share one sidebar menu. Hide it to expand the workspace; the desktop
 choice is remembered in this browser. On phones it opens as a drawer, closes
 with Escape or the backdrop, and keeps keyboard focus inside while open.
