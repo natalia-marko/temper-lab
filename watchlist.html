@@ -7,7 +7,7 @@
     <title>Temper Lab — Watchlist</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
-    <link rel="stylesheet" href="./watchlist.css?v=2062a2b1f201" />
+    <link rel="stylesheet" href="./watchlist.css?v=586e02b3754d" />
   </head>
   <body class="watchlist-page">
     <div class="desk">
@@ -50,7 +50,7 @@
           <p id="wl-empty" class="wl-empty" hidden>No stars yet. Press ☆ next to any ticker on Research, Analyst ratings, Insights, Earnings read by Jev or Market mood.</p>
           <div class="wl-table-wrap">
             <table id="wl-table" class="wl-table" hidden>
-              <thead><tr><th scope="col"><span class="visually-hidden">Star</span></th><th scope="col"><span class="wl-company"><button type="button" id="wl-select-all" class="wl-select-all" aria-controls="wl-rows" aria-pressed="false" aria-label="Unselect all" disabled></button>Company</span></th><th scope="col" class="num">Price</th><th scope="col" class="num">Market value</th><th scope="col">Next results</th><th scope="col">Added</th></tr></thead>
+              <thead><tr><th scope="col"><span class="visually-hidden">Star</span></th><th scope="col"><span class="wl-company"><button type="button" id="wl-select-all" class="wl-select-all" aria-controls="wl-rows" aria-pressed="false" aria-label="Unselect all" disabled></button>Company</span></th><th scope="col">Jev</th><th scope="col">Revision</th><th scope="col" class="num">Price</th><th scope="col" class="num">Market value</th><th scope="col">Next results</th><th scope="col">Added</th></tr></thead>
               <tbody id="wl-rows"></tbody>
             </table>
           </div>
@@ -79,7 +79,8 @@
       </main>
     </div>
     <script src="./watchlist.js?v=85cbb096ddf1"></script>
-    <script src="./watchlist-page.js?v=c29d9ee49f95"></script>
+    <script src="./decision-tape.js?v=a2b6a6e1fb76"></script>
+    <script src="./watchlist-page.js?v=2fcaa80c5b05"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

@@ -1,14 +1,15 @@
 // Ticker page: everything saved about one ticker, each fact with its date.
 // Reads only files the weekly and Tue/Fri jobs already publish (desk.json,
-// fscore.json, earnings-calendar.json, ownership-signals.json) plus
+// fscore.json, earnings-calendar.json, ownership-signals.json, jev-reads.json) plus
 // ticker-volume.json (weekly: volume facts and the 12-month / 3-month price chart) and ticker-funds.json (13F, quarterly).
 // Nothing is computed here beyond lookups, formatting, changes along the saved price line, sums of the
-// dollar amounts shown, and two ratios of figures from one Research record (price / earnings, EV / operating income).
+// dollar amounts shown, two ratios of figures from one Research record (price / earnings, EV / operating income),
+// and the decision tape (Jev raised? / revision up?) from already-published facts.
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
 "use strict";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FILES = { desk: "./desk.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
-  own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json" };
+  own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json", jev: "./jev-reads.json" };
 const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
 const MONEY_LABEL = {
   buy: "bought", buy_plan: "bought under a 10b5-1 plan", buy_private: "bought privately or in an offering",
@@ -444,12 +445,20 @@ function card(data, query, sessions = state.period) {
     lists: listsOf(data.desk, symbol), moves: movesOf(data.desk, symbol), factors: desk.factors || {}, analyst: desk.analyst || {},
     revenue_period_end: desk.revenue_period_end, revenue_filed: desk.revenue_filed, quality_filed: desk.quality_filed } : null;
   if (research) research.valuation = valuationOf(research);
+  const tape = (typeof TLTape !== "undefined" && TLTape)
+    ? TLTape.tape(symbol, {
+      book: TLTape.latestBook(data.jev),
+      factors: desk ? desk.factors : null,
+      analystRetrievedAt: desk && desk.analyst && desk.analyst.retrieved_at,
+      asOf: data.desk && data.desk.as_of,
+    })
+    : null;
   return {
     symbol, found: true,
     name: (desk && desk.name) || (checked && checked.name) || (company && company.name) || "",
     industry: (desk && desk.industry) || (company && company.industry) || "",
     eligible: Boolean(desk), filer: checked ? checked.symbol : null, cik: company ? company.cik : null,
-    research,
+    research, tape,
     insights: own ? insightsOf(own, company) : null,
     insiders: own ? insidersOf(own, company) : null,
     stakes: own ? stakesOf(own, company) : null,
@@ -629,7 +638,12 @@ function reportText(cardOrSymbol) {
     ...((c.research && c.research.moves) || []).map((m) => (m.note ? `${m.label} (${m.note})` : m.label)),
     c.earnings && c.earnings.next ? `Next results ${longDay(c.earnings.next.date)}${c.earnings.next.timing ? ` (${c.earnings.next.timing})` : ""}` : "",
   ].filter(Boolean).join(" · ");
-  const lines = [head, meta, ...glance(c).map((g) => `${g.title}: ${g.value}${g.context ? ` (${g.context})` : ""}`)];
+  const lines = [head, meta];
+  if (c.tape) {
+    lines.push(`Jev: ${c.tape.jev.label}${c.tape.jev.detail ? ` (${c.tape.jev.detail})` : ""}`);
+    lines.push(`Revision: ${c.tape.revision.label}${c.tape.revision.detail ? ` (${c.tape.revision.detail})` : ""}`);
+  }
+  lines.push(...glance(c).map((g) => `${g.title}: ${g.value}${g.context ? ` (${g.context})` : ""}`));
   if (c.insights) {
     lines.push(`Insights: ${c.insights.is_new ? "NEW · " : ""}${c.insights.signal} — ${c.insights.headline}${c.insights.explanation ? ` (${c.insights.explanation})` : ""}`);
   }
@@ -1137,6 +1151,22 @@ function headerBox(c) {
     price.append(el("b", "", `$${Number(c.research.price).toFixed(2)}`), el("span", "", `${longDay(c.research.price_date)} close`));
     box.append(price);
   }
+  return box;
+}
+function tapeBox(c) {
+  const t = c.tape;
+  if (!t) return null;
+  const box = el("section", "tk-glance tk-tape");
+  box.setAttribute("aria-label", `${c.symbol} decision tape`);
+  const inner = el("div", "tk-glance-in");
+  const jev = el("a", `tk-cell tk-tape-${t.jev.state}`);
+  jev.href = t.jev.href || "./jev-reads.html";
+  jev.append(el("span", "tk-k", "Jev"), el("span", "tk-v", t.jev.label), el("span", "tk-c", t.jev.detail));
+  const rev = el("a", `tk-cell tk-tape-${t.revision.state}`);
+  rev.href = "#tk-business";
+  rev.append(el("span", "tk-k", "Revision"), el("span", "tk-v", t.revision.label), el("span", "tk-c", t.revision.detail));
+  inner.append(jev, rev);
+  box.append(inner, el("small", "tk-tape-note", "Two facts for a name you might hold. Not a score, not a buy or sell call."));
   return box;
 }
 function glanceBox(c) {
@@ -1707,6 +1737,7 @@ function aboutBox(c) {
     "13F: managers with $100M+ report long positions within 45 days of each quarter end; no short positions. One manager can combine many funds and client accounts, so a change can be flows, not a decision. SEC publishes these data sets every three months; managers whose table in them is incomplete are left out.",
     "Volume: normal is the average of the 63 sessions before the last 21. Up-day share is volume on days the price rose, out of volume on days it rose or fell; above 50% means on-balance volume (OBV) rose.",
     "F-Score: Piotroski's nine financial-health checks. Context, not a signal.",
+    "Decision tape: Jev is an AI read of the company's latest earnings release on the Research Shortlist (Raised means vs its own previous guidance, counted only at confidence 0.5+). Not on that list this week is Not read. Revision is Yahoo 30-day EPS estimate changes for the current fiscal year from the weekly freeze. Two facts, not a combined score.",
   ];
   ul.append(...lines.map((t) => el("li", "", t)));
   box.append(ul);
@@ -1729,7 +1760,7 @@ function render() {
     ? band("tk-business", "The business", `Research snapshot, week of ${longDay(c.research.as_of)}`, "biz",
       financialsBox(c), stack(fscoreBox(c), analystsBox(c)))
     : [];
-  out.replaceChildren(headerBox(c), ...[glanceBox(c)].filter(Boolean),
+  out.replaceChildren(headerBox(c), ...[tapeBox(c), glanceBox(c)].filter(Boolean),
     ...band("tk-price", "Price and trading", "", "wide", priceBox(c), stack(volumeBox(c), insightsBox(c), shortBox(c))),
     ...research,
     ...band("tk-owners", "Who owns and trades it", "SEC Form 4, 13D/13G and 13F filings", "own",
@@ -1875,6 +1906,7 @@ function start() {
       else state.missing.push(FILES[names[i]].slice(2));
     });
     if (state.data.own && state.data.own.schema !== "ownership-signals-1") { state.missing.push("ownership-signals.json"); delete state.data.own; }
+    if (state.data.jev && state.data.jev.schema !== "jev-reads-index-1") { state.missing.push("jev-reads.json"); delete state.data.jev; }
     if (!state.data.desk && !state.data.own) throw new Error("no data");
     setup();
   }).catch((error) => {

@@ -42,6 +42,15 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-price b { display: block; font-size: 30px; font-weight: 650; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
 .tk-price span { color: var(--muted); font-size: 12px; }
 
+/* Decision tape: two facts, not a score */
+.tk-tape { margin-bottom: 12px; }
+.tk-tape .tk-glance-in { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tk-tape-note { display: block; padding: 8px 16px 12px; color: var(--tk-faint); font-size: 11px; }
+.tk-tape-raised .tk-v, .tk-tape-up .tk-v { color: var(--tk-up); }
+.tk-tape-not_raised .tk-v, .tk-tape-down .tk-v { color: var(--tk-down); }
+.tk-tape-unsure .tk-v, .tk-tape-unread .tk-v, .tk-tape-unavailable .tk-v,
+.tk-tape-missing .tk-v, .tk-tape-flat .tk-v { color: var(--muted); font-weight: 600; }
+
 /* summary strip: borders on every cell, clipped at the outer edge */
 .tk-glance { background: var(--tk-panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .tk-glance-in { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); margin: 0 -1px -1px 0; }

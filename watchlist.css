@@ -35,6 +35,11 @@
 .wl-table td strong a:hover, .wl-table td strong a:focus-visible { text-decoration: underline; }
 .wl-table td small { color: #6d7d72; font-size: 11px; }
 .wl-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wl-tape { white-space: nowrap; }
+.wl-tape small { display: block; font-weight: 400; color: #6d7d72; }
+.wl-tape-raised, .wl-tape-up { color: #1e6547; font-weight: 650; }
+.wl-tape-not_raised, .wl-tape-down { color: #9a5b0c; font-weight: 650; }
+.wl-tape-unsure, .wl-tape-unread, .wl-tape-unavailable, .wl-tape-missing, .wl-tape-flat { color: #5d7263; }
 @media (max-width: 860px) {
   .wl-tools, .wl-note { padding-left: 14px; padding-right: 14px; }
   .wl-count { width: 100%; margin-left: 0; }

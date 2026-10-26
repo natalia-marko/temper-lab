@@ -194,6 +194,7 @@
   }
 
   let desk = {};
+  let jevBook = null;
   let earnings = {};
   let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
   let trend = null; // share/trend-rules.json: the tested rules at the last month-end close, same file as Research
@@ -241,7 +242,22 @@
     name.append(link);
     co.append(name, el("small", "", c.name || item.name || "Not in this week's Research snapshot"));
     const from = W.PAGES[item.page];
-    tr.append(star, co, el("td", "num", price(c.price)), el("td", "num", money(c.market_cap)),
+    const tape = (globalThis.TLTape)
+      ? globalThis.TLTape.tape(item.symbol, {
+        book: jevBook,
+        factors: c.factors,
+        analystRetrievedAt: c.analyst && c.analyst.retrieved_at,
+      })
+      : null;
+    const jevCell = el("td", `wl-tape${tape ? ` wl-tape-${tape.jev.state}` : ""}`);
+    jevCell.append(el("span", "", tape ? tape.jev.label : "—"));
+    if (tape && tape.jev.filed) jevCell.append(el("small", "", shortDay(tape.jev.filed)));
+    const revCell = el("td", `wl-tape${tape ? ` wl-tape-${tape.revision.state}` : ""}`);
+    revCell.append(el("span", "", tape ? tape.revision.label : "—"));
+    if (tape && tape.revision.state !== "missing") {
+      revCell.append(el("small", "", `${tape.revision.up ?? 0} up · ${tape.revision.down ?? 0} down`));
+    }
+    tr.append(star, co, jevCell, revCell, el("td", "num", price(c.price)), el("td", "num", money(c.market_cap)),
       el("td", "", resultsText(earnings[item.symbol])), el("td", "", `${longDay(item.added)}${from ? ` · ${from}` : ""}`));
     return tr;
   }
@@ -733,9 +749,10 @@
     W.onChange(render);
     render(W.list());
     const get = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([get("./desk.json"), get("./earnings-calendar.json")]).then(([deskData, calendar]) => {
+    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./jev-reads.json")]).then(([deskData, calendar, jevIndex]) => {
       desk = (deskData && deskData.companies) || {};
       earnings = (calendar && calendar.companies) || {};
+      jevBook = (globalThis.TLTape && jevIndex) ? globalThis.TLTape.latestBook(jevIndex) : null;
       const shortlist = deskData && deskData.setups && deskData.setups.composite && deskData.setups.composite.results;
       const topTen = Array.isArray(shortlist) ? shortlist.slice(0, 10) : [];
       shortlistPicks = topTen.map((row) => row.symbol).filter(Boolean);
@@ -744,7 +761,9 @@
         if (row && row.symbol) shortlistRanks[row.symbol] = row.rank || idx + 1;
       });
       const asOf = Object.values(desk).find((c) => c && c.price_date);
-      $("wl-source").textContent = asOf ? `Price and market value: close on ${longDay(asOf.price_date)} (Research snapshot).` : "";
+      $("wl-source").textContent = asOf
+        ? `Price and market value: close on ${longDay(asOf.price_date)} (Research snapshot). Jev is the latest Shortlist earnings read; Revision is 30-day EPS estimate changes. Two facts, not a score.`
+        : "";
       render(W.list());
     });
   }
