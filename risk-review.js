@@ -52,7 +52,7 @@
   function reviewDecision(c, hurdle) {
     if (!c || !finite(hurdle) || hurdle <= 0 || hurdle > 100) return "Review unavailable";
     if (c.method === "book") return "Separate insurer review";
-    if ((c.claims || []).some(x => x.title === "Equity bridge limitation")) return "Defer: ownership bridge";
+    if (c.valuation_blocker) return "Defer: ownership bridge";
     const central = c.scenarios.find(x => x.label === "Historical median");
     const stress = c.scenarios.find(x => x.label === "OI −25%");
     if (!finite(central?.yield) || !finite(stress?.yield)) return "Defer: missing evidence";
@@ -61,8 +61,9 @@
   }
   function exposures(review, weights, options, eventRows) {
     const all = review.top;
+    const required = ["hurdle", "energy_limit", "memory_limit", "single_limit", "event_limit", "shock", "loss_limit"];
     if (all.some(s => !finite(weights[s]) || weights[s] < 0 || weights[s] > 100) ||
-        Object.values(options).some(v => !finite(v) || v < 0 || v > 100) || !options.hurdle) return {error:"Enter valid numbers from 0 to 100; the valuation hurdle must be above zero."};
+        required.some(k => !finite(options[k]) || options[k] < 0 || options[k] > 100) || !options.hurdle) return {error:"Enter valid numbers from 0 to 100; the valuation hurdle must be above zero."};
     const total = all.reduce((n,s) => n + weights[s],0);
     if (total > 100 + 1e-8) return {error:`Weights total ${total.toFixed(1)}%. Reduce them to 100% or less.`};
     const groups = review.exposure_groups.map(g => {

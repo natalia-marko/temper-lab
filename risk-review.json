@@ -99,6 +99,7 @@
       "market_cap": 3099398360.480194,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -268,6 +269,7 @@
       "market_cap": 5040858880.871559,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -437,6 +439,7 @@
       "market_cap": 8257007583.801804,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -606,6 +609,7 @@
       "market_cap": 1536282392.9138184,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -771,6 +775,7 @@
       "market_cap": 12346750193.088531,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -940,6 +945,7 @@
       "market_cap": 3715054606.784317,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1109,6 +1115,7 @@
       "market_cap": 4224469461.193165,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1278,6 +1285,7 @@
       "market_cap": 2082585310.1516876,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1436,6 +1444,7 @@
       "market_cap": 1828657716.96986,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1605,6 +1614,7 @@
       "market_cap": 2840943093.0989,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1774,6 +1784,7 @@
       "market_cap": 3809852053.7995987,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -1952,6 +1963,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Transplant testing / reimbursement"
       ],
@@ -2119,6 +2131,7 @@
       "market_cap": 3110369336.452589,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -2288,6 +2301,7 @@
       "market_cap": 18263485574.584732,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -2457,6 +2471,7 @@
       "market_cap": 8649374766.439453,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -2626,6 +2641,7 @@
       "market_cap": 13046343729.68605,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -2795,6 +2811,7 @@
       "market_cap": 80640261898.04077,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -2964,6 +2981,7 @@
       "market_cap": 33426752777.100456,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3133,6 +3151,7 @@
       "market_cap": 5867146558.173691,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3296,6 +3315,7 @@
       "market_cap": 1039604850.7739096,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3443,6 +3463,7 @@
       "market_cap": 21629183720.4039,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3612,6 +3633,7 @@
       "market_cap": 1069368668.8057709,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3781,6 +3803,7 @@
       "market_cap": 2570839130.390293,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -3950,6 +3973,7 @@
       "market_cap": 85513990922.9856,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -4119,6 +4143,7 @@
       "market_cap": 34797455748.12317,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -4297,6 +4322,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Global trade volumes / freight margins"
       ],
@@ -4476,6 +4502,7 @@
       "market_cap": 1766054546.9474792,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -4645,6 +4672,7 @@
       "market_cap": 18483729428.469177,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -4814,6 +4842,7 @@
       "market_cap": 6860845145.490189,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -4983,6 +5012,7 @@
       "market_cap": 1279863780.1560898,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5152,6 +5182,7 @@
       "market_cap": 2920587472.8034973,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5321,6 +5352,7 @@
       "market_cap": 2938704722.359497,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5486,6 +5518,7 @@
       "market_cap": 1452642487.2837982,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5655,6 +5688,7 @@
       "market_cap": 1403317294.181385,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5824,6 +5858,7 @@
       "market_cap": 70183834318.69733,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -5982,6 +6017,7 @@
       "market_cap": 1046415359.6445146,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -6164,6 +6200,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "WAKIX exclusivity"
       ],
@@ -6335,6 +6372,7 @@
       "market_cap": 6387028244.946747,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -6493,6 +6531,7 @@
       "market_cap": 6035222597.844009,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -6679,6 +6718,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Crude/product tanker rates",
         "Geopolitical route disruption"
@@ -6840,6 +6880,7 @@
       "market_cap": 4945637970.940762,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -7018,6 +7059,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Consumer spending / retail margins"
       ],
@@ -7189,6 +7231,7 @@
       "market_cap": 2063317665.8635483,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -7358,6 +7401,7 @@
       "market_cap": 5755706831.581787,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -7536,6 +7580,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Gas-carrier rates",
         "Geopolitical route disruption"
@@ -7705,6 +7750,7 @@
       "market_cap": 3338678992.361458,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -7874,6 +7920,7 @@
       "market_cap": 6294357268.230984,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -8043,6 +8090,7 @@
       "market_cap": 3299586248.227482,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -8212,6 +8260,7 @@
       "market_cap": 3961880352.207016,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -8305,6 +8354,7 @@
       "market_cap": 7420302678.059631,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -8483,6 +8533,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Memory pricing and capacity"
       ],
@@ -8709,6 +8760,7 @@
       "market_cap": 7653981706.448151,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -8878,6 +8930,7 @@
       "market_cap": 2057449041.7556763,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -9082,12 +9135,13 @@
         {
           "title": "Equity bridge limitation",
           "status": "model limitation",
-          "text": "Consolidated operating income includes economics belonging to non-controlling hospital interests. Generic EV omits those interests; earnings-multiple prices here are diagnostic only and cannot qualify NUTX for the decision list.",
+          "text": "Consolidated operating income includes economics belonging to non-controlling hospital interests. Generic EV omits those interests. OI/EV is shown for diagnosis only; equity price scenarios are withheld and NUTX cannot pass the decision review until the ownership bridge is reconciled.",
           "sources": [
             "nutx_regulatory"
           ]
         }
       ],
+      "valuation_blocker": "Equity valuation withheld: reconcile non-controlling hospital interests and related claims before converting consolidated operating earnings into common-share value.",
       "drivers": [
         "Reimbursement / IDR",
         "Cyber litigation"
@@ -9156,33 +9210,21 @@
           "operating_income": 364268000.0,
           "margin": 0.4302106953892668,
           "yield": 0.28690208751528956,
-          "equity_prices_6_8_10x": [
-            343.34466564047494,
-            449.7317673419565,
-            556.118869043438
-          ]
+          "equity_prices_6_8_10x": null
         },
         {
           "label": "OI \u221225%",
           "operating_income": 273201000.0,
           "margin": null,
           "yield": 0.21517656563646717,
-          "equity_prices_6_8_10x": [
-            263.5543393643637,
-            343.34466564047494,
-            423.1349919165861
-          ]
+          "equity_prices_6_8_10x": null
         },
         {
           "label": "OI \u221250%",
           "operating_income": 182134000.0,
           "margin": null,
           "yield": 0.14345104375764478,
-          "equity_prices_6_8_10x": [
-            183.76401308825254,
-            236.95756393899333,
-            290.15111478973415
-          ]
+          "equity_prices_6_8_10x": null
         },
         {
           "label": "Historical P25",
@@ -9196,27 +9238,20 @@
           "operating_income": 230575770.67563426,
           "margin": 0.2723164336210722,
           "yield": 0.18160439549256635,
-          "equity_prices_6_8_10x": [
-            226.20732062667383,
-            293.54864065688844,
-            360.88996068710304
-          ]
+          "equity_prices_6_8_10x": null
         },
         {
           "label": "Historical P75",
           "operating_income": 266638484.46799055,
           "margin": 0.31490750716646654,
           "yield": 0.21000784533854086,
-          "equity_prices_6_8_10x": [
-            257.8044491133279,
-            335.67814530576044,
-            413.551841498193
-          ]
+          "equity_prices_6_8_10x": null
         }
       ],
       "limits": [
         "Historical margins can include impairments and asset-sale effects. A structural business change can make them unrepresentative.",
-        "6/8/10\u00d7 OI are illustrative valuation multiples, not targets. EV excludes leases and non-controlling interests; price bridge holds net debt and current shares fixed, omits dilution and future cash/capex. OI is not free cash flow."
+        "6/8/10\u00d7 OI are illustrative valuation multiples, not targets. EV excludes leases and non-controlling interests; price bridge holds net debt and current shares fixed, omits dilution and future cash/capex. OI is not free cash flow.",
+        "Equity valuation withheld: reconcile non-controlling hospital interests and related claims before converting consolidated operating earnings into common-share value."
       ],
       "method": "operating_income",
       "enterprise_value": 1269659635.9919739,
@@ -9256,6 +9291,7 @@
       "market_cap": 3865186299.495964,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -9425,6 +9461,7 @@
       "market_cap": 1660770228.5443668,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -9594,6 +9631,7 @@
       "market_cap": 6697992580.291374,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -9763,6 +9801,7 @@
       "market_cap": 1205703549.1434746,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -9932,6 +9971,7 @@
       "market_cap": 50297655614.65585,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -10101,6 +10141,7 @@
       "market_cap": 1200292078.0607986,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": [
         "Oil/gas production prices",
         "Geopolitical commodity disruption"
@@ -10273,6 +10314,7 @@
       "market_cap": 1936447961.4257812,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -10442,6 +10484,7 @@
       "market_cap": 1629027845.0859299,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -10611,6 +10654,7 @@
       "market_cap": 7337856166.811213,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -10758,6 +10802,7 @@
       "market_cap": 3612199027.3521423,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -10936,6 +10981,7 @@
           ]
         }
       ],
+      "valuation_blocker": null,
       "drivers": [
         "Property catastrophe / reinsurance"
       ],
@@ -10989,6 +11035,7 @@
       "market_cap": 9540326812.654602,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11158,6 +11205,7 @@
       "market_cap": 21640438846.75534,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11327,6 +11375,7 @@
       "market_cap": 14538809317.267914,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11485,6 +11534,7 @@
       "market_cap": 4955298587.076847,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11654,6 +11704,7 @@
       "market_cap": 4067048490.7836914,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11815,6 +11866,7 @@
       "market_cap": 1699164758.9524841,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -11984,6 +12036,7 @@
       "market_cap": 21615326532.89795,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -12153,6 +12206,7 @@
       "market_cap": 12891364737.579346,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -12322,6 +12376,7 @@
       "market_cap": 2034758745.379593,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -12491,6 +12546,7 @@
       "market_cap": 11149296693.588257,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -12660,6 +12716,7 @@
       "market_cap": 1184083843.023777,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -12821,6 +12878,7 @@
       "market_cap": 1977312787.1289558,
       "shares_basis": "market cap / snapshot price; current shares, not a diluted forecast",
       "claims": [],
+      "valuation_blocker": null,
       "drivers": null,
       "manual": null,
       "history": [
@@ -13050,7 +13108,7 @@
     "nutx_regulatory": {
       "title": "Nutex June 2026 10-Q",
       "url": "https://www.sec.gov/Archives/edgar/data/1479681/000162828026054268/nutx-20260630.htm",
-      "published": "2026-08-07",
+      "published": "2026-08-06",
       "checked": "2026-10-26"
     },
     "nutx_cyber": {

@@ -1,12 +1,19 @@
 # Temper Lab — Opportunities snapshot
 
-Research displays a missing valuation pillar as **valuation unavailable** and
-requires manual valuation review; the score detail still discloses its neutral
-50 substitution. Yahoo earnings dates are marked as lacking recorded company
-confirmation; conflicting vendor dates are tentative. The dated
-[Shortlist review workflow](../docs/shortlist-review-2026-10-26.md) records
-normalization work, shared-exposure budgets and sourced event review separately
-from the frozen automatic ranks.
+Research includes a dated **Risk review** (`risk-review.js`, `risk-review.css`,
+`risk-review.json`): historical-margin and operating-income stress scenarios for
+Cheap names, manual CDNA/EXPD debt reconciliation, SLDE price/book, company risk
+flags, issuer-confirmed earnings and editable exposure/earnings-window budgets.
+Illustrated weights start equal; edits last for the page session. Risk-review
+outcomes do not change automatic ranks. Missing score inputs remain explicit;
+neutral 50 is never treated as evidence in the review. Unreconciled ownership
+claims suppress equity-price scenarios. A mismatched review is rejected and
+an overdue review is visibly dated; overdue sources do not certify live earnings.
+See the [review workflow and audit](../docs/shortlist-review-2026-10-26.md).
+
+Rebuild offline with `.venv/bin/python tools/build_risk_review.py` after reviewing
+`pipeline/reviews/risk_review_2026-10-26.json`. The builder refuses evidence for a
+different snapshot; it does not regenerate frozen ranks or historical runs.
 
 All pages share one sidebar menu. Hide it to expand the workspace; the desktop
 choice is remembered in this browser. On phones it opens as a drawer, closes
