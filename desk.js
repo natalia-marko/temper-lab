@@ -563,7 +563,7 @@ function resultsCell(symbol) {
   if (!calendar) return `<td><span class="na" title="The results calendar is not available">—</span></td>`;
   const next = calendar.companies?.[symbol];
   if (next?.date && next.date >= todayIso()) {
-    return `<td class="results" title="Yahoo date; company confirmation is not recorded in this calendar"><span class="when">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}</span><small>${escapeHtml(next.timing || "")}${next.unsure ? " · tentative: sources disagree" : ""}</small><small>Company confirmation unverified</small></td>`;
+    return `<td class="results" title="Yahoo date; company confirmation is not recorded in this calendar"><span class="when">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}</span><small>${escapeHtml(next.timing || "")}${next.unsure ? " · tentative: sources disagree" : ""}</small></td>`;
   }
   if (next?.date) {
     return `<td class="results past">Scheduled ${escapeHtml(weekday(next.date))}<small>Date passed; release not checked</small></td>`;
