@@ -1,19 +1,9 @@
 # Temper Lab — Opportunities snapshot
 
-Research includes a dated **Risk review** (`risk-review.js`, `risk-review.css`,
-`risk-review.json`): historical-margin and operating-income stress scenarios for
-Cheap names, manual CDNA/EXPD debt reconciliation, SLDE price/book, company risk
-flags, issuer-confirmed earnings and editable exposure/earnings-window budgets.
-Illustrated weights start equal; edits last for the page session. Risk-review
-outcomes do not change automatic ranks. Missing score inputs remain explicit;
-neutral 50 is never treated as evidence in the review. Unreconciled ownership
-claims suppress equity-price scenarios. A mismatched review is rejected and
-an overdue review is visibly dated; overdue sources do not certify live earnings.
-See the [review workflow and audit](../docs/shortlist-review-2026-10-26.md).
-
-Rebuild offline with `.venv/bin/python tools/build_risk_review.py` after reviewing
-`pipeline/reviews/risk_review_2026-10-26.json`. The builder refuses evidence for a
-different snapshot; it does not regenerate frozen ranks or historical runs.
+The dated risk review of 26 Oct 2026 was taken off the site on 27 Oct 2026: its
+hurdle, budgets and historical windows were assumptions, not a pre-registered test.
+Its builder and evidence stay for the record (`tools/build_risk_review.py`,
+`pipeline/reviews/risk_review_2026-10-26.json`); the builder now writes to `output/`.
 
 All pages share one sidebar menu. Hide it to expand the workspace; the desktop
 choice is remembered in this browser. On phones it opens as a drawer, closes

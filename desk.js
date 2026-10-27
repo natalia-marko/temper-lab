@@ -125,8 +125,8 @@ function fmt(value, kind) {
 function scoreCell(idea) {
   if (!idea) return `<td class="score">—</td>`;
   return (
-    `<td class="score" title="${idea.score.toFixed(1)} out of 100 on this list">` +
-    `<span class="score-value">${idea.score.toFixed(1)}</span><small>/100</small>${idea.neutral?.length ? `<small class="rr-score">${3-idea.neutral.length}/3 measured; includes placeholder</small>` : ""}</td>`
+    `<td class="score" title="${idea.score.toFixed(1)} out of 100 on this list${idea.neutral?.length ? `; ${idea.neutral.length} of 3 inputs could not be measured and count as a neutral 50` : ""}">` +
+    `<span class="score-value">${idea.score.toFixed(1)}</span><small>/100</small>${idea.neutral?.length ? `<small>· ${3 - idea.neutral.length}/3 measured</small>` : ""}</td>`
   );
 }
 
@@ -482,7 +482,7 @@ function missingMetricTitle(symbol, key) {
 function metricCell(symbol, key, kind) {
   if (neutralPart(symbol, key)) {
     if (key === "part_undervalued") {
-      return `<span class="na" title="Not valuation-qualified; manual review required. The Shortlist score uses a neutral 50 for this missing input, not a valuation estimate.">valuation unavailable</span>`;
+      return `<span class="na" title="OI / EV cannot be computed for this company (no enterprise value in this snapshot, or a financial company). The Shortlist score counts it as a neutral 50; that is not a valuation.">valuation unavailable</span>`;
     }
     return `<span class="na" title="This number cannot be computed for this company; the Shortlist counts it as a neutral 50">none · 50</span>`;
   }
@@ -563,9 +563,6 @@ function resultsCell(symbol) {
   if (!calendar) return `<td><span class="na" title="The results calendar is not available">—</span></td>`;
   const next = calendar.companies?.[symbol];
   if (next?.date && next.date >= todayIso()) {
-    if (next.confirmation === "issuer_confirmed" && globalThis.TLRisk?.safeUrl(next.source_url)) {
-      return `<td class="results"><span class="when">${escapeHtml(weekday(next.date))}</span><small>${escapeHtml(next.timing || "time unverified")}</small><small><a href="${escapeHtml(next.source_url)}" target="_blank" rel="noopener noreferrer">Issuer-confirmed</a></small></td>`;
-    }
     return `<td class="results" title="Yahoo date; company confirmation is not recorded in this calendar"><span class="when">${next.unsure ? "~" : ""}${escapeHtml(weekday(next.date))}</span><small>${escapeHtml(next.timing || "")}${next.unsure ? " · tentative: sources disagree" : ""}</small><small>Company confirmation unverified</small></td>`;
   }
   if (next?.date) {
@@ -646,7 +643,7 @@ function scoreInputs(screen, symbol) {
   if (screen === "composite") {
     const row = rankedMap("composite").get(symbol);
     if (!row?.parts) return "Score is the average of three market-wide percentiles.";
-    const part = (key, label) => `${label} ${(row.neutral || []).includes(key) ? (key === "undervalued" ? "valuation unavailable; not valuation-qualified, manual review required (score uses 50)" : "none, counted as 50") : row.parts[key].toFixed(1)}`;
+    const part = (key, label) => `${label} ${(row.neutral || []).includes(key) ? "none, counted as 50" : row.parts[key].toFixed(1)}`;
     const held = row.held_back ? " Held back from the first ten by the 3-per-sector limit." : "";
     return `Score is the average of three market-wide percentiles: ${part("strength", "price strength")}, ${part("growth", "profitability (five measures)")}, ${part("undervalued", "OI / EV")}.${held}`;
   }
@@ -723,7 +720,6 @@ function earningsLine(symbol) {
   if (next.date >= today) {
     const days = Math.round((Date.parse(`${next.date}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
     const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-    if (next.confirmation === "issuer_confirmed") return `Results ${weekday(next.date)}${timing} · ${when}. Issuer-confirmed (checked ${next.confirmed_at})${next.call_date && next.call_date !== next.date ? `; conference call ${day(next.call_date)}` : ""}.`;
     return `Results ${next.unsure ? "~" : ""}${weekday(next.date)}${timing} · ${when}${unsure}. Yahoo date; company confirmation is not recorded${next.unsure ? "; Yahoo sources disagree" : ""}.`;
   }
   const filed = state.desk.companies[symbol]?.revenue_filed;
@@ -892,7 +888,6 @@ function showEvidence(symbol) {
     ${yearPlotHtml(symbol)}
     ${whyHere(symbol)}
     ${checkFirst(symbol)}
-    ${globalThis.TLRisk ? globalThis.TLRisk.companyHtml(symbol, state.riskReview, globalThis.TLRisk.hurdle()) : ""}
     ${metricsTable(symbol)}
     ${fscore || analysts ? `<p class="qv-more">${[fscore, analysts].filter(Boolean).map(escapeHtml).join("<br>")}</p>` : ""}
     <p class="qv-more">Insiders, 13F funds, the price chart and analyst targets are on the <a href="./ticker.html?t=${encodeURIComponent(symbol)}">full ticker page</a>.</p>
@@ -1029,14 +1024,12 @@ async function loadExtras() {
       return null;
     }
   };
-  const [earnings, shorts, trend, review] = await Promise.all([
+  const [earnings, shorts, trend] = await Promise.all([
     load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
     load("short-interest.json", (data) => data.schema === "short-interest-1"),
     load("trend-rules.json", (data) => data.schema === "trend-rules-2"),
-    load("risk-review.json", (data) => globalThis.TLRisk?.compatible(data, state.desk, state.snapshotHash)),
   ]);
-  state.riskReview = review;
-  state.earnings = review ? globalThis.TLRisk.mergeCalendar(earnings, review, todayIso()) : earnings;
+  state.earnings = earnings;
   state.shorts = shorts;
   state.trend = trend;
   render();
@@ -1130,9 +1123,7 @@ function companyCell(symbol) {
     (status !== "complete"
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
       : "") + lossmakingChip(symbol);
-  const review = state.riskReview?.companies?.[symbol];
-  const flag = review ? `<span class="rr-flag">${review.claims?.length ? "Risk notes · " : ""}Scenario review</span>` : "";
-  return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span>${flag}</button></div></td>`;
+  return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></div></td>`;
 }
 
 function industryCell(symbol) {
@@ -1207,13 +1198,6 @@ function listNote() {
 }
 
 function render() {
-  if (globalThis.TLRisk) {
-    const reviewRoot = $("risk-review");
-    if (reviewRoot) {
-      reviewRoot.hidden = !["composite", "undervalued"].includes(state.screen);
-      globalThis.TLRisk.mount(reviewRoot, state.riskReview, state.earnings, state.desk, openCompany, todayIso());
-    }
-  }
   const setup = state.desk.setups[state.screen];
   $("method-copy").textContent = setup.method || "Method not recorded in this snapshot.";
   $("method-version").textContent = `Method version: ${setup.version || "not recorded"}`;
@@ -1379,12 +1363,7 @@ async function start() {
   try {
     const response = await fetch("./desk.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
-    const snapshotText = await response.text();
-    state.desk = JSON.parse(snapshotText);
-    if (globalThis.crypto?.subtle) {
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(snapshotText));
-      state.snapshotHash = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,"0")).join("");
-    }
+    state.desk = await response.json();
     // A snapshot from before the Shortlist was published opens on Growth.
     if (!state.desk.setups[state.screen]) state.screen = SCREENS.find(([key]) => state.desk.setups[key])?.[0] || "growth";
     try {

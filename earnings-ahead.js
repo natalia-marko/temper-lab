@@ -88,8 +88,7 @@
     const node = el("span", "ea-chip");
     if (globalThis.TLWatch) node.append(globalThis.TLWatch.button(r.symbol, r.name));
     node.append(el("span", "ea-sym", r.symbol + (r.unsure ? " ~" : "")));
-    node.title = [r.name, money(r.market_cap), r.confirmation === "issuer_confirmed" ? "Issuer-confirmed" : "Vendor date; company confirmation unverified", r.unsure ? "sources disagree" : ""].filter(Boolean).join(" · ");
-    if (r.confirmation === "issuer_confirmed") node.append(el("span", "", " ✓"));
+    node.title = [r.name, money(r.market_cap), "Yahoo date, not a company announcement", r.unsure ? "sources disagree" : ""].filter(Boolean).join(" · ");
     return node;
   }
   // One day: the largest DAY_LIMIT companies by timing, then "+ N more" for the rest.
@@ -183,7 +182,7 @@
     // Agreement between vendor feeds is not issuer confirmation.
     const unsure = list.reduce((n, w) => n + w.rows.filter((r) => r.unsure).length, 0);
     const note = document.getElementById("earnings-note");
-    note.textContent = "✓ = issuer-confirmed in the dated review. Other dates are vendor estimates, not issuer confirmations." +
+    note.textContent = "Dates are Yahoo estimates, not company announcements." +
       (unsure ? ` ~ = tentative: Yahoo's two sources disagree (${unsure} in this window).` : "");
     note.hidden = false;
     root.hidden = false;
@@ -193,17 +192,8 @@
     if (!root) return;
     fetch("./earnings-calendar.json", { cache: "no-cache" })
       .then((r) => (r.ok ? r.json() : null))
-      .then(async (data) => {
+      .then((data) => {
         if (!data || data.schema !== "earnings-calendar-1" || !data.window) return;
-        if (globalThis.TLRisk) {
-          try {
-            const responses = await Promise.all([fetch("./risk-review.json", {cache:"no-store"}), fetch("./desk.json", {cache:"no-store"})]);
-            if (responses.every(r=>r.ok)) {
-              const [review, desk] = await Promise.all(responses.map(r=>r.json()));
-              if (globalThis.TLRisk.compatible(review,desk)) data = globalThis.TLRisk.mergeCalendar(data,review,newYorkToday());
-            }
-          } catch (error) { /* Vendor dates stay explicitly unconfirmed. */ }
-        }
         for (const [id, mine] of [["ea-all", false], ["ea-mine", true]]) {
           const b = document.getElementById(id);
           if (!b) continue;
