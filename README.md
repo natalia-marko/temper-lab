@@ -13,8 +13,7 @@ See `docs/quiet-facts-review-2026-10-27.md` for the coverage test and limitation
 
 The dated risk review of 26 Oct 2026 was taken off the site on 27 Oct 2026: its
 hurdle, budgets and historical windows were assumptions, not a pre-registered test.
-Its builder and evidence stay for the record (`tools/build_risk_review.py`,
-`pipeline/reviews/risk_review_2026-10-26.json`); the builder now writes to `output/`.
+Its builder and evidence were removed from the product on 28 Oct 2026.
 
 All pages share one sidebar menu. Hide it to expand the workspace; the desktop
 choice is remembered in this browser. On phones it opens as a drawer, closes
