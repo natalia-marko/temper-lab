@@ -8,7 +8,7 @@
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
 "use strict";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const FILES = { desk: "./desk.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
+const FILES = { desk: "./desk.json", quiet: "./quiet-facts.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
   own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json", jev: "./jev-reads.json" };
 const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
 const MONEY_LABEL = {
@@ -401,6 +401,13 @@ function fscoreOf(data, symbol) {
   const f = data.fscore && data.fscore.companies && data.fscore.companies[symbol];
   return f && data.desk && data.fscore.as_of === data.desk.as_of ? { ...f, as_of: data.fscore.as_of } : null;
 }
+function quietFactsOf(data, symbol) {
+  const q = data.quiet;
+  return q && q.schema === "quiet-facts-1" && data.desk && data.desk.run_id &&
+    q.as_of === data.desk.as_of && q.desk_run_id === data.desk.run_id &&
+    data.deskSha256 && q.desk_sha256 === data.deskSha256
+    ? q.companies?.[symbol] || null : null;
+}
 // Two ratios of figures from the same Research record. Not shown for a loss: a negative multiple reads as cheap.
 function valuationOf(research) {
   const f = research.factors || {};
@@ -466,6 +473,7 @@ function card(data, query, sessions = state.period) {
     volume, price,
     funds: fundsOf(data.funds, symbol),
     fscore: fscoreOf(data, symbol),
+    quiet: quietFactsOf(data, symbol),
     earnings: calendar ? { window: calendar.window || {}, next: (calendar.companies || {})[symbol] || null } : null,
     potential: (desk && desk.potential) || null,
   };
@@ -1464,6 +1472,62 @@ function financialsBox(c) {
   table.append(body);
   return section("Financials", `Research snapshot, week of ${longDay(r.as_of)}`, table);
 }
+function quietFactsBox(c) {
+  const q = c.quiet;
+  const title = "What changed vs the same quarter last year";
+  if (!q) return section(title, "", note("No verified comparison for this weekly snapshot."));
+  const box = section(title, q.period_end ? `${longDay(q.previous_end) || "n/a"} → ${longDay(q.period_end)}` : "",
+    note("Reported facts, no directional judgement. Cash vs profit uses the labelled year-to-date or full-year period."));
+  const inputLabels = {
+    AccountsReceivableNetCurrent: "Net receivables (current)", AccountsReceivableNet: "Net receivables",
+    InventoryNet: "Inventory", GrossProfit: "Gross profit", CostOfRevenue: "Cost of revenue",
+    CostOfGoodsAndServicesSold: "Cost of goods and services sold", NetIncomeLoss: "Net income",
+    NetCashProvidedByUsedInOperatingActivities: "Operating cash flow", CommonStockSharesOutstanding: "Shares outstanding",
+    ContractWithCustomerLiability: "Contract liabilities (total)", ContractWithCustomerLiabilityCurrent: "Contract liabilities (current)",
+    RevenueFromContractWithCustomerExcludingAssessedTax: "Revenue (excluding assessed tax)",
+    RevenueFromContractWithCustomerIncludingAssessedTax: "Revenue (including assessed tax)", Revenues: "Revenue", SalesRevenueNet: "Net sales",
+  };
+  const format = (v, unit, change = false) => {
+    if (!num(v)) return "n/a";
+    const prefix = Number(v) < 0 ? "−" : change && Number(v) > 0 ? "+" : "";
+    const n = Math.abs(Number(v));
+    if (unit === "USD") return prefix + money(n);
+    if (unit === "shares") return prefix + count(n);
+    return `${prefix}${n.toFixed(1)}${unit === "percent" ? (change ? " pp" : "%") : " days"}`;
+  };
+  if (q.reason) box.append(note(q.reason));
+  for (const r of q.rows || []) {
+    const detail = el("details", "tk-quiet-row");
+    const summary = el("summary");
+    summary.append(el("span", "tk-quiet-label", r.label + (r.key === "cash_profit" && r.basis ? ` · ${r.basis}` : "")));
+    if (r.status !== "available") {
+      summary.append(el("span", "tk-quiet-value", "Unavailable"));
+      detail.append(summary, note(r.reason));
+      box.append(detail);
+      continue;
+    }
+    summary.append(el("span", "tk-quiet-value", `${format(r.previous.value, r.unit)} → ${format(r.current.value, r.unit)} (${format(r.change, r.unit, true)})`));
+    detail.append(summary, note(`${r.basis}. ${r.explanation}`));
+    for (const [key, label] of [["previous", "Last year"], ["current", "Current"]]) {
+      const inputs = r[key].inputs || [];
+      const group = el("div", "tk-quiet-source");
+      group.append(el("strong", "", label));
+      for (const input of inputs) {
+        const exact = num(input.val) ? `${Number(input.val).toLocaleString("en-US", { maximumFractionDigits: 6 })} ${input.unit}` : "n/a";
+        const line = el("p", "tk-note", `${inputLabels[input.tag] || input.tag}: ${exact} · ${input.start ? `${longDay(input.start)} – ` : "as of "}${longDay(input.end)} · `);
+        line.title = input.tag;
+        const url = secUrl(input.url);
+        if (url) line.append(link(`${input.form}, filed ${longDay(input.filed)} ↗`, url, true));
+        else line.append(el("span", "", "Filing link unavailable"));
+        group.append(line);
+      }
+      detail.append(group);
+    }
+    box.append(detail);
+  }
+  box.append(note("Comparatives may include revisions. Missing is not zero. Splits, acquisitions and accounting changes can affect comparisons; check the filings."));
+  return box;
+}
 function fscoreBox(c) {
   const f = c.fscore;
   if (!f) return section("F-Score", "", missing("fscore.json") || note("No F-Score for this week's snapshot."));
@@ -1758,7 +1822,7 @@ function render() {
   document.title = `Temper Lab — ${c.symbol}`;
   const research = c.research
     ? band("tk-business", "The business", `Research snapshot, week of ${longDay(c.research.as_of)}`, "biz",
-      financialsBox(c), stack(fscoreBox(c), analystsBox(c)))
+      stack(financialsBox(c), quietFactsBox(c)), stack(fscoreBox(c), analystsBox(c)))
     : [];
   out.replaceChildren(headerBox(c), ...[tapeBox(c), glanceBox(c)].filter(Boolean),
     ...band("tk-price", "Price and trading", "", "wide", priceBox(c), stack(volumeBox(c), insightsBox(c), shortBox(c))),
@@ -1897,9 +1961,14 @@ function start() {
     return;
   }
   const names = Object.keys(FILES);
-  Promise.allSettled(names.map((k) => fetch(FILES[k], { cache: "no-cache" }).then((r) => {
+  Promise.allSettled(names.map((k) => fetch(FILES[k], { cache: "no-cache" }).then(async (r) => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
+    const raw = await r.text();
+    if (k === "desk" && globalThis.crypto?.subtle) {
+      const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+      state.data.deskSha256 = Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, "0")).join("");
+    }
+    return JSON.parse(raw);
   }))).then((results) => {
     results.forEach((r, i) => {
       if (r.status === "fulfilled") state.data[names[i]] = r.value;

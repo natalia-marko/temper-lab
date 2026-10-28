@@ -1,5 +1,16 @@
 # Temper Lab — Opportunities snapshot
 
+Ticker's “What changed vs the same quarter last year” block reads `quiet-facts.json`,
+built offline by `tools/build_quiet_facts.py` after the weekly desk. It compares
+receivable/inventory days proxies, gross margin, cash flow minus profit,
+balance-sheet shares and contract liabilities. Each available row expands to
+exact inputs, period dates and SEC filing links. Cash uses explicitly labelled
+YTD/full-year periods. Missing comparable facts stay unavailable; annual revenue
+is never passed off as Q4. The file must match the desk date, run and SHA-256.
+This is descriptive research, with no score or return forecast. Current or prior
+reported values may include revisions; this is not a restatement detector.
+See `docs/quiet-facts-review-2026-10-27.md` for the coverage test and limitations.
+
 The dated risk review of 26 Oct 2026 was taken off the site on 27 Oct 2026: its
 hurdle, budgets and historical windows were assumptions, not a pre-registered test.
 Its builder and evidence stay for the record (`tools/build_risk_review.py`,

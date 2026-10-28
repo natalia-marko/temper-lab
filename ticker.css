@@ -175,6 +175,12 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-fin td:first-child { color: #3d5346; }
 .tk-fin .tk-fv { padding-left: 12px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .tk-fin .tk-fn { padding-left: 12px; color: #6d7d72; font-size: 11px; }
+.tk-quiet-row { border-top: 1px solid var(--tk-hair); padding: 8px 0; min-width: 0; }
+.tk-quiet-row summary { cursor: pointer; font-size: 12px; }
+.tk-quiet-label { font-weight: 600; }
+.tk-quiet-value { display: block; margin: 4px 0 0 14px; font-variant-numeric: tabular-nums; }
+.tk-quiet-source { margin-top: 10px; font-size: 12px; overflow-wrap: anywhere; }
+.tk-quiet-source p { margin: 4px 0; }
 .tk-fs { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
 .tk-fs i { height: 14px; border-radius: 3px; }
 .tk-fs i.yes { background: var(--tk-up); }
