@@ -282,3 +282,28 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; }
 .tk-early-list h3 { margin: 12px 0 6px; font-size: 12px; color: var(--muted); }
 .tk-early-list .tk-chip-btn { margin: 0 6px 6px 0; }
+
+/* What the price implies */
+.tk-ln.need { stroke: #2f78c0; stroke-width: 2; stroke-dasharray: 6 4; }
+.tk-dot.need { fill: #2f78c0; stroke: #fff; stroke-width: 2; }
+.tk-implies-head { margin: 0; font-size: 17px; line-height: 1.4; }
+.tk-implies-head strong { font-size: 22px; }
+.tk-implies-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 4px; color: var(--muted); font-size: 12px; }
+.tk-implies-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tk-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--ink); }
+.tk-key.need { border-top: 2px dashed #2f78c0; }
+.tk-implies-rows { display: grid; gap: 0; border-top: 1px solid var(--tk-hair); }
+.tk-implies-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; padding: 8px 0; border-bottom: 1px solid var(--tk-hair); font-size: 14px; }
+.tk-implies-row strong { text-align: right; font-variant-numeric: tabular-nums; }
+.tk-implies-row small { grid-column: 1 / -1; color: var(--tk-faint); font-size: 11.5px; }
+.tk-implies-controls { display: grid; gap: 14px; }
+.tk-implies-label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink); }
+.tk-implies-label strong { font-variant-numeric: tabular-nums; }
+.tk-implies-slider { display: grid; gap: 4px; }
+.tk-implies-slider input { width: 100%; accent-color: var(--green); }
+.tk-implies-slider small { color: var(--tk-faint); font-size: 11.5px; }
+.tk-implies-years { display: flex; align-items: center; gap: 6px; }
+.tk-implies-years .tk-implies-label { margin-right: 4px; }
+.tk-implies-years .tk-chip-btn { margin: 0; }
+.tk-chip-btn.on { background: #214d36; border-color: #214d36; color: #fff; }
+.tk-implies-math { display: grid; gap: 6px; padding-top: 6px; }

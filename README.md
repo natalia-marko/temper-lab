@@ -11,6 +11,19 @@ This is descriptive research, with no score or return forecast. Current or prior
 reported values may include revisions; this is not a restatement detector.
 See `docs/quiet-facts-review-2026-10-27.md` for the coverage test and limitations.
 
+Ticker's “What the price implies” block reads `price-implies.json`, built weekly by
+`tools/build_price_implies.py` after the desk. It turns today's market value into the
+yearly revenue growth a buyer would need: value needed = market value × ((1 + return
+wanted) / (1 + cash returned a year))^years; ÷ exit P/E = net income needed; ÷ net margin =
+revenue needed; growth = (revenue needed / TTM revenue)^(1/years) − 1. Defaults: the
+company's own TTM net margin, the sector's median P/E, last 10-K dividends plus buybacks
+as a share of market value, 8% wanted, 3 years; the reader can move each one. Revenue is
+point-in-time TTM from SEC filings, as first filed. It is compared with the company's own
+last three years, its sector median and the share of similar-size companies that grew as
+fast (today's listed companies only, so survivors). Not shown for banks, insurers, REITs
+or companies without a net profit. The file must match the desk date, run and SHA-256.
+Arithmetic, not a fair value, forecast or signal.
+
 The dated risk review of 26 Oct 2026 was taken off the site on 27 Oct 2026: its
 hurdle, budgets and historical windows were assumptions, not a pre-registered test.
 Its builder and evidence were removed from the product on 28 Oct 2026.

@@ -1,15 +1,18 @@
 // Ticker page: everything saved about one ticker, each fact with its date.
 // Reads only files the weekly and Tue/Fri jobs already publish (desk.json,
 // fscore.json, earnings-calendar.json, ownership-signals.json, jev-reads.json) plus
-// ticker-volume.json (weekly: volume facts and the 12-month / 3-month price chart) and ticker-funds.json (13F, quarterly).
+// ticker-volume.json (weekly: volume facts and the 12-month / 3-month price chart), price-implies.json (weekly:
+// dated revenue, cash returned and base rates) and ticker-funds.json (13F, quarterly).
 // Nothing is computed here beyond lookups, formatting, changes along the saved price line, sums of the
 // dollar amounts shown, two ratios of figures from one Research record (price / earnings, EV / operating income),
+// the "What the price implies" reverse-valuation arithmetic on the reader's assumptions,
 // and the decision tape (Jev raised? / revision up?) from already-published facts.
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
 "use strict";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FILES = { desk: "./desk.json", quiet: "./quiet-facts.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
-  own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json", jev: "./jev-reads.json" };
+  own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json", jev: "./jev-reads.json",
+  implies: "./price-implies.json" };
 const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
 const MONEY_LABEL = {
   buy: "bought", buy_plan: "bought under a 10b5-1 plan", buy_private: "bought privately or in an offering",
@@ -401,6 +404,60 @@ function fscoreOf(data, symbol) {
   const f = data.fscore && data.fscore.companies && data.fscore.companies[symbol];
   return f && data.desk && data.fscore.as_of === data.desk.as_of ? { ...f, as_of: data.fscore.as_of } : null;
 }
+// "What the price implies". Same freshness rule as quiet facts: inputs from another desk snapshot are not shown.
+function impliesOf(data, symbol) {
+  const p = data.implies;
+  if (!p || p.schema !== "price-implies-1" || !data.desk || p.as_of !== data.desk.as_of ||
+      p.desk_run_id !== data.desk.run_id || !data.deskSha256 || p.desk_sha256 !== data.deskSha256) return null;
+  const c = p.companies && p.companies[symbol];
+  if (!c) return null;
+  return { ...c, sectorStats: (p.sectors || {})[c.sector] || null, defaults: p.defaults || {},
+    bands: (p.base_rates && p.base_rates.bands) || [], baseWindow: p.base_rates && p.base_rates.window };
+}
+// Reverse valuation. Value needed in N years = market value × ((1 + return wanted) / (1 + cash returned a year))^N:
+// cash paid out counts toward the return, so less value growth is needed. Earnings = value / exit P/E;
+// revenue = earnings / net margin; implied growth = (revenue needed / revenue today)^(1/N) − 1.
+function impliedPath({ marketCap, revenue, margin, exitPe, cashYield, requiredReturn, years }) {
+  if (![marketCap, revenue, margin, exitPe, cashYield, requiredReturn, years].every(num)) return null;
+  if (marketCap <= 0 || revenue <= 0 || margin <= 0 || exitPe <= 0 || years <= 0 || cashYield < 0 || requiredReturn <= -1) return null;
+  const value = marketCap * Math.pow((1 + requiredReturn) / (1 + cashYield), years);
+  const earnings = value / exitPe;
+  const needed = earnings / margin;
+  return { value, earnings, revenue: needed, growth: Math.pow(needed / revenue, 1 / years) - 1 };
+}
+// Share of companies in the same revenue-size band whose last three years grew at least this fast.
+function baseRate(bands, revenue, growth) {
+  if (!bands || !bands.length || !num(revenue) || !num(growth)) return null;
+  const band = bands.find((b) => revenue <= b.max_revenue) || bands[bands.length - 1];
+  const list = band.growth || [];
+  if (!list.length) return null;
+  let lo = 0, hi = list.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (list[mid] < growth) lo = mid + 1; else hi = mid; }
+  return { share: (list.length - lo) / list.length, n: list.length, min: band.min_revenue, max: band.max_revenue };
+}
+// Starting assumptions: the company's own dated numbers where they exist, the sector's otherwise.
+function impliesDefaults(c) {
+  const i = c.implies, f = (c.research && c.research.factors) || {}, s = i.sectorStats || {};
+  const own = num(f.net_margin) && Number(f.net_margin) > 0 ? Number(f.net_margin) : null;
+  const cash = i.cash_returned;
+  const paid = cash ? (num(cash.dividends) ? Number(cash.dividends) : 0) + (num(cash.buybacks) ? Number(cash.buybacks) : 0) : 0;
+  const cap = c.research && Number(c.research.market_cap);
+  const pe = c.research && c.research.valuation && c.research.valuation.pe;
+  return {
+    // The company's own margin only: a borrowed sector margin turns a loss-maker's price into a fake growth rate.
+    margin: own,
+    exitPe: num(s.pe_median) ? Number(s.pe_median) : num(pe) ? Number(pe) : null,
+    peFrom: num(s.pe_median) ? "sector" : "today",
+    cashYield: cap > 0 ? Math.min(0.2, Math.max(0, paid / cap)) : 0,
+    requiredReturn: num(i.defaults.required_return) ? Number(i.defaults.required_return) : 0.08,
+    years: num(i.defaults.years) ? Number(i.defaults.years) : 3,
+  };
+}
+function addYears(iso, n) {
+  const d = new Date(`${String(iso).slice(0, 10)}T00:00:00Z`);
+  d.setUTCFullYear(d.getUTCFullYear() + n);
+  return d.toISOString().slice(0, 10);
+}
 function quietFactsOf(data, symbol) {
   const q = data.quiet;
   return q && q.schema === "quiet-facts-1" && data.desk && data.desk.run_id &&
@@ -474,6 +531,7 @@ function card(data, query, sessions = state.period) {
     funds: fundsOf(data.funds, symbol),
     fscore: fscoreOf(data, symbol),
     quiet: quietFactsOf(data, symbol),
+    implies: impliesOf(data, symbol),
     earnings: calendar ? { window: calendar.window || {}, next: (calendar.companies || {})[symbol] || null } : null,
     potential: (desk && desk.potential) || null,
   };
@@ -1528,6 +1586,206 @@ function quietFactsBox(c) {
   box.append(note("Comparatives may include revisions. Missing is not zero. Splits, acquisitions and accounting changes can affect comparisons; check the filings."));
   return box;
 }
+// Revenue as reported (solid) and the path the price needs (dashed), on one date axis.
+function impliesChart(history, needed, symbol) {
+  const W = 720, L = 58, R = 104, T = 16, B = 172;
+  const points = [...history.map(([d, filed, v]) => ({ d, filed, v, kind: "reported" })), ...needed.map(([d, v]) => ({ d, v, kind: "needed" }))];
+  const t = (d) => Date.parse(`${d}T00:00:00Z`);
+  const t0 = t(points[0].d), t1 = t(points[points.length - 1].d);
+  const max = Math.max(...points.map((p) => p.v));
+  const step = [1, 2, 2.5, 5].map((m) => m * 10 ** Math.floor(Math.log10(max || 1))).find((s) => max / s <= 4) || 10 ** Math.ceil(Math.log10(max || 1));
+  const hi = Math.ceil(max / step) * step;
+  const x = (d) => L + ((t(d) - t0) / (t1 - t0 || 1)) * (W - L - R);
+  const y = (v) => T + (1 - v / (hi || 1)) * (B - T);
+  const chart = svg("svg", { viewBox: `0 0 ${W} ${B + 24}`, role: "img", tabindex: "0",
+    "aria-label": `${symbol} trailing twelve-month revenue ${money(history[history.length - 1][2])} to ${longDay(history[history.length - 1][0])}; ` +
+      `the price needs ${money(needed[needed.length - 1][1])} by ${longDay(needed[needed.length - 1][0])}. Left and right arrow keys read each point.` });
+  for (let v = 0; v <= hi + 1e-6; v += step) {
+    svg("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: v === 0 ? "tk-zero" : "tk-grid" }, chart);
+    svg("text", { x: L - 6, y: y(v) + 3.5, "text-anchor": "end", class: "tk-tick" }, chart, v === 0 ? "$0" : money(v).replace(/\.0(?=[KMBT])/, ""));
+  }
+  const years = [...new Set(points.map((p) => p.d.slice(0, 4)))];
+  years.forEach((yr) => {
+    const d = `${yr}-01-01`;
+    if (t(d) > t0 && t(d) < t1) svg("text", { x: x(d), y: B + 16, "text-anchor": "middle", class: "tk-tick" }, chart, yr);
+  });
+  const line = (list) => list.map((p, k) => `${k ? "L" : "M"}${x(p.d).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  const rep = points.filter((p) => p.kind === "reported");
+  const need = [rep[rep.length - 1], ...points.filter((p) => p.kind === "needed")];
+  svg("line", { x1: x(rep[rep.length - 1].d), x2: x(rep[rep.length - 1].d), y1: T, y2: B, class: "tk-report-line" }, chart);
+  svg("path", { d: line(rep), class: "tk-ln stock" }, chart);
+  svg("path", { d: line(need), class: "tk-ln need" }, chart);
+  const last = rep[rep.length - 1], end = need[need.length - 1];
+  svg("circle", { cx: x(last.d), cy: y(last.v), r: 4.5, class: "tk-dot stock" }, chart);
+  svg("circle", { cx: x(end.d), cy: y(end.v), r: 4.5, class: "tk-dot need" }, chart);
+  let yl = y(last.v) + 4, ye = y(end.v) + 4;
+  if (Math.abs(yl - ye) < 14) { const m = (yl + ye) / 2; [yl, ye] = yl <= ye ? [m - 7, m + 7] : [m + 7, m - 7]; }
+  svg("text", { x: W - R + 9, y: ye, class: "tk-tick strong" }, chart, money(end.v));  // the legend names the dashed line
+  if (x(end.d) - x(last.d) > 60) svg("text", { x: x(last.d) - 8, y: yl - 10, "text-anchor": "end", class: "tk-tick strong" }, chart, `Now ${money(last.v)}`);
+  // Hover and keyboard readout over every point of both lines.
+  const cross = svg("line", { y1: T, y2: B, class: "tk-cross", visibility: "hidden" }, chart);
+  const dot = svg("circle", { r: 4.5, class: "tk-dot stock", visibility: "hidden" }, chart);
+  const wrap = el("div", "tk-chart");
+  const tip = el("div", "tk-tip");
+  tip.hidden = true;
+  let cur = rep.length - 1;
+  const all = [...rep, ...need.slice(1)];
+  const show = (k) => {
+    cur = Math.max(0, Math.min(all.length - 1, k));
+    const p = all[cur];
+    cross.setAttribute("visibility", "visible");
+    cross.setAttribute("x1", x(p.d)); cross.setAttribute("x2", x(p.d));
+    dot.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x(p.d)); dot.setAttribute("cy", y(p.v));
+    dot.setAttribute("class", `tk-dot ${p.kind === "needed" ? "need" : "stock"}`);
+    tip.replaceChildren(el("b", "", money(p.v)), el("span", "", p.kind === "needed" ? `Needed by ${longDay(p.d)}` : `TTM revenue to ${longDay(p.d)}, filed ${longDay(p.filed)}`));
+    tip.hidden = false;
+    const left = (x(p.d) / W) * 100;
+    tip.style.left = left > 60 ? "" : `${left + 2}%`;
+    tip.style.right = left > 60 ? `${100 - left + 2}%` : "";
+  };
+  const hide = () => { cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.hidden = true; };
+  chart.addEventListener("pointermove", (e) => {
+    const box = chart.getBoundingClientRect();
+    const px = ((e.clientX - box.left) / box.width) * W;
+    let best = 0;
+    all.forEach((p, k) => { if (Math.abs(x(p.d) - px) < Math.abs(x(all[best].d) - px)) best = k; });
+    show(best);
+  });
+  chart.addEventListener("pointerleave", hide);
+  chart.addEventListener("blur", hide);
+  chart.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); show(cur + (e.key === "ArrowRight" ? 1 : -1)); }
+  });
+  const legend = el("div", "tk-implies-legend");
+  for (const [cls, text] of [["stock", "Reported TTM revenue"], ["need", "Revenue the price needs"]]) {
+    const item = el("span", "");
+    item.append(el("i", `tk-key ${cls}`), document.createTextNode(text));
+    legend.append(item);
+  }
+  wrap.append(legend, chart, tip);
+  return wrap;
+}
+function impliesBoxes(c) {
+  const title = "Not shown for this company";
+  const i = c.implies;
+  if (!i) return [section("Inputs missing", "", missing("price-implies.json") || note("No inputs for this weekly snapshot."))];
+  if (i.excluded) return [section(title, "", note(i.excluded))];
+  const r = c.research;
+  const history = i.history;
+  const revenue = history[history.length - 1][2];
+  const start = impliesDefaults(c);
+  if (start.margin === null) return [section(title, "", note(
+    "No net profit over the last twelve months, so the price cannot be read as a revenue growth rate."))];
+  if (start.exitPe === null) return [section(title, "", note("No P/E for the company or its sector."))];
+  const a = { ...start };
+  const sector = (i.sectorStats && i.sectorStats.label) || "Sector";
+  const left = section("Revenue: reported and needed", `TTM revenue to ${longDay(history[history.length - 1][0])} · price at the ${longDay(r.price_date)} close`);
+  const head = el("p", "tk-implies-head");
+  const sub = note("");
+  const chartSlot = el("div", "");
+  const rows = el("div", "tk-implies-rows");
+  left.append(head, sub, chartSlot, rows,
+    note("Arithmetic on dated filings and your assumptions: not a fair value, a forecast or advice. History covers today's listed companies only."));
+  const right = section("Your assumptions", "Move any of them");
+  const controls = el("div", "tk-implies-controls");
+  const math = el("div", "tk-implies-math");
+  const pe = r.valuation && r.valuation.pe;
+  const cash = i.cash_returned;
+  const sliders = [
+    ["exitPe", "P/E at the end", 5, 80, 0.5, (v) => times(v),
+      start.peFrom === "sector" ? `${sector} median ${times(start.exitPe)}${num(pe) ? ` · today ${times(pe)}` : ""}` : `today ${times(pe)} · no ${sector} median`],
+    ["margin", "Net margin", 0.01, 0.7, 0.005, (v) => level(v),
+      `today ${level(start.margin)} (TTM)${num(i.sectorStats && i.sectorStats.net_margin_median) ? ` · ${sector} median ${level(i.sectorStats.net_margin_median)}` : ""}`],
+    ["cashYield", "Cash returned a year", 0, 0.1, 0.001, (v) => level(v),
+      cash ? `dividends + buybacks, fiscal year to ${longDay(cash.fy_end)}: ${level(start.cashYield)} of market value` : "none reported in the last 10-K"],
+    ["requiredReturn", "Return you want a year", 0.04, 0.15, 0.005, (v) => level(v), "your choice; 8% is a common long-run equity figure"],
+  ];
+  const yearsBox = el("div", "tk-implies-years");
+  yearsBox.append(el("span", "tk-implies-label", "Years"));
+  const yearButtons = [3, 5].map((n) => {
+    const b = el("button", "tk-chip-btn", `${n}`);
+    b.type = "button";
+    b.addEventListener("click", () => { a.years = n; update(); });
+    yearsBox.append(b);
+    return [n, b];
+  });
+  controls.append(yearsBox);
+  const inputs = sliders.map(([key, label, min, max, stepSize, fmt, hint]) => {
+    const row = el("label", "tk-implies-slider");
+    const top = el("span", "tk-implies-label", label);
+    const val = el("strong", "", fmt(a[key]));
+    top.append(val);
+    const input = el("input");
+    Object.assign(input, { type: "range", min, max, step: stepSize, value: Math.min(max, Math.max(min, a[key])) });
+    input.addEventListener("input", () => { a[key] = Number(input.value); update(); });
+    row.append(top, input, el("small", "", hint));
+    controls.append(row);
+    return [key, input, val, fmt];
+  });
+  const reset = el("button", "tk-chip-btn", "Reset to the company's numbers");
+  reset.type = "button";
+  reset.addEventListener("click", () => {
+    Object.assign(a, start);
+    inputs.forEach(([key, input]) => { input.value = a[key]; });
+    update();
+  });
+  const details = el("details", "tk-more");
+  details.append(el("summary", "", "Show the arithmetic"), math);
+  right.append(controls, reset, details);
+  function update() {
+    inputs.forEach(([key, , val, fmt]) => { val.textContent = fmt(a[key]); });
+    yearButtons.forEach(([n, b]) => b.classList.toggle("on", n === a.years));
+    const p = impliedPath({ marketCap: Number(r.market_cap), revenue, margin: a.margin, exitPe: a.exitPe,
+      cashYield: a.cashYield, requiredReturn: a.requiredReturn, years: a.years });
+    if (!p) {
+      head.textContent = "Not computable with these inputs.";
+      sub.textContent = ""; chartSlot.replaceChildren(); rows.replaceChildren(); math.replaceChildren();
+      return;
+    }
+    const endDay = addYears(history[history.length - 1][0], a.years);
+    head.replaceChildren(document.createTextNode(`At ${dollars(r.price)}, ${c.name || c.symbol} needs revenue to `),
+      el("strong", "", p.growth >= 0 ? `grow ${p.growth > 1 ? "over 100%" : level(p.growth)} a year` : `fall no more than ${level(-p.growth)} a year`),
+      document.createTextNode(` for ${a.years} years.`));
+    sub.textContent = `If its P/E ends at ${times(a.exitPe)}, it earns a ${level(a.margin)} net margin, returns ${level(a.cashYield)} a year in cash and you want ${level(a.requiredReturn)} a year.`;
+    const needed = Array.from({ length: a.years }, (_, k) => [addYears(history[history.length - 1][0], k + 1), revenue * Math.pow(1 + p.growth, k + 1)]);
+    chartSlot.replaceChildren(impliesChart(history, needed, c.symbol));
+    const g = i.growth_3y, s = i.sectorStats || {};
+    const base = baseRate(i.bands, revenue, p.growth);
+    const row = (label, value, hint) => {
+      const line = el("div", "tk-implies-row");
+      line.append(el("span", "", label), el("strong", "", value));
+      if (hint) line.append(el("small", "", hint));
+      return line;
+    };
+    rows.replaceChildren(
+      row("Needed", `${level(p.growth)} a year`, `to ${money(p.revenue)} by ${monthYear(endDay)}`),
+      row("Its own last 3 years", g ? `${level(g.value)} a year` : "n/a", g ? `${monthYear(g.from)} → ${monthYear(g.to)}` : "no comparable report three years earlier"),
+      row(`${sector} median, last 3 years`, num(s.growth_3y_median) ? `${level(s.growth_3y_median)} a year` : "n/a", num(s.growth_3y_count) ? `${s.growth_3y_count} companies` : ""),
+      row("Companies its size that grew this fast", base ? share(base.share) : "n/a",
+        base ? `of ${base.n} with revenue ${money(base.min)}–${money(base.max)}, over their own last 3 years` : ""));
+    const lines = [
+      `Market value today ${money(r.market_cap)} × ((1 + ${level(a.requiredReturn)}) / (1 + ${level(a.cashYield)}))^${a.years} = ${money(p.value)} needed by ${monthYear(endDay)}`,
+      `÷ P/E ${times(a.exitPe)} = ${money(p.earnings)} of yearly net income`,
+      `÷ net margin ${level(a.margin)} = ${money(p.revenue)} of revenue`,
+      `from ${money(revenue)} TTM revenue: (${money(p.revenue)} / ${money(revenue)})^(1/${a.years}) − 1 = ${level(p.growth)} a year`,
+      "Cash returned counts toward your return, so it lowers the value the market cap must reach. Share-count changes, debt and taxes are not modelled.",
+    ];
+    math.replaceChildren(...lines.map((t) => el("p", "tk-note", t)));
+    const latest = history[history.length - 1];
+    math.append(el("p", "tk-note", `Revenue: trailing twelve months to ${longDay(latest[0])}, as first filed ${longDay(latest[1])} (SEC filings).`));
+    if (cash) {
+      const paid = [["dividends", cash.dividends], ["buybacks", cash.buybacks]].map(([k, v]) => `${k} ${num(v) ? money(v) : "n/a"}`).join(" + ");
+      const line = el("p", "tk-note", `Cash returned: ${paid}, fiscal year to ${longDay(cash.fy_end)} · `);
+      const url = secUrl(cash.url);
+      if (url) line.append(link(`10-K, filed ${longDay(cash.filed)} ↗`, url, true));
+      else line.append(el("span", "", "Filing link unavailable"));
+      math.append(line);
+    }
+  }
+  update();
+  return [left, right];
+}
 function fscoreBox(c) {
   const f = c.fscore;
   if (!f) return section("F-Score", "", missing("fscore.json") || note("No F-Score for this week's snapshot."));
@@ -1827,6 +2085,8 @@ function render() {
   out.replaceChildren(headerBox(c), ...[tapeBox(c), glanceBox(c)].filter(Boolean),
     ...band("tk-price", "Price and trading", "", "wide", priceBox(c), stack(volumeBox(c), insightsBox(c), shortBox(c))),
     ...research,
+    ...(c.research ? band("tk-implies", "What the price implies", "Arithmetic on dated filings, not a forecast",
+      "wide", ...impliesBoxes(c)) : []),
     ...band("tk-owners", "Who owns and trades it", "SEC Form 4, 13D/13G and 13F filings", "own",
       stack(insidersBox(c), stakesBox(c)), fundsBox(c)),
     ...(c.potential ? band("tk-early", "Early-stage research file", `Week of ${longDay(c.potential.as_of || c.research?.as_of)}`, "early", earlyStageBox(c)) : []),
