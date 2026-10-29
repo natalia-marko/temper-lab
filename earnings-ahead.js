@@ -129,11 +129,15 @@
     bar.append(fill);
     count.append(bar, el("span", "ea-n", rows.length.toLocaleString("en-US")));
     count.title = plural(rows.length, "company reports", "companies report");
+    // Shortlist names reporting this week (List check's file); a dash until it has loaded.
+    const short = ctx.shortlist ? rows.filter((r) => ctx.shortlist.has(r.symbol)).length : null;
+    const sl = el("span", `ea-sl${short ? "" : " ea-zero"}`, short === null ? "—" : short.toLocaleString("en-US"));
+    sl.title = short === null ? "Shortlist not loaded" : plural(short, "Shortlist name reports", "Shortlist names report");
     const names = el("span", "ea-names");
     if (w.starred.length) names.append(el("span", "ea-starred", mineText(w.starred)));
-    if (!ctx.mine) names.append(el("span", "", `Largest: ${w.biggest.map((r) => r.symbol + (r.unsure ? " ~" : "")).join(", ")}`));
+    if (!ctx.mine) names.append(el("span", "", w.biggest.map((r) => r.symbol + (r.unsure ? " ~" : "")).join(", ")));
     else if (!w.starred.length) names.append(el("span", "ea-none", "none of yours"));
-    summary.append(el("strong", "ea-when", weekLabel(w, ctx.today, ctx.windowTo)), count, names, el("span", "ea-toggle"));
+    summary.append(el("strong", "ea-when", weekLabel(w, ctx.today, ctx.windowTo)), count, sl, names, el("span", "ea-toggle"));
     details.append(summary);
     const body = el("div", "ea-days");
     const days = [...new Set(rows.map((r) => r.date))].sort();
@@ -142,8 +146,13 @@
     details.append(body);
     return details;
   }
-  const state = { mine: false };
+  const state = { mine: false, root: null, data: null };
+  function shortlistSet() {
+    const symbols = globalThis.TLListCheck && globalThis.TLListCheck.current && globalThis.TLListCheck.current.shortlist;
+    return Array.isArray(symbols) ? new Set(symbols) : null;
+  }
   function render(root, data) {
+    state.root = root; state.data = data;
     const today = newYorkToday();
     const starred = (s) => Boolean(globalThis.TLWatch && globalThis.TLWatch.has(s));
     const list = weeks(data, today, starred);
@@ -153,7 +162,7 @@
     const max = Math.max(1, ...list.map((w) => (state.mine ? w.starred : w.rows).length));
     const open = new Set([...root.querySelectorAll("details.ea-week[open]")].map((d) => d.dataset.week));
     document.getElementById("earnings-weeks").replaceChildren(...list.map((w) => {
-      const block = weekBlock(w, { mine: state.mine, today, windowTo, max });
+      const block = weekBlock(w, { mine: state.mine, today, windowTo, max, shortlist: shortlistSet() });
       block.dataset.week = w.from;
       if (open.has(w.from)) block.open = true;
       return block;
@@ -176,6 +185,9 @@
     if (!state.mine && mine) parts.push(mine);
     document.getElementById("earnings-summary").textContent = parts.join(" · ");
     document.getElementById("earnings-built").textContent = data.built_at ? `Updated ${weekdayText(data.built_at)}` : "";
+    document.getElementById("earnings-title").textContent = `Upcoming earnings through ${weekdayText(windowTo)}`;
+    const clock = document.getElementById("clock-earnings");
+    if (clock) clock.textContent = data.built_at ? weekdayText(data.built_at) : "—";
     const mineButton = document.getElementById("ea-mine");
     if (mineButton) mineButton.textContent = `★ My watchlist (${mineAll.length})`;
 
@@ -211,6 +223,8 @@
       })
       .catch(() => { root.hidden = true; });
   }
-  globalThis.TLEarnings = { weeks, monday, spanText, weekdaySpan, weekLabel, mineText, money };
+  // List check calls this once its file (with the Shortlist) has loaded.
+  const refresh = () => { if (state.root && state.data) render(state.root, state.data); };
+  globalThis.TLEarnings = { weeks, monday, spanText, weekdaySpan, weekLabel, mineText, money, refresh };
   if (globalThis.document) start();
 })();

@@ -6,6 +6,12 @@ function day(iso) {
   });
 }
 
+function weekdayDay(iso) {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
+  }).replace(",", "");
+}
+
 function percent(value, digits = 1) {
   if (!Number.isFinite(value)) return "—";
   return `${value > 0 ? "+" : ""}${(value * 100).toFixed(digits)}%`;
@@ -134,17 +140,8 @@ function tapeHeadline(mood, period) {
   const qqq = mood.indices?.QQQ?.[`return_${period}`];
   const up = mood.breadth?.[`up_${period}`];
   const middle = mood.breadth?.[`median_${period}`];
-  const lists = listBreadthOf(mood);
-  const listUp = lists?.[`up_${period}`];
-  const listMiddle = lists?.[`median_${period}`];
+  // The market only: how list names compare is on List check, with its selection caveat.
   if (![spy, qqq, up, middle].every(Number.isFinite)) return 'The Friday market snapshot';
-  if (Number.isFinite(listUp) && Number.isFinite(listMiddle)
-      && spy > 0 && qqq > 0 && up < 0.5 && listUp > 0.5) {
-    return 'Indices rose. Most eligible stocks did not — list names did.';
-  }
-  if (Number.isFinite(listMiddle) && spy > 0 && qqq > 0 && middle < 0 && listMiddle > 0) {
-    return 'Indices rose. Eligible median fell; list names held up.';
-  }
   if (up === 0.5) return 'Half of eligible stocks rose.';
   if (spy > 0 && qqq > 0 && up < 0.5) return 'Indices rose. Most eligible stocks did not.';
   if (spy < 0 && qqq < 0 && up > 0.5) return 'Indices fell. Most eligible stocks rose.';
@@ -297,15 +294,19 @@ function sectorScale(sectors) {
   return {minimum, maximum, ticks, position, zero: position(0)};
 }
 
-function renderSectors(breakdown, lists) {
+function renderSectors(breakdown) {
   const target = $('sector-body'); target.replaceChildren();
   const axis = $('sector-scale'); axis.replaceChildren();
-  if (!breakdown.sectors.length) {
+  const ranked = breakdown.sectors.filter(row => row.key !== 'unclassified');
+  const unclassified = breakdown.sectors.find(row => row.key === 'unclassified');
+  $('sector-note').textContent = unclassified
+    ? `Unclassified (${unclassified.count.toLocaleString()} stock${unclassified.count === 1 ? '' : 's'} with no industry match) is a data-coverage gap and is left out of the ranking.`
+    : '';
+  if (!ranked.length) {
     appendText(target, 'p', 'Sector observations are unavailable.', 'chart-empty');
     return;
   }
-  const listedSectors = new Map(lists.sectors.map(row => [row.key, row]));
-  const scale = sectorScale([...breakdown.sectors, ...lists.sectors]);
+  const scale = sectorScale(ranked);
   for (const tick of scale.ticks) {
     const position = scale.position(tick / 100);
     const crowded = tick !== 0 && Math.abs(position - scale.zero) < 35;
@@ -313,12 +314,12 @@ function renderSectors(breakdown, lists) {
       `${tick === 0 || tick === scale.minimum || tick === scale.maximum ? 'axis-key' : ''}${crowded ? ' axis-crowded' : ''}`);
     label.style.left = `${position}%`;
   }
-  for (const row of breakdown.sectors) {
+  for (const row of ranked) {
     const group = appendText(target, 'div', '', 'sector-group');
     group.setAttribute('role', 'listitem');
     appendText(group, 'span', row.label, 'sector-name');
     const pair = appendText(group, 'div', '', 'sector-pair');
-    for (const [label, cohort, className] of [['Eligible', row, 'eligible'], ['On lists', listedSectors.get(row.key), 'listed']]) {
+    for (const [label, cohort, className] of [['Eligible', row, 'eligible']]) {
       const series = appendText(pair, 'div', '', `sector-series ${className}`);
       const description = `${row.label}, ${label}: ${percent(cohort?.median)}, ${cohort?.count || 0} stocks`;
       series.setAttribute('aria-label', description);
@@ -336,6 +337,41 @@ function renderSectors(breakdown, lists) {
       appendText(value, 'small', `n=${cohort?.count || 0}`);
     }
   }
+}
+
+// List check: eligible stocks against list names over the selected window (from this file's stats).
+function renderComparison(mood, period) {
+  const body = $('lc-compare-body'); body.replaceChildren();
+  const lists = listBreadthOf(mood);
+  for (const [label, stats] of [['Eligible', mood.breadth], ['On lists', lists]]) {
+    const row = appendText(body, 'tr', '');
+    appendText(row, 'td', label, 'lc-strong');
+    appendText(row, 'td', Number.isFinite(stats?.[`n_${period}`]) ? stats[`n_${period}`].toLocaleString() : '—');
+    appendText(row, 'td', levelPercent(stats?.[`up_${period}`]));
+    const median = stats?.[`median_${period}`];
+    appendText(row, 'td', percent(median), Number.isFinite(median) && median < 0 ? 'negative' : '');
+  }
+  // The population line above counts every list name; returns need both windows.
+  $('lc-compare-note').textContent = Number.isFinite(lists?.[`n_${period}`])
+    ? `Window: ${period} sessions. ${lists[`n_${period}`].toLocaleString()} list names have both return windows.`
+    : `Window: ${period} sessions.`;
+}
+
+// List check: where the Shortlist's largest sector ranks in the market, for the selected window.
+// Needs both files; whichever loads last calls it.
+function renderSectorRank() {
+  const target = $('lc-sector-rank');
+  const check = globalThis.TLListCheck?.current;
+  const largest = check?.sectors?.concentration?.shortlist?.largest;
+  if (!target || !moodState.mood || !largest) { if (target) target.hidden = true; return; }
+  const period = moodState.period;
+  const ranked = marketBreakdown(moodState.mood.market_details, period).sectors.filter(row => row.key !== 'unclassified');
+  const index = ranked.findIndex(row => row.key === largest.sector);
+  if (index < 0) { target.hidden = true; return; }
+  const row = ranked[index];
+  const share = check.groups?.shortlist?.count ? largest.count / check.groups.shortlist.count : null;
+  target.textContent = `${row.label}, the Shortlist’s largest sector${Number.isFinite(share) ? ` (${(share * 100).toFixed(0)}%)` : ''}: median stock return ${percent(row.median)} over ${period} sessions, #${index + 1} of ${ranked.length} sectors in the eligible universe.`;
+  target.hidden = false;
 }
 
 function fillParticipation(ids, share, middle, count, label) {
@@ -358,39 +394,31 @@ function fillParticipation(ids, share, middle, count, label) {
 function renderMarketDesk() {
   const mood = moodState.mood, period = moodState.period;
   const share = mood.breadth?.[`up_${period}`], middle = mood.breadth?.[`median_${period}`];
-  const lists = listBreadthOf(mood);
-  const listShare = lists?.[`up_${period}`], listMiddle = lists?.[`median_${period}`];
-  const listCount = lists?.[`n_${period}`];
+  const count = mood.breadth?.[`n_${period}`];
+  const spy = mood.indices?.SPY?.[`return_${period}`], qqq = mood.indices?.QQQ?.[`return_${period}`];
   $('tape-headline').textContent = tapeHeadline(mood, period);
-  const listBit = Number.isFinite(listMiddle)
-    ? ` · median on lists ${percent(listMiddle)}`
-    : '';
-  $('tape-summary').textContent = `${period} trading sessions · SPY ${percent(mood.indices?.SPY?.[`return_${period}`])} · QQQ ${percent(mood.indices?.QQQ?.[`return_${period}`])} · median eligible ${percent(middle)}${listBit}`;
+  $('tape-summary').textContent = `Over ${period} sessions, SPY returned ${percent(spy)} and QQQ ${percent(qqq)}. `
+    + `Of ${Number.isFinite(count) ? count.toLocaleString() : '—'} eligible stocks, ${levelPercent(share)} rose and the median stock returned ${percent(middle)}.`;
+  $('fig-spy').textContent = percent(spy);
+  $('fig-qqq').textContent = percent(qqq);
+  $('fig-spy-window').textContent = `${period}-session return`;
+  $('fig-qqq-window').textContent = `${period}-session return`;
+  $('fig-up').textContent = levelPercent(share);
+  $('fig-median').textContent = percent(middle);
   fillParticipation(
     { up: 'breadth-up', fill: 'breadth-fill', track: 'breadth-track', down: 'breadth-down', copy: 'breadth-copy' },
-    share, middle, mood.breadth?.[`n_${period}`], 'eligible stocks');
-  fillParticipation(
-    { up: 'lists-up', fill: 'lists-fill', track: 'lists-track', down: 'lists-down', copy: 'lists-copy' },
-    listShare, listMiddle, listCount, 'list names');
-  const listsLabel = $('lists-up-label');
-  if (listsLabel) {
-    listsLabel.textContent = Number.isFinite(listCount)
-      ? `${listCount.toLocaleString()} on Hot tape · Growth · Cheap`
-      : 'Hot tape · Growth · Cheap';
-  }
+    share, middle, count, 'eligible stocks');
+  $('breadth-up-label').textContent = `of eligible stocks rose over ${period} sessions`;
   const other = period === 63 ? 252 : 63;
-  const otherLists = Number.isFinite(lists?.[`up_${other}`])
-    ? ` · lists ${levelPercent(lists[`up_${other}`])} up · median ${percent(lists[`median_${other}`])}`
-    : '';
-  $('breadth-year').textContent = `${other} sessions: eligible ${levelPercent(mood.breadth?.[`up_${other}`])} up · median ${percent(mood.breadth?.[`median_${other}`])}${otherLists}`;
+  $('breadth-year').textContent = `Other window · ${other} sessions: ${levelPercent(mood.breadth?.[`up_${other}`])} rose, median ${percent(mood.breadth?.[`median_${other}`])}`;
   $('path-window').textContent = `${period} sessions · adjusted returns`;
   renderIndices(mood.indices, period);
-  const spy = mood.indices?.SPY?.[`return_${period}`], qqq = mood.indices?.QQQ?.[`return_${period}`];
   $('index-spread').textContent = Number.isFinite(spy) && Number.isFinite(qqq)
-    ? `QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
+    ? `At the Friday close, QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
   const breakdown = marketBreakdown(mood.market_details, period);
   const listBreakdown = marketBreakdown(mood.market_details, period, true);
-  renderDistribution(breakdown, listBreakdown); renderSectors(breakdown, listBreakdown); renderIndexChart();
+  renderSectors(breakdown); renderIndexChart();
+  renderDistribution(breakdown, listBreakdown); renderComparison(mood, period); renderSectorRank();
   document.querySelectorAll('[data-period]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.period) === period)));
 }
 
@@ -402,7 +430,7 @@ function bindMarketDesk() {
   });
   const lists = $('desk-open-lists');
   if (lists.dataset.bound !== 'true') {
-    lists.addEventListener('click', () => { showMoodPanel('lists'); $('show-lists').focus(); });
+    lists.addEventListener('click', () => { showMoodPanel('lists'); globalThis.scrollTo?.(0, 0); $('show-lists').focus(); });
     lists.dataset.bound = 'true';
   }
   if (!moodState.observer && typeof ResizeObserver !== 'undefined') {
@@ -438,13 +466,12 @@ function bindMoodPanels() {
 
 function render(mood) {
   moodState.mood = mood;
-  $("week-chip").textContent = `Data as of ${day(mood.as_of)}`;
+  $("clock-market").textContent = weekdayDay(mood.as_of);
   $("aside-week").textContent = day(mood.as_of);
-  $("coverage-date").textContent = `${mood.price_history_count.toLocaleString()} complete price histories · ${mood.universe_count.toLocaleString()} liquid names`;
   $("vix-close").textContent = Number.isFinite(mood.vix?.close) ? mood.vix.close.toFixed(2) : "—";
   $("vix-week").textContent = mood.vix
-    ? `${vixPoints(mood.vix.change_points_week)} over 5 trading sessions`
-    : "The matching Cboe close is unavailable in this snapshot.";
+    ? `${vixPoints(mood.vix.change_points_week)} over the last 5 trading sessions.`
+    : "the matching Cboe close is unavailable in this snapshot.";
   bindMoodPanels();
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;

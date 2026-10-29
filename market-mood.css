@@ -222,3 +222,32 @@
 .list-check a:not(.lc-tick) { color: #1e6547; text-underline-offset: 2px; }
 @media (max-width: 980px) { .lc-pair { grid-template-columns: minmax(0, 1fr); gap: 0; } }
 @media (max-width: 620px) { .list-check { margin: 14px 14px 28px; } .lc-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .lc-tile { padding: 12px; } .lc-tile .v { font-size: 20px; } .lc-card { padding: 14px; } .lc-bar-row { grid-template-columns: 88px minmax(0, 1fr); gap: 8px; } .lc-ft { grid-template-columns: 1fr; gap: 4px; } .lc-ft em { text-align: left; white-space: normal; } .lc-tbl { font-size: 11.5px; } .lc-tbl th, .lc-tbl td { padding: 7px 4px; } .lc-tbl th { white-space: normal; } .lc-tbl .lc-flag { margin: 3px 0 0; } }
+
+/* Redesign (Oct 2026): market first on Overview, list facts on List check, one window for both. */
+.mood-clocks { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0 28px 4px; color: var(--muted); font-size: 12px; }
+.mood-clocks strong { color: var(--ink); font-weight: 600; }
+.mood-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 10px 28px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.mood-controls .page-switch { margin: 0; }
+.mood-controls .desk-controls { margin: 0; padding: 0; border: 0; gap: 10px; }
+.desk-figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 28px 10px; }
+.desk-figure { display: grid; gap: 3px; min-width: 0; padding: 13px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.desk-figure span, .desk-figure small { color: var(--muted); font-size: 11.5px; }
+.desk-figure strong { color: #1f3a2c; font-size: 26px; font-weight: 550; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.desk-figure.stock { border-color: #c9dccf; background: #f8fbf8; }
+.desk-vix { margin: 0 28px 16px; padding-left: 10px; border-left: 2px solid var(--line); color: var(--muted); font-size: 12px; }
+.desk-vix strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.desk-other { margin: 14px 0 0; padding: 7px 10px; border-radius: 6px; background: #f2f6f2; color: var(--muted); font-size: 12px; }
+.desk-sectors { margin: 0 28px 16px; }
+.desk-to-lists { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 28px 18px; padding: 12px 16px; border: 1px dashed #c9d6cd; border-radius: 10px; background: #fff; font-size: 13px; }
+.desk-to-lists strong { font-variant-numeric: tabular-nums; }
+.desk-to-lists button { padding: 4px 0; border: 0; background: transparent; color: #1e6547; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.lc-led { margin: -6px 0 14px; padding: 8px 12px; border-left: 3px solid #c99a4a; border-radius: 4px; background: #fdf8ee; color: #3c3a2c; font-size: 12.5px; line-height: 1.45; }
+.lc-guide { margin: 8px 0; padding-left: 10px; border-left: 3px solid #e2c48f; color: #3c4b42; font-size: 12px; line-height: 1.45; }
+.lc-compare-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px; margin-top: 10px; }
+.lc-compare-grid h4 { margin: 0; color: #244734; font-size: 14px; font-weight: 600; }
+.lc-compare td:not(:first-child), .lc-compare th:not(:first-child) { text-align: right; }
+.lc-forward-box summary { cursor: pointer; color: #244734; font-size: 15px; font-weight: 600; }
+.lc-forward-box summary .lc-q { font-weight: 400; }
+.lc-forward-box[open] summary { margin-bottom: 8px; }
+@media (max-width: 1000px) { .desk-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lc-compare-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 620px) { .mood-clocks, .mood-controls, .desk-figures, .desk-vix, .desk-sectors, .desk-to-lists { margin-left: 14px; margin-right: 14px; } .desk-figure strong { font-size: 22px; } }

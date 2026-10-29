@@ -116,6 +116,9 @@
     $("lc-dates").textContent = parts.join(" · ");
   }
 
+  function renderPopulation(check) {
+    $("lc-population").textContent = `${count(check.union.count)} names on at least one list · ${count(check.groups.shortlist.count)} on the Shortlist (two or more lists, positive equity) · ${count(check.union.on_all_three)} on all three`;
+  }
   function tile(key, value, unit, sub, flagged = false) {
     const node = el("div", `lc-tile${flagged ? " flagged" : ""}`);
     node.appendChild(el("span", "k", key));
@@ -126,30 +129,30 @@
   }
   function renderTiles(check) {
     const g = check.groups, tiles = [];
-    tiles.push(tile("On the lists", count(check.union.count), "names",
-      `Shortlist ${count(g.shortlist.count)} · on all three ${count(check.union.on_all_three)}`));
     const big = largestTilt(check);
     tiles.push(big
-      ? tile("Shortlist’s largest sector", `${sectorName(big.sector)} ${pct(big.share)}`, "",
+      ? tile("1 · Shortlist’s largest sector", `${sectorName(big.sector)} ${pct(big.share)}`, "",
         big.ratio !== null ? `${big.ratio.toFixed(1)}× its share of eligible stocks (${pct(big.base)})` : "Not among eligible stocks", tilted(big))
-      : tile("Shortlist’s largest sector", "—", "", "No Shortlist this week"));
+      : tile("1 · Shortlist’s largest sector", "—", "", "No Shortlist this week"));
     if (check.trend.available) {
       const t = check.trend.counts;
-      tiles.push(tile("Uptrend on all 3 rules", count(t.shortlist.up), `of ${count(g.shortlist.count)} Shortlist`,
+      tiles.push(tile("2 · Uptrend on all 3 rules", count(t.shortlist.up), `of ${count(g.shortlist.count)} Shortlist`,
         `Eligible stocks: ${pct(share(t.eligible.up, g.eligible.count))} · at the ${dayText(check.trend.signal_date)} close`));
-    } else tiles.push(tile("Uptrend on all 3 rules", "—", "", "The trend file for this week is not available"));
+    } else tiles.push(tile("2 · Uptrend on all 3 rules", "—", "", "The trend file for this week is not available"));
     if (check.changes.available) {
       const c = check.changes.lists;
-      tiles.push(tile(`Kept since ${monthName(check.changes.previous_as_of).slice(0, 3)} month-end`, count(c.shortlist.kept),
+      const changed = c.shortlist.previous_version && c.shortlist.previous_version !== c.shortlist.version;
+      const others = ["strength", "growth", "undervalued"].map((k) => `${groupLabel(k)} ${count(c[k].kept)} of ${count(c[k].previous)}`).join(" · ");
+      tiles.push(tile(`3 · Kept since ${monthName(check.changes.previous_as_of).slice(0, 3)} month-end`, count(c.shortlist.kept),
         `of ${count(c.shortlist.previous)} Shortlist`,
-        ["strength", "growth", "undervalued"].map((k) => `${groupLabel(k)} ${count(c[k].kept)} of ${count(c[k].previous)}`).join(" · ")));
-    } else tiles.push(tile("Kept since the last month-end", "—", "", "No earlier month-end freeze on file"));
+        changed ? `Shortlist method changed: ${c.shortlist.previous_version} → ${c.shortlist.version} · ${others}` : others, changed));
+    } else tiles.push(tile("3 · Kept since the last month-end", "—", "", "No earlier month-end freeze on file"));
     const r = check.results;
     if (r.available && r.after) {
-      tiles.push(tile(`Report right after ${dayText(check.decision_date)}`, count(r.counts.shortlist.after),
+      tiles.push(tile(`4 · Report right after ${dayText(check.decision_date)}`, count(r.counts.shortlist.after),
         `of ${count(g.shortlist.count)} Shortlist`,
-        `Results ${spanText(r.after.from, r.after.to)}; ${count(r.counts.top10.after)} of the top ${count(g.top10.count)}`));
-    } else tiles.push(tile(`Report right after ${dayText(check.decision_date)}`, "—", "", "No results dates for that window yet"));
+        `Results ${spanText(r.after.from, r.after.to)}; ${count(r.counts.top10.after)} of the top ${count(g.top10.count)} · calendar of ${dayText(r.calendar_built_at)}`));
+    } else tiles.push(tile(`4 · Report right after ${dayText(check.decision_date)}`, "—", "", "No results dates for that window yet"));
     $("lc-tiles").replaceChildren(...tiles);
   }
 
@@ -196,7 +199,7 @@
       const rest = (counts.shortlist[big.sector] || 0) - (counts.top10[big.sector] || 0);
       notes.push(`The Shortlist’s first ${top} hold at most 3 per sector; the other ${sl - top} Shortlist names are ${pct(share(rest, sl - top))} ${sectorName(big.sector).toLowerCase()}.`);
     }
-    notes.push("Sectors follow the Shortlist’s rule: the shared Nasdaq industry map plus reviewed company corrections (tankers count as energy). Cheap has no financials by design: operating income / EV does not apply to them.");
+    notes.push("Sectors: the shared Nasdaq industry map plus reviewed company corrections (tankers count as energy), the same rule as the Overview’s sector chart, here over all eligible names. Cheap has no financials by design: operating income / EV does not apply to them.");
     $("lc-mix-note").textContent = notes.join(" ");
   }
 
@@ -222,7 +225,7 @@
     const ch = check.changes;
     const table = $("lc-change-table"), top = $("lc-top"), note = $("lc-change-note");
     if (!ch.available) {
-      $("lc-change-title").textContent = "What changed since the last month-end";
+      $("lc-change-title").textContent = "3 · What changed since the last month-end";
       $("lc-change-copy").textContent = "Membership against the last month-end freeze, the last decision snapshot.";
       table.hidden = true;
       top.replaceChildren();
@@ -230,7 +233,7 @@
       return;
     }
     table.hidden = false;
-    $("lc-change-title").textContent = `What changed since the ${monthName(ch.previous_as_of)} month-end`;
+    $("lc-change-title").textContent = `3 · What changed since the ${monthName(ch.previous_as_of)} month-end`;
     $("lc-change-copy").textContent = `Membership on ${dayText(check.as_of)} against the ${dayText(ch.previous_as_of)} freeze, the last month-end snapshot.`;
     $("lc-change-prev").textContent = dayText(ch.previous_as_of);
     const changed = [];
@@ -352,28 +355,30 @@
       rows.push(row);
     }
     $("lc-forward").replaceChildren(...rows);
+    const first = (check.forward_tests?.tracks || []).filter((t) => t.first_readout).sort((a, b) => a.first_readout.localeCompare(b.first_readout))[0];
+    $("lc-forward-next").textContent = first
+      ? `· first readout ${first.readout_basis === "registered" ? dayYear(first.first_readout) : `~${monthText(first.first_readout)}`}`
+      : "";
   }
 
   function renderStrip(check) {
-    const value = $("desk-shortlist-value"), sub = $("desk-shortlist-change");
-    if (!value || !sub) return;
+    const value = $("desk-shortlist-value"), decision = $("desk-decision"), clock = $("clock-decision");
+    if (!value || !decision) return;
     if (!check) {
       value.textContent = "—";
-      sub.textContent = "List check awaits this week’s refresh.";
+      decision.textContent = "—";
+      if (clock) clock.textContent = "—";
       return;
     }
     value.textContent = count(check.groups.shortlist.count);
-    const parts = [`${count(check.union.on_all_three)} on all three lists`];
-    if (check.changes.available) {
-      const s = check.changes.lists.shortlist;
-      parts.push(`${count(s.kept)} of ${count(s.previous)} kept since the ${dayText(check.changes.previous_as_of)} month-end`);
-    }
-    sub.textContent = parts.join(" · ");
+    decision.textContent = weekdayText(check.decision_date);
+    if (clock) clock.textContent = weekdayText(check.decision_date);
   }
-
   function render(check) {
+    api.current = check;
     renderStrip(check);
     renderDates(check);
+    renderPopulation(check);
     renderTiles(check);
     renderMix(check);
     renderTrend(check);
@@ -383,6 +388,9 @@
     $("lc-research-count").textContent = count(check.groups.shortlist.count);
     $("lc-status").hidden = true;
     $("lc-body").hidden = false;
+    // The Overview's sector rank and the earnings Shortlist column read this file too.
+    if (typeof globalThis.renderSectorRank === "function") globalThis.renderSectorRank();
+    if (globalThis.TLEarnings && typeof globalThis.TLEarnings.refresh === "function") globalThis.TLEarnings.refresh();
   }
   function fail(message) {
     renderStrip(null);
@@ -412,6 +420,7 @@
     }
   }
 
-  globalThis.TLListCheck = { render, fail, checkFile, sectorColumns, binClass, tiltOf, largestTilt, pct, spanText, forwardWhen };
+  const api = { current: null, render, fail, checkFile, sectorColumns, binClass, tiltOf, largestTilt, pct, spanText, forwardWhen };
+  globalThis.TLListCheck = api;
   void start();
 })();

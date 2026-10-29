@@ -7,8 +7,8 @@
     <title>Temper Lab — Market mood</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
-    <link rel="stylesheet" href="./market-mood.css?v=c82c8b34c477" />
-    <link rel="stylesheet" href="./earnings-ahead.css?v=964f9c0a68ef" />
+    <link rel="stylesheet" href="./market-mood.css?v=be4d414cf66f" />
+    <link rel="stylesheet" href="./earnings-ahead.css?v=e478b0f95ec5" />
     <link rel="stylesheet" href="./watchlist.css?v=586e02b3754d" />
   </head>
   <body>
@@ -32,58 +32,68 @@
       <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close menu" tabindex="-1" hidden></button>
       <main id="main-content">
         <section class="heading mood-heading">
-          <div><div class="eyebrow">MARKET DESK</div><h1>Market mood</h1><p>Index direction, stock participation and sector leadership at the Friday close.</p></div>
-          <div class="snapshot-status"><span id="week-chip" class="week" role="status">Loading…</span><small id="coverage-date"></small></div>
-        </section>
-        <p id="mood-status" class="mood-status" role="status">Loading the Friday snapshot…</p>
-        <div id="mood-content" hidden>
-          <div class="page-switch" role="tablist" aria-label="Market mood">
-            <button type="button" id="show-tape" class="on" role="tab" aria-selected="true" aria-controls="tape-panel">Market desk</button>
-            <button type="button" id="show-lists" role="tab" aria-selected="false" aria-controls="lists-panel">List check</button>
-          </div>
-          <div id="tape-panel" role="tabpanel" aria-labelledby="show-tape">
-          <div class="desk-context-strip" role="region" aria-label="Weekly snapshot context"><section class="desk-volatility"><span>Implied volatility · Cboe VIX</span><strong id="vix-close">—</strong><small id="vix-week"></small></section><section class="desk-lists"><span>Shortlist · on two or more lists, positive equity</span><strong id="desk-shortlist-value">—</strong><small id="desk-shortlist-change"></small><button type="button" id="desk-open-lists">List check →</button></section></div>
-          <section id="earnings-ahead" class="desk-panel earnings-panel" aria-labelledby="earnings-title" hidden><div class="desk-panel-heading"><div><h2 id="earnings-title">Earnings in the next 4 weeks</h2><p id="earnings-summary"></p></div><span id="earnings-built" class="chart-caption"></span></div><div class="ea-filter" role="group" aria-label="Which companies"><button type="button" id="ea-all" class="on" aria-pressed="true">All</button><button type="button" id="ea-mine" aria-pressed="false">★ My watchlist</button></div><div id="earnings-weeks"></div><p id="earnings-note" class="chart-caption" hidden></p></section>
-            <div class="desk-controls"><span>Compare the same return window across every chart</span><div class="period-buttons" role="group" aria-label="Return window"><button type="button" data-period="63" aria-pressed="true">3 months <small>63 sessions</small></button><button type="button" data-period="252" aria-pressed="false">12 months <small>252 sessions</small></button></div></div>
-            <section class="desk-story" aria-live="polite"><h2 id="tape-headline"></h2><p id="tape-summary"></p></section>
-            <div class="desk-top-grid">
-              <section class="desk-panel path-panel" aria-labelledby="paths-title"><div class="desk-panel-heading"><div><h2 id="paths-title">Index direction</h2><p>SPY tracks the S&amp;P 500 · QQQ tracks the Nasdaq-100</p></div><span id="path-window" class="chart-caption"></span></div><div id="index-chart" class="index-chart"></div><div id="index-rows" class="path-legend"></div><p id="path-readout" class="chart-readout" aria-live="off"></p><p class="chart-caption" id="index-spread"></p></section>
-              <section class="desk-panel participation-panel" aria-labelledby="participation-title"><h2 id="participation-title">How many stocks rose?</h2><div class="cohort-compare" aria-label="Eligible stocks versus published lists"><div class="cohort-block"><span class="cohort-label">Eligible</span><div class="participation-reading"><strong id="breadth-up">—</strong><span id="breadth-up-label">of eligible stocks</span></div><div class="breadth-track" role="img" id="breadth-track"><span id="breadth-fill"></span></div><p id="breadth-down" class="chart-caption"></p><div class="median-reading"><span>Median return</span><strong id="breadth-copy">—</strong></div></div><div class="cohort-block cohort-lists"><span class="cohort-label">On lists</span><div class="participation-reading"><strong id="lists-up">—</strong><span id="lists-up-label">Hot tape · Growth · Cheap</span></div><div class="breadth-track lists-track" role="img" id="lists-track"><span id="lists-fill"></span></div><p id="lists-down" class="chart-caption"></p><div class="median-reading"><span>Median return</span><strong id="lists-copy">—</strong></div></div></div><p id="breadth-year" class="chart-caption"></p></section>
-            </div>
-            <div class="desk-lower-grid">
-              <section class="desk-panel" aria-labelledby="distribution-title"><div class="desk-panel-heading"><div><h2 id="distribution-title">Where stock returns fell</h2><p>Return bands · share of each group</p></div></div><div id="distribution-cohorts" class="comparison-legend"></div><div id="distribution-scale" class="distribution-scale" aria-hidden="true"></div><div id="return-distribution"></div><p id="distribution-caption" class="chart-caption"></p></section>
-              <section class="desk-panel" aria-labelledby="sectors-title"><div class="desk-panel-heading"><div><h2 id="sectors-title">Which sectors led?</h2><p>Median stock return · sorted by eligible median</p></div></div><div class="comparison-legend" aria-label="Sector comparison groups"><span class="eligible">Eligible</span><span class="listed">On lists</span></div><div id="sector-scale" class="sector-scale" aria-hidden="true"></div><div id="sector-body" class="sector-chart" role="list" aria-label="Median sector returns: eligible versus on lists"></div><p class="chart-caption">n = stocks behind each median · shared return scale · sectors use the shared Nasdaq industry map.</p></section>
-            </div>
-            <details class="desk-method"><summary>What these charts measure</summary><p>Returns use adjusted closes over 63 or 252 trading sessions. Each stock has equal weight in participation, the distribution and sector medians; index funds have their own weights. The median is the middle stock return. Eligible is the liquid universe with both return windows. On lists is the union of this week's Hot tape, Growth and Cheap names (rule-selected, so it can look stronger or weaker than the full eligible set). Stocks missing either return window are excluded from both windows. Today's lists are selected partly using these past returns: this describes their current composition, not how a previously selected portfolio performed.</p><p>Prices: saved Yahoo Finance captures (<a href="https://finance.yahoo.com/quote/SPY/history/" target="_blank" rel="noopener noreferrer">SPY</a> · <a href="https://finance.yahoo.com/quote/QQQ/history/" target="_blank" rel="noopener noreferrer">QQQ</a>). Volatility: <a href="https://www.cboe.com/tradable-products/vix/vix-historical-data" target="_blank" rel="noopener noreferrer">Cboe VIX history</a>. VIX measures expected 30-day S&amp;P 500 volatility in index points. The Shortlist line counts this week's Shortlist (names on two or more of Hot tape, Growth and Cheap); List check describes the lists before the month-end decision. Earnings dates: Yahoo Finance's earnings calendar (company pages fill gaps), refreshed Tuesday and Friday; a date can move until the company confirms it. For planning, not a signal: our test found no price drift after results. This page describes saved observations, not a forecast.</p></details>
-          </div>
-          <div id="lists-panel" role="tabpanel" aria-labelledby="show-lists" hidden>
-          <section class="list-check" aria-labelledby="list-check-title">
-            <div class="lc-intro"><div class="eyebrow">BEFORE THE MONTH-END DECISION</div><h2 id="list-check-title">What the lists hold</h2><p>Four checks on this week’s Hot tape, Growth, Cheap and Shortlist: what they are made of, whether their names still trend, how much they changed since the last month-end, and when they report. Descriptions, not forecasts; the names themselves are on <a href="./">Research</a>.</p><p id="lc-dates" class="lc-dates"></p></div>
-            <p id="lc-status" class="mood-status" role="status">Loading the List check…</p>
-            <div id="lc-body" hidden>
-              <div id="lc-tiles" class="lc-tiles" aria-label="Summary"></div>
-              <section class="lc-card" aria-labelledby="lc-mix-title"><h3 id="lc-mix-title">What the lists are made of</h3><p class="lc-q">Share of each list in each sector, against the eligible universe. A darker cell is a bigger share; ×n marks a sector holding at least 10% of a list and at least twice its eligible share.</p><div class="lc-scroll"><table class="lc-heat"><thead id="lc-mix-head"></thead><tbody id="lc-mix-body"></tbody></table></div><div class="lc-scale" aria-hidden="true"><span>Share of list</span><i class="lc-b0"></i>0 <i class="lc-b1"></i>&lt;5% <i class="lc-b2"></i>5–10% <i class="lc-b3"></i>10–20% <i class="lc-b4"></i>20–30% <i class="lc-b5"></i>30%+</div><p id="lc-mix-note" class="lc-note"></p></section>
-              <div class="lc-pair">
-                <section class="lc-card" aria-labelledby="lc-trend-title"><h3 id="lc-trend-title">Do list names still trend?</h3><p id="lc-trend-copy" class="lc-q"></p><div class="lc-legend" aria-hidden="true"><span><i class="lc-up"></i>Up on all 3</span><span><i class="lc-mixed"></i>Mixed</span><span><i class="lc-down"></i>Down on all 3</span><span><i class="lc-short"></i>Too little history</span></div><div id="lc-trend" class="lc-bars"></div><p class="lc-note">In our test (entries 2021–26, stocks of similar size compared, before costs), stocks with each rule up beat those with it down by 3.0–3.6% over six months. Hot tape is chosen on price, so it is mostly up by construction; Cheap and the Shortlist are the rows to read.</p></section>
-                <section class="lc-card" aria-labelledby="lc-change-title"><h3 id="lc-change-title">What changed since the last month-end</h3><p id="lc-change-copy" class="lc-q"></p><div class="lc-scroll"><table id="lc-change-table" class="lc-tbl"><thead><tr><th scope="col">List</th><th scope="col" id="lc-change-prev">Then</th><th scope="col">Now</th><th scope="col">Kept</th><th scope="col">New</th><th scope="col">Dropped</th><th scope="col">Kept share</th></tr></thead><tbody id="lc-change-body"></tbody></table></div><div id="lc-top" class="lc-top"></div><p id="lc-change-note" class="lc-note"></p></section>
-              </div>
-              <div class="lc-pair">
-                <section class="lc-card" aria-labelledby="lc-results-title"><h3 id="lc-results-title">Results around the decision</h3><p id="lc-results-copy" class="lc-q"></p><div id="lc-results-legend" class="lc-legend" aria-hidden="true"></div><div id="lc-results" class="lc-bars"></div><p id="lc-results-note" class="lc-note"></p></section>
-                <section class="lc-card" aria-labelledby="lc-forward-title"><h3 id="lc-forward-title">Forward tests</h3><p class="lc-q">What is being recorded, and when it can first be read. Interim returns are not shown: each test is read at its pre-registered horizon.</p><div id="lc-forward" class="lc-status-list"></div></section>
-              </div>
-              <p class="lc-foot">All <span id="lc-research-count">—</span> Shortlist names with their scores are on <a href="./">Research</a>; analysts’ view of each list is on <a href="./analyst-ratings.html">Analyst ratings</a>.</p>
-            </div>
-          </section>
-          </div>
-        </div>
-        <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
+<div><h1>Market mood</h1><p>Weekly snapshot at the Friday close. Overview: what the market did. List check: what the lists hold before the month-end decision.</p></div>
+</section>
+<p class="mood-clocks" aria-label="Dates on this page"><span>Market and lists · <strong id="clock-market">—</strong> close</span><span>Earnings calendar, both tabs · refreshed <strong id="clock-earnings">—</strong></span><span>Month-end decision · <strong id="clock-decision">—</strong></span></p>
+<p id="mood-status" class="mood-status" role="status">Loading the Friday snapshot…</p>
+<div id="mood-content" hidden>
+<div class="mood-controls">
+<div class="page-switch" role="tablist" aria-label="Market mood">
+<button type="button" id="show-tape" class="on" role="tab" aria-selected="true" aria-controls="tape-panel">Overview</button>
+<button type="button" id="show-lists" role="tab" aria-selected="false" aria-controls="lists-panel">List check</button>
+</div>
+<div class="desk-controls"><span>Return window, both tabs</span><div class="period-buttons" role="group" aria-label="Return window"><button type="button" data-period="63" aria-pressed="true">3 months <small>63 sessions</small></button><button type="button" data-period="252" aria-pressed="false">12 months <small>252 sessions</small></button></div></div>
+</div>
+<div id="tape-panel" role="tabpanel" aria-labelledby="show-tape">
+<section class="desk-story" aria-live="polite"><h2 id="tape-headline"></h2><p id="tape-summary"></p></section>
+<div class="desk-figures" aria-label="Headline figures">
+<div class="desk-figure"><span>SPY · S&amp;P 500</span><strong id="fig-spy">—</strong><small id="fig-spy-window"></small></div>
+<div class="desk-figure"><span>QQQ · Nasdaq-100</span><strong id="fig-qqq">—</strong><small id="fig-qqq-window"></small></div>
+<div class="desk-figure stock"><span>Eligible stocks that rose</span><strong id="fig-up">—</strong><small>equal weight, above 0%</small></div>
+<div class="desk-figure stock"><span>Median stock return</span><strong id="fig-median">—</strong><small>the middle eligible stock</small></div>
+</div>
+<p class="desk-vix">Volatility, on its own clock: Cboe VIX <strong id="vix-close">—</strong> at the Friday close, <span id="vix-week"></span></p>
+<div class="desk-top-grid">
+<section class="desk-panel path-panel" aria-labelledby="paths-title"><div class="desk-panel-heading"><div><h2 id="paths-title">Index direction</h2><p>SPY tracks the S&amp;P 500 · QQQ tracks the Nasdaq-100. End values are the Friday close; drag or hover to inspect a date.</p></div><span id="path-window" class="chart-caption"></span></div><div id="index-chart" class="index-chart"></div><div id="index-rows" class="path-legend"></div><p id="path-readout" class="chart-readout" aria-live="off"></p><p class="chart-caption" id="index-spread"></p></section>
+<section class="desk-panel participation-panel" aria-labelledby="participation-title"><h2 id="participation-title">How many stocks rose?</h2><p class="chart-caption">Eligible universe, each stock counted once. Flat counts as not rising.</p><div class="cohort-block"><div class="participation-reading"><strong id="breadth-up">—</strong><span id="breadth-up-label">of eligible stocks rose</span></div><div class="breadth-track" role="img" id="breadth-track"><span id="breadth-fill"></span></div><p id="breadth-down" class="chart-caption"></p><div class="median-reading"><span>Median return</span><strong id="breadth-copy">—</strong></div></div><p id="breadth-year" class="desk-other"></p></section>
+</div>
+<section class="desk-panel desk-sectors" aria-labelledby="sectors-title"><div class="desk-panel-heading"><div><h2 id="sectors-title">Which sectors led?</h2><p>Median stock return by sector in the eligible universe, not sector-index returns · sorted by median</p></div></div><div id="sector-scale" class="sector-scale" aria-hidden="true"></div><div id="sector-body" class="sector-chart" role="list" aria-label="Median sector returns, eligible stocks"></div><p class="chart-caption">n = stocks behind each median · one shared scale · sectors: shared industry map plus reviewed corrections, as on List check.</p><p id="sector-note" class="chart-caption"></p></section>
+<section id="earnings-ahead" class="desk-panel earnings-panel" aria-labelledby="earnings-title" hidden><div class="desk-panel-heading"><div><h2 id="earnings-title">Upcoming earnings</h2><p id="earnings-summary"></p></div><span id="earnings-built" class="chart-caption"></span></div><div class="ea-filter" role="group" aria-label="Which companies"><button type="button" id="ea-all" class="on" aria-pressed="true">All</button><button type="button" id="ea-mine" aria-pressed="false">★ My watchlist</button></div><div class="ea-head" aria-hidden="true"><span>Week</span><span>Companies reporting</span><span>Shortlist</span><span>Largest by market cap</span></div><div id="earnings-weeks"></div><p id="earnings-note" class="chart-caption" hidden></p></section>
+<div class="desk-to-lists"><span>Shortlist <strong id="desk-shortlist-value">—</strong> names · month-end decision <strong id="desk-decision">—</strong></span><button type="button" id="desk-open-lists">Open List check →</button></div>
+</div>
+<div id="lists-panel" role="tabpanel" aria-labelledby="show-lists" hidden>
+<section class="list-check" aria-labelledby="list-check-title">
+<div class="lc-intro"><div class="eyebrow">BEFORE THE MONTH-END DECISION</div><h2 id="list-check-title">What the lists hold</h2><p>Four checks on this week’s Hot tape, Growth, Cheap and Shortlist: what they are made of, whether their names still trend, how much they changed since the last month-end, and when they report. Descriptions, not forecasts; the names themselves are on <a href="./">Research</a>.</p><p id="lc-dates" class="lc-dates"></p><p id="lc-population" class="lc-dates"></p></div>
+<p id="lc-status" class="mood-status" role="status">Loading the List check…</p>
+<div id="lc-body" hidden>
+<div id="lc-tiles" class="lc-tiles" aria-label="Summary"></div>
+<p id="lc-sector-rank" class="lc-led" hidden></p>
+<section class="lc-card" aria-labelledby="lc-mix-title"><h3 id="lc-mix-title">1 · What the lists are made of</h3><p class="lc-q">Share of each list in each sector, against the eligible universe. A darker cell is a bigger share; ×n marks a sector holding at least 10% of a list and at least twice its eligible share.</p><div class="lc-scroll"><table class="lc-heat"><thead id="lc-mix-head"></thead><tbody id="lc-mix-body"></tbody></table></div><div class="lc-scale" aria-hidden="true"><span>Share of list</span><i class="lc-b0"></i>0 <i class="lc-b1"></i>&lt;5% <i class="lc-b2"></i>5–10% <i class="lc-b3"></i>10–20% <i class="lc-b4"></i>20–30% <i class="lc-b5"></i>30%+</div><p id="lc-mix-note" class="lc-note"></p></section>
+<div class="lc-pair">
+<section class="lc-card" aria-labelledby="lc-trend-title"><h3 id="lc-trend-title">2 · Do list names still trend?</h3><p id="lc-trend-copy" class="lc-q"></p><p class="lc-guide">Hot tape is chosen on price, so it is mostly up by construction. Cheap and the Shortlist are the rows to read.</p><div class="lc-legend" aria-hidden="true"><span><i class="lc-up"></i>Up on all 3</span><span><i class="lc-mixed"></i>Mixed</span><span><i class="lc-down"></i>Down on all 3</span><span><i class="lc-short"></i>Too little history</span></div><div id="lc-trend" class="lc-bars"></div><p class="lc-note">In our test (entries 2021–26, stocks of similar size compared, before costs), stocks with each rule up beat those with it down by 3.0–3.6% over six months.</p></section>
+<section class="lc-card" aria-labelledby="lc-change-title"><h3 id="lc-change-title">3 · What changed since the last month-end</h3><p id="lc-change-copy" class="lc-q"></p><div class="lc-scroll"><table id="lc-change-table" class="lc-tbl"><thead><tr><th scope="col">List</th><th scope="col" id="lc-change-prev">Then</th><th scope="col">Now</th><th scope="col">Kept</th><th scope="col">New</th><th scope="col">Dropped</th><th scope="col">Kept share</th></tr></thead><tbody id="lc-change-body"></tbody></table></div><div id="lc-top" class="lc-top"></div><p id="lc-change-note" class="lc-note"></p></section>
+</div>
+<section class="lc-card" aria-labelledby="lc-results-title"><h3 id="lc-results-title">4 · Results around the decision</h3><p id="lc-results-copy" class="lc-q"></p><div id="lc-results-legend" class="lc-legend" aria-hidden="true"></div><div id="lc-results" class="lc-bars"></div><p id="lc-results-note" class="lc-note"></p></section>
+<section class="lc-card lc-compare-card" aria-labelledby="lc-compare-title"><h3 id="lc-compare-title">How list names’ returns compare with the market</h3><p class="lc-guide">On lists = the union of this week’s Hot tape, Growth and Cheap. Returns run backward from the Friday close over the window chosen above, and the lists are chosen partly on those same past returns (Hot tape on price). This describes what the lists hold today, not what following them earned.</p>
+<div class="lc-compare-grid">
+<div><div class="lc-scroll"><table class="lc-tbl lc-compare"><thead><tr><th scope="col">Group</th><th scope="col">Stocks measured</th><th scope="col">Rose</th><th scope="col">Median return</th></tr></thead><tbody id="lc-compare-body"></tbody></table></div><p id="lc-compare-note" class="lc-note"></p></div>
+<div><h4 id="distribution-title">How stock returns were spread</h4><div id="distribution-cohorts" class="comparison-legend"></div><div id="distribution-scale" class="distribution-scale" aria-hidden="true"></div><div id="return-distribution"></div><p id="distribution-caption" class="lc-note"></p></div>
+</div></section>
+<details class="lc-card lc-forward-box"><summary><span id="lc-forward-title">Forward tests</span> <span id="lc-forward-next" class="lc-q"></span></summary><p class="lc-q">What is being recorded, and when it can first be read. Interim returns are not shown: each test is read at its pre-registered horizon.</p><div id="lc-forward" class="lc-status-list"></div></details>
+<p class="lc-foot">All <span id="lc-research-count">—</span> Shortlist names with their scores are on <a href="./">Research</a>; analysts’ view of each list is on <a href="./analyst-ratings.html">Analyst ratings</a>.</p>
+</div>
+</section>
+</div>
+<details class="desk-method"><summary>What these charts measure</summary><p>Returns use adjusted closes over 63 or 252 trading sessions; the window applies to both tabs. Each stock has equal weight in participation, the spread and sector medians; index funds have their own weights. The median is the middle stock return. Eligible is the liquid universe with both return windows. On lists is the union of this week's Hot tape, Growth and Cheap names. Sectors on both tabs use the shared industry map plus reviewed corrections; the Overview counts stocks with both return windows, List check all eligible names. Today's lists are selected partly using these past returns: the comparison describes their current composition, not how a previously selected portfolio performed.</p><p>Prices: saved Yahoo Finance captures (<a href="https://finance.yahoo.com/quote/SPY/history/" target="_blank" rel="noopener noreferrer">SPY</a> · <a href="https://finance.yahoo.com/quote/QQQ/history/" target="_blank" rel="noopener noreferrer">QQQ</a>). Volatility: <a href="https://www.cboe.com/tradable-products/vix/vix-historical-data" target="_blank" rel="noopener noreferrer">Cboe VIX history</a>. VIX measures expected 30-day S&amp;P 500 volatility in index points. The Shortlist counts names on two or more of Hot tape, Growth and Cheap with positive equity. Earnings dates: Yahoo Finance's earnings calendar (company pages fill gaps), refreshed Tuesday and Friday, one calendar for both tabs; List check's dates between the freeze and the refresh come from the calendar saved at the freeze. A date can move until the company confirms it. For planning, not a signal: our test found no price drift after results. This page describes saved observations, not a forecast.</p></details>
+</div>
+<footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=85cbb096ddf1"></script>
     <script src="./sectors.js?v=110a6e79c5f8"></script>
-    <script src="./market-mood.js?v=1ef4d6da4f4c"></script>
-    <script src="./list-check.js?v=c634f0da0b89"></script>
-    <script src="./earnings-ahead.js?v=3f0315e3025d"></script>
+    <script src="./market-mood.js?v=b94a3e3e72a6"></script>
+    <script src="./list-check.js?v=2d991669e1f0"></script>
+    <script src="./earnings-ahead.js?v=be0ce76cb8f9"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>
