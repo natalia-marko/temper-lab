@@ -189,7 +189,8 @@
     const clock = document.getElementById("clock-earnings");
     if (clock) clock.textContent = data.built_at ? weekdayText(data.built_at) : "—";
     const mineButton = document.getElementById("ea-mine");
-    if (mineButton) mineButton.textContent = `★ My watchlist (${mineAll.length})`;
+    // Saved names reporting in this window; the sidebar count is every saved name.
+    if (mineButton) mineButton.textContent = `★ My watchlist · ${mineAll.length.toLocaleString("en-US")} reporting`;
 
     // Agreement between vendor feeds is not issuer confirmation.
     const unsure = list.reduce((n, w) => n + w.rows.filter((r) => r.unsure).length, 0);

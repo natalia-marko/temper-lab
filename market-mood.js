@@ -180,6 +180,25 @@ function pathCoordinates(series, width, height = 230) {
   return { minimum, maximum, left, right, top, bottom, x, y, paths };
 }
 
+// Gridlines at the finest round step (1, 2, 2.5 or 5 × 10^k) that gives at most six lines
+// inside the drawn range; zero is always one of them (the range always contains zero).
+function returnTicks(minimum, maximum) {
+  const span = Math.max(maximum - minimum, 1e-9);
+  for (let unit = 10 ** Math.floor(Math.log10(span / 10)); ; unit *= 10) {
+    for (const multiple of [1, 2, 2.5, 5]) {
+      const step = multiple * unit;
+      const first = Math.ceil(minimum / step - 1e-9), last = Math.floor(maximum / step + 1e-9);
+      if (last - first + 1 > 6) continue;
+      const ticks = [];
+      for (let index = first; index <= last; index += 1) ticks.push(index === 0 ? 0 : index * step);
+      // As few decimals as the step needs: 5% -> 0, 2.5% -> 1, 0.05% -> 2.
+      const stepPercent = step * 100;
+      const digits = [0, 1, 2, 3].find(d => Math.abs(stepPercent * 10 ** d - Math.round(stepPercent * 10 ** d)) < 1e-6) ?? 3;
+      return { ticks, digits };
+    }
+  }
+}
+
 function renderIndexChart() {
   const target = $('index-chart');
   target.replaceChildren();
@@ -197,10 +216,11 @@ function renderIndexChart() {
     'aria-label': `SPY and QQQ adjusted returns over ${period} trading sessions. Use the date slider for values.` });
   svgElement(svg, 'title', {}, `Index returns over ${period} sessions`);
   svgElement(svg, 'text', { x: left, y: 11 }, 'Return (%)');
-  for (let index = 0; index <= 4; index += 1) {
-    const value = minimum + (maximum - minimum) * index / 4;
+  const grid = returnTicks(minimum, maximum);
+  for (const value of grid.ticks) {
     svgElement(svg, 'line', { x1: left, x2: right, y1: y(value), y2: y(value), class: 'chart-grid' });
-    svgElement(svg, 'text', { x: left - 8, y: y(value) + 4, 'text-anchor': 'end' }, (value * 100).toFixed(1));
+    const label = value === 0 ? '0' : `${value > 0 ? '+' : '−'}${Math.abs(value * 100).toFixed(grid.digits)}`;
+    svgElement(svg, 'text', { x: left - 8, y: y(value) + 4, 'text-anchor': 'end' }, label);
   }
   svgElement(svg, 'line', { x1: left, x2: right, y1: y(0), y2: y(0), class: 'chart-zero' });
   for (const row of geometry.paths) svgElement(svg, 'path', { d: row.d, class: `index-path series-${row.symbol.toLowerCase()}`, fill: 'none' });
@@ -227,7 +247,7 @@ function renderIndexChart() {
     });
     slider.value = String(index);
     slider.setAttribute('aria-valuetext', `${day(points[index].date)}: ${series.map(row => `${row.symbol} ${percent(row.points[index].value)}`).join(', ')}`);
-    $('path-readout').textContent = `${day(points[index].date)} · ${series.map(row => `${row.symbol} ${percent(row.points[index].value)}`).join(' · ')}`;
+    $('path-readout').textContent = `Selected date ${day(points[index].date)} · ${series.map(row => `${row.symbol} ${percent(row.points[index].value)}`).join(' · ')}`;
   };
   slider.addEventListener('input', () => inspect(Number(slider.value)));
   const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, class: 'chart-hit', fill: 'transparent' });
@@ -467,6 +487,9 @@ function bindMoodPanels() {
 function render(mood) {
   moodState.mood = mood;
   $("clock-market").textContent = weekdayDay(mood.as_of);
+  $("coverage-line").textContent = Number.isFinite(mood.price_history_count) && Number.isFinite(mood.universe_count)
+    ? `Returns cover ${mood.price_history_count.toLocaleString()} of ${mood.universe_count.toLocaleString()} eligible stocks: those with both return windows.`
+    : "";
   $("aside-week").textContent = day(mood.as_of);
   $("vix-close").textContent = Number.isFinite(mood.vix?.close) ? mood.vix.close.toFixed(2) : "—";
   $("vix-week").textContent = mood.vix
