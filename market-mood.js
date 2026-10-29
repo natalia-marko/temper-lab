@@ -84,7 +84,7 @@ function marketBreakdown(details, period, onLists = false) {
     const value = row[`return_${period}`];
     const index = RETURN_BANDS.findIndex(band => value < band.max);
     bins[index].count += 1;
-    const key = sectorFor(row.industry);
+    const key = row.sector || sectorFor(row.industry);  // exported company sector (List check's rule); older files map the industry
     if (!bySector.has(key)) bySector.set(key, []);
     bySector.get(key).push(value);
   }

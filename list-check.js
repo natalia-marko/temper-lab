@@ -293,6 +293,7 @@
     }));
     const notes = [`Yahoo’s dates as of ${weekdayText(r.calendar_built_at)}, refreshed Tuesday and Friday; a date can move until the company confirms it.`];
     const full = new Date(utc(check.decision_date).getTime() + r.after_days * 864e5).toISOString().slice(0, 10);
+    if (r.freeze_capture) notes.push(`Dates up to ${dayText(r.freeze_capture.to)} come from the calendar saved on ${weekdayText(r.freeze_capture.retrieved)}.`);
     if (r.after && r.after.to < full) notes.push(`The calendar reaches ${dayText(r.window.to)}; later dates are not listed yet.`);
     notes.push("Our test found no price drift after results: this is for planning, not a signal.");
     $("lc-results-note").textContent = notes.join(" ");
