@@ -1,5 +1,11 @@
-// The Watchlist page: names starred on any page, with facts from the latest
-// Research snapshot (desk.json) and the earnings calendar. The Timing tab draws one year of
+// The Watchlist page: names starred on any page. The Saved tab answers, per name, where it stands
+// in Temper Lab this week: on which lists (desk.json), the three tested trend rules at the last
+// month-end close (trend-rules.json, the only per-stock signal with a tested edge), a one-year line
+// (ticker-sparks.json, every 5th close) with the 3- and 12-month returns, the next results date
+// (earnings-calendar.json) and EPS revisions as untested context. Rows sort by next results; four
+// counts on top say what needs a look. Jev reads are on each Ticker page (a trial, no edge yet).
+// No purchase or "since starred" price: a reference price makes winners easier to sell and losers
+// easier to hold (Frydman and Rangel 2014). The Timing tab draws one year of
 // daily closes with the 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
 // ticker-timing.json, loaded only when that tab opens. Colour has one meaning on that tab: the three
 // trend rules tested in Leg D (green all up, amber mixed, red all down). RSI and MACD are context.
@@ -194,7 +200,10 @@
   }
 
   let desk = {};
-  let jevBook = null;
+  let deskLoaded = false;
+  let deskRunId = null;
+  let members = {}; // symbol -> { shortlist: rank, lists: ["Hot tape", ...] } from desk.json setups
+  let sparks = null; // share/ticker-sparks.json: every 5th close of the year, for the Saved tab's lines
   let earnings = {};
   let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
   let trend = null; // share/trend-rules.json: the tested rules at the last month-end close, same file as Research
@@ -230,8 +239,39 @@
       });
   }
 
-  function row(item) {
+  // New York's date, as the earnings calendar uses: "today" for the reader is the market's day.
+  const marketToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const daysUntil = (iso, today) => Math.round((Date.UTC(...parts(iso).map((v, i) => (i === 1 ? v - 1 : v)))
+    - Date.UTC(...parts(today).map((v, i) => (i === 1 ? v - 1 : v)))) / 864e5);
+  const SOON = 7; // days: results this close get the amber mark
+
+  function resultsFor(symbol, today) {
+    const next = earnings[symbol];
+    if (!next || !next.date) return null;
+    return { ...next, days: daysUntil(next.date, today) };
+  }
+
+  // One-year line: word-sized, one colour, the last close marked (Tufte's sparkline).
+  function sparkline(symbol) {
+    if (!sparks || !deskRunId || sparks.desk_run_id !== deskRunId) return null;
+    const series = sparks.closes && sparks.closes[symbol];
+    if (!Array.isArray(series)) return null;
+    const pts = series.map((v, i) => [i, Number(v)]).filter(([, v]) => Number.isFinite(v) && v > 0);
+    if (pts.length < 2) return null;
+    const w = 96, h = 24, pad = 3;
+    const lo = Math.min(...pts.map(([, v]) => v)), hi = Math.max(...pts.map(([, v]) => v));
+    const x = (i) => pad + (i / (series.length - 1)) * (w - 2 * pad);
+    const y = (v) => (hi > lo ? h - pad - ((v - lo) / (hi - lo)) * (h - 2 * pad) : h / 2);
+    const node = svg("svg", { class: "wl-spark", viewBox: `0 0 ${w} ${h}`, width: w, height: h, "aria-hidden": "true" });
+    svg("polyline", { points: pts.map(([i, v]) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" "), class: "wl-spark-line" }, node);
+    const [li, lv] = pts[pts.length - 1];
+    svg("circle", { cx: x(li).toFixed(1), cy: y(lv).toFixed(1), r: 2.2, class: "wl-spark-end" }, node);
+    return node;
+  }
+
+  function row(item, today) {
     const c = desk[item.symbol] || {};
+    const inDesk = Boolean(desk[item.symbol]);
     const tr = el("tr");
     const star = el("td", "wl-star");
     star.append(W.button(item.symbol, item.name || c.name || ""));
@@ -240,26 +280,95 @@
     const link = el("a", "", item.symbol);
     link.href = `./ticker.html?t=${encodeURIComponent(item.symbol)}`;
     name.append(link);
-    co.append(name, el("small", "", c.name || item.name || "Not in this week's Research snapshot"));
     const from = W.PAGES[item.page];
-    const tape = (globalThis.TLTape)
-      ? globalThis.TLTape.tape(item.symbol, {
-        book: jevBook,
-        factors: c.factors,
-        analystRetrievedAt: c.analyst && c.analyst.retrieved_at,
-      })
-      : null;
-    const jevCell = el("td", `wl-tape${tape ? ` wl-tape-${tape.jev.state}` : ""}`);
-    jevCell.append(el("span", "", tape ? tape.jev.label : "—"));
-    if (tape && tape.jev.filed) jevCell.append(el("small", "", shortDay(tape.jev.filed)));
-    const revCell = el("td", `wl-tape${tape ? ` wl-tape-${tape.revision.state}` : ""}`);
-    revCell.append(el("span", "", tape ? tape.revision.label : "—"));
-    if (tape && tape.revision.state !== "missing") {
-      revCell.append(el("small", "", `${tape.revision.up ?? 0} up · ${tape.revision.down ?? 0} down`));
-    }
-    tr.append(star, co, jevCell, revCell, el("td", "num", price(c.price)), el("td", "num", money(c.market_cap)),
-      el("td", "", resultsText(earnings[item.symbol])), el("td", "", `${longDay(item.added)}${from ? ` · ${from}` : ""}`));
+    const cap = money(c.market_cap);
+    co.append(name, el("small", "", `${c.name || item.name || item.symbol}${cap !== "—" ? ` · ${cap}` : ""}`),
+      el("small", "wl-quiet", `Added ${longDay(item.added)}${from ? ` · ${from}` : ""}`));
+
+    // Where it stands in Temper Lab this week.
+    const listCell = el("td", "wl-lists");
+    const m = members[item.symbol];
+    if (deskLoaded && !inDesk) listCell.append(el("span", "wl-flag", "Not in the universe"));
+    else if (m && (m.shortlist || m.lists.length)) {
+      if (m.shortlist) listCell.append(el("span", "wl-chip sl", `Shortlist #${m.shortlist}`));
+      for (const label of m.lists) listCell.append(el("span", "wl-chip", label));
+    } else if (deskLoaded) listCell.append(el("span", "wl-flag", "On no list"));
+    else listCell.append(el("span", "wl-quiet", "—"));
+
+    // The tested signal, the same file and words as the Timing tab.
+    const T = savedRules(item.symbol);
+    const ruleCell = el("td", "wl-rules");
+    ruleCell.title = ruleList(T);
+    const dots = el("span", "wl-dots");
+    for (const k of ["A", "B", "C"]) dots.append(el("i", `wl-dot ${!T || T.rules[k] === null ? "none" : T.rules[k] ? "on" : "off"}`));
+    ruleCell.append(dots, el("span", `wl-badge ${T ? T.ruleTone : "none"}`, ruleBadge(T)));
+
+    // One year of closes, with the two return windows used across the site.
+    const yearCell = el("td", "wl-year");
+    const line = sparkline(item.symbol);
+    if (line) yearCell.append(line);
+    const f = c.factors || {};
+    yearCell.append(el("small", "", inDesk
+      ? `3m ${signedPct(f.momentum_63, 0)} · 12m ${signedPct(f.momentum_252, 0)}`
+      : "Not in this week's Research snapshot"));
+    if (Number(c.price) > 0) yearCell.title = `${price(c.price)} at the ${longDay(c.price_date)} close`;
+
+    // When the next results are: the sort key.
+    const r = resultsFor(item.symbol, today);
+    const resCell = el("td", "wl-results");
+    if (r) {
+      resCell.append(el("span", r.days >= 0 && r.days <= SOON ? "wl-soon" : "", `${shortDay(r.date)}${r.timing ? `, ${r.timing}` : ""}`));
+      const when = r.days === 0 ? "today" : r.days > 0 ? `in ${r.days} day${r.days === 1 ? "" : "s"}` : "date passed";
+      resCell.append(el("small", "", `${when}${r.unsure ? " · may change" : ""}`));
+    } else resCell.append(el("span", "wl-quiet", inDesk ? "No date in the calendar" : "—"));
+
+    // Context, not tested on Temper Lab data.
+    const rev = globalThis.TLTape ? globalThis.TLTape.revisionOf(f) : null;
+    const revCell = el("td", "wl-quiet");
+    revCell.textContent = rev && rev.state !== "missing" ? `${rev.up ?? 0}↑ ${rev.down ?? 0}↓` : "—";
+    if (rev && rev.state !== "missing") revCell.title = `${rev.detail}. Context: not tested on Temper Lab data.`;
+
+    tr.append(star, co, listCell, ruleCell, yearCell, resCell, revCell);
     return tr;
+  }
+
+  // Upcoming results first (soonest on top), then dates already passed (latest first), then names with
+  // no date, then names outside the universe.
+  function sortRows(items, today) {
+    const key = (item) => {
+      if (deskLoaded && !desk[item.symbol]) return [4, 0];
+      const r = resultsFor(item.symbol, today);
+      if (!r) return [3, 0];
+      return r.days >= 0 ? [1, r.days] : [2, -r.days];
+    };
+    return items.slice().sort((a, b) => {
+      const [ga, va] = key(a), [gb, vb] = key(b);
+      return ga - gb || va - vb || a.symbol.localeCompare(b.symbol);
+    });
+  }
+
+  // Overview first, then the exceptions (Few): four counts over the starred names.
+  function renderSummary(items, today) {
+    const box = $("wl-summary");
+    if (!box) return;
+    box.hidden = !deskLoaded || items.length === 0;
+    if (box.hidden) { box.replaceChildren(); return; }
+    const soon = items.filter((i) => { const r = resultsFor(i.symbol, today); return r && r.days >= 0 && r.days <= SOON; }).length;
+    const ruled = items.map((i) => savedRules(i.symbol)).filter((T) => T && T.ruleTone !== "none");
+    const allUp = ruled.filter((T) => T.ruleTone === "up").length;
+    const inDesk = items.filter((i) => desk[i.symbol]);
+    const noList = inDesk.filter((i) => !members[i.symbol]).length;
+    const outside = items.length - inDesk.length;
+    const tile = (label, value, flag) => {
+      const t = el("div", `wl-sum${flag ? " wl-sum-flag" : ""}`);
+      t.append(el("span", "", label), el("strong", "", value));
+      return t;
+    };
+    box.replaceChildren(
+      tile(`Report within ${SOON} days`, String(soon), soon > 0),
+      tile("Up on all 3 trend rules", ruled.length ? `${allUp} of ${ruled.length}` : "—", false),
+      tile("On no list this week", String(noList), noList > 0),
+      tile("Not in the universe", String(outside), outside > 0));
   }
 
   // Prices in ticker-timing.json carry four significant digits; show them that way, not as cents.
@@ -286,6 +395,11 @@
   const RULE_NAMES = { A: "price above 200-day", B: "12–1 month return above zero", C: "50-day above 200-day" };
   function trendFor(symbol) {
     if (!trend || !timing || trend.desk_run_id !== timing.desk_run_id) return null;
+    return rulesOf(symbol);
+  }
+  // The Saved tab needs no Timing file: the rules file must belong to this week's Research snapshot.
+  const savedRules = (symbol) => (trend && deskRunId && trend.desk_run_id === deskRunId ? rulesOf(symbol) : null);
+  function rulesOf(symbol) {
     const a = trend.rules[symbol];
     if (!Array.isArray(a) || a.length !== 3) return null;
     const rules = { A: a[0] === null ? null : a[0] === 1, B: a[1] === null ? null : a[1] === 1, C: a[2] === null ? null : a[2] === 1 };
@@ -680,7 +794,8 @@
   function render(items) {
     if (bulkRows.every((item) => W.has(item.symbol))) bulkRows = [];
     displayed = W.clean([...items, ...bulkRows]);
-    const sorted = displayed.slice().sort((a, b) => b.added.localeCompare(a.added) || a.symbol.localeCompare(b.symbol));
+    const today = marketToday();
+    const sorted = sortRows(displayed, today);
     const allSelected = displayed.length > 0 && displayed.every((item) => W.has(item.symbol));
     $("wl-select-all").setAttribute("aria-pressed", allSelected ? "true" : "false");
     $("wl-select-all").setAttribute("aria-label", allSelected ? "Unselect all" : "Select all");
@@ -690,7 +805,8 @@
     $("wl-table").hidden = displayed.length === 0;
     $("wl-export").disabled = items.length === 0;
     $("wl-storage").hidden = W.stored();
-    $("wl-rows").replaceChildren(...sorted.map(row));
+    $("wl-rows").replaceChildren(...sorted.map((item) => row(item, today)));
+    renderSummary(items, today);
     if (activeTab === "timing") renderTiming(items);
   }
   const say = (text) => { $("wl-status").textContent = text; };
@@ -749,10 +865,25 @@
     W.onChange(render);
     render(W.list());
     const get = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./jev-reads.json")]).then(([deskData, calendar, jevIndex]) => {
+    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./trend-rules.json"), get("./ticker-sparks.json")])
+      .then(([deskData, calendar, rules, lines]) => {
       desk = (deskData && deskData.companies) || {};
+      deskLoaded = Boolean(deskData && deskData.companies);
+      deskRunId = (deskData && deskData.run_id) || null;
       earnings = (calendar && calendar.companies) || {};
-      jevBook = (globalThis.TLTape && jevIndex) ? globalThis.TLTape.latestBook(jevIndex) : null;
+      if (!trend && rules && rules.schema === "trend-rules-2" && rules.signal_date && rules.rules) trend = rules;
+      sparks = lines && lines.schema === "ticker-sparks-1" && lines.closes ? lines : null;
+      members = {};
+      const setups = (deskData && deskData.setups) || {};
+      for (const [key, label] of [["strength", "Hot tape"], ["growth", "Growth"], ["undervalued", "Cheap"]]) {
+        for (const r of (setups[key] && setups[key].results) || []) {
+          if (!r || !r.symbol) continue;
+          (members[r.symbol] = members[r.symbol] || { shortlist: null, lists: [] }).lists.push(label);
+        }
+      }
+      for (const r of (setups.composite && setups.composite.results) || []) {
+        if (r && r.symbol) (members[r.symbol] = members[r.symbol] || { shortlist: null, lists: [] }).shortlist = r.rank;
+      }
       const shortlist = deskData && deskData.setups && deskData.setups.composite && deskData.setups.composite.results;
       const topTen = Array.isArray(shortlist) ? shortlist.slice(0, 10) : [];
       shortlistPicks = topTen.map((row) => row.symbol).filter(Boolean);
@@ -761,8 +892,12 @@
         if (row && row.symbol) shortlistRanks[row.symbol] = row.rank || idx + 1;
       });
       const asOf = Object.values(desk).find((c) => c && c.price_date);
+      const rulesOk = trend && deskRunId && trend.desk_run_id === deskRunId;
+      if ($("wl-th-rules")) $("wl-th-rules").textContent = rulesOk ? `Trend · tested, ${shortDay(trend.signal_date)}` : "Trend · tested";
       $("wl-source").textContent = asOf
-        ? `Price and market value: close on ${longDay(asOf.price_date)} (Research snapshot). Jev is the latest Shortlist earnings read; Revision is 30-day EPS estimate changes. Two facts, not a score.`
+        ? `Lists, prices and 3- and 12-month returns: Research snapshot, close on ${longDay(asOf.price_date)}. `
+          + `Trend: the three tested rules${rulesOk ? ` at the ${longDay(trend.signal_date)} month-end close` : ""} (price above 200-day, 12–1 month return above zero, 50-day above 200-day); the only per-stock signal that passed our test. `
+          + "Revisions: 30-day EPS estimate changes, context only, not tested on our data. Jev reads are on each Ticker page."
         : "";
       render(W.list());
     });

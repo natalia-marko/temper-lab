@@ -35,6 +35,32 @@
 .wl-table td strong a:hover, .wl-table td strong a:focus-visible { text-decoration: underline; }
 .wl-table td small { color: #6d7d72; font-size: 11px; }
 .wl-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Saved tab: lists, tested rules, one-year line, next results; counts on top (Oct 2026). */
+.wl-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line, #e3e8e3); }
+.wl-sum { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line, #e3e8e3); border-radius: 8px; background: #fafbf9; }
+.wl-sum span { color: #5d7263; font-size: 11.5px; }
+.wl-sum strong { color: #1d3528; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wl-sum.wl-sum-flag { border-color: #e2c48f; background: #fffaf0; }
+.wl-chip { display: inline-block; margin: 0 4px 4px 0; padding: 1px 7px; border-radius: 999px; background: #eef2ee; color: #3c5446; font-size: 11.5px; white-space: nowrap; }
+.wl-chip.sl { background: #1e6547; color: #fff; font-weight: 600; }
+.wl-flag { color: #8a5a00; font-size: 12px; font-weight: 600; }
+.wl-quiet { color: #7a8a80; }
+.wl-table td.wl-quiet { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12px; }
+.wl-rules { white-space: nowrap; }
+.wl-dots { display: flex; gap: 3px; margin-bottom: 4px; }
+.wl-dot { display: block; width: 9px; height: 9px; border-radius: 50%; }
+.wl-dot.on { background: #2f8a5b; }
+.wl-dot.off { background: #d9e0da; }
+.wl-dot.none { border: 1px dashed #b7c3ba; }
+.wl-year { white-space: nowrap; }
+.wl-spark { display: block; width: 96px; height: 24px; overflow: visible; }
+.wl-spark-line { fill: none; stroke: #6d7d72; stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.wl-spark-end { fill: #1d3528; }
+.wl-results { white-space: nowrap; }
+.wl-soon { color: #8a5a00; font-weight: 650; }
+@media (max-width: 860px) { .wl-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 14px; } }
+/* Phones: the line and the revisions give way so lists, trend and results stay in reach. */
+@media (max-width: 640px) { #wl-table th:nth-child(5), #wl-table td:nth-child(5), #wl-table th:nth-child(7), #wl-table td:nth-child(7) { display: none; } }
 .wl-tape { white-space: nowrap; }
 .wl-tape small { display: block; font-weight: 400; color: #6d7d72; }
 .wl-tape-raised, .wl-tape-up { color: #1e6547; font-weight: 650; }

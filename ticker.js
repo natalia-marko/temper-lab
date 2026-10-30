@@ -425,6 +425,20 @@ function impliedPath({ marketCap, revenue, margin, exitPe, cashYield, requiredRe
   const needed = earnings / margin;
   return { value, earnings, revenue: needed, growth: Math.pow(needed / revenue, 1 / years) - 1 };
 }
+// What the price needs from revenue, in words: "grow 12.0% a year" or "fall no more than 5.0% a year".
+function needWords(growth) {
+  return growth >= 0 ? `grow ${growth > 1 ? "over 100%" : level(growth)} a year` : `fall no more than ${level(-growth)} a year`;
+}
+// One line when the latest TTM net margin is far from the company's own median (price-implies.json
+// margin_5y.far_from_median): a margin at a cyclical peak makes the price look as if it needs
+// shrinking revenue. atMedian = impliedPath at the median margin with the reader's other
+// assumptions, or null to leave the second sentence out.
+function marginCycleText(hist, atMedian) {
+  if (!hist || hist.far_from_median !== true) return "";
+  const first = `Its net margin for the twelve months to ${longDay(hist.to)} is ${level(hist.latest)}; its median since ${monthYear(hist.from)} is ${level(hist.median)}.`;
+  if (!(hist.median > 0)) return `${first} At a median that is zero or a loss, the price cannot be read as revenue growth.`;
+  return atMedian ? `${first} At the median, the price needs revenue to ${needWords(atMedian.growth)}.` : first;
+}
 // Share of companies in the same revenue-size band whose last three years grew at least this fast.
 function baseRate(bands, revenue, growth) {
   if (!bands || !bands.length || !num(revenue) || !num(growth)) return null;
@@ -1683,9 +1697,11 @@ function impliesBoxes(c) {
   const left = section("Revenue: reported and needed", `TTM revenue to ${longDay(history[history.length - 1][0])} · price at the ${longDay(r.price_date)} close`);
   const head = el("p", "tk-implies-head");
   const sub = note("");
+  const cycle = note("");
+  const hist = i.margin_5y && num(i.margin_5y.median) ? i.margin_5y : null;
   const chartSlot = el("div", "");
   const rows = el("div", "tk-implies-rows");
-  left.append(head, sub, chartSlot, rows,
+  left.append(head, sub, cycle, chartSlot, rows,
     note("Arithmetic on dated filings and your assumptions: not a fair value, a forecast or advice. History covers today's listed companies only."));
   const right = section("Your assumptions", "Move any of them");
   const controls = el("div", "tk-implies-controls");
@@ -1696,7 +1712,7 @@ function impliesBoxes(c) {
     ["exitPe", "P/E at the end", 5, 80, 0.5, (v) => times(v),
       start.peFrom === "sector" ? `${sector} median ${times(start.exitPe)}${num(pe) ? ` · today ${times(pe)}` : ""}` : `today ${times(pe)} · no ${sector} median`],
     ["margin", "Net margin", 0.01, 0.7, 0.005, (v) => level(v),
-      `today ${level(start.margin)} (TTM)${num(i.sectorStats && i.sectorStats.net_margin_median) ? ` · ${sector} median ${level(i.sectorStats.net_margin_median)}` : ""}`],
+      `today ${level(start.margin)} (TTM)${hist ? ` · its median ${level(hist.median)} since ${monthYear(hist.from)}` : ""}${num(i.sectorStats && i.sectorStats.net_margin_median) ? ` · ${sector} median ${level(i.sectorStats.net_margin_median)}` : ""}`],
     ["cashYield", "Cash returned a year", 0, 0.1, 0.001, (v) => level(v),
       cash ? `dividends + buybacks, fiscal year to ${longDay(cash.fy_end)}: ${level(start.cashYield)} of market value` : "none reported in the last 10-K"],
     ["requiredReturn", "Return you want a year", 0.04, 0.15, 0.005, (v) => level(v), "your choice; 8% is a common long-run equity figure"],
@@ -1732,7 +1748,16 @@ function impliesBoxes(c) {
   });
   const details = el("details", "tk-more");
   details.append(el("summary", "", "Show the arithmetic"), math);
-  right.append(controls, reset, details);
+  const useMedian = hist && hist.median > 0 ? el("button", "tk-chip-btn", "Use its median margin") : null;
+  if (useMedian) {
+    useMedian.type = "button";
+    useMedian.addEventListener("click", () => {
+      a.margin = hist.median;
+      inputs.forEach(([key, input]) => { if (key === "margin") input.value = a.margin; });
+      update();
+    });
+  }
+  right.append(...[controls, reset, useMedian, details].filter(Boolean));
   function update() {
     inputs.forEach(([key, , val, fmt]) => { val.textContent = fmt(a[key]); });
     yearButtons.forEach(([n, b]) => b.classList.toggle("on", n === a.years));
@@ -1740,12 +1765,17 @@ function impliesBoxes(c) {
       cashYield: a.cashYield, requiredReturn: a.requiredReturn, years: a.years });
     if (!p) {
       head.textContent = "Not computable with these inputs.";
-      sub.textContent = ""; chartSlot.replaceChildren(); rows.replaceChildren(); math.replaceChildren();
+      sub.textContent = ""; cycle.textContent = ""; chartSlot.replaceChildren(); rows.replaceChildren(); math.replaceChildren();
       return;
     }
+    const atMedian = hist && hist.median > 0 && a.margin !== hist.median
+      ? impliedPath({ marketCap: Number(r.market_cap), revenue, margin: hist.median, exitPe: a.exitPe,
+        cashYield: a.cashYield, requiredReturn: a.requiredReturn, years: a.years })
+      : null;
+    cycle.textContent = marginCycleText(hist, atMedian);
     const endDay = addYears(history[history.length - 1][0], a.years);
     head.replaceChildren(document.createTextNode(`At ${dollars(r.price)}, ${c.name || c.symbol} needs revenue to `),
-      el("strong", "", p.growth >= 0 ? `grow ${p.growth > 1 ? "over 100%" : level(p.growth)} a year` : `fall no more than ${level(-p.growth)} a year`),
+      el("strong", "", needWords(p.growth)),
       document.createTextNode(` for ${a.years} years.`));
     sub.textContent = `If its P/E ends at ${times(a.exitPe)}, it earns a ${level(a.margin)} net margin, returns ${level(a.cashYield)} a year in cash and you want ${level(a.requiredReturn)} a year.`;
     const needed = Array.from({ length: a.years }, (_, k) => [addYears(history[history.length - 1][0], k + 1), revenue * Math.pow(1 + p.growth, k + 1)]);
