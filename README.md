@@ -7,6 +7,8 @@ balance-sheet shares and contract liabilities. Each available row expands to
 exact inputs, period dates and SEC filing links. Cash uses explicitly labelled
 YTD/full-year periods. Missing comparable facts stay unavailable; annual revenue
 is never passed off as Q4. The file must match the desk date, run and SHA-256.
+Revenue is the filing's largest net revenue line; financial companies show no
+revenue-based rows; a share split between the two filings withholds the share row.
 This is descriptive research, with no score or return forecast. Current or prior
 reported values may include revisions; this is not a restatement detector.
 See `docs/quiet-facts-review-2026-10-27.md` for the coverage test and limitations.
