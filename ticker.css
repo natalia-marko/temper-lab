@@ -181,6 +181,7 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
 .tk-quiet-value { display: block; margin: 4px 0 0 14px; font-variant-numeric: tabular-nums; }
 .tk-quiet-source { margin-top: 10px; font-size: 12px; overflow-wrap: anywhere; }
 .tk-quiet-source p { margin: 4px 0; }
+.tk-quiet-missing .tk-quiet-label { font-weight: 400; color: var(--tk-faint); }
 .tk-fs { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
 .tk-fs i { height: 14px; border-radius: 3px; }
 .tk-fs i.yes { background: var(--tk-up); }

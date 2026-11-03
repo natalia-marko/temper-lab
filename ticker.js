@@ -10,9 +10,13 @@
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
 "use strict";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const FILES = { desk: "./desk.json", quiet: "./quiet-facts.json", fscore: "./fscore.json", earnings: "./earnings-calendar.json",
-  own: "./ownership-signals.json", volume: "./ticker-volume.json", funds: "./ticker-funds.json", jev: "./jev-reads.json",
-  implies: "./price-implies.json" };
+const FILES = { desk: "./desk.json", shared: "./ticker-shared.json", earnings: "./earnings-calendar.json",
+  own: "./ownership-signals.json", jev: "./jev-reads.json" };
+// Price closes, fund holders, quiet facts, F-score and price-implies come as one small file per
+// ticker plus ticker-shared.json (tools/build_ticker_shards.py, 3 Nov 2026): the same facts, a
+// fraction of the download. The keys each dataset fills per ticker:
+const SHARD_KEYS = { volume: ["rows", "closes"], funds: ["rows", "manager_names"], quiet: ["companies"],
+  fscore: ["companies"], implies: ["companies"] };
 const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
 const MONEY_LABEL = {
   buy: "bought", buy_plan: "bought under a 10b5-1 plan", buy_private: "bought privately or in an offering",
@@ -54,7 +58,7 @@ const FSCORE_CHECKS = [
 ];
 const VOLUME_FIELDS = ["normal_volume", "volume_x_5", "volume_x_21", "up_share_5", "up_share_21", "return_5", "return_21"];
 const CHART_PERIODS = [[252, "12 months"], [63, "3 months"]];
-const state = { data: {}, missing: [], period: 252 };
+const state = { data: {}, missing: [], period: 252, shards: new Map(), ticket: 0 };
 const $ = (id) => document.getElementById(id);
 
 // ---------- formatting ----------
@@ -1568,16 +1572,11 @@ function quietFactsBox(c) {
     return `${prefix}${n.toFixed(1)}${unit === "percent" ? (change ? " pp" : "%") : " days"}`;
   };
   if (q.reason) box.append(note(q.reason));
-  for (const r of q.rows || []) {
+  const rows = q.rows || [];
+  for (const r of rows.filter((x) => x.status === "available")) {
     const detail = el("details", "tk-quiet-row");
     const summary = el("summary");
     summary.append(el("span", "tk-quiet-label", r.label + (r.key === "cash_profit" && r.basis ? ` · ${r.basis}` : "")));
-    if (r.status !== "available") {
-      summary.append(el("span", "tk-quiet-value", "Unavailable"));
-      detail.append(summary, note(r.reason));
-      box.append(detail);
-      continue;
-    }
     summary.append(el("span", "tk-quiet-value", `${format(r.previous.value, r.unit)} → ${format(r.current.value, r.unit)} (${format(r.change, r.unit, true)})`));
     detail.append(summary, note(`${r.basis}. ${r.explanation}`));
     for (const [key, label] of [["previous", "Last year"], ["current", "Current"]]) {
@@ -1595,6 +1594,15 @@ function quietFactsBox(c) {
       }
       detail.append(group);
     }
+    box.append(detail);
+  }
+  // Unavailable rows: one line naming them, each reason one click away (3 Nov 2026 audit).
+  const missing = rows.filter((x) => x.status !== "available");
+  if (missing.length) {
+    const detail = el("details", "tk-quiet-row tk-quiet-missing");
+    const summary = el("summary");
+    summary.append(el("span", "tk-quiet-label", `Not available: ${missing.map((r) => r.label).join(", ")}`));
+    detail.append(summary, ...missing.map((r) => note(`${r.label}: ${r.reason}`)));
     box.append(detail);
   }
   box.append(note("Comparatives may include revisions. Missing is not zero. Splits, acquisitions and accounting changes can affect comparisons; check the filings."));
@@ -2095,10 +2103,31 @@ function aboutBox(c) {
   box.append(ul);
   return box;
 }
+// Each dataset as the page used it whole: its own metadata plus this ticker's entries. A ticker
+// file from another build is ignored, so a stale file never mixes with the current metadata.
+function withShard(shared, shard) {
+  if (!shared || shared.schema !== "ticker-shards-1") return {};
+  const parts = shard && shard.schema === "ticker-shards-1" && shard.build_id === shared.build_id ? shard.data || {} : {};
+  return Object.fromEntries(Object.entries(shared.data || {}).filter(([name]) => SHARD_KEYS[name]).map(([name, meta]) =>
+    [name, { ...meta, ...Object.fromEntries(SHARD_KEYS[name].map((key) => [key, (parts[name] || {})[key] || {}])) }]));
+}
+// Draws at once when the ticker's file is already here (or not needed); otherwise fetches it
+// first. A newer request wins: an older fetch that lands late does not redraw.
 function render() {
+  const ticket = ++state.ticket;
+  const symbol = norm($("tk-query").value);
+  if (!symbol || !state.data.shared || state.shards.has(symbol)) return draw(state.shards.get(symbol) || null);
+  fetch(`./ticker/${encodeURIComponent(symbol)}.json`, { cache: "no-cache" })
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    .then((shard) => {
+      state.shards.set(symbol, shard);
+      if (ticket === state.ticket) draw(shard);
+    });
+}
+function draw(shard) {
   const query = $("tk-query").value;
   const out = $("tk-out");
-  const c = card(state.data, query);
+  const c = card({ ...state.data, ...withShard(state.data.shared, shard) }, query);
   if (!c) {
     out.replaceChildren(starters());
     return;
@@ -2266,6 +2295,7 @@ function start() {
     });
     if (state.data.own && state.data.own.schema !== "ownership-signals-1") { state.missing.push("ownership-signals.json"); delete state.data.own; }
     if (state.data.jev && state.data.jev.schema !== "jev-reads-index-1") { state.missing.push("jev-reads.json"); delete state.data.jev; }
+    if (state.data.shared && state.data.shared.schema !== "ticker-shards-1") { state.missing.push("ticker-shared.json"); delete state.data.shared; }
     if (!state.data.desk && !state.data.own) throw new Error("no data");
     setup();
   }).catch((error) => {

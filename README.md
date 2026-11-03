@@ -157,7 +157,12 @@ are new, added, cut or sold out, and the five largest increases and decreases by
 as the 13F Gate 2 research; the latest restatement in each data set; managers whose table in SEC's data
 set is incomplete (fewer rows than 90% of the entries the filing declares) are not compared; positions
 whose reported value does not match their shares, or whose shares were restated for a split after the
-quarter, are left out and counted. Facts, not a buy or sell call (Gate 2 found no return edge in holder counts). Insights rows and
+quarter, are left out and counted. Facts, not a buy or sell call (Gate 2 found no return edge in holder counts). Since 3 Nov 2026
+the Ticker page does not download those five all-company files (`ticker-volume.json`, `ticker-funds.json`,
+`quiet-facts.json`, `fscore.json`, `price-implies.json`): `tools/build_ticker_shards.py` cuts them into
+`ticker-shared.json` (each file's own dates, run ids, hashes and chart days) and one `ticker/<SYMBOL>.json` per
+ticker, about 30 KB per view instead of 21 MB. Shared part plus one ticker file is exactly that ticker's slice,
+so every date and run check is unchanged; the release check fails when a source changed after the cut. Insights rows and
 Watchlist names link to the page.
 
 Watchlist is the sixth page, `watchlist.html`, last in the sidebar. `watchlist.js` (loaded first on
