@@ -151,7 +151,8 @@ reads top-down: header (next results date, list ranks against last week), a summ
 per section, then price and trading, the business (Research stocks only; price / earnings and EV / operating
 income are the only ratios worked out on the page, from one Research record, and not shown for a loss), and
 who owns and trades it; method notes sit in "About the data". Fund holdings come from `ticker-funds.json`, written
-by hand each quarter with `tools/build_ticker_funds.py` once SEC posts a new 13F data set: per stock, the
+by `tools/build_ticker_funds.py`, which the Saturday job runs every week: it does nothing until SEC posts a newer
+13F data set, then writes the file and rebuilds the Ticker page files (3 Nov 2026). Per stock, the
 13F managers that filed for both of the last two quarters — how many hold it, shares and value, how many
 are new, added, cut or sold out, and the five largest increases and decreases by shares. Same CUSIP links
 as the 13F Gate 2 research; the latest restatement in each data set; managers whose table in SEC's data

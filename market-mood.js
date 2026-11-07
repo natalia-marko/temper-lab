@@ -505,8 +505,8 @@ function render(mood) {
 async function loadMood() {
   try {
     const [moodResponse, releaseResponse] = await Promise.all([
-      fetch("./market-mood.json", { cache: "no-store" }),
-      fetch("./release.json", { cache: "no-store" }),
+      fetch("./market-mood.json", { cache: "no-cache" }),
+      fetch("./release.json", { cache: "no-cache" }),
     ]);
     if (!moodResponse.ok) throw new Error("The market-mood snapshot is unavailable.");
     const mood = await moodResponse.json();

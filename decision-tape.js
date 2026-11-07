@@ -1,6 +1,6 @@
 // Decision tape: two dated facts for a name you might hold.
 // Jev raised? from the published suggestion book (same labels as jev-reads.html).
-// Conviction revision up? from the Research freeze's 30-day EPS up/down counts.
+// EPS revisions up? from the Research freeze's 30-day EPS up/down counts.
 // Lookups and labels only. No combined score. Not a buy or sell call.
 "use strict";
 

@@ -544,7 +544,7 @@ function showError(error) {
   const dialog = document.getElementById("jev-panel");
   if (dialog.open && typeof dialog.close === "function") dialog.close();
 }
-async function fetchJson(path) { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error(`Could not load ${path} (HTTP ${response.status}).`); return response.json(); }
+async function fetchJson(path) { const response = await fetch(path, { cache: "no-cache" }); if (!response.ok) throw new Error(`Could not load ${path} (HTTP ${response.status}).`); return response.json(); }
 async function startJevReads() {
   const query = document.getElementById("jev-query");
   query.addEventListener("input", event => { jevState.filters.query = event.target.value; if (jevState.book) renderList(); });

@@ -17,7 +17,7 @@ const FILES = { desk: "./desk.json", shared: "./ticker-shared.json", earnings: "
 // fraction of the download. The keys each dataset fills per ticker:
 const SHARD_KEYS = { volume: ["rows", "closes"], funds: ["rows", "manager_names"], quiet: ["companies"],
   fscore: ["companies"], implies: ["companies"] };
-const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"], ["conviction", "Conviction"]];
+const LISTS = [["composite", "Shortlist"], ["strength", "Strength"], ["growth", "Growth"], ["undervalued", "Cheap"]];
 const MONEY_LABEL = {
   buy: "bought", buy_plan: "bought under a 10b5-1 plan", buy_private: "bought privately or in an offering",
   sell_no_plan: "sold without a 10b5-1 plan", sell_plan: "sold under a 10b5-1 plan", sell_tax: "sold to cover tax",
@@ -1275,21 +1275,34 @@ function glanceBox(c) {
   return box;
 }
 
+// Chart end labels: cents below $1,000, whole dollars from there, so a long price fits beside the chart.
+const endPrice = (v) => `$${Number(v).toLocaleString("en-US", Number(v) >= 999.995
+  ? { maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const PRICE_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000];
+const axisPrice = (v, step) => `$${Number(v).toLocaleString("en-US", step < 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`;
+// Price vs QQQ in dollars (4 Nov 2026): the stock's price on the left axis, QQQ's on the right, on one
+// scale of change. Both lines start level at the stock's first close and the same percentage is the same
+// height for both, so the gap between them is the difference in return; every number shown is a price.
 function priceBox(c) {
   const p = c.price;
   if (!p) return section("Price vs QQQ", "", missing("ticker-volume.json") || note("No reliable price line for this ticker this week (fewer than half the days, or a split mix-up in the price data)."));
   const W = 720, L = 54, R = 96, T = 26, PB = 196;
   const n = p.days.length;
-  const rebase = (series, i0) => (series ? series.map((v, k) => (k >= i0 && num(v) && v > 0 && num(series[i0]) ? v / series[i0] - 1 : null)) : null);
-  const a = rebase(p.stock, p.first);
-  const q = rebase(p.qqq, p.first);
-  const all = [...a, ...(q || [])].filter((v) => v !== null);
-  // Round the scale out to whole steps (at most five) so every gridline names a value inside the drawing.
-  const range = Math.max(...all, 0) - Math.min(...all, 0);
-  const step = [0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10].find((s) => range / s <= 5) || 20;
-  const lo = Math.min(0, Math.floor(Math.min(...all) / step) * step), hi = Math.max(0, Math.ceil(Math.max(...all) / step) * step);
+  const ok = (v) => num(v) && Number(v) > 0;
+  const S = p.stock.map((v, k) => (k >= p.first && ok(v) ? Number(v) : null));
+  const Q = p.qqq ? p.qqq.map((v, k) => (k >= p.first && ok(v) ? Number(v) : null)) : null;
+  const s0 = S[p.first], q0 = Q ? Q[p.first] : null;
+  const hasQ = Q !== null && ok(q0);
+  const live = (arr) => arr.filter((v) => v !== null);
+  // One scale of change for both lines: 0 is each line's first close.
+  const changes = [...live(S).map((v) => v / s0 - 1), ...(hasQ ? live(Q).map((v) => v / q0 - 1) : []), 0];
+  let lo = Math.min(...changes), hi = Math.max(...changes);
+  const pad = (hi - lo || 0.1) * 0.06;
+  lo -= pad; hi += pad;
   const x = (i) => L + (i / (n - 1)) * (W - L - R);
-  const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (PB - T);
+  const yr = (r) => T + (1 - (r - lo) / (hi - lo)) * (PB - T);
+  const ys = (v) => yr(v / s0 - 1);
+  const yq = (v) => yr(v / q0 - 1);
   const i = c.insiders;
   const lastDay = p.days[n - 1];
   const marks = filingMarks(c);
@@ -1302,48 +1315,70 @@ function priceBox(c) {
   ];
   const H = PB + 26 + rows.length * 18 + (rows.length ? 8 : 0);
   const chart = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: "0",
-    "aria-label": `${c.symbol} ${pct(p.change)} from ${longDay(p.first_day)} to ${longDay(p.last_day)}${p.qqq_change !== null ? `, QQQ ${pct(p.qqq_change)}` : ""}. Left and right arrow keys read each day.` });
-  for (let t = Math.ceil(lo / step - 1e-9) * step; t <= hi + 1e-9; t += step) {
-    const v = Math.abs(t) < 1e-9 ? 0 : t;
-    svg("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: v === 0 ? "tk-zero" : "tk-grid" }, chart);
-    svg("text", { x: L - 6, y: y(v) + 3.5, "text-anchor": "end", class: "tk-tick" }, chart, v === 0 ? "0%" : pct(v, 0));
+    "aria-label": `${c.symbol} ${dollars(s0)} to ${dollars(S[p.last])}, ${pct(p.change)}, from ${longDay(p.first_day)} to ${longDay(p.last_day)}${hasQ && Q[p.last] !== null ? `; QQQ ${dollars(q0)} to ${dollars(Q[p.last])}, ${pct(p.qqq_change)}` : ""}. Left and right arrow keys read each day.` });
+  // Left axis: the stock's dollars, at most five round steps.
+  const sStep = PRICE_STEPS.find((st) => (s0 * (hi - lo)) / st <= 5) || 100000;
+  for (let t = Math.ceil((s0 * (1 + lo)) / sStep - 1e-9) * sStep; t <= s0 * (1 + hi) + 1e-9; t += sStep) {
+    if (t <= 0) continue;
+    svg("line", { x1: L, x2: W - R, y1: ys(t), y2: ys(t), class: "tk-grid" }, chart);
+    svg("text", { x: L - 6, y: ys(t) + 3.5, "text-anchor": "end", class: "tk-tick" }, chart, axisPrice(t, sStep));
   }
-  const path = (vals) => {
+  // The start level, where both lines begin.
+  svg("line", { x1: L, x2: W - R, y1: yr(0), y2: yr(0), class: "tk-zero" }, chart);
+  const path = (vals, yf) => {
     let d = "";
-    vals.forEach((v, k) => { if (v !== null) d += `${d && vals[k - 1] !== null ? "L" : "M"}${x(k).toFixed(1)},${y(v).toFixed(1)}`; });
+    vals.forEach((v, k) => { if (v !== null) d += `${d && vals[k - 1] !== null ? "L" : "M"}${x(k).toFixed(1)},${yf(v).toFixed(1)}`; });
     return d;
   };
-  const area = (vals) => {
+  const area = (vals, yf) => {
     let d = "", start = null;
     vals.forEach((v, k) => {
       if (v !== null) {
-        d += `${start === null ? "M" : "L"}${x(k).toFixed(1)},${y(v).toFixed(1)}`;
+        d += `${start === null ? "M" : "L"}${x(k).toFixed(1)},${yf(v).toFixed(1)}`;
         if (start === null) start = k;
         if (vals[k + 1] === null || k === vals.length - 1) {
-          d += `L${x(k).toFixed(1)},${y(0).toFixed(1)}L${x(start).toFixed(1)},${y(0).toFixed(1)}Z`;
+          d += `L${x(k).toFixed(1)},${yr(0).toFixed(1)}L${x(start).toFixed(1)},${yr(0).toFixed(1)}Z`;
           start = null;
         }
       }
     });
     return d;
   };
-  svg("path", { d: area(a), class: "tk-area" }, chart);
-  if (q) svg("path", { d: path(q), class: "tk-ln qqq" }, chart);
-  svg("path", { d: path(a), class: "tk-ln stock" }, chart);
-  // End labels, pushed apart when the two lines finish close together.
-  let ya = y(a[p.last]);
-  let yq = q && q[p.last] !== null ? y(q[p.last]) : null;
-  if (yq !== null && Math.abs(ya - yq) < 14) { const m = (ya + yq) / 2; [ya, yq] = ya <= yq ? [m - 7, m + 7] : [m + 7, m - 7]; }
-  if (yq !== null) svg("circle", { cx: x(p.last), cy: y(q[p.last]), r: 3.5, class: "tk-dot qqq" }, chart);
-  svg("circle", { cx: x(p.last), cy: y(a[p.last]), r: 4.5, class: "tk-dot stock" }, chart);
-  svg("text", { x: x(n - 1) + 9, y: ya + 4, class: "tk-tick strong" }, chart, `${c.symbol} ${pct(a[p.last])}`);
-  if (yq !== null) svg("text", { x: x(n - 1) + 9, y: yq + 4, class: "tk-tick" }, chart, `QQQ ${pct(q[p.last])}`);
+  svg("path", { d: area(S, ys), class: "tk-area" }, chart);
+  if (hasQ) svg("path", { d: path(Q, yq), class: "tk-ln qqq" }, chart);
+  svg("path", { d: path(S, ys), class: "tk-ln stock" }, chart);
+  // End labels with the last close, pushed apart when the two lines finish close together.
+  let ya = ys(S[p.last]);
+  let yb = hasQ && Q[p.last] !== null ? yq(Q[p.last]) : null;
+  if (yb !== null && Math.abs(ya - yb) < 14) { const m = (ya + yb) / 2; [ya, yb] = ya <= yb ? [m - 7, m + 7] : [m + 7, m - 7]; }
+  if (yb !== null) svg("circle", { cx: x(p.last), cy: yq(Q[p.last]), r: 3.5, class: "tk-dot qqq" }, chart);
+  svg("circle", { cx: x(p.last), cy: ys(S[p.last]), r: 4.5, class: "tk-dot stock" }, chart);
+  svg("text", { x: x(n - 1) + 9, y: ya + 4, class: "tk-tick strong" }, chart, `${c.symbol} ${endPrice(S[p.last])}`);
+  if (yb !== null) svg("text", { x: x(n - 1) + 9, y: yb + 4, class: "tk-tick" }, chart, `QQQ ${endPrice(Q[p.last])}`);
+  // Right axis: QQQ's dollars, only prices it traded at in the window, at least 26 units apart (the
+    // phone's larger text), and not on an end label.
+  if (hasQ) {
+    const perDollar = (PB - T) / (q0 * (hi - lo));
+    const qStep = PRICE_STEPS.find((st) => st * perDollar >= 26) || 100000;
+    const ql = Math.min(...live(Q)), qh = Math.max(...live(Q));
+    for (let t = Math.ceil(ql / qStep - 1e-9) * qStep; t <= qh + 1e-9; t += qStep) {
+      const r = t / q0 - 1;
+      if (t <= 0 || r < lo || r > hi || Math.abs(yr(r) - ya) < 13 || (yb !== null && Math.abs(yr(r) - yb) < 13)) continue;
+      svg("text", { x: x(n - 1) + 9, y: yr(r) + 3.5, class: "tk-tick qq" }, chart, axisPrice(t, qStep));
+    }
+  }
   const next = c.earnings && c.earnings.next;
   if (next && next.date > lastDay) svg("text", { x: W - R, y: T - 12, "text-anchor": "end", class: "tk-tick event" }, chart, `Next results ${day(next.date)} →`);
   const edge = Math.max(5, Math.ceil(n * 0.075));
+  // A month name within 82 units of the first or last date would overlap it in the phone's larger text
+  // (an end date is ~61 units there): "tight" names are hidden on phones only (ticker.css).
+  const TIGHT = 82;
   svg("text", { x: x(0), y: PB + 16, class: "tk-tick" }, chart, day(p.days[0]));
   p.days.forEach((d, k) => {
-    if (k > edge && k < n - edge && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) svg("text", { x: x(k), y: PB + 16, "text-anchor": "middle", class: "tk-tick" }, chart, MONTHS[Number(d.slice(5, 7)) - 1]);
+    if (k > edge && k < n - edge && d.slice(5, 7) !== p.days[k - 1].slice(5, 7)) {
+      const tight = x(k) - x(0) < TIGHT || x(n - 1) - x(k) < TIGHT;
+      svg("text", { x: x(k), y: PB + 16, "text-anchor": "middle", class: tight ? "tk-tick tight" : "tk-tick" }, chart, MONTHS[Number(d.slice(5, 7)) - 1]);
+    }
   });
   svg("text", { x: x(n - 1), y: PB + 16, "text-anchor": "end", class: "tk-tick" }, chart, day(lastDay));
   // Filing days on the same date axis; the company's own reports also get a line through the price.
@@ -1357,7 +1392,7 @@ function priceBox(c) {
       if (at >= 0) svg("rect", { x: x(at) - 2.5, y: ty - 6, width: 5, height: 12, rx: 2, class: cls }, chart);
     }
   });
-  // Hover and keyboard readout.
+  // Hover and keyboard readout: both closes in dollars, with the change since the first close.
   const cross = svg("line", { y1: T, y2: H - 4, class: "tk-cross", visibility: "hidden" }, chart);
   const da = svg("circle", { r: 4.5, class: "tk-dot stock", visibility: "hidden" }, chart);
   const dq = svg("circle", { r: 3.5, class: "tk-dot qqq", visibility: "hidden" }, chart);
@@ -1367,18 +1402,18 @@ function priceBox(c) {
   let cur = p.last;
   const show = (k) => {
     cur = Math.max(0, Math.min(n - 1, k));
-    const on = a[cur] !== null;
+    const on = S[cur] !== null;
     cross.setAttribute("visibility", "visible");
     cross.setAttribute("x1", x(cur)); cross.setAttribute("x2", x(cur));
     da.setAttribute("visibility", on ? "visible" : "hidden");
-    if (on) { da.setAttribute("cx", x(cur)); da.setAttribute("cy", y(a[cur])); }
-    const qon = q && q[cur] !== null;
+    if (on) { da.setAttribute("cx", x(cur)); da.setAttribute("cy", ys(S[cur])); }
+    const qon = hasQ && Q[cur] !== null;
     dq.setAttribute("visibility", qon ? "visible" : "hidden");
-    if (qon) { dq.setAttribute("cx", x(cur)); dq.setAttribute("cy", y(q[cur])); }
+    if (qon) { dq.setAttribute("cx", x(cur)); dq.setAttribute("cy", yq(Q[cur])); }
     const filedHere = rows.filter(([, , days]) => days.includes(p.days[cur])).map((row) => row[4]);
     tip.replaceChildren(el("b", "", longDay(p.days[cur])),
-      el("div", "", on ? `${c.symbol} $${Number(p.stock[cur]).toLocaleString("en-US", { maximumFractionDigits: 2 })} · ${pct(a[cur])}` : `${c.symbol}: no trade this day`));
-    if (qon) tip.append(el("div", "", `QQQ ${pct(q[cur])}`));
+      el("div", "", on ? `${c.symbol} ${dollars(S[cur])} · ${pct(S[cur] / s0 - 1)}` : `${c.symbol}: no trade this day`));
+    if (qon) tip.append(el("div", "", `QQQ ${dollars(Q[cur])} · ${pct(Q[cur] / q0 - 1)}`));
     for (const text of filedHere) tip.append(el("div", "tk-tip-trade", text));
     tip.hidden = false;
     const px = (x(cur) / W) * wrap.clientWidth;
@@ -1400,10 +1435,11 @@ function priceBox(c) {
   const legend = el("div", "tk-legend");
   const item = (cls, text) => { const s = el("span"); s.append(el("i", cls), text); return s; };
   legend.append(item("tk-sw-line", c.symbol));
-  if (q) legend.append(item("tk-sw-line qqq", "QQQ"));
+  if (hasQ) legend.append(item("tk-sw-line qqq", "QQQ"));
   for (const [, cls, , label] of rows) legend.append(item(`tk-sw ${cls}`, label));
+  // Under the chart only what this ticker needs; how to read the chart is in "About the data".
   const notes = [];
-  if (rows.length) notes.push("Marks are SEC filing days, when the market could know; a Form 4 is due within two business days of the trade.");
+  if (hasQ) notes.push(`Both lines share one scale of change since the start; the axes label it in dollars, ${c.symbol} left, QQQ right.`);
   if (marks.later) notes.push(`${marks.later} filing day${marks.later === 1 ? "" : "s"} after ${day(lastDay)} ${marks.later === 1 ? "is" : "are"} not on the chart yet.`);
   if (i) {
     const paid = PAID_LABEL.filter(([k]) => i.paid[k] && num(i.paid[k].avg)).map(([k, label]) => {
@@ -1411,11 +1447,8 @@ function priceBox(c) {
       return `${label} at $${Number(pp.avg).toFixed(2)}${pp.low !== pp.high ? ` ($${Number(pp.low).toFixed(2)}–$${Number(pp.high).toFixed(2)})` : ""}`;
     });
     if (paid.length) {
-      // Compared with the chart's last close: the Research price when it is for the same day.
-      const close = c.research && c.research.price_date === lastDay && num(c.research.price) ? Number(c.research.price) : Number(p.close);
-      notes.push(`Average prices: insiders ${paid.join("; ")}. ${i.split_after
-        ? "A stock split was recorded during or after these trades, so these prices do not compare with today's."
-        : `${c.symbol} closed at $${close.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${day(p.last_day)}.`}`);
+      notes.push(`Average insider price: ${paid.join("; ")}.${i.split_after
+        ? " A stock split came during or after these trades, so these prices do not compare with the chart." : ""}`);
     }
   }
   const returns = el("dl", "tk-returns");
@@ -1429,7 +1462,7 @@ function priceBox(c) {
   row(c.symbol, p.stock[p.first], p.stock[p.last], p.change);
   row("QQQ", p.qqq && p.qqq[p.first], p.qqq && p.qqq[p.last], p.qqq_change);
   const box = section(`Price vs QQQ, ${p.label || "3 months"}`, `daily closes, ${longDay(p.first_day)} – ${longDay(p.last_day)}`, returns, legend, wrap,
-    note(["Both lines start at their own first close. Hover, or focus the chart and use the arrow keys, to read each day.", ...notes].join(" ")));
+    notes.length ? note(notes.join(" ")) : null);
   if (p.can_switch) {
     const periods = el("div", "tk-periods");
     periods.setAttribute("role", "group");
@@ -2091,6 +2124,7 @@ function aboutBox(c) {
   const ul = el("ul");
   const lines = [
     "Price: adjusted daily closes to the freeze Friday, the same day as the Research snapshot. No line when fewer than half the days have a close or a one-day move is beyond 3× (a split mix-up in the price data).",
+    "Price chart: both lines share one scale of change since the first close, so the gap between them is the difference in return; the left axis labels it in the stock's dollars, the right axis in QQQ's. Marks are SEC filing days, when the market could know; a Form 4 is due within two business days of the trade. Hover, or focus the chart and use the arrow keys, to read each day.",
     "Valuation: price / earnings is market value over trailing net income; EV / operating income is the inverse of OI / EV on Research. Neither is shown for a loss.",
     "Insider trades include officers, directors and 10% owners. A 10b5-1 plan is a trading plan set in advance.",
     "13D: an active holder, filed within 5 business days. 13G: a passive holder or institution, filed within 5 business days to 45 days after the quarter.",

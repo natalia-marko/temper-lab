@@ -274,6 +274,8 @@ button.tk-link { font: inherit; cursor: pointer; appearance: none; }
   .tk-glance-in { grid-template-columns: minmax(0, 1fr); }
   .tk-facts { grid-template-columns: 1fr; }
   .tk-tick { font-size: 17px; }  /* the chart scales to about half size on a phone */
+  .tk-tick.qq { display: none; }  /* QQQ's right-axis prices; its end label still gives its last close */
+  .tk-tick.tight { display: none; }  /* month names that would overlap the first or last date */
 }
 
 /* Early-stage research file (moved from Research, Oct 2026). */

@@ -74,7 +74,7 @@ async function loadOutlook() {
   const root = document.getElementById("outlook");
   try {
     const [report, desk, release] = await Promise.all(["outlook.json", "desk.json", "release.json"].map(async file => {
-      const response = await fetch(`./${file}`, { cache: "no-store" });
+      const response = await fetch(`./${file}`, { cache: "no-cache" });
       if (!response.ok) throw new Error("Outlook data unavailable.");
       return response.json();
     }));

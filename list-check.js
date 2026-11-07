@@ -408,7 +408,7 @@
   async function start() {
     try {
       const [response, releaseResponse] = await Promise.all([
-        fetch("./list-check.json", { cache: "no-store" }), fetch("./release.json", { cache: "no-store" })]);
+        fetch("./list-check.json", { cache: "no-cache" }), fetch("./release.json", { cache: "no-cache" })]);
       if (!response.ok) throw new Error("The List check snapshot is unavailable.");
       const check = await response.json();
       const release = releaseResponse.ok ? await releaseResponse.json() : null;

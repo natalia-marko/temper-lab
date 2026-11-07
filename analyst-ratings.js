@@ -566,8 +566,8 @@ function checkAnalystSnapshot(data, release) {
 async function loadAnalystSnapshot() {
   try {
     const [dataResponse, releaseResponse] = await Promise.all([
-      fetch("./analyst-ratings.json", { cache: "no-store" }),
-      fetch("./release.json", { cache: "no-store" }),
+      fetch("./analyst-ratings.json", { cache: "no-cache" }),
+      fetch("./release.json", { cache: "no-cache" }),
     ]);
     if (!dataResponse.ok) throw new Error("The weekly analyst snapshot is unavailable.");
     const data = await dataResponse.json();

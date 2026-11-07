@@ -1,7 +1,7 @@
 // Research page. Four lists, one table each, the same three fact columns on
 // every list (Trend, Shorted, Next results). The Shortlist (Composite) opens
-// the page. Conviction lives on Analyst ratings and early-stage research files
-// on the Ticker page; both keep their data in desk.json.
+// the page. Early-stage research files live on the Ticker page. Conviction is built and
+// frozen weekly but not published (5 Nov 2026).
 const SCREENS = [
   ["composite", "Shortlist"],
   ["growth", "Growth"],
@@ -798,8 +798,7 @@ function analystLine(symbol) {
   if (Number.isFinite(f.up_last_30_days) || Number.isFinite(f.down_last_30_days)) {
     parts.push(`EPS estimates in 30 days ${f.up_last_30_days ?? 0} up, ${f.down_last_30_days ?? 0} down`);
   }
-  const conviction = rankedMap("conviction").get(symbol);
-  return `Analysts: ${parts.join("; ")}.${conviction ? ` Analyst conviction rank ${conviction.rank} (Analyst ratings page).` : ""}`;
+  return `Analysts: ${parts.join("; ")}.`;
 }
 
 function dataDates(symbol, company) {
@@ -968,7 +967,7 @@ async function loadYearChart() {
   state.volumeState = "loading";
   const opened = state.panelSymbol;
   try {
-    const response = await fetch("./ticker-volume.json", { cache: "no-store" });
+    const response = await fetch("./ticker-volume.json", { cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (data.schema !== "ticker-volume-2" || !data.chart || !Array.isArray(data.chart.days)) throw new Error("unexpected chart file");
@@ -1015,7 +1014,7 @@ function standoutNotes(symbol) {
 async function loadExtras() {
   const load = async (file, check) => {
     try {
-      const response = await fetch(`./${file}`, { cache: "no-store" });
+      const response = await fetch(`./${file}`, { cache: "no-cache" });
       if (!response.ok) return null;
       const data = await response.json();
       return check(data) ? data : null;
@@ -1361,14 +1360,14 @@ function renderInputsStatus() {
 
 async function start() {
   try {
-    const response = await fetch("./desk.json", { cache: "no-store" });
+    const response = await fetch("./desk.json", { cache: "no-cache" });
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
     // A snapshot from before the Shortlist was published opens on Growth.
     if (!state.desk.setups[state.screen]) state.screen = SCREENS.find(([key]) => state.desk.setups[key])?.[0] || "growth";
     try {
       // Optional: the F-Score line in the company panel; the page works without it.
-      const fscoreResponse = await fetch("./fscore.json", { cache: "no-store" });
+      const fscoreResponse = await fetch("./fscore.json", { cache: "no-cache" });
       if (fscoreResponse.ok) {
         const fscore = await fscoreResponse.json();
         if (fscore.schema === "fscore-1" && fscore.as_of === state.desk.as_of) state.fscore = fscore;
@@ -1377,7 +1376,7 @@ async function start() {
       console.warn("Temper Lab F-Score checklist is unavailable:", fscoreError);
     }
     try {
-      const releaseResponse = await fetch("./release.json", { cache: "no-store" });
+      const releaseResponse = await fetch("./release.json", { cache: "no-cache" });
       if (releaseResponse.ok) {
         const release = await releaseResponse.json();
         const historical = release.historical_validation?.status || "unknown";

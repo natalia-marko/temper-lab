@@ -43,7 +43,7 @@ const SIGNAL_RANK = { "Group buy, incl. officer": 0, "Group buy, directors": 1, 
   "New stake, active (13D)": 0, "Switched to active (13D)": 0, "Stake change (13D)": 1,
   "New stake, passive (13G)": 2, "Stake change (13G)": 3, "Below 5%": 4 };
 const PAGE = 50;
-const state = { view: "all", sort: "signal", eligible: true, lists: false, fresh: false, query: "", shown: PAGE, data: null,
+const state = { view: "all", sort: "signal", eligible: true, lists: false, watch: false, watched: [], fresh: false, query: "", shown: PAGE, data: null,
   selected: null, panelView: null, panelClosed: false };
 const $ = (id) => document.getElementById(id);
 // Wide screens keep the company panel open beside the list; narrower ones open it over the list.
@@ -467,15 +467,16 @@ function matches(company, query) {
     ...(company.stakes || []).flatMap((s) => (s.holders || []).map((h) => h.name))]
     .some((text) => String(text || "").toLowerCase().includes(query));
 }
-// An exact ticker search shows that company even when "Eligible stocks only" or "On my lists"
-// would hide it; the row then carries an "outside eligible set" badge. The boxes stay as set.
+// An exact ticker search shows that company even when "Eligible stocks only", "On my lists" or
+// "On my watchlist" would hide it; the row then carries an "outside eligible set" badge. The boxes stay as set.
 function exactTicker(company, query) {
   const q = String(query || "").trim().toUpperCase();
   return Boolean(q) && String(company.symbol || "").toUpperCase() === q;
 }
 function base(companies, filters) {
   return companies.filter((c) => exactTicker(c, filters.query)
-    || ((!filters.eligible || c.eligible) && (!filters.lists || (c.lists || []).length)));
+    || ((!filters.eligible || c.eligible) && (!filters.lists || (c.lists || []).length)
+      && (!filters.watch || (filters.watched || []).includes(String(c.symbol || "").toUpperCase()))));
 }
 // Every issuer whose SEC feed was read (ownership-signals.json "checked"), by any of its tickers.
 function checkedRow(data, ticker) {
@@ -541,7 +542,7 @@ function viewCounts(companies, filters) {
   return Object.fromEntries([...VIEWS, OTHER].map((v) => [v.key, shown.filter((c) => inView(c, v.key) && fresh(c, v.key, filters)).length]));
 }
 function notCounted(data, filters) {
-  const shown = base(data.companies, { ...filters, lists: false, fresh: false }).filter((c) => inView(c, "other"));
+  const shown = base(data.companies, { ...filters, lists: false, watch: false, fresh: false }).filter((c) => inView(c, "other"));
   const transfers = shown.filter((c) => (c.money || {}).transfer > 0);
   const priv = shown.filter((c) => (c.money || {}).buy_private || (c.money || {}).sell_private);
   const routine = shown.filter((c) => !sum(c.money, KEYS.other));
@@ -603,6 +604,9 @@ function starred(company, button) {
 }
 function render() {
   const data = state.data;
+  // "On my watchlist": the stocks starred in this browser (watchlist.js).
+  state.watched = globalThis.TLWatch ? globalThis.TLWatch.list().map((x) => x.symbol) : [];
+  $("os-watch-count").textContent = state.watched.length.toLocaleString();
   const view = state.view === "other" ? OTHER : VIEWS.find((v) => v.key === state.view);
   const list = visible(data.companies, state);
   const counts = viewCounts(data.companies, state);
@@ -1101,6 +1105,14 @@ function setup(data) {
   }
   $("os-eligible").addEventListener("change", (e) => { state.eligible = e.target.checked; state.shown = PAGE; render(); });
   $("os-lists").addEventListener("change", (e) => { state.lists = e.target.checked; state.shown = PAGE; render(); });
+  $("os-watch").addEventListener("change", (e) => { state.watch = e.target.checked; state.shown = PAGE; render(); });
+  // A star added or removed (here or in another tab): the count follows, and the list when the box is ticked.
+  if (globalThis.TLWatch) {
+    globalThis.TLWatch.onChange((items) => {
+      $("os-watch-count").textContent = items.length.toLocaleString();
+      if (state.watch) render();
+    });
+  } else $("os-watch").closest("label").hidden = true;
   $("os-fresh").addEventListener("change", (e) => { state.fresh = e.target.checked; state.shown = PAGE; render(); });
   $("os-query").addEventListener("input", (e) => {
     const started = !state.query.trim() && e.target.value.trim();

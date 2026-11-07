@@ -52,6 +52,7 @@
           <div class="os-bar os-filters">
             <label class="os-toggle"><input id="os-eligible" type="checkbox" checked /><span>Eligible stocks only (<span id="os-eligible-count"></span>)</span></label>
             <label class="os-toggle"><input id="os-lists" type="checkbox" /> On my lists</label>
+            <label class="os-toggle"><input id="os-watch" type="checkbox" /><span>On my watchlist (<span id="os-watch-count"></span>)</span></label>
             <span id="os-count" class="os-count" role="status"></span>
           </div>
           <p id="os-tab-note" class="os-tab-note" hidden></p>
@@ -67,7 +68,7 @@
           <noscript><p class="empty">Enable JavaScript to load insights.</p></noscript>
           <details class="method-info" id="how">
             <summary>How it works</summary>
-            <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible stocks only" shows the frozen eligible universe; "On my lists" the Strength, Growth and Cheap lists. Not a forecast and not advice.</p>
+            <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible stocks only" shows the frozen eligible universe; "On my lists" the Strength, Growth and Cheap lists; "On my watchlist" the stocks you starred, kept in this browser. Not a forecast and not advice.</p>
             <p><strong>Signal.</strong> A label from the filings, not a score: Group buy, incl. officer (two or more insiders bought within 10 sessions, at least one an officer such as the CEO or CFO), Group buy, directors, Officer buy, Director buy, Sale, no plan (no 10b5-1 trading plan), Plan or tax sale (under a 10b5-1 plan or to cover tax), Fund/10% owner buy or sale. On the 5%+ ownership reports tab: New stake, active (13D), Switched to active (13D), Stake change (13D or 13G), New stake, passive (13G), Below 5%. Checks ●●○ shows the three checks below in order: several insiders within 10 sessions; the CEO or CFO bought; a holding up 5% or more (or new) on $50K or more.</p>
             <p><strong>Ranking.</strong> Buys are sorted by checks met, then amount. Checks counts how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Fund &amp; 10% owner trades by amount, with sales without a plan first. Click a column name to sort: Signal, Amount or Filed; on Buys, Why it matters sorts by Checks. On phones, use the Sort menu. Search looks at every company: typing starts in All, each tab count shows its matches, and an exact ticker comes first. NEW marks a filing from the last 7 days of data. On screens 1,600px wide or more the company panel stays open beside the list.</p>
             <p><strong>Tested (Leg D, 6 Oct 2026).</strong> In eligible stocks, 3,122 insider purchases filed Jan 2023 – Jun 2026 did not beat the average eligible stock over the next 1, 3 or 6 months; groups of insiders and CEO or CFO buys did not either. Use this page as research context — who traded, how much, and whether it is unusual — not as a buy signal. Limits: only companies listed today, one 3.5-year period.</p>
@@ -92,7 +93,7 @@
       <div id="os-detail-body"></div>
     </dialog>
     <script src="./watchlist.js?v=85cbb096ddf1"></script>
-    <script src="./ownership.js?v=fc9ec2892138"></script>
+    <script src="./ownership.js?v=5e133e8ada14"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>
