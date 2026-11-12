@@ -7,7 +7,7 @@
     <title>Temper Lab — Market mood</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
-    <link rel="stylesheet" href="./market-mood.css?v=be4d414cf66f" />
+    <link rel="stylesheet" href="./market-mood.css?v=89726e2b7f6a" />
     <link rel="stylesheet" href="./earnings-ahead.css?v=e478b0f95ec5" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
@@ -54,7 +54,7 @@
 </div>
 <p class="desk-vix">Volatility, on its own clock: Cboe VIX <strong id="vix-close">—</strong> at the Friday close, <span id="vix-week"></span></p>
 <div class="desk-top-grid">
-<section class="desk-panel path-panel" aria-labelledby="paths-title"><div class="desk-panel-heading"><div><h2 id="paths-title">Index direction</h2><p>SPY tracks the S&amp;P 500 · QQQ tracks the Nasdaq-100. End values are the Friday close; drag or hover to inspect a date.</p></div><span id="path-window" class="chart-caption"></span></div><div id="index-chart" class="index-chart"></div><div id="index-rows" class="path-legend"></div><p id="path-readout" class="chart-readout" aria-live="off"></p><p class="chart-caption" id="index-spread"></p></section>
+<section class="desk-panel path-panel" aria-labelledby="paths-title"><div class="desk-panel-heading"><div><h2 id="paths-title">Index direction</h2><p>SPY tracks the S&amp;P 500 · QQQ tracks the Nasdaq-100. Both lines start level and share one scale of change; the axes label it in dollars, SPY left, QQQ right. End values are the Friday close; drag or hover to inspect a date.</p></div><span id="path-window" class="chart-caption"></span></div><div id="index-chart" class="index-chart"></div><div id="index-rows" class="path-legend"></div><p id="path-readout" class="chart-readout" aria-live="off"></p><p class="chart-caption" id="index-spread"></p></section>
 <section class="desk-panel participation-panel" aria-labelledby="participation-title"><h2 id="participation-title">How many stocks rose?</h2><p class="chart-caption">Each stock counted once; flat counts as not rising. <span id="coverage-line"></span></p><div class="cohort-block"><div class="participation-reading"><strong id="breadth-up">—</strong><span id="breadth-up-label">of eligible stocks rose</span></div><div class="breadth-track" role="img" id="breadth-track"><span id="breadth-fill"></span></div><p id="breadth-down" class="chart-caption"></p><div class="median-reading"><span>Median return</span><strong id="breadth-copy">—</strong></div></div><p id="breadth-year" class="desk-other"></p></section>
 </div>
 <section class="desk-panel desk-sectors" aria-labelledby="sectors-title"><div class="desk-panel-heading"><div><h2 id="sectors-title">Which sectors led?</h2><p>Median stock return by sector in the eligible universe, not sector-index returns · sorted by median</p></div></div><div id="sector-scale" class="sector-scale" aria-hidden="true"></div><div id="sector-body" class="sector-chart" role="list" aria-label="Median sector returns, eligible stocks"></div><p class="chart-caption">n = stocks behind each median · one shared scale · sectors: shared industry map plus reviewed corrections, as on List check.</p><p id="sector-note" class="chart-caption"></p></section>
@@ -91,7 +91,7 @@
     </div>
     <script src="./watchlist.js?v=85cbb096ddf1"></script>
     <script src="./sectors.js?v=110a6e79c5f8"></script>
-    <script src="./market-mood.js?v=720cbaa909cb"></script>
+    <script src="./market-mood.js?v=5bb431c4d499"></script>
     <script src="./list-check.js?v=af1aac219bd5"></script>
     <script src="./earnings-ahead.js?v=037760a7e7e4"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>

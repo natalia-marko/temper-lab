@@ -45,6 +45,9 @@
 .index-chart svg text { fill: #64766b; font-size: 12px; font-family: inherit; }
 .chart-grid { stroke: #e6ece7; stroke-width: 1px; }
 .chart-zero { stroke: #b4c4b9; stroke-width: 1px; }
+.index-chart svg text.axis-spy { fill: #236949; }
+.index-chart svg text.axis-qqq { fill: #a26925; }
+.index-closes { color: #64766b; font-size: 12px; font-variant-numeric: tabular-nums; }
 .index-path { stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; }
 .index-path.series-spy { stroke: #236949; }
 .index-path.series-qqq { stroke: #a26925; }
@@ -62,6 +65,7 @@
 .path-legend-item.series-qqq .index-name::before { background: #a26925; }
 .path-legend-item .index-name strong { font-size: 12px; }
 .path-legend-item .index-name span { font-size: 11px; }
+.path-legend-item .index-metrics { display: flex; align-items: baseline; gap: 8px; }
 .path-legend-item .index-metrics strong { font-size: 13px; color: var(--ink); }
 .cohort-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; margin-top: 18px; }
 .cohort-block { min-width: 0; }

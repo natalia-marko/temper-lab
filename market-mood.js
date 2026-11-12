@@ -17,6 +17,10 @@ function percent(value, digits = 1) {
   return `${value > 0 ? "+" : ""}${(value * 100).toFixed(digits)}%`;
 }
 
+function dollars(value) {
+  return Number.isFinite(value) ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
+}
+
 function levelPercent(value) {
   return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "—";
 }
@@ -50,16 +54,19 @@ function indexSpread(indices) {
   return `${behind} by ${Math.abs(gap).toFixed(1)} pp over 63 sessions.`;
 }
 
-function renderIndices(indices, period = 63) {
+function renderIndices(indices, period = 63, details = null) {
   const target = $("index-rows");
   target.replaceChildren();
+  const paths = indexPaths(details, period);
   for (const [symbol, label] of [["SPY", "S&P 500"], ["QQQ", "Nasdaq-100"]]) {
     const snapshot = indices?.[symbol];
+    const path = paths.find((row) => row.symbol === symbol);
     const row = appendText(target, "div", "", `path-legend-item series-${symbol.toLowerCase()}`);
     const name = appendText(row, "div", "", "index-name");
     appendText(name, "strong", symbol);
     appendText(name, "span", label);
     const metrics = appendText(row, "div", "", "index-metrics");
+    if (path) appendText(metrics, "span", `${dollars(path.base)} → ${dollars(path.points.at(-1).close)}`, "index-closes");
     appendText(metrics, "strong", percent(snapshot?.[`return_${period}`]));
   }
 }
@@ -112,9 +119,10 @@ function indexPaths(details, period) {
     if (!Number.isFinite(base) || base <= 0 || closes.length !== dates.length) return null;
     const points = dates.slice(start).map((date, index) => {
       const close = closes[start + index];
-      return { date, value: Number.isFinite(close) && close > 0 ? close / base - 1 : null };
+      const ok = Number.isFinite(close) && close > 0;
+      return { date, value: ok ? close / base - 1 : null, close: ok ? close : null };
     });
-    return { symbol, points };
+    return { symbol, base, points };
   }).filter(Boolean);
 }
 
@@ -164,7 +172,7 @@ function pathCoordinates(series, width, height = 230) {
   const lo = Math.min(0, ...values), hi = Math.max(0, ...values);
   const pad = Math.max((hi - lo) * 0.12, 0.002);
   const minimum = lo - pad, maximum = hi + pad;
-  const left = 50, right = width - 16, top = 18, bottom = height - 34;
+  const left = 50, right = width - (series.length > 1 ? 56 : 16), top = 18, bottom = height - 34;
   const x = index => left + (right - left) * index / (series[0].points.length - 1);
   const y = value => bottom - (value - minimum) / (maximum - minimum) * (bottom - top);
   const paths = series.map(row => {
@@ -180,23 +188,25 @@ function pathCoordinates(series, width, height = 230) {
   return { minimum, maximum, left, right, top, bottom, x, y, paths };
 }
 
-// Gridlines at the finest round step (1, 2, 2.5 or 5 × 10^k) that gives at most six lines
-// inside the drawn range; zero is always one of them (the range always contains zero).
-function returnTicks(minimum, maximum) {
-  const span = Math.max(maximum - minimum, 1e-9);
+// Dollar gridlines at the finest round step (1, 2, 2.5 or 5 × 10^k) that gives at most `most`
+// lines between `lo` and `hi`, with as few decimals as the step needs ($5 -> 0, $2.5 -> 1).
+function priceTicks(lo, hi, most = 6) {
+  const span = Math.max(hi - lo, 1e-9);
   for (let unit = 10 ** Math.floor(Math.log10(span / 10)); ; unit *= 10) {
     for (const multiple of [1, 2, 2.5, 5]) {
       const step = multiple * unit;
-      const first = Math.ceil(minimum / step - 1e-9), last = Math.floor(maximum / step + 1e-9);
-      if (last - first + 1 > 6) continue;
+      const first = Math.ceil(lo / step - 1e-9), last = Math.floor(hi / step + 1e-9);
+      if (last - first + 1 > most) continue;
       const ticks = [];
-      for (let index = first; index <= last; index += 1) ticks.push(index === 0 ? 0 : index * step);
-      // As few decimals as the step needs: 5% -> 0, 2.5% -> 1, 0.05% -> 2.
-      const stepPercent = step * 100;
-      const digits = [0, 1, 2, 3].find(d => Math.abs(stepPercent * 10 ** d - Math.round(stepPercent * 10 ** d)) < 1e-6) ?? 3;
+      for (let index = first; index <= last; index += 1) ticks.push(Number((index * step).toPrecision(12)));
+      const digits = [0, 1, 2].find(d => Math.abs(step * 10 ** d - Math.round(step * 10 ** d)) < 1e-6) ?? 2;
       return { ticks, digits };
     }
   }
+}
+
+function axisDollars(value, digits) {
+  return `$${value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
 function renderIndexChart() {
@@ -213,15 +223,26 @@ function renderIndexChart() {
   const geometry = pathCoordinates(series, width, height);
   const { left, right, top, bottom, minimum, maximum, x, y } = geometry;
   const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
-    'aria-label': `SPY and QQQ adjusted returns over ${period} trading sessions. Use the date slider for values.` });
-  svgElement(svg, 'title', {}, `Index returns over ${period} sessions`);
-  svgElement(svg, 'text', { x: left, y: 11 }, 'Return (%)');
-  const grid = returnTicks(minimum, maximum);
-  for (const value of grid.ticks) {
-    svgElement(svg, 'line', { x1: left, x2: right, y1: y(value), y2: y(value), class: 'chart-grid' });
-    const label = value === 0 ? '0' : `${value > 0 ? '+' : '−'}${Math.abs(value * 100).toFixed(grid.digits)}`;
-    svgElement(svg, 'text', { x: left - 8, y: y(value) + 4, 'text-anchor': 'end' }, label);
+    'aria-label': `SPY and QQQ adjusted closes over ${period} trading sessions, in dollars on one scale of change. Use the date slider for values.` });
+  svgElement(svg, 'title', {}, `Index closes over ${period} sessions`);
+  // Both lines start level and share one scale of change (the same percentage is the same height),
+  // so the gap between them is the difference in return; each axis labels its own index in dollars.
+  const [first, second] = series;
+  svgElement(svg, 'text', { x: left, y: 11, class: `axis-${first.symbol.toLowerCase()}` }, `${first.symbol} ($)`);
+  const grid = priceTicks(first.base * (1 + minimum), first.base * (1 + maximum));
+  for (const price of grid.ticks) {
+    const at = y(price / first.base - 1);
+    svgElement(svg, 'line', { x1: left, x2: right, y1: at, y2: at, class: 'chart-grid' });
+    svgElement(svg, 'text', { x: left - 8, y: at + 4, 'text-anchor': 'end', class: `axis-${first.symbol.toLowerCase()}` }, axisDollars(price, grid.digits));
   }
+  if (second) {
+    svgElement(svg, 'text', { x: width, y: 11, 'text-anchor': 'end', class: `axis-${second.symbol.toLowerCase()}` }, `${second.symbol} ($)`);
+    const right2 = priceTicks(second.base * (1 + minimum), second.base * (1 + maximum));
+    for (const price of right2.ticks) {
+      svgElement(svg, 'text', { x: right + 8, y: y(price / second.base - 1) + 4, class: `axis-${second.symbol.toLowerCase()}` }, axisDollars(price, right2.digits));
+    }
+  }
+  // The start level, where both lines begin.
   svgElement(svg, 'line', { x1: left, x2: right, y1: y(0), y2: y(0), class: 'chart-zero' });
   for (const row of geometry.paths) svgElement(svg, 'path', { d: row.d, class: `index-path series-${row.symbol.toLowerCase()}`, fill: 'none' });
   const points = series[0].points;
@@ -236,7 +257,7 @@ function renderIndexChart() {
   appendText(label, 'span', 'Inspect a date', 'sr-only');
   const slider = document.createElement('input');
   slider.type = 'range'; slider.min = '0'; slider.max = String(points.length - 1); slider.step = '1';
-  slider.value = slider.max; slider.setAttribute('aria-label', 'Inspect index returns by trading date');
+  slider.value = slider.max; slider.setAttribute('aria-label', 'Inspect index closes by trading date');
   label.appendChild(slider);
   const inspect = index => {
     guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index));
@@ -246,8 +267,9 @@ function renderIndexChart() {
       if (Number.isFinite(value)) { markers[number].setAttribute('cx', x(index)); markers[number].setAttribute('cy', y(value)); }
     });
     slider.value = String(index);
-    slider.setAttribute('aria-valuetext', `${day(points[index].date)}: ${series.map(row => `${row.symbol} ${percent(row.points[index].value)}`).join(', ')}`);
-    $('path-readout').textContent = `Selected date ${day(points[index].date)} · ${series.map(row => `${row.symbol} ${percent(row.points[index].value)}`).join(' · ')}`;
+    const read = row => `${row.symbol} ${dollars(row.points[index].close)} (${percent(row.points[index].value)})`;
+    slider.setAttribute('aria-valuetext', `${day(points[index].date)}: ${series.map(read).join(', ')}`);
+    $('path-readout').textContent = `Selected date ${day(points[index].date)} · ${series.map(read).join(' · ')}`;
   };
   slider.addEventListener('input', () => inspect(Number(slider.value)));
   const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, class: 'chart-hit', fill: 'transparent' });
@@ -431,8 +453,8 @@ function renderMarketDesk() {
   $('breadth-up-label').textContent = `of eligible stocks rose over ${period} sessions`;
   const other = period === 63 ? 252 : 63;
   $('breadth-year').textContent = `Other window · ${other} sessions: ${levelPercent(mood.breadth?.[`up_${other}`])} rose, median ${percent(mood.breadth?.[`median_${other}`])}`;
-  $('path-window').textContent = `${period} sessions · adjusted returns`;
-  renderIndices(mood.indices, period);
+  $('path-window').textContent = `${period} sessions · adjusted closes`;
+  renderIndices(mood.indices, period, mood.market_details);
   $('index-spread').textContent = Number.isFinite(spy) && Number.isFinite(qqq)
     ? `At the Friday close, QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
   const breakdown = marketBreakdown(mood.market_details, period);
