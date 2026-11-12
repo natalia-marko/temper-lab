@@ -678,34 +678,59 @@ function setView(key) {
 }
 
 // ---------- panel ----------
+// Price vs QQQ in dollars (12 Nov 2026), as on the Ticker page: both lines start level at their close on
+// the stock's first day and share one scale of change, so the gap between them is the difference in
+// return; the stock's dollars label the left axis, QQQ's the right. The date axis runs to the end of the
+// filing window, which can pass the last close (prices stop at the weekly freeze): those days keep their
+// filing marks and have no line.
+const PRICE_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000];
+const axisPrice = (v, step) => `$${Number(v).toLocaleString("en-US", step < 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`;
+// First and last day with a close, or null when there is none.
+function priced(values) {
+  const ok = (v) => Number(v) > 0;
+  const list = Array.isArray(values) ? values : [];
+  const first = list.findIndex(ok);
+  if (first < 0) return null;
+  let last = list.length - 1;
+  while (!ok(list[last])) last -= 1;
+  return { first, last };
+}
 function chart(company, data, sig) {
   const ctx = company.prices || {};
   const days = (data.chart || {}).days || [];
-  const stock = ctx.chart;
   const box = el("div", "os-section os-chart");
   const head = el("div", "os-chart-head");
   head.append(el("h3", "", "Price performance vs QQQ"), el("span", "", "solid line = first filing · dashed = trade dates"));
   box.append(head);
-  if (!stock || !days.length) {
+  const run = days.length ? priced(ctx.chart) : null;
+  if (!run || run.last <= run.first) {
     box.append(el("p", "os-detail-line", "No reliable 3-month price series for this stock (missing days or a split mix-up in the price data)."));
     return box;
   }
-  const rebase = (values) => {
-    const first = (values || []).find((v) => v);
-    return first ? values.map((v) => (v ? (v / first - 1) : null)) : null;
-  };
-  const a = rebase(stock);
-  const q = rebase((data.chart || {}).qqq);
-  const all = [...a, ...(q || [])].filter((v) => v !== null);
-  const lo = Math.min(...all, 0), hi = Math.max(...all, 0);
-  const W = 480, H = 170, L = 38, R = 8, T = 10, B = 22;
+  const { first, last } = run;
+  const ok = (v) => Number(v) > 0;
+  const S = ctx.chart.map((v, i) => (i >= first && ok(v) ? Number(v) : null));
+  const qqq = (data.chart || {}).qqq;
+  const q0 = Array.isArray(qqq) && ok(qqq[first]) ? Number(qqq[first]) : null;
+  const Q = q0 ? qqq.map((v, i) => (i >= first && ok(v) ? Number(v) : null)) : null;
+  const qLast = Q ? priced(Q).last : -1;
+  const s0 = S[first];
+  const live = (values) => values.filter((v) => v !== null);
+  const changes = [...live(S).map((v) => v / s0 - 1), ...(Q ? live(Q).map((v) => v / q0 - 1) : []), 0];
+  let lo = Math.min(...changes), hi = Math.max(...changes);
+  const pad = (hi - lo || 0.1) * 0.06;
+  lo -= pad; hi += pad;
+  const W = 480, H = 170, L = 44, R = Q ? 44 : 8, T = 10, B = 22;
   const x = (i) => L + (i / (days.length - 1)) * (W - L - R);
-  const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+  const yr = (r) => T + (1 - (r - lo) / (hi - lo)) * (H - T - B);
+  const ys = (v) => yr(v / s0 - 1);
+  const yq = (v) => yr(v / q0 - 1);
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", `${company.symbol} price change over the last 3 months against QQQ`);
+  svg.setAttribute("aria-label", `${company.symbol} ${price(s0)} to ${price(S[last])} (${pct(S[last] / s0 - 1)}) from ${day(days[first])} to ${day(days[last])}`
+    + (Q ? `; QQQ ${price(q0)} to ${price(Q[qLast])} (${pct(Q[qLast] / q0 - 1)})` : ""));
   const line = (x1, y1, x2, y2, cls) => {
     const l = document.createElementNS(NS, "line");
     l.setAttribute("x1", x1); l.setAttribute("x2", x2); l.setAttribute("y1", y1); l.setAttribute("y2", y2);
@@ -718,11 +743,24 @@ function chart(company, data, sig) {
     t.textContent = value;
     svg.append(t);
   };
-  line(L, y(0), W - R, y(0), "os-zero");
-  // Axis labels for the top, zero and bottom, skipped when they would overlap.
-  text("0%", L - 4, y(0) + 4, "end", "os-tick");
-  if (y(0) - y(hi) > 12) text(pct(hi, 0), L - 4, y(hi) + 4, "end", "os-tick");
-  if (y(lo) - y(0) > 12) text(pct(lo, 0), L - 4, y(lo) + 4, "end", "os-tick");
+  // Left axis: the stock's dollars, at most five round steps, with a light grid.
+  const sStep = PRICE_STEPS.find((st) => (s0 * (hi - lo)) / st <= 5) || 100000;
+  for (let t = Math.ceil((s0 * (1 + lo)) / sStep - 1e-9) * sStep; t <= s0 * (1 + hi) + 1e-9; t += sStep) {
+    if (t <= 0) continue;
+    line(L, ys(t), W - R, ys(t), "os-grid");
+    text(axisPrice(t, sStep), L - 4, ys(t) + 3.5, "end", "os-tick");
+  }
+  // The start level, where both lines begin.
+  line(L, yr(0), W - R, yr(0), "os-zero");
+  // Right axis: QQQ's dollars, only prices it traded at in the window, at least 18 units apart.
+  if (Q) {
+    const perDollar = (H - T - B) / (q0 * (hi - lo));
+    const qStep = PRICE_STEPS.find((st) => st * perDollar >= 18) || 100000;
+    const ql = Math.min(...live(Q)), qh = Math.max(...live(Q));
+    for (let t = Math.ceil(ql / qStep - 1e-9) * qStep; t <= qh + 1e-9; t += qStep) {
+      if (t > 0) text(axisPrice(t, qStep), W - R + 4, yq(t) + 3.5, "start", "os-tick qq");
+    }
+  }
   for (const [key, list] of Object.entries(ctx.trade_days || {})) {
     if (!sig.keys.includes(key)) continue;
     for (const d of list) {
@@ -736,25 +774,36 @@ function chart(company, data, sig) {
     line(x(fi), T, x(fi), H - B, "os-filing");
     text("Filed", x(fi) + 3, T + 9, "start", "os-tick strong");
   }
-  const path = (values, cls) => {
+  const path = (values, yf, cls) => {
     let d = "";
-    values.forEach((v, i) => { if (v !== null) d += `${d && values[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; });
+    values.forEach((v, i) => { if (v !== null) d += `${d && values[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${yf(v).toFixed(1)}`; });
     const p = document.createElementNS(NS, "path");
     p.setAttribute("d", d);
     p.setAttribute("class", cls);
     svg.append(p);
   };
-  if (q) path(q, "os-line qqq");
-  path(a, "os-line stock");
+  if (Q) path(Q, yq, "os-line qqq");
+  path(S, ys, "os-line stock");
   text(day(days[0]), x(0), H - 6, "start", "os-tick");
   // Month starts, kept clear of the first and last date labels.
   days.forEach((d, i) => { if (i > 4 && i < days.length - 6 && d.slice(5, 7) !== days[i - 1].slice(5, 7)) text(MONTHS[Number(d.slice(5, 7)) - 1], x(i), H - 6, "middle", "os-tick"); });
   text(day(days[days.length - 1]), x(days.length - 1), H - 6, "end", "os-tick");
   box.append(svg);
   const legend = el("p", "os-legend");
-  const item = (cls, name, value) => { const s = el("span", cls, `${name} `); s.append(el("b", signCls(value), value)); return s; };
-  legend.append(item("stock", company.symbol, pct(a[a.length - 1])), item("qqq", "QQQ", q ? pct(q[q.length - 1]) : ""));
+  const item = (cls, name, from, to) => {
+    const change = pct(to / from - 1);
+    const s = el("span", cls, `${name} ${price(from)} → ${price(to)} `);
+    s.append(el("b", signCls(change), change));
+    return s;
+  };
+  legend.append(item("stock", company.symbol, s0, S[last]));
+  if (Q) legend.append(item("qqq", "QQQ", q0, Q[qLast]));
   box.append(legend);
+  // Adjusted closes: before an ex-dividend date the line sits below the price that traded (and that
+  // insiders report on Form 4) by the dividend. Stated on every dollar chart (timing audit, 18 Oct 2026).
+  box.append(el("p", "os-detail-line", Q
+    ? `Both lines share one scale of change from ${day(days[first])}, on adjusted closes; the axes label it in dollars, ${company.symbol} left, QQQ right.`
+    : `Adjusted closes in dollars from ${day(days[first])}.`));
   const since = sinceFiling(company, data, sig.keys, sig.filed);
   if (since) box.append(withSigns("os-detail-line os-tabular", since));
   return box;
@@ -771,7 +820,8 @@ function sinceFiling(company, data, keys, filedDay) {
   const filed = filedDay || firstFiled(ctx, keys);
   if (!filed || !ctx.chart || !days.length) return "";
   const i = days.findIndex((d) => d >= filed);
-  const last = days.length - 1;
+  // The last close, not the last day of the window: prices stop at the weekly freeze.
+  const last = (priced(ctx.chart) || { last: -1 }).last;
   if (i < 0 || i >= last || !ctx.chart[i] || !ctx.chart[last]) return filed ? `Filed ${day(filed)}: no full trading day since the filing yet.` : "";
   const stock = ctx.chart[last] / ctx.chart[i] - 1;
   const qqq = (data.chart.qqq || [])[i] && data.chart.qqq[last] ? data.chart.qqq[last] / data.chart.qqq[i] - 1 : null;

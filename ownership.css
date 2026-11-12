@@ -101,6 +101,8 @@
 .os-chart-head span { color: #5d7263; font-size: 11.5px; }
 .os-chart svg { display: block; width: 100%; height: auto; border: 1px solid #e6ece8; border-radius: 10px; background: #fbfbf9; }
 .os-zero { stroke: #dbe3de; stroke-width: 1; }
+.os-grid { stroke: #eef2ef; stroke-width: 1; }
+.os-tick.qq { fill: #9fb0a5; }
 .os-line { fill: none; stroke-width: 2; stroke-linejoin: round; }
 .os-line.stock { stroke: #27332e; }
 .os-line.qqq { stroke: #9fb0a5; stroke-width: 1.5; stroke-dasharray: 4 3; }
