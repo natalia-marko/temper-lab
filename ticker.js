@@ -2107,7 +2107,7 @@ function fundsBox(c) {
         const after = el("i", "after");
         after.style.left = at(p.after);
         bar.append(segment, before, after);
-        row.title = `${p.name}: ${p.before ? count(p.before) : "none"} shares on ${longDay(f.previous)}, ${p.after ? count(p.after) : "none (sold out)"} on ${longDay(f.quarter)}`;
+        row.title = `${p.name}: ${p.before ? `${count(p.before)} shares` : "no shares"} on ${longDay(f.previous)}, ${p.after ? count(p.after) : "none (sold out)"} on ${longDay(f.quarter)}`;
         row.append(name, bar, el("span", "tk-db-val", `${p.before ? count(p.before) : "none"} → ${p.after ? count(p.after) : "none"}`));
         box.append(row);
       }
