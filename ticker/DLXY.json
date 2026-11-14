@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"9b5ae472edfcd3b9","symbol":"DLXY","data":{"volume":{"rows":{"DLXY":[1203017,0.02,0.15,0.132,0.467,-0.0724,-0.3789]}},"funds":{"rows":{"DLXY":[null,5,null,null,null,null,null,135350,59204,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"8d56dc99f752eea3","symbol":"DLXY","data":{"volume":{"rows":{"DLXY":[1254950,0.02,0.02,0.753,0.273,0.0638,-0.2991]}},"funds":{"rows":{"DLXY":[null,5,null,null,null,null,null,135350,59204,false,0,[],[]]},"manager_names":{}}}}

@@ -17,10 +17,10 @@
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a href="./market-mood.html">Market mood</a>
           <a href="./">Research</a>
+          <a href="./screener-tests.html">Screener tests</a>
           <a href="./ticker.html">Ticker</a>
           <a href="./analyst-ratings.html">Analyst ratings</a>
           <a href="./insights.html">Insights</a>
-          <a href="./jev-reads.html">Earnings read by Jev</a>
           <a href="./watchlist.html">Watchlist<span class="tl-watch-count"></span></a>
         </nav>
         <a class="aside-how on" href="./how-it-works.html" aria-current="page">How Temper Lab works</a>
@@ -44,7 +44,7 @@
               <tr><th scope="row">Data</th><td>As each source publishes</td><td>Prices and SEC filings every Saturday. Insider and 5%+ holder filings, results dates and short interest every Tuesday and Friday. Fund holdings (13F) once a quarter.</td></tr>
               <tr><th scope="row">Snapshot</th><td>Every Saturday, from Friday's close</td><td>One data date for the whole site, shown at the top of each page. Nothing is computed while you browse.</td></tr>
               <tr class="how-key"><th scope="row">Decide</th><td>Once a month</td><td>Review Research and the trend colour after each month's last close, then plan to hold 6–12 months — the horizon every test used.</td></tr>
-              <tr><th scope="row">Watch</th><td>Weekly, or twice a week</td><td>Market mood, Insights, Earnings read by Jev, Ticker facts, next results and short interest: news that can change a view between reviews.</td></tr>
+              <tr><th scope="row">Watch</th><td>Weekly, or twice a week</td><td>Market mood, Insights, Ticker facts, next results and short interest: news that can change a view between reviews.</td></tr>
               <tr><th scope="row">Validate</th><td>When a question comes up</td><td>A rule reaches the site only after a test written down before it was run. Untested numbers are labelled as context.</td></tr>
             </tbody>
           </table></div>
@@ -61,9 +61,9 @@
               <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead. A later date is not shown yet; the cell says so.</td></tr>
               <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings (with 12-month and 3-month chart markers and 21-day Insights activity), SEC 13F data sets, and a one-page PNG/text report card.</td></tr>
               <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries and price targets, dated when they were collected, for every company on the Hot tape, Growth and Cheap lists.</td></tr>
+              <tr><th scope="row">Screener tests</th><td>Saturday</td><td>The forward tests recorded in the weekly job (every rule written down, with its batches and dates) and the Shortlist backtest windows from the weekly comparison report. Results appear only when a batch is sold, 6 and 12 months after purchase.</td></tr>
               <tr><th scope="row">Market mood</th><td>Saturday</td><td>Market desk: Friday's closes and the Cboe VIX. List check: the same lists' sectors, month-end trend, changes since the last month-end freeze, results dates from Yahoo's calendar, and the forward tests' status.</td></tr>
               <tr><th scope="row">Insights</th><td>Tuesday and Friday</td><td>SEC Forms 3, 4 and 5 (insiders) and Schedules 13D and 13G (5%+ holders).</td></tr>
-              <tr><th scope="row">Earnings read by Jev</th><td>Saturday</td><td>The latest quarterly earnings release of each Research Shortlist company, read by AI against its own previous guidance, in Shortlist order with the next results date. The 3-session reaction and the next 21 sessions versus QQQ are realized moves, not a forecast.</td></tr>
               <tr><th scope="row">Watchlist</th><td>Your stars: at once, in this browser only. Prices and Timing chart (50/200-day averages, RSI, MACD): Saturday. Trend colour: monthly.</td><td>The same snapshot as Research.</td></tr>
             </tbody>
           </table></div>
@@ -75,7 +75,7 @@
           <ul class="how-list">
             <li><strong>Once a month</strong>, after the month's last close, start with Market mood's List check: what the lists are made of by sector, how many still trend, what changed since the last month-end, and who reports in the two weeks after. Then open Research. The Shortlist is the review queue: companies on two or more of Growth, Cheap and Hot tape, with positive shareholders' equity, ordered by the average of three market-wide percentiles (price strength, five-measure profitability, and operating income / EV; at most three per sector in the first ten). A click shows the one-year price shape against QQQ; the Ticker page states both returns in dollars and percent, adds a 12-month / 3-month chart with SEC filing markers and a 21-day Insights box, and copies a one-page report. Read that page, decide, and plan to hold 6–12 months.</li>
             <li><strong>Between reviews</strong>, do not act on weekly reshuffles. A name entering or leaving the Shortlist's first ten for a week or two is usually noise: in a 2022–26 replay, half of all stays lasted two weeks or less.</li>
-            <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), Earnings read by Jev (latest results), next results dates, Market mood, and the Watchlist Timing tab (50/200-day averages and cross dates, with RSI and MACD as context).</li>
+            <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), next results dates, Market mood, and the Watchlist Timing tab (50/200-day averages and cross dates, with RSI and MACD as context).</li>
             <li><strong>The trend colour</strong> changes once a month. In our test a change between month-ends did not predict returns; the month-end state did.</li>
           </ul>
         </section>
@@ -98,15 +98,15 @@
             <li><strong>Trend rules</strong> (price above its 200-day average; 12-month return, skipping the last month, above zero; 50-day above 200-day): stocks with each rule up beat those with it down by 3.0–3.6% over six months (entries 2021–26, stocks of similar size compared, before costs).</li>
             <li><strong>Short interest:</strong> lightly shorted stocks (days to cover) led, and heavily shorted ones trailed, stocks of similar size over six months (2023–26).</li>
             <li><strong>Profitability and negative equity:</strong> Growth ranks on five measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets), not on return on equity alone, which rewards thin equity; on 2021–26 data it ranked as well, with less leverage. Excluding negative-equity companies from the Shortlist cost no return across 216 weekly cohorts (2022–26).</li>
-            <li><strong>What did not pass:</strong> <strong>F-Score</strong>, 13F fund holder counts, insider buys (officers and directors, 2023–26: no edge over other eligible stocks after 6 months) and post-earnings drift did not pass their tests, so they are shown as checklists or facts only. Learned-pattern and tabular rankers (chart/temporal CNNs, Kronos-small, TabPFN-v2, LightGBM) neither beat simple 12–1 momentum nor improved ordering inside momentum's top fifth, so no AI ranker is on the site.</li>
-            <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist are recorded, beside two challengers that replace them only by a rule written down in advance: a 60/40 strength–ROE order of the same Shortlist members, and Growth v3 (return on assets and cash flow to assets). Each month-end also records the top ten and top twenty by 12–1 momentum and three side tests: Beneish M-score, net operating assets, and Jev's reading of the financial statements. Of these, only Growth and the Shortlist are on the site. All are checked against QQQ after 6 and 12 months, all but the side tests against SPY too.</li>
+            <li><strong>What did not pass:</strong> <strong>F-Score</strong>, 13F fund holder counts, insider buys (officers and directors, 2023–26: no edge over other eligible stocks after 6 months) and post-earnings drift did not pass their tests, so they are shown as checklists or facts only. Learned-pattern and tabular rankers (chart/temporal CNNs, Kronos-small, TabPFN-v2, LightGBM) neither beat simple 12–1 momentum nor improved ordering inside momentum's top fifth, so no AI ranker is on the site. Jev, an AI read of each Shortlist company's latest earnings release, matched the market's 3-day reaction but showed no edge after it (440 releases, 2023–25), so its page and weekly reads were removed on 13 Nov 2026.</li>
+            <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist are recorded, beside two challengers that replace them only by a rule written down in advance: a 60/40 strength–ROE order of the same Shortlist members, and Growth v3 (return on assets and cash flow to assets). Each month-end also records the top ten and top twenty by 12–1 momentum and two side tests: Beneish M-score and net operating assets (a third, Jev's reading of the financial statements, was stopped on 13 Nov 2026). Of these, only Growth and the Shortlist are on the site as lists. All are checked against QQQ after 6 and 12 months, all but the side tests against SPY too. <a href="./screener-tests.html">Screener tests</a> lists every one, stopped and replaced versions included, with its written rule and dates.</li>
           </ul>
           <p class="how-note">Past results, not a forecast, and not a buy or sell call.</p>
         </section>
         <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
-    <script src="./watchlist.js?v=85cbb096ddf1"></script>
+    <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>

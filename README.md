@@ -110,18 +110,10 @@ classes and implausible prices stay out of totals until checked. Names appear as
 filed. Values are set as text and links go only to sec.gov or this site. See
 the product's `docs/ownership-signals-v1.md` for methodology and limits.
 
-Earnings read by Jev is the sixth page, `jev-reads.html` (file name kept), after Insights in the sidebar.
-One row per Research Shortlist company, in Shortlist order: Jev's guidance read with its confidence,
-the three arithmetic checks (pass, fail or missing), the 3-session reaction (stock minus QQQ, with the
-stock's own move) and the next results date (from `earnings-calendar.json`, with a tag when it falls
-before the month-end freeze). A side panel gives the verbatim change sentences, both guidance passages
-with the periods they name, the SEC links, the reaction's parts (stock, QQQ, shares traded against the
-20 sessions before) and the 21-session return. Returns are realized moves, not a forecast. Jev's
-operations answer and product score are kept in the data but not shown (22 Oct 2026). "Download the
-rows shown (CSV)" saves the filtered rows with raw values (returns as fractions).
-Data: `jev-reads.json` (index: weeks, `suggestion_books`, 3-day and 21-session vs-QQQ overlays, tracking vs QQQ,
-the 2023-25 test) and `jev-reads/<Friday>.json` or `jev-reads/shortlist-<Friday>.json` (one file per week,
-never rewritten), written by `python -m jev.public_page` after the Saturday Jev run. The page does not call the model.
+Earnings read by Jev (`jev-reads.html`, `jev-reads.json`, `jev-reads/`, `jev-passages/`) was removed on
+13 Nov 2026: the 2023-25 test (440 releases) found Jev's read matched the 3-day reaction and showed no edge
+after it. Its weekly runs stay in `output/jev-weekly/`. The Ticker and Watchlist decision tape keeps only
+EPS revisions.
 
 The Research table has an F-Score column on every view (`fscore.css`, data `fscore.json`, written by
 `tools/build_fscore.py` in the weekly job): Piotroski's nine financial-health checks from the latest
@@ -294,7 +286,7 @@ for `desk.css`, `analyst-ratings.css`, and `analyst-ratings.js`.
 Public-page logic and markup regression checks (from the product repository):
 
 ```bash
-node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs tools/tests/ownership.test.cjs tools/tests/jev_reads.test.cjs
+node --test tools/tests/public_desk.test.cjs tools/tests/analyst_ratings.test.cjs tools/tests/market_mood.test.cjs tools/tests/outlook.test.cjs tools/tests/ownership.test.cjs tools/tests/screener_tests.test.cjs
 ```
 
 These use Node's built-in test runner; no extra DOM package is needed. They
@@ -314,7 +306,7 @@ newer than Friday prices and show their own recording time. Statuses are
 experimental and have no demonstrated predictive value. Older freezes that lack
 this evidence display no invented status.
 
-## Jev book (`suggestion_books`, schema `jev-suggestion-book-3`)
+## Jev book (`suggestion_books`, schema `jev-suggestion-book-3`) — removed with the page on 13 Nov 2026; kept as a record
 
 One row for every company on the selected Research Shortlist, shown in Shortlist order. `read` holds Jev's guidance answer as a label (Raised, Maintained, Lowered, Withheld, No comparison, None or unclear) with its confidence and an "AI unsure" flag below 0.50 (a display rule, not a calibrated accuracy). Schema 3 (22 Oct 2026) dropped the operations label from `read`; the raw answer stays in `jev`. A raise read across different periods counts only when the release states the change in a sentence. `checks` gives the three arithmetic checks as pass, fail or missing. "New since" covers only confirmed earnings filings after the previous calendar Friday. `month_end_freeze` is the List check's month-end date. Nothing in the book orders the rows.
 

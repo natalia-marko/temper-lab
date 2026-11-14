@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Temper Lab — Screener tests</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
+    <link rel="stylesheet" href="./screener-tests.css?v=0247b11ab3dc" />
+    <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
+  </head>
+  <body>
+    <div class="desk">
+      <aside id="site-sidebar" aria-label="Site menu">
+        <div class="sidebar-head"><a class="brand" href="./"><span>t</span>temper<span>lab</span></a><button id="nav-close" class="nav-close" type="button" aria-label="Hide menu" aria-controls="site-sidebar" aria-expanded="true" hidden>‹</button></div>
+        <p class="aside-note">Read-only weekly snapshot. Every rule is written down before it is tested.</p>
+        <nav class="site-nav" aria-label="Temper Lab pages">
+          <a href="./market-mood.html">Market mood</a>
+          <a href="./">Research</a>
+          <a class="on" href="./screener-tests.html" aria-current="page">Screener tests</a>
+          <a href="./ticker.html">Ticker</a>
+          <a href="./analyst-ratings.html">Analyst ratings</a>
+          <a href="./insights.html">Insights</a>
+          <a href="./watchlist.html">Watchlist<span class="tl-watch-count"></span></a>
+        </nav>
+        <div class="aside-foot"><span class="dot"></span>Shared snapshot<small id="aside-week">Loading…</small></div>
+        <a class="aside-how" href="./how-it-works.html">How Temper Lab works</a>
+      </aside>
+      <button id="nav-open" class="nav-open" type="button" aria-label="Open menu" aria-controls="site-sidebar" aria-expanded="false" hidden><span aria-hidden="true">☰</span> Menu</button>
+      <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close menu" tabindex="-1" hidden></button>
+      <main id="main-content">
+        <section class="heading">
+          <div>
+            <div class="eyebrow">TEST THE LOGIC</div>
+            <h1>Screener tests</h1>
+            <p>Do the screeners’ picks beat QQQ? Each rule is written down first, then checked on new data. Everything on this page is hypothetical: no real money is invested.</p>
+          </div>
+          <div class="snapshot-status"><span class="week" id="st-week">Loading…</span><small>Weekly refresh: Sat 06:00 · Copenhagen<br />Published after the weekly checks pass.</small></div>
+        </section>
+        <p id="st-status" class="st-status" role="status">Loading the screener tests…</p>
+        <div id="st-content" hidden>
+          <section class="st-steps" aria-label="How a test works">
+            <div class="st-step"><h2><span aria-hidden="true">1</span>Written down</h2><p>The rule, what it is compared with and what would count as a win are saved with a date and a fingerprint, before any new data arrives.</p></div>
+            <div class="st-step"><h2><span aria-hidden="true">2</span>Recorded</h2><p>Each week’s top 10 is saved before the market opens, bought on paper at the next open, and held for 6 and 12 months.</p></div>
+            <div class="st-step"><h2><span aria-hidden="true">3</span>Judged</h2><p>Only finished batches count, against QQQ and SPY. A challenger replaces a list only by its written rule, never by a hunch.</p></div>
+          </section>
+
+          <div class="page-switch st-lists" role="tablist" aria-label="Screener">
+            <button id="st-tab-shortlist" type="button" role="tab" aria-selected="true" aria-controls="st-list">Shortlist</button>
+            <button id="st-tab-growth" type="button" role="tab" aria-selected="false" aria-controls="st-list">Growth</button>
+          </div>
+
+          <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
+            <h2 id="st-list-title">—</h2>
+            <p id="st-list-what" class="st-lead"></p>
+            <div class="st-clock">
+              <div class="st-before"><span>BEFORE IT WAS WRITTEN DOWN</span><p id="st-clock-before"></p></div>
+              <div class="st-written"><span>WRITTEN DOWN</span><strong id="st-clock-written">—</strong></div>
+              <div class="st-after"><span>AFTER: THE ACTUAL TEST</span><p id="st-clock-after"></p></div>
+            </div>
+            <div class="st-cards">
+              <div class="st-card"><h3>Rule vs challenger</h3><dl id="st-board" class="st-rows"></dl><ol id="st-windows" class="st-windows"></ol><p id="st-switch" class="st-small"></p></div>
+              <div class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small"></p></div>
+            </div>
+
+            <h3 class="st-h3">After it was written down</h3>
+            <p class="st-small">No returns are shown until a batch is sold: interim marks invite judging early.</p>
+            <div id="st-batches" class="st-table-wrap"></div>
+            <button id="st-batches-more" class="st-more" type="button" hidden></button>
+            <div id="st-picks" class="st-picks"></div>
+            <p id="st-shared" class="st-small"></p>
+
+            <h3 class="st-h3">Before it was written down: backtest</h3>
+            <p class="st-small">Where the idea came from. Useful for knowing what to expect; not the test.</p>
+            <div id="st-backtest-empty" class="st-empty" hidden></div>
+            <div id="st-backtest" hidden>
+              <div class="st-controls">
+                <div class="st-toggles" role="group" aria-label="Show">
+                  <button id="st-show-shortlist" type="button" aria-pressed="true"><span class="st-swatch sl"></span>Shortlist</button>
+                  <button id="st-show-challenger" type="button" aria-pressed="true"><span class="st-swatch ch"></span>60/40 order</button>
+                  <button id="st-show-monthend" type="button" aria-pressed="false"><span class="st-swatch me"></span>Month-end starts</button>
+                </div>
+                <div class="st-measure" role="group" aria-label="Measure">
+                  <button id="st-measure-excess" type="button" aria-pressed="true">Lead over QQQ</button>
+                  <button id="st-measure-return" type="button" aria-pressed="false">6-month return</button>
+                </div>
+              </div>
+              <p id="st-chart-legend" class="st-legend"></p>
+              <div id="st-chart" class="st-chart"></div>
+              <label class="st-slider-label" for="st-start">Start date: drag, use the arrow keys, or hover the chart</label>
+              <input id="st-start" class="st-slider" type="range" min="0" max="0" step="1" value="0" />
+              <div id="st-readout" class="st-readout" aria-live="polite"></div>
+              <div id="st-stats" class="st-stats"></div>
+              <div class="st-read">
+                <h4>Read this before comparing</h4>
+                <ul>
+                  <li><strong>Overlapping windows.</strong> <span id="st-overlap"></span></li>
+                  <li><strong>Before costs.</strong> Returns are gross; trading costs and tax would lower them.</li>
+                  <li><strong>Survivors only.</strong> Companies delisted since are missing from the data, which likely flatters every line.</li>
+                  <li><strong>Hindsight.</strong> Both rules were written down in October 2026, after this history existed, so it cannot confirm them.</li>
+                </ul>
+              </div>
+              <p id="st-backtest-source" class="st-small"></p>
+            </div>
+          </section>
+
+          <section class="surface st-register" aria-labelledby="st-register-title">
+            <h2 id="st-register-title">Test register: every rule written down so far</h2>
+            <p id="st-register-intro" class="st-lead"></p>
+            <div id="st-filters" class="st-filters" role="group" aria-label="Filter tests"></div>
+            <div id="st-register" class="st-table-wrap"></div>
+            <p class="st-small">An earliest decision assumes no batch is missed or excluded; the rules themselves are fixed.</p>
+          </section>
+
+          <p class="st-fine">Everything on this page is hypothetical: no real money is invested. Backtests use today’s survivors, so companies delisted since are missing. Forward batches are saved before the paper purchase and never changed. Simulated past results are not a reliable guide to future results. Research, not advice.</p>
+        </div>
+<footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
+      </main>
+    </div>
+    <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
+    <script src="./screener-tests.js?v=7e22d8fe8961"></script>
+    <script src="./navigation.js?v=693cdf80c629"></script>
+  </body>
+</html>

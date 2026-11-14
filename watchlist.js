@@ -8,6 +8,7 @@
   const SYMBOL = /^[A-Z0-9][A-Z0-9.-]{0,9}$/;
   const DAY = /^\d{4}-\d{2}-\d{2}$/;
   const PAGES = { index: "Research", "market-mood": "Market mood", "analyst-ratings": "Analyst ratings",
+    // "jev-reads" names stars saved on Earnings read by Jev before that page was removed (13 Nov 2026).
     insights: "Insights", "jev-reads": "Earnings read by Jev", watchlist: "Watchlist" };
   const page = (String(globalThis.location?.pathname || "").split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   const listeners = [];

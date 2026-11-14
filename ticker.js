@@ -1,17 +1,17 @@
 // Ticker page: everything saved about one ticker, each fact with its date.
 // Reads only files the weekly and Tue/Fri jobs already publish (desk.json,
-// fscore.json, earnings-calendar.json, ownership-signals.json, jev-reads.json) plus
+// fscore.json, earnings-calendar.json, ownership-signals.json) plus
 // ticker-volume.json (weekly: volume facts and the 12-month / 3-month price chart), price-implies.json (weekly:
 // dated revenue, cash returned and base rates) and ticker-funds.json (13F, quarterly).
 // Nothing is computed here beyond lookups, formatting, changes along the saved price line, sums of the
 // dollar amounts shown, two ratios of figures from one Research record (price / earnings, EV / operating income),
 // the "What the price implies" reverse-valuation arithmetic on the reader's assumptions,
-// and the decision tape (Jev raised? / revision up?) from already-published facts.
+// and the decision tape (revision up?) from already-published facts.
 // Facts, not a buy or sell call. Values are set as text; links go to sec.gov or this site.
 "use strict";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FILES = { desk: "./desk.json", shared: "./ticker-shared.json", earnings: "./earnings-calendar.json",
-  own: "./ownership-signals.json", jev: "./jev-reads.json" };
+  own: "./ownership-signals.json" };
 // Price closes, fund holders, quiet facts, F-score and price-implies come as one small file per
 // ticker plus ticker-shared.json (tools/build_ticker_shards.py, 3 Nov 2026): the same facts, a
 // fraction of the download. The keys each dataset fills per ticker:
@@ -529,7 +529,6 @@ function card(data, query, sessions = state.period) {
   if (research) research.valuation = valuationOf(research);
   const tape = (typeof TLTape !== "undefined" && TLTape)
     ? TLTape.tape(symbol, {
-      book: TLTape.latestBook(data.jev),
       factors: desk ? desk.factors : null,
       analystRetrievedAt: desk && desk.analyst && desk.analyst.retrieved_at,
       asOf: data.desk && data.desk.as_of,
@@ -724,7 +723,6 @@ function reportText(cardOrSymbol) {
   ].filter(Boolean).join(" · ");
   const lines = [head, meta];
   if (c.tape) {
-    lines.push(`Jev: ${c.tape.jev.label}${c.tape.jev.detail ? ` (${c.tape.jev.detail})` : ""}`);
     lines.push(`Revision: ${c.tape.revision.label}${c.tape.revision.detail ? ` (${c.tape.revision.detail})` : ""}`);
   }
   lines.push(...glance(c).map((g) => `${g.title}: ${g.value}${g.context ? ` (${g.context})` : ""}`));
@@ -1243,14 +1241,11 @@ function tapeBox(c) {
   const box = el("section", "tk-glance tk-tape");
   box.setAttribute("aria-label", `${c.symbol} decision tape`);
   const inner = el("div", "tk-glance-in");
-  const jev = el("a", `tk-cell tk-tape-${t.jev.state}`);
-  jev.href = t.jev.href || "./jev-reads.html";
-  jev.append(el("span", "tk-k", "Jev"), el("span", "tk-v", t.jev.label), el("span", "tk-c", t.jev.detail));
   const rev = el("a", `tk-cell tk-tape-${t.revision.state}`);
   rev.href = "#tk-business";
   rev.append(el("span", "tk-k", "Revision"), el("span", "tk-v", t.revision.label), el("span", "tk-c", t.revision.detail));
-  inner.append(jev, rev);
-  box.append(inner, el("small", "tk-tape-note", "Two facts for a name you might hold. Not a score, not a buy or sell call."));
+  inner.append(rev);
+  box.append(inner, el("small", "tk-tape-note", "A dated fact for a name you might hold. Not a score, not a buy or sell call."));
   return box;
 }
 function glanceBox(c) {
@@ -2131,7 +2126,7 @@ function aboutBox(c) {
     "13F: managers with $100M+ report long positions within 45 days of each quarter end; no short positions. One manager can combine many funds and client accounts, so a change can be flows, not a decision. SEC publishes these data sets every three months; managers whose table in them is incomplete are left out.",
     "Volume: normal is the average of the 63 sessions before the last 21. Up-day share is volume on days the price rose, out of volume on days it rose or fell; above 50% means on-balance volume (OBV) rose.",
     "F-Score: Piotroski's nine financial-health checks. Context, not a signal.",
-    "Decision tape: Jev is an AI read of the company's latest earnings release on the Research Shortlist (Raised means vs its own previous guidance, counted only at confidence 0.5+). Not on that list this week is Not read. Revision is Yahoo 30-day EPS estimate changes for the current fiscal year from the weekly freeze. Two facts, not a combined score.",
+    "Decision tape: Revision is Yahoo 30-day EPS estimate changes for the current fiscal year from the weekly freeze. A fact, not a score.",
   ];
   ul.append(...lines.map((t) => el("li", "", t)));
   box.append(ul);
@@ -2328,7 +2323,6 @@ function start() {
       else state.missing.push(FILES[names[i]].slice(2));
     });
     if (state.data.own && state.data.own.schema !== "ownership-signals-1") { state.missing.push("ownership-signals.json"); delete state.data.own; }
-    if (state.data.jev && state.data.jev.schema !== "jev-reads-index-1") { state.missing.push("jev-reads.json"); delete state.data.jev; }
     if (state.data.shared && state.data.shared.schema !== "ticker-shards-1") { state.missing.push("ticker-shared.json"); delete state.data.shared; }
     if (!state.data.desk && !state.data.own) throw new Error("no data");
     setup();

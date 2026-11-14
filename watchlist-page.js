@@ -3,7 +3,7 @@
 // month-end close (trend-rules.json, the only per-stock signal with a tested edge), a one-year line
 // (ticker-sparks.json, every 5th close) with the 3- and 12-month returns, the next results date
 // (earnings-calendar.json) and EPS revisions as untested context. Rows sort by next results; four
-// counts on top say what needs a look. Jev reads are on each Ticker page (a trial, no edge yet).
+// counts on top say what needs a look.
 // No purchase or "since starred" price: a reference price makes winners easier to sell and losers
 // easier to hold (Frydman and Rangel 2014). The Timing tab draws one year of
 // daily closes with the 50-day and 200-day averages, RSI (14, Wilder) and MACD (12, 26, 9) from
@@ -897,7 +897,7 @@
       $("wl-source").textContent = asOf
         ? `Lists, prices and 3- and 12-month returns: Research snapshot, close on ${longDay(asOf.price_date)}. `
           + `Trend: the three tested rules${rulesOk ? ` at the ${longDay(trend.signal_date)} month-end close` : ""} (price above 200-day, 12–1 month return above zero, 50-day above 200-day); the only per-stock signal that passed our test. `
-          + "Revisions: 30-day EPS estimate changes, context only, not tested on our data. Jev reads are on each Ticker page."
+          + "Revisions: 30-day EPS estimate changes, context only, not tested on our data."
         : "";
       render(W.list());
     });
