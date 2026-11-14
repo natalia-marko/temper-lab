@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — How it works</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=dc7fa30fcbcf" />
+    <link rel="stylesheet" href="./desk.css?v=f3a762428ec5" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
   <body>
@@ -55,10 +55,10 @@
           <div class="how-table-wrap"><table class="how-table">
             <thead><tr><th scope="col">Page or column</th><th scope="col">Updated</th><th scope="col">From</th></tr></thead>
             <tbody>
-              <tr><th scope="row">Research — Shortlist, Growth, Cheap, Hot tape</th><td>Saturday</td><td>Friday's closes and the SEC filings public by then.</td></tr>
+              <tr><th scope="row">Research — Shortlist, Growth, Cheap</th><td>Saturday</td><td>Friday's closes and the SEC filings public by then.</td></tr>
               <tr><th scope="row">Trend (Research, Watchlist)</th><td>After each month's last close</td><td>The same closes, at the month-end. The date is in the column.</td></tr>
               <tr><th scope="row">Shorted</th><td>Twice a month</td><td>FINRA counts short positions mid-month and at month-end and publishes about 7 business days later, so the figure is 1½–3½ weeks older than the prices. The date is in the column.</td></tr>
-              <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead. A later date is not shown yet; the cell says so.</td></tr>
+              <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead; the column heading gives the last date covered. A later date is not shown yet.</td></tr>
               <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings (with 12-month and 3-month chart markers and 21-day Insights activity), SEC 13F data sets, and a one-page PNG/text report card.</td></tr>
               <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries and price targets, dated when they were collected, for every company on the Hot tape, Growth and Cheap lists.</td></tr>
               <tr><th scope="row">Screener tests</th><td>Saturday</td><td>The forward tests recorded in the weekly job (every rule written down, with its batches and dates) and the Shortlist backtest windows from the weekly comparison report. Results appear only when a batch is sold, 6 and 12 months after purchase.</td></tr>
@@ -84,7 +84,7 @@
           <h2 id="how-built">How the data is built</h2>
           <ul class="how-list">
             <li><strong>Universe:</strong> US-listed common stocks. A company counts as liquid with a market value of at least $1B, average daily trading of at least $10M over 63 sessions, a price of at least $5, a fresh SEC filing within 180 days (period within 300 days), and an SEC share count no more than 400 days old.</li>
-            <li><strong>Lists:</strong> <strong>Growth</strong> ranks profitable companies whose quarterly revenue is up at least 20% on a year earlier, from at least $50M, on five profitability measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets). <strong>Cheap</strong> ranks non-financial companies with positive operating income on operating income to enterprise value. <strong>Hot tape</strong> ranks liquid stocks with a full year of prices on their 3-month return (60%) and 12-month return (40%), the latest month included; the list is the top 10%, at most 150 names. On the <strong>Shortlist</strong>, financials and missing inputs take a neutral 50 on a missing pillar, while a non-financial operating loss scores 0 on operating income / EV.</li>
+            <li><strong>Lists:</strong> <strong>Growth</strong> ranks profitable companies whose quarterly revenue is up at least 20% on a year earlier, from at least $50M, on five profitability measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets). <strong>Cheap</strong> ranks non-financial companies with positive operating income on operating income to enterprise value. <strong>Hot tape</strong> ranks liquid stocks with a full year of prices on their 3-month return (60%) and 12-month return (40%), the latest month included; the list is the top 10%, at most 150 names. It is an ingredient of the Shortlist and has no tab of its own on Research. On the <strong>Shortlist</strong>, financials and missing inputs take a neutral 50 on a missing pillar, while a non-financial operating loss scores 0 on operating income / EV.</li>
             <li><strong>Prices:</strong> Yahoo daily closes, adjusted for splits and dividends.</li>
             <li><strong>Company numbers:</strong> SEC filings (XBRL company facts), each used only from the day it was filed — point in time, never back-dated. Twelve-month figures add up four quarters.</li>
             <li><strong>If a week's SEC download is incomplete,</strong> the companies it missed keep the filings saved earlier, and the Research page says so.</li>

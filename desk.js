@@ -1,5 +1,7 @@
-// Research page. Four lists, one table each, the same three fact columns on
-// every list (Trend, Shorted, Next results). The Shortlist (Composite) opens
+// Research page. Three lists, one table each, the same three fact columns on
+// every list (Trend, Shorted, Next results). Hot tape is still built and still
+// feeds the Shortlist (its gate, its Price strength score, the "On lists" chips),
+// but it has no tab of its own since 14 Nov 2026: a price list with no test of its own. The Shortlist (Composite) opens
 // the page. Early-stage research files live on the Ticker page. Conviction is built and
 // frozen weekly but not published (5 Nov 2026).
 const SCREENS = [
@@ -8,6 +10,9 @@ const SCREENS = [
   ["undervalued", "Cheap"],
   ["strength", "Hot tape"],
 ];
+// The lists a reader can open. SCREENS still names all four wherever a company's
+// lists are stated.
+const TABS = SCREENS.filter(([key]) => key !== "strength");
 // The numbers that explain each list's order. LEAD marks the one a list ranks
 // on; the Shortlist, Growth and Hot tape rank on a blend, shown as Score.
 const COLUMNS = {
@@ -168,43 +173,56 @@ function movementLabel(screen, symbol) {
   if (row.rank_change === 0) return "rank unchanged";
   return `${row.rank_change > 0 ? "up" : "down"} ${Math.abs(row.rank_change)} from rank ${row.previous_rank}`;
 }
-function movementChip(symbol) {
-  const track = trajectoryFor(state.screen);
-  const row = track?.rows?.[symbol];
-  if (!row) return "";
-  const since = day(state.desk.trajectory.previous_as_of);
-  if (row.change === "entered") {
-    return `<span class="move new" title="Not on this list on ${since}">New</span>`;
-  }
-  // Unchanged and not-comparable both draw nothing; the note below the table
-  // says which of the two an absent marker means.
-  if (!track.comparable || !row.rank_change) return "";
-  const up = row.rank_change > 0;
-  return `<span class="move ${up ? "up" : "down"}" title="Was rank ${row.previous_rank} on ${since}">${up ? "▲" : "▼"}${Math.abs(row.rank_change)}</span>`;
+// What changed on a list since the last month-end freeze, from share/list-check.json
+// (tools/build_list_check.py), used only when it was built for this release. The page
+// used to mark every row with its move since last week; decisions are monthly and a
+// week-to-week move is mostly noise (How it works), so the table carries no marker.
+function monthEndChanges(screen) {
+  const file = state.listCheck;
+  if (!file || file.desk_run_id !== state.desk.run_id || !file.changes?.available) return null;
+  const group = screen === "composite" ? "shortlist" : screen;
+  const row = file.changes.lists?.[group];
+  if (!row || !file.changes.previous_as_of) return null;
+  // The names are in list checks built from 14 Nov 2026; an older file has counts only.
+  const names = file.changes.names?.[group] || null;
+  return { ...row, since: file.changes.previous_as_of, names };
 }
-// Counts in the line; the dropped names fold away, since Hot tape can drop 45.
+// "New" marks a company that was not on this list at the last month-end freeze.
+function newChip(symbol) {
+  const change = monthEndChanges(state.screen);
+  if (!change?.names?.added?.includes(symbol)) return "";
+  return `<span class="move new" title="Not on this list at the ${escapeHtml(day(change.since))} month-end">New</span>`;
+}
 function renderTrajectory() {
   const element = $("trajectory-note");
-  const track = trajectoryFor(state.screen);
-  if (!track) {
-    element.textContent = state.desk.trajectory
-      ? "This list has no comparison in the previous published week."
-      : "No earlier week is published yet, so nothing is compared.";
-    return;
+  const change = monthEndChanges(state.screen);
+  let html = "";
+  if (change) {
+    const method = change.previous_version !== change.version
+      ? " The ranking method changed in between, so part of this is the method."
+      : "";
+    html = escapeHtml(
+      `Since the ${day(change.since)} month-end: ${change.added} new, ${change.dropped} dropped, ${change.kept} kept.${method} Week-to-week moves are mostly noise. `
+    ) + `<a href="./market-mood.html">List check</a>`;
   }
-  const since = day(state.desk.trajectory.previous_as_of);
-  const rows = Object.values(track.rows);
-  const entered = rows.filter((row) => row.change === "entered").length;
-  const moved = rows.filter((row) => row.rank_change).length;
-  const lead =
-    `Since ${since}: ${entered} new, ${track.exited.length} dropped, ` +
-    (track.comparable
-      ? `${moved} changed rank. No marker means the rank did not move.`
-      : "and the ranking method changed between the two weeks, so ranks are not compared.");
-  const dropped = track.exited.map((row) => `${row.symbol} (was ${row.previous_rank})`).join(", ");
-  element.innerHTML = escapeHtml(lead) + (dropped
-    ? ` <details class="dropped"><summary>Dropped names</summary>${escapeHtml(dropped)}.</details>`
-    : "");
+  // A company that left a list is on no row, so this fold is the one place the page
+  // can name it. It covers the same period as the counts when the list check carries
+  // the names; an older list check has none, and the fold then covers the last week.
+  const fold = (summary, names) => ` <details class="dropped"><summary>${escapeHtml(summary)}</summary>${escapeHtml(names)}.</details>`;
+  if (change?.names) {
+    const left = change.names.dropped;
+    if (left.length) {
+      html += fold(`Left this list since the ${day(change.since)} month-end (${left.length})`,
+        left.map(([symbol, rank]) => `${symbol} (was ${rank})`).join(", "));
+    }
+  } else {
+    const exited = trajectoryFor(state.screen)?.exited || [];
+    if (exited.length) {
+      html += fold(`Left this list since ${day(state.desk.trajectory.previous_as_of)} (${exited.length})`,
+        exited.map((row) => `${row.symbol} (was ${row.previous_rank})`).join(", "));
+    }
+  }
+  element.innerHTML = html;
 }
 
 function industryKey(company) {
@@ -328,12 +346,15 @@ function compactIndustry(name) {
 // live in share/sectors.js so Research and Analyst ratings share one
 // taxonomy. That file is loaded before this one on every page that needs it.
 
-// On the Shortlist a company's sector is the one its Composite row was capped
-// by (reviewed corrections, e.g. a tanker company counted as energy); elsewhere
-// it is the site taxonomy of its Nasdaq industry.
+// One sector per company, on every tab and in the company panel (14 Nov 2026). The
+// Shortlist's 3-per-sector limit uses reviewed corrections (a tanker company counted
+// as energy), then the site taxonomy of the Nasdaq industry. A Shortlist member takes
+// the sector its row was capped by; any other company takes the sector the snapshot
+// states for it by the same rule (`sector`, in snapshots exported from 14 Nov 2026);
+// an older snapshot falls back to the industry taxonomy.
 function rowSector(symbol) {
-  const capped = state.screen === "composite" ? rankedMap("composite").get(symbol)?.sector : null;
-  return capped || sectorFor(industryKey(state.desk.companies[symbol]));
+  const company = state.desk.companies[symbol];
+  return rankedMap("composite").get(symbol)?.sector || company?.sector || sectorFor(industryKey(company));
 }
 
 function liquidCount() {
@@ -358,7 +379,7 @@ function searchNotice(visible) {
   const symbol = matchedSymbol(q);
   if (symbol) {
     if (rankedMap(state.screen).has(symbol)) return "";
-    const elsewhere = SCREENS.filter(([key]) => key !== state.screen && rankedMap(key).has(symbol)).map(([, label]) => label);
+    const elsewhere = TABS.filter(([key]) => key !== state.screen && rankedMap(key).has(symbol)).map(([, label]) => label);
     return `${symbol} is in the liquid universe, not on this list.${elsewhere.length ? ` It is on ${elsewhere.join(", ")}.` : ""} The Ticker page has everything on it.`;
   }
   if (visible.length) return "";
@@ -569,7 +590,8 @@ function resultsCell(symbol) {
     return `<td class="results past">Scheduled ${escapeHtml(weekday(next.date))}<small>Date passed; release not checked</small></td>`;
   }
   const to = calendar.window?.to;
-  return `<td class="results past" title="The calendar looks about four weeks ahead; a date beyond it is not shown yet">${to ? `None to ${escapeHtml(shortDay(to))}` : "—"}</td>`;
+  const none = to ? `No results date in the calendar to ${shortDay(to)}; a later date is not shown yet` : "No results date in the calendar";
+  return `<td class="results past"><span class="na" title="${escapeHtml(none)}">—</span></td>`;
 }
 
 // ---------- company panel ----------
@@ -616,7 +638,7 @@ function panelMissing(symbol, key) {
 }
 
 function sectorOf(symbol) {
-  return sectorFor(industryKey(state.desk.companies[symbol]));
+  return rowSector(symbol);
 }
 
 // Stored per sector by the weekly build (desk.json sector_medians); null when
@@ -1023,11 +1045,13 @@ async function loadExtras() {
       return null;
     }
   };
-  const [earnings, shorts, trend] = await Promise.all([
+  const [earnings, shorts, trend, listCheck] = await Promise.all([
     load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
     load("short-interest.json", (data) => data.schema === "short-interest-1"),
     load("trend-rules.json", (data) => data.schema === "trend-rules-2"),
+    load("list-check.json", (data) => data.schema === "list-check-1"),
   ]);
+  state.listCheck = listCheck;
   state.earnings = earnings;
   state.shorts = shorts;
   state.trend = trend;
@@ -1061,8 +1085,10 @@ function renderScreenGates() {
     ? ["On 2+ of Growth, Cheap, Hot tape", "Positive equity", "Top 10: at most 3 per sector"]
     : state.desk.setups?.[state.screen]?.gates || [];
   if (!labels.length) {
+    // A list whose build states no gate labels (Cheap, Hot tape) is not a list
+    // without rules: its rule is under "How this list is ranked". Say nothing here
+    // instead of something false.
     element.innerHTML = "";
-    element.textContent = "No entry gates: every eligible company is scored.";
     return;
   }
   element.innerHTML =
@@ -1085,7 +1111,7 @@ function sortHeader(key, label, title = "") {
 }
 
 function renderHead() {
-  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">#</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Rows still show the Nasdaq industry. Rank is unchanged."></select></th>`;
+  let html = `<tr><th class="rank" title="Rank on this list. Sorting a column reorders the rows; this number stays the list rank.">#</th>${sortHeader("company", "Company")}<th scope="col" class="industry-column"><label for="sector">Sector</label><select id="sector" aria-label="Filter by sector" title="Eleven market sectors, the same buckets as GICS. Each row shows its sector with the Nasdaq industry beneath. Rank is unchanged."></select></th>`;
   for (const [key, label] of currentMetrics()) {
     const [main, sub] = label.split(" · ");
     html += sortHeader(key, sub ? `${main} <small>${sub}</small>` : main);
@@ -1096,7 +1122,8 @@ function renderHead() {
   const trendDate = trendReady() ? `<small>month-end</small><small>${escapeHtml(shortDay(state.trend.signal_date))}</small>` : "";
   html += sortHeader("trend", `Trend ${trendDate}`, "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Shown at the last month-end close, the signal that passed; a change between month-ends did not predict returns.");
   html += sortHeader("short", `Shorted <small>days to cover</small><small>${escapeHtml(shortsDate)}</small>`, "Days to cover from FINRA short interest. Heavy and Light mark the top and bottom 10% of eligible stocks of similar size, the split our test backed.");
-  html += sortHeader("results", "Next results");
+  const resultsTo = state.earnings?.window?.to ? ` <small>to ${escapeHtml(shortDay(state.earnings.window.to))}</small>` : "";
+  html += sortHeader("results", `Next results${resultsTo}`);
   html += `</tr>`;
   $("head").innerHTML = html;
   renderIndustries();
@@ -1128,9 +1155,13 @@ function companyCell(symbol) {
 function industryCell(symbol) {
   const industry = state.desk.companies[symbol]?.industry?.trim() || "";
   const label = compactIndustry(industry);
-  const sector = sectorLabel(rowSector(symbol));
+  const key = rowSector(symbol);
+  const sector = sectorLabel(key);
   const title = industry ? `${sector} · ${industry}` : sector;
-  return `<td class="industry-column"><span class="industry" title="${escapeHtml(title)}">${escapeHtml(label)}</span></td>`;
+  // The sector is what the filter and the Shortlist's 3-per-sector limit use, so it
+  // leads; the Nasdaq industry sits beneath it.
+  const lead = key === "unclassified" ? "" : `<span class="sector-name">${escapeHtml(sector)}</span>`;
+  return `<td class="industry-column">${lead}<span class="industry" title="${escapeHtml(title)}">${escapeHtml(label)}</span></td>`;
 }
 
 function escapeHtml(value) {
@@ -1154,7 +1185,7 @@ function renderBody(pageRows) {
   $("body").innerHTML = pageRows
     .map((symbol) => {
       const idea = ranked.get(symbol);
-      let cells = `<td class="rank">${idea?.rank ?? "—"}${movementChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
+      let cells = `<td class="rank">${idea?.rank ?? "—"}${newChip(symbol)}</td>${companyCell(symbol)}${industryCell(symbol)}`;
       for (const [key, , kind] of metrics) cells += metricTd(symbol, key, kind);
       if (SCORED.has(state.screen)) cells += scoreCell(idea);
       cells += `<td><span class="chips">${alsoOn(symbol).map((label) => `<span class="chip also">${label}</span>`).join("")}</span></td>`;
@@ -1224,7 +1255,7 @@ function render() {
     : state.sortKey === "rank" ? (state.sortDir === "desc" ? "first to last" : "last to first")
     : state.sortKey === "results" ? (state.sortDir === "desc" ? "soonest first" : "latest first")
       : (state.sortDir === "desc" ? "High to low" : "Low to high");
-  $("order").textContent = `Sorted by ${sortLabel} · ${sortDirection}`;
+  $("order").textContent = state.sortKey === "rank" && state.sortDir === "desc" ? "" : `Sorted by ${sortLabel} · ${sortDirection}`;
   $("range").textContent = all.length
     ? `${start + 1}–${Math.min(start + state.pageSize, all.length)} of ${all.length.toLocaleString()} companies`
     : "0 companies";
@@ -1307,7 +1338,7 @@ function bind() {
     $("sector").focus();
   });
   const switcher = $("screen-switch");
-  for (const [key, label] of SCREENS.filter(([key]) => state.desk.setups[key])) {
+  for (const [key, label] of TABS.filter(([key]) => state.desk.setups[key])) {
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.screen = key;
@@ -1364,7 +1395,7 @@ async function start() {
     if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
     state.desk = await response.json();
     // A snapshot from before the Shortlist was published opens on Growth.
-    if (!state.desk.setups[state.screen]) state.screen = SCREENS.find(([key]) => state.desk.setups[key])?.[0] || "growth";
+    if (!state.desk.setups[state.screen]) state.screen = TABS.find(([key]) => state.desk.setups[key])?.[0] || "growth";
     try {
       // Optional: the F-Score line in the company panel; the page works without it.
       const fscoreResponse = await fetch("./fscore.json", { cache: "no-cache" });
@@ -1380,7 +1411,8 @@ async function start() {
       if (releaseResponse.ok) {
         const release = await releaseResponse.json();
         const historical = release.historical_validation?.status || "unknown";
-        $("release-status").textContent = `Current release: ${release.status || "unknown"} · Historical validation: ${historical}`;
+        $("release-status").textContent = `Current release: ${release.status || "unknown"} · Data checks: ${historical}`;
+        $("release-status").title = "The weekly files agree with each other and with the stored comparison. This says nothing about returns.";
       }
     } catch (releaseError) {
       console.warn("Temper Lab release status is unavailable:", releaseError);
