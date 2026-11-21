@@ -440,6 +440,7 @@ function sortValue(symbol, ranked) {
   if (key === "company") return symbol;
   if (key === "trend") return trendOf(symbol)?.up ?? null;
   if (key === "short") return shortOf(symbol)?.daysToCover ?? null;
+  if (key === "high") return belowHigh(symbol);
   if (key === "results") {
     const next = upcomingResults(symbol);
     return next ? -Date.parse(`${next.date}T12:00:00Z`) : null;
@@ -572,6 +573,30 @@ function shortCell(symbol) {
   const tag = short.rank === "heavily" ? `<span class="tag heavy" title="Top 10% of eligible stocks of similar size">Heavy</span>`
     : short.rank === "lightly" ? `<span class="tag light" title="Bottom 10% of eligible stocks of similar size">Light</span>` : "";
   return `<td class="metric quiet">${short.daysToCover.toFixed(1)}${tag}</td>`;
+}
+
+// How far the last close sits below the highest close of the last 12 months
+// (factors.below_high_252, in snapshots frozen from 21 Nov 2026). A price fact shown
+// beside the tested ones; it has not passed a test of ours and enters no rank or score.
+function belowHigh(symbol) {
+  const value = state.desk.companies[symbol]?.factors?.below_high_252;
+  return Number.isFinite(value) ? value : null;
+}
+// The column exists only when the snapshot carries the figure: an older snapshot
+// would show a column of dashes that says nothing.
+function highReady() {
+  if (state.highReady === undefined || state.highReadyFor !== state.desk) {
+    state.highReadyFor = state.desk;
+    state.highReady = Object.values(state.desk.companies || {}).some((company) => Number.isFinite(company?.factors?.below_high_252));
+  }
+  return state.highReady;
+}
+function highCell(symbol) {
+  if (!highReady()) return "";
+  const value = belowHigh(symbol);
+  if (value === null) return `<td class="metric quiet"><span class="na" title="Less than a full year of prices">—</span></td>`;
+  const text = value === 0 ? "At high" : `−${Math.abs(value * 100).toFixed(1)}%`;
+  return `<td class="metric quiet" title="Last close against the highest close of the last 12 months">${text}</td>`;
 }
 
 function upcomingResults(symbol) {
@@ -1121,6 +1146,10 @@ function renderHead() {
   const shortsDate = state.shorts?.date ? `FINRA, ${shortDay(state.shorts.date)}` : "FINRA";
   const trendDate = trendReady() ? `<small>month-end</small><small>${escapeHtml(shortDay(state.trend.signal_date))}</small>` : "";
   html += sortHeader("trend", `Trend ${trendDate}`, "Three rules that passed our test: price above its 200-day average, 12-month return skipping the last month above zero, 50-day average above the 200-day. Shown at the last month-end close, the signal that passed; a change between month-ends did not predict returns.");
+  if (highReady()) {
+    html += sortHeader("high", `52-week high <small>close below it</small><small>${escapeHtml(shortDay(state.desk.as_of))}</small>`,
+      "The last close against the highest close of the last 12 months, on prices adjusted for splits and dividends. A fact for context: unlike Trend and Shorted, it has not passed a test of ours.");
+  }
   html += sortHeader("short", `Shorted <small>days to cover</small><small>${escapeHtml(shortsDate)}</small>`, "Days to cover from FINRA short interest. Heavy and Light mark the top and bottom 10% of eligible stocks of similar size, the split our test backed.");
   const resultsTo = state.earnings?.window?.to ? ` <small>to ${escapeHtml(shortDay(state.earnings.window.to))}</small>` : "";
   html += sortHeader("results", `Next results${resultsTo}`);
@@ -1171,7 +1200,7 @@ function escapeHtml(value) {
 }
 
 function columnCount() {
-  return 3 + currentMetrics().length + (SCORED.has(state.screen) ? 1 : 0) + 4;
+  return 3 + currentMetrics().length + (SCORED.has(state.screen) ? 1 : 0) + 4 + (highReady() ? 1 : 0);
 }
 
 function renderBody(pageRows) {
@@ -1189,7 +1218,7 @@ function renderBody(pageRows) {
       for (const [key, , kind] of metrics) cells += metricTd(symbol, key, kind);
       if (SCORED.has(state.screen)) cells += scoreCell(idea);
       cells += `<td><span class="chips">${alsoOn(symbol).map((label) => `<span class="chip also">${label}</span>`).join("")}</span></td>`;
-      cells += trendCell(symbol) + shortCell(symbol) + resultsCell(symbol);
+      cells += trendCell(symbol) + highCell(symbol) + shortCell(symbol) + resultsCell(symbol);
       return `<tr>${cells}</tr>`;
     })
     .join("");
@@ -1248,12 +1277,13 @@ function render() {
   state.page = Math.min(state.page, pages - 1);
   const start = state.page * state.pageSize;
   const shown = all.slice(start, start + state.pageSize);
-  const sortLabel = { rank: "List rank", score: "Score", company: "Company", trend: "Trend", short: "Days to cover", results: "Next results" }[state.sortKey]
+  const sortLabel = { rank: "List rank", score: "Score", company: "Company", trend: "Trend", high: "52-week high", short: "Days to cover", results: "Next results" }[state.sortKey]
     || currentMetrics().find(([key]) => key === state.sortKey)?.[1] || "Metric";
   const sortDirection = state.sortKey === "company"
     ? (state.sortDir === "asc" ? "A to Z" : "Z to A")
     : state.sortKey === "rank" ? (state.sortDir === "desc" ? "first to last" : "last to first")
     : state.sortKey === "results" ? (state.sortDir === "desc" ? "soonest first" : "latest first")
+    : state.sortKey === "high" ? (state.sortDir === "desc" ? "nearest the high first" : "furthest below first")
       : (state.sortDir === "desc" ? "High to low" : "Low to high");
   $("order").textContent = state.sortKey === "rank" && state.sortDir === "desc" ? "" : `Sorted by ${sortLabel} · ${sortDirection}`;
   $("range").textContent = all.length
