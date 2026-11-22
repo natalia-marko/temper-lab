@@ -134,7 +134,9 @@
       : backtest.available ? `Backtest of ${backtest.starts.length} Friday starts, ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[backtest.starts.length - 1])}.`
         : `Backtest withheld: ${backtest.reason}`;
     $("st-clock-written").textContent = dayYear(list.registered_at);
-    $("st-clock-after").textContent = `${list.batches.length} weekly batches since the list of ${dayYear(oldest.as_of)}. First 6-month result ${dayYear(oldest.exit_6m)}.`;
+    $("st-clock-after").textContent = oldest
+      ? `${list.batches.length} weekly batches since the list of ${dayYear(oldest.as_of)}. First 6-month result ${dayYear(oldest.exit_6m)}.`
+      : "No weekly batches yet; the first batch is recorded at the next weekly run.";
 
     const sw = list.switch;
     const board = [["Rule on the site", names.rule], ["Challenger, on paper", names.challenger]];
@@ -152,11 +154,13 @@
       + `and still ahead after dropping its single best stock. No other reason to switch.` : "";
 
     $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
-    const finished = oldest.exit_6m.slice(0, 10) <= data.as_of;
+    const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
     $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
-    $("st-pass-note").textContent = list.pass_rule ? "" : finished
-      ? "The first batch has finished; a bar written now could be fitted to its result."
-      : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
+    $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
+      ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
+      : finished
+        ? "The first batch has finished; a bar written now could be fitted to its result."
+        : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
 
     renderBatches(list, names);
     renderPicks(list, names);
@@ -184,6 +188,11 @@
   }
 
   function renderBatches(list, names) {
+    if (!list.batches.length) {
+      $("st-batches").replaceChildren(el("p", "st-small", "No weekly batches yet."));
+      $("st-batches-more").hidden = true;
+      return;
+    }
     const shown = state.allBatches ? list.batches : list.batches.slice(0, BATCHES_SHOWN);
     const body = shown.map((row) => {
       const first = el("td");

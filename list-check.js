@@ -21,8 +21,10 @@
     ["short", "Too little history", "lc-short"]];
   const RESULT_PARTS = [["before", "lc-before"], ["after", "lc-after"], ["later", "lc-later"]];
   const TILT = { share: 0.1, ratio: 2 };  // ×n mark: at least 10% of the list and twice the eligible share
-  // Retired first versions, in reading order; an unknown track shows its id after these.
-  const RETIRED = [["composite-top10-v1", "the lake-9 Shortlist"], ["composite-strength-roe-top10-v1", "its 60/40 challenger"],
+  // Retired earlier versions, in reading order; an unknown track shows its id after these.
+  const RETIRED = [["composite-top10-v2", "the lake-13 Shortlist"], ["composite-strength-roe-top10-v2", "its lake-13 60/40 challenger"],
+    ["growth-top10-v2", "Growth v2 (with financials)"],
+    ["composite-top10-v1", "the lake-9 Shortlist"], ["composite-strength-roe-top10-v1", "its 60/40 challenger"],
     ["growth-top10-v1", "Growth on ROE"]];
 
   const $ = (id) => document.getElementById(id);
@@ -303,11 +305,12 @@
   }
 
   const FORWARD = [
-    { id: "composite-top10-v2", pair: "composite-strength-roe-top10-v2", title: "Shortlist top 10", tail: " vs the 60/40 challenger",
+    { ids: ["composite-top10-v3", "composite-top10-v2"], pairs: ["composite-strength-roe-top10-v3", "composite-strength-roe-top10-v2"],
+      title: "Shortlist top 10", tail: " vs the 60/40 challenger",
       text: "Each week’s first ten against QQQ and SPY; switch only if the challenger wins 2 of the first 3 six-month windows." },
-    { id: "growth-top10-v2", title: "Growth top 10", tail: " (five profitability measures)",
+    { ids: ["growth-top10-v3", "growth-top10-v2"], title: "Growth top 10", tail: " (five profitability measures)",
       text: "Each week’s first ten against QQQ and SPY at 6 and 12 months." },
-    { id: "momentum-12-1-top20-monthly-v1", title: "Momentum top 20", tail: ", month-end only",
+    { ids: ["momentum-12-1-top20-monthly-v1"], title: "Momentum top 20", tail: ", month-end only",
       text: "12-1 month return, equal weight; nothing is published unless 8 of the first 12 cohorts beat QQQ, among other conditions." },
   ];
   function forwardWhen(track, monthly) {
@@ -325,17 +328,19 @@
     const tracks = Object.fromEntries((check.forward_tests?.tracks || []).map((t) => [t.id, t]));
     const rows = [];
     for (const item of FORWARD) {
-      const track = tracks[item.id];
+      const id = item.ids.find((key) => tracks[key]);
+      const track = id && tracks[id];
       if (!track) continue;
       const row = el("div", "lc-ft");
       const what = el("span", "");
       what.append(el("b", "", item.title), document.createTextNode(item.tail));
       let text = item.text;
-      const pair = item.pair && tracks[item.pair];
+      const pairId = item.pairs && item.pairs.find((key) => tracks[key]);
+      const pair = pairId && tracks[pairId];
       if (pair && pair.cohorts !== track.cohorts) text += ` The challenger has ${pair.cohorts} cohort${pair.cohorts === 1 ? "" : "s"}.`;
       what.appendChild(el("small", "", text));
       const when = el("em", "");
-      forwardWhen(track, item.id.includes("monthly")).forEach((line, i) => { if (i) when.appendChild(el("br")); when.appendChild(document.createTextNode(line)); });
+      forwardWhen(track, id.includes("monthly")).forEach((line, i) => { if (i) when.appendChild(el("br")); when.appendChild(document.createTextNode(line)); });
       row.append(what, when);
       rows.push(row);
     }

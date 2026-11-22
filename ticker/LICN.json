@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"6a81c47ad1ec294c","symbol":"LICN","data":{"volume":{"rows":{"LICN":[392,3736.82,1278.52,0.0,0.0,-0.5552,-0.985]}},"funds":{"rows":{"LICN":[null,3,null,null,null,null,null,166829,165661,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"3ff65c817a6099a2","symbol":"LICN","data":{"volume":{"rows":{"LICN":[392,3736.82,1278.52,0.0,0.0,-0.5552,-0.985]}},"funds":{"rows":{"LICN":[null,3,null,null,null,null,null,166829,165661,false,0,[],[]]},"manager_names":{}}}}
