@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"6002208073253e12","symbol":"JDZG","data":{"volume":{"rows":{"JDZG":[706762,6.11,25.46,0.0,0.755,-0.4891,-0.9857]}},"funds":{"rows":{"JDZG":[null,7,null,null,null,null,null,37927,1896350,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"f1da12ab2e2d59d5","symbol":"JDZG","data":{"volume":{"rows":{"JDZG":[706762,6.11,25.46,0.0,0.755,-0.4891,-0.9857]}},"funds":{"rows":{"JDZG":[null,7,null,null,null,null,null,37927,1896350,false,0,[],[]]},"manager_names":{}}}}
