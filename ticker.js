@@ -458,7 +458,10 @@ function impliesDefaults(c) {
   const i = c.implies, f = (c.research && c.research.factors) || {}, s = i.sectorStats || {};
   const own = num(f.net_margin) && Number(f.net_margin) > 0 ? Number(f.net_margin) : null;
   const cash = i.cash_returned;
-  const paid = cash ? (num(cash.dividends) ? Number(cash.dividends) : 0) + (num(cash.buybacks) ? Number(cash.buybacks) : 0) : 0;
+  const effBuybacks = cash
+    ? (num(cash.buybacks_net_sbc) ? Number(cash.buybacks_net_sbc) : (num(cash.buybacks) ? Number(cash.buybacks) : 0))
+    : 0;
+  const paid = cash ? (num(cash.dividends) ? Number(cash.dividends) : 0) + effBuybacks : 0;
   const cap = c.research && Number(c.research.market_cap);
   const pe = c.research && c.research.valuation && c.research.valuation.pe;
   return {
@@ -1560,7 +1563,12 @@ function financialsBox(c) {
   line("Change in that growth", points(f.acceleration), "against the quarter before");
   group("Profitability", `trailing 12 months, filed ${longDay(r.quality_filed) || "n/a"}`);
   line("Operating margin", level(f.operating_margin));
-  line("Net margin", level(f.net_margin), v.net_income !== null ? `net income ${v.net_income < 0 ? "−" : ""}${money(Math.abs(v.net_income))}` : "");
+  const m5 = c.implies && c.implies.margin_5y && c.implies.margin_5y.far_from_median === true ? c.implies.margin_5y : null;
+  const marginNote = [
+    v.net_income !== null ? `net income ${v.net_income < 0 ? "−" : ""}${money(Math.abs(v.net_income))}` : "",
+    m5 ? `${m5.median <= 0 || m5.latest >= m5.median ? "peak vs" : "below"} 5Y median ${level(m5.median)}` : "",
+  ].filter(Boolean).join(" · ");
+  line("Net margin", level(f.net_margin), marginNote);
   line("Cash conversion", num(f.cash_conversion) ? `${Number(f.cash_conversion).toFixed(2)}×` : "n/a", "operating cash flow / net income");
   line("Return on equity", level(f.roe));
   group("Valuation", `at the ${longDay(r.price_date)} close`);
@@ -1569,10 +1577,13 @@ function financialsBox(c) {
   line("Enterprise value", money(v.ev), v.net_debt === null ? "" : v.net_debt >= 0 ? `net debt ${money(v.net_debt)}` : `net cash ${money(-v.net_debt)}`);
   group("Balance sheet");
   line("Liabilities / assets", level(f.leverage));
-  group("Price trend", `to ${longDay(r.price_date)}`);
+  group("Price trend & risk", `to ${longDay(r.price_date)}`);
   line("63 sessions", pct(f.momentum_63));
   line("252 sessions", pct(f.momentum_252));
   line("6 months, minus QQQ", points(f.relative_strength_6m), "the stock's 6-month return minus QQQ's");
+  if (num(f.below_high_252)) line("Below 52-week high", pct(f.below_high_252), "last close vs 253-session high");
+  if (num(f.volatility_252)) line("252-day volatility", level(f.volatility_252), "annualized std of daily returns");
+  if (num(f.max_drawdown_252)) line("1-year max drawdown", pct(f.max_drawdown_252), "worst peak-to-trough drop over 253 sessions");
   table.append(body);
   return section("Financials", `Research snapshot, week of ${longDay(r.as_of)}`, table);
 }
@@ -1750,7 +1761,7 @@ function impliesBoxes(c) {
     ["margin", "Net margin", 0.01, 0.7, 0.005, (v) => level(v),
       `today ${level(start.margin)} (TTM)${hist ? ` · its median ${level(hist.median)} since ${monthYear(hist.from)}` : ""}${num(i.sectorStats && i.sectorStats.net_margin_median) ? ` · ${sector} median ${level(i.sectorStats.net_margin_median)}` : ""}`],
     ["cashYield", "Cash returned a year", 0, 0.1, 0.001, (v) => level(v),
-      cash ? `dividends + buybacks, fiscal year to ${longDay(cash.fy_end)}: ${level(start.cashYield)} of market value` : "none reported in the last 10-K"],
+      cash ? `${num(cash.buybacks) && num(cash.buybacks_net_sbc) ? "dividends + buybacks net of SBC" : "dividends + buybacks"}, fiscal year to ${longDay(cash.fy_end)}: ${level(start.cashYield)} of market value` : "none reported in the last 10-K"],
     ["requiredReturn", "Return you want a year", 0.04, 0.15, 0.005, (v) => level(v), "your choice; 8% is a common long-run equity figure"],
   ];
   const yearsBox = el("div", "tk-implies-years");
@@ -1841,8 +1852,13 @@ function impliesBoxes(c) {
     const latest = history[history.length - 1];
     math.append(el("p", "tk-note", `Revenue: trailing twelve months to ${longDay(latest[0])}, as first filed ${longDay(latest[1])} (SEC filings).`));
     if (cash) {
-      const paid = [["dividends", cash.dividends], ["buybacks", cash.buybacks]].map(([k, v]) => `${k} ${num(v) ? money(v) : "n/a"}`).join(" + ");
-      const line = el("p", "tk-note", `Cash returned: ${paid}, fiscal year to ${longDay(cash.fy_end)} · `);
+      const parts = [`dividends ${num(cash.dividends) ? money(cash.dividends) : "n/a"}`];
+      if (num(cash.buybacks) && num(cash.sbc) && num(cash.buybacks_net_sbc)) {
+        parts.push(`buybacks ${money(cash.buybacks)} − SBC ${money(cash.sbc)} = ${money(cash.buybacks_net_sbc)} net`);
+      } else {
+        parts.push(`buybacks ${num(cash.buybacks) ? money(cash.buybacks) : "n/a"}`);
+      }
+      const line = el("p", "tk-note", `Cash returned: ${parts.join(" + ")}, fiscal year to ${longDay(cash.fy_end)} · `);
       const url = secUrl(cash.url);
       if (url) line.append(link(`10-K, filed ${longDay(cash.filed)} ↗`, url, true));
       else line.append(el("span", "", "Filing link unavailable"));

@@ -83,6 +83,8 @@ const state = {
   // One-year price lines from ticker-volume.json, loaded when a panel opens.
   volume: null,
   volumeState: null,
+  // Margin cycle facts from price-implies.json (loaded in loadExtras).
+  implies: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -797,6 +799,39 @@ function trendLine(symbol) {
   return `Trend ${trendText(trend)} at the ${shortDay(state.trend.signal_date)} month-end close: ${trendDetail(trend)}.`;
 }
 
+function marginCycleOf(symbol) {
+  const implies = state.implies;
+  if (!implies || implies.schema !== "price-implies-1") return null;
+  if (state.desk?.as_of && implies.as_of !== state.desk.as_of) return null;
+  if (state.desk?.run_id && implies.desk_run_id !== state.desk.run_id) return null;
+  const m = implies.companies?.[symbol]?.margin_5y;
+  if (!m || m.far_from_median !== true || !Number.isFinite(m.latest) || !Number.isFinite(m.median)) return null;
+  return m;
+}
+
+function marginCycleLine(symbol) {
+  const m = marginCycleOf(symbol);
+  if (!m) return "";
+  const isPeak = m.median <= 0 || m.latest >= m.median;
+  const range = Number.isFinite(m.low) && Number.isFinite(m.high)
+    ? ` (5-year range ${(m.low * 100).toFixed(1)}% to ${(m.high * 100).toFixed(1)}%)`
+    : "";
+  const prompt = isPeak
+    ? "Check whether margins are at a cyclical peak before relying on valuation."
+    : "Margins sit well below their 5-year median.";
+  return `Margin cycle: trailing net margin is ${(m.latest * 100).toFixed(1)}% vs ${(m.median * 100).toFixed(1)}% median since ${day(m.from)}${range}. ${prompt}`;
+}
+
+function riskLine(symbol) {
+  const f = state.desk.companies[symbol]?.factors || {};
+  const parts = [];
+  if (Number.isFinite(f.volatility_252)) parts.push(`${(f.volatility_252 * 100).toFixed(1)}% annualized volatility`);
+  if (Number.isFinite(f.max_drawdown_252)) parts.push(`${(f.max_drawdown_252 * 100).toFixed(1)}% max drawdown`);
+  if (!parts.length) return "";
+  if (Number.isFinite(f.below_high_252)) parts.push(`${(f.below_high_252 * 100).toFixed(1)}% vs 52-week high`);
+  return `1-year price risk: ${parts.join(" · ")}.`;
+}
+
 function checkFirst(symbol) {
   const status = trustStatus(symbol);
   const reasons = state.desk.companies[symbol]?.trust?.reasons || [];
@@ -810,7 +845,13 @@ function checkFirst(symbol) {
   if (trend) {
     items.push(`<li title="In our Leg D test (2021–26), stocks with each rule up beat those with it down by about 3–3.6% over six months.">${escapeHtml(trend)}</li>`);
   }
+  const risk = riskLine(symbol);
+  if (risk) {
+    items.push(`<li title="Realized 252-session daily return volatility (annualized) and worst peak-to-trough drop over the last 253 sessions. A fact for position sizing; enters no rank or score.">${escapeHtml(risk)}</li>`);
+  }
   const notes = standoutNotes(symbol);
+  const cycle = marginCycleLine(symbol);
+  if (cycle) notes.unshift(cycle);
   for (const note of notes) items.push(`<li class="qv-steer">${escapeHtml(note)}</li>`);
   const short = shortLine(symbol);
   if (short) {
@@ -884,9 +925,15 @@ function panelHeader(symbol, company) {
     : company.profitable === true
       ? `<span class="qv-chip">Profitable${Number.isFinite(income) ? ` · TTM ${money(income)}` : ""}</span>`
       : "";
+  const m = marginCycleOf(symbol);
+  const cycleChip = m
+    ? (m.median <= 0 || m.latest >= m.median
+      ? `<span class="qv-chip peak" title="Trailing net margin is far above its 5-year median (or median is ≤0). Cyclical peaks can make valuation look artificially cheap.">Peak margin · ${(m.latest * 100).toFixed(1)}% vs ${(m.median * 100).toFixed(1)}% med</span>`
+      : `<span class="qv-chip" title="Trailing net margin is far below its 5-year median.">Depressed margin · ${(m.latest * 100).toFixed(1)}% vs ${(m.median * 100).toFixed(1)}% med</span>`)
+    : "";
   return `<p class="qv-sub">${escapeHtml([where, quote].filter(Boolean).join(" · "))}</p>
     <div class="qv-actions">
-      <span class="qv-chip trust-${status}" title="Statement status. It does not certify coverage, freshness, or valuation.">${trustLabel(status)}</span>${earns}
+      <span class="qv-chip trust-${status}" title="Statement status. It does not certify coverage, freshness, or valuation.">${trustLabel(status)}</span>${earns}${cycleChip}
       <span class="qv-spacer"></span>${starHtml(symbol, company.name)}
       <a class="qv-ticker" href="./ticker.html?t=${encodeURIComponent(symbol)}">Full ticker page →</a>
     </div>`;
@@ -1070,16 +1117,18 @@ async function loadExtras() {
       return null;
     }
   };
-  const [earnings, shorts, trend, listCheck] = await Promise.all([
+  const [earnings, shorts, trend, listCheck, implies] = await Promise.all([
     load("earnings-calendar.json", (data) => data.schema === "earnings-calendar-1"),
     load("short-interest.json", (data) => data.schema === "short-interest-1"),
     load("trend-rules.json", (data) => data.schema === "trend-rules-2"),
     load("list-check.json", (data) => data.schema === "list-check-1"),
+    load("price-implies.json", (data) => data.schema === "price-implies-1" && data.as_of === state.desk?.as_of && data.desk_run_id === state.desk?.run_id),
   ]);
   state.listCheck = listCheck;
   state.earnings = earnings;
   state.shorts = shorts;
   state.trend = trend;
+  state.implies = implies;
   render();
   if ($("company-evidence").open && state.panelSymbol) showEvidence(state.panelSymbol);
 }
@@ -1168,6 +1217,13 @@ function lossmakingChip(symbol) {
     : "";
 }
 
+function peakMarginChip(symbol) {
+  const m = marginCycleOf(symbol);
+  if (!m || !(m.median <= 0 || m.latest >= m.median)) return "";
+  const tip = `Trailing net margin ${(m.latest * 100).toFixed(1)}% vs ${(m.median * 100).toFixed(1)}% 5-year median. Check for cyclical peak before relying on valuation.`;
+  return `<span class="flag peak" title="${escapeHtml(tip)}">Peak margin</span>`;
+}
+
 // Watchlist star (watchlist.js); empty if that script is missing.
 const starHtml = (symbol, name) => (globalThis.TLWatch ? globalThis.TLWatch.html(symbol, name) : "");
 
@@ -1177,7 +1233,7 @@ function companyCell(symbol) {
   const chip =
     (status !== "complete"
       ? `<span class="trust ${status}">${trustLabel(status)}</span>`
-      : "") + lossmakingChip(symbol);
+      : "") + lossmakingChip(symbol) + peakMarginChip(symbol);
   return `<td><div class="tl-with-star">${starHtml(symbol, company?.name)}<button type="button" class="company-button" data-company="${escapeHtml(symbol)}" aria-label="Inspect evidence for ${escapeHtml(symbol)}"><span class="ticker">${escapeHtml(symbol)}${chip}</span><span class="name">${escapeHtml(company?.name ?? symbol)}</span></button></div></td>`;
 }
 

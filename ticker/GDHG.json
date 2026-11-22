@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"3ff65c817a6099a2","symbol":"GDHG","data":{"volume":{"rows":{"GDHG":[233002,233.17,55.81,0.459,0.459,-0.8545,-0.8857]}},"funds":{"rows":{"GDHG":[null,4,null,null,null,null,null,30820,34827,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"6002208073253e12","symbol":"GDHG","data":{"volume":{"rows":{"GDHG":[233002,233.17,55.81,0.459,0.459,-0.8545,-0.8857]}},"funds":{"rows":{"GDHG":[null,4,null,null,null,null,null,30820,34827,false,0,[],[]]},"manager_names":{}}}}
