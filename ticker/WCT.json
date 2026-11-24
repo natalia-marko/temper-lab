@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"f1da12ab2e2d59d5","symbol":"WCT","data":{"volume":{"rows":{"WCT":[69379,0.98,14.98,0.561,0.856,-0.1608,-0.2857]}}}}
+{"schema":"ticker-shards-1","build_id":"d3e1c7146ba28ce4","symbol":"WCT","data":{"volume":{"rows":{"WCT":[69379,0.98,14.98,0.561,0.856,-0.1608,-0.2857]}},"funds":{"rows":{"WCT":[null,5,null,null,null,null,null,69046,558553,false,0,[],[]]},"manager_names":{}}}}

@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"f1da12ab2e2d59d5","symbol":"SGRX","data":{"volume":{"rows":{"SGRX":[3490086,0.03,2.34,0.165,0.96,4.5897,3.2412]}}}}
+{"schema":"ticker-shards-1","build_id":"d3e1c7146ba28ce4","symbol":"SGRX","data":{"volume":{"rows":{"SGRX":[3490086,0.03,2.34,0.165,0.96,4.5897,3.2412]}},"funds":{"rows":{"SGRX":[null,5,null,null,null,null,null,25434,40445,false,0,[],[]]},"manager_names":{}}}}

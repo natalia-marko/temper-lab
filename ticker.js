@@ -396,7 +396,7 @@ function fundsOf(funds, symbol) {
   const row = funds && funds.rows && funds.rows[symbol];
   if (!funds || !funds.rows) return null;
   const base = { quarter: funds.quarter, previous: funds.previous, deadline: funds.deadline,
-    continuing: (funds.managers || {}).continuing };
+    filings_through: funds.filings_through, continuing: (funds.managers || {}).continuing };
   if (!row) return { ...base, linked: false };
   const f = Object.fromEntries((funds.fields || []).map((name, i) => [name, row[i]]));
   const names = funds.manager_names || {};
@@ -2074,7 +2074,8 @@ function stakesBox(c) {
 function fundsBox(c) {
   const f = c.funds;
   if (!f) return section("Funds (13F)", "", missing("ticker-funds.json") || note("Not built yet."));
-  const when = `quarter to ${longDay(f.quarter)}, filed by ${longDay(f.deadline)}`;
+  const through = f.filings_through ? ` · EDGAR filings through ${longDay(f.filings_through)}` : "";
+  const when = `quarter to ${longDay(f.quarter)}, filing deadline ${longDay(f.deadline)}${through}`;
   if (!f.linked) return section("Funds (13F)", when, note(`${c.symbol} is not linked to a security in this quarter's 13F filings.`));
   const changed = num(f.shares_prev) && f.shares_prev > 0 ? `${pct(f.shares_now / f.shares_prev - 1)} vs ${day(f.previous)}${f.split_adjusted ? " (split-adjusted)" : ""}` : "";
   const parts = [facts([

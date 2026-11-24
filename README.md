@@ -143,12 +143,13 @@ reads top-down: header (next results date, list ranks against last week), a summ
 per section, then price and trading, the business (Research stocks only; price / earnings and EV / operating
 income are the only ratios worked out on the page, from one Research record, and not shown for a loss), and
 who owns and trades it; method notes sit in "About the data". Fund holdings come from `ticker-funds.json`, written
-by `tools/build_ticker_funds.py`, which the Saturday job runs every week: it does nothing until SEC posts a newer
-13F data set, then writes the file and rebuilds the Ticker page files (3 Nov 2026). Per stock, the
+by `tools/build_ticker_funds.py`, which the Saturday job runs every week. After the filing deadline it reads
+individual EDGAR filings while the SEC bulk data set is pending, then rebuilds from the bulk ZIP when available.
+The page shows the filing cutoff when it uses individual EDGAR filings. Per stock, the
 13F managers that filed for both of the last two quarters — how many hold it, shares and value, how many
 are new, added, cut or sold out, and the five largest increases and decreases by shares. Same CUSIP links
-as the 13F Gate 2 research; the latest restatement in each data set; managers whose table in SEC's data
-set is incomplete (fewer rows than 90% of the entries the filing declares) are not compared; positions
+as the 13F Gate 2 research. The builder uses the latest available restatement and excludes managers whose table
+contains fewer than 90% of the entries the filing declares. Positions
 whose reported value does not match their shares, or whose shares were restated for a split after the
 quarter, are left out and counted. Facts, not a buy or sell call (Gate 2 found no return edge in holder counts). Since 3 Nov 2026
 the Ticker page does not download those five all-company files (`ticker-volume.json`, `ticker-funds.json`,
