@@ -27,7 +27,7 @@
 
   const state = {
     data: null, list: "shortlist", view: "periods", measure: "excess",
-    index: null, periodIndex: null, filter: "active", allBatches: false,
+    index: null, periodIndex: null, holdingsSort: "return", filter: "active", allBatches: false,
     show: { shortlist: true, growth: true, challenger: true, monthend: false },
   };
   let cursor = null;
@@ -35,7 +35,15 @@
   const $ = (id) => document.getElementById(id);
   const utc = (iso) => { const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
   const dayYear = (iso) => { if (!iso) return "—"; const d = utc(iso); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-  const monthYr = (iso) => { if (!iso) return "—"; const d = utc(iso); return `${MONTHS[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`; };
+  const spanLabel = (start, exit) => {
+    if (!start) return "—";
+    const s = utc(start);
+    const sm = MONTHS[s.getUTCMonth()], sy = String(s.getUTCFullYear()).slice(2);
+    if (!exit) return `${sm} '${sy}`;
+    const e = utc(exit);
+    const em = MONTHS[e.getUTCMonth()], ey = String(e.getUTCFullYear()).slice(2);
+    return sy === ey ? `${sm}–${em} '${ey}` : `${sm} '${sy}–${em} '${ey}`;
+  };
   const signed = (value, digits = 1) => {
     if (value === null || value === undefined || !Number.isFinite(value)) return "—";
     const text = Math.abs(value).toFixed(digits);
@@ -307,7 +315,7 @@
         const ty = val >= 0 ? top - 5 : top + h + 12;
         g.appendChild(svgEl("text", { x: xPos + bw / 2, y: ty, "text-anchor": "middle", class: "bar-val" }, signed(val, 1)));
       });
-      g.appendChild(svgEl("text", { x: cx, y: 292, "text-anchor": "middle" }, monthYr(p.start)));
+      g.appendChild(svgEl("text", { x: cx, y: 292, "text-anchor": "middle", class: "axis-span" }, spanLabel(p.start, p.exit)));
       const choose = () => {
         state.periodIndex = i;
         groups.forEach((node, idx) => node.setAttribute("class", `bar-group${idx === i ? " selected" : ""}`));
@@ -324,14 +332,64 @@
   function renderPeriodReadout(periods, keys) {
     const p = periods[state.periodIndex];
     if (!p) return;
-    const lines = [el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)} (QQQ ${percent(p.qqq_return)})`)];
+    const holdings = p.holdings;
+    if (!holdings) {
+      const lines = [el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)} (QQQ ${percent(p.qqq_return)})`)];
+      keys.forEach((key) => {
+        const m = SERIES_META[key];
+        const line = el("span");
+        line.append(dot(m.kind), document.createTextNode(`${m.label}: ${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])} vs QQQ)`));
+        lines.push(line);
+      });
+      $("st-readout").replaceChildren(...lines);
+      return;
+    }
+
+    const head = el("div", "st-readout-head");
+    const titleWrap = el("div", "st-readout-title");
+    titleWrap.append(
+      el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)}`),
+      el("span", "st-readout-meta", ` · 10 equal-weight stocks each · QQQ ${percent(p.qqq_return)}`),
+    );
+    const sortWrap = el("div", "st-sort");
+    [["return", "Best → Worst"], ["rank", "Rank #1–10"]].forEach(([mode, label]) => {
+      const btn = el("button", "", label);
+      btn.setAttribute("type", "button");
+      btn.setAttribute("aria-pressed", String(state.holdingsSort === mode));
+      btn.addEventListener("click", () => { state.holdingsSort = mode; renderPeriodReadout(periods, keys); });
+      sortWrap.appendChild(btn);
+    });
+    head.append(titleWrap, sortWrap);
+
+    const grid = el("div", "st-holdings-grid");
     keys.forEach((key) => {
       const m = SERIES_META[key];
-      const line = el("span");
-      line.append(dot(m.kind), document.createTextNode(`${m.label}: ${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])} vs QQQ)`));
-      lines.push(line);
+      const raw = (holdings[key] || []).map((item, idx) => ({ ...item, rank: idx + 1 }));
+      const items = state.holdingsSort === "return"
+        ? [...raw].sort((a, b) => (b.r ?? -999) - (a.r ?? -999))
+        : raw;
+      const upCount = raw.filter((x) => x.r !== null && x.r > 0).length;
+
+      const card = el("div", "st-holding-card");
+      const chead = el("div", "st-holding-head");
+      const left = el("span", "st-holding-name");
+      left.append(dot(m.kind), document.createTextNode(m.label));
+      const right = el("span", "st-holding-sum", `${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])}) · ${upCount}/${raw.length} up`);
+      chead.append(left, right);
+
+      const pills = el("div", "st-pill-grid");
+      items.forEach((item) => {
+        const up = item.r !== null && item.r >= 0;
+        const a = el("a", `st-stock-pill ${item.r === null ? "flat" : up ? "up" : "down"}`);
+        a.setAttribute("href", `./ticker.html?t=${encodeURIComponent(item.s)}`);
+        a.setAttribute("title", `#${item.rank} ${item.s}: ${percent(item.r)} over 6 months`);
+        a.append(el("strong", "", item.s), el("span", "", item.r === null ? "—" : `${signed(item.r, 0)}%`));
+        pills.appendChild(a);
+      });
+      card.append(chead, pills);
+      grid.appendChild(card);
     });
-    $("st-readout").replaceChildren(...lines);
+    $("st-readout").replaceChildren(head, grid);
   }
 
   function drawRangeChart(backtest) {
