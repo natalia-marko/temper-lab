@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"d3e1c7146ba28ce4","symbol":"MNDR","data":{"volume":{"rows":{"MNDR":[3489149,0.03,0.15,0.747,0.863,0.0042,0.0997]}},"funds":{"rows":{"MNDR":[null,5,null,null,null,null,null,10180,13573,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"9ea83c10afb51861","symbol":"MNDR","data":{"volume":{"rows":{"MNDR":[3489149,0.03,0.15,0.747,0.863,0.0042,0.0997]}},"funds":{"rows":{"MNDR":[null,5,null,null,null,null,null,10180,13573,false,0,[],[]]},"manager_names":{}}}}

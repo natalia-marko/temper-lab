@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"d3e1c7146ba28ce4","symbol":"CHSN","data":{"volume":{"rows":{"CHSN":[114167,1591.77,498.73,0.0,0.142,-0.8812,-0.9245]}},"funds":{"rows":{"CHSN":[null,8,null,null,null,null,null,82271,88030,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"9ea83c10afb51861","symbol":"CHSN","data":{"volume":{"rows":{"CHSN":[114167,1591.77,498.73,0.0,0.142,-0.8812,-0.9245]}},"funds":{"rows":{"CHSN":[null,8,null,null,null,null,null,82271,88030,false,0,[],[]]},"manager_names":{}}}}
