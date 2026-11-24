@@ -1,6 +1,6 @@
-// Screener tests page: every rule written down in the forward tests, the Shortlist and Growth
-// rule-versus-challenger status, and the backtest views (8 independent periods, crash & range,
-// and all 193 weeks) — from share/screener-tests.json (tools/build_screener_tests.py, Saturday).
+// Screener tests page: 1. Unified backtest comparison (8 independent periods, crash & range,
+// all 193 weeks), 2. Live forward tests (Shortlist / Growth batches & challengers), and
+// 3. Test register — from share/screener-tests.json (tools/build_screener_tests.py, Saturday).
 // Numbers come from the builder; this file only formats them and draws the charts.
 // Values are written as text, never as HTML.
 (function () {
@@ -22,11 +22,11 @@
   };
   const BATCHES_SHOWN = 6;
   const NEEDED = 3;
-  const BOX = { width: 1000, height: 300, left: 54, right: 988, top: 18, bottom: 268 };
+  const BOX = { width: 1000, height: 310, left: 54, right: 988, top: 22, bottom: 268 };
   const TICK = 20;
 
   const state = {
-    data: null, list: "shortlist", view: "periods", pair: "challenger", measure: "excess",
+    data: null, list: "shortlist", view: "periods", measure: "excess",
     index: null, periodIndex: null, filter: "active", allBatches: false,
     show: { shortlist: true, growth: true, challenger: true, monthend: false },
   };
@@ -44,6 +44,7 @@
   const points = (value) => `${signed(value)} pts`;
   const percent = (value) => `${signed(value)}%`;
   const share = (part, whole) => `${part} of ${whole} (${Math.round((100 * part) / whole)}%)`;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -157,146 +158,19 @@
     return picked;
   }
 
-  // ---- One list: clock, backtest, rule vs challenger, batches, picks ----------------------------
-  function renderList() {
-    const data = state.data, key = state.list, list = data.lists[key], names = LISTS[key];
-    ["shortlist", "growth"].forEach((k) => {
-      const tab = $(`st-tab-${k}`);
-      tab.setAttribute("aria-selected", String(k === key));
-      tab.className = k === key ? "on" : "";
-    });
-    $("st-list-title").textContent = names.rule;
-    $("st-list-what").textContent = list.what;
-    const oldest = list.batches[list.batches.length - 1];
-    const backtest = data.backtest;
-    const hasGrowthBt = Boolean(backtest.available && backtest.growth_available);
-    $("st-clock-before").textContent = !backtest.available
-      ? `Backtest withheld: ${backtest.reason}`
-      : key === "growth" && !hasGrowthBt
-        ? "No backtest report for Growth yet."
-        : `Backtest of ${backtest.starts.length} Friday starts (${periodsOf(backtest).length} independent 6M periods), ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[backtest.starts.length - 1])}.`;
-    $("st-clock-written").textContent = dayYear(list.registered_at);
-    $("st-clock-after").textContent = oldest
-      ? `${list.batches.length} weekly batches since the list of ${dayYear(oldest.as_of)}. First 6-month result ${dayYear(oldest.exit_6m)}.`
-      : "No weekly batches yet; the first batch is recorded at the next weekly run.";
-
-    const sw = list.switch;
-    const board = [["Rule on the site", names.rule], ["Challenger, on paper", names.challenger]];
-    if (sw) {
-      board.push(["Switch rule written down", dayYear(sw.rule_written_at)], ["Windows counted", `${sw.counted} of ${NEEDED}`]);
-      if (sw.counted) board.push(["Challenger wins", `${sw.challenger_wins} of ${sw.counted}`]);
-      board.push(sw.decision ? ["Decision", sw.decision === "switch" ? `Switch to ${names.challenger}` : `Keep ${names.rule}`]
-        : ["Earliest decision", dayYear(sw.earliest_decision)]);
-    } else board.push(["Windows", "No paired batches yet"]);
-    rows($("st-board"), board);
-    $("st-windows").replaceChildren(...(sw ? sw.windows : []).map((w, i) => el("li", "", windowText(w, i, names))));
-    const unit = sw && sw.month_end ? "month-end" : "week";
-    $("st-switch").textContent = sw ? `Written rule: switch to ${names.challenger} only if it wins at least 2 of the first 3 `
-      + `${sw.month_end ? "month-end " : ""}windows, each a pair of batches from the same ${unit}: ahead of ${names.rule} versus QQQ, `
-      + `and still ahead after dropping its single best stock. No other reason to switch.` : "";
-
-    $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
-    const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
-    $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
-    $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
-      ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
-      : finished
-        ? "The first batch has finished; a bar written now could be fitted to its result."
-        : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
-
-    renderBacktest();
-    renderBatches(list, names);
-    renderPicks(list, names);
-  }
-
-  function windowText(w, i, names) {
-    const head = `Window ${i + 1} · list of ${dayYear(w.freeze)} · ends ${dayYear(w.exit)}: `;
-    if (w.status === "open") return `${head}open`;
-    if (w.status === "awaiting_observation") return `${head}ended; waiting for the Saturday observation`;
-    if (w.status === "skipped") return `${head}skipped, a price is missing on one side (not counted)`;
-    return `${head}${names.rule} ${points(100 * w.default_excess)} vs QQQ; ${names.challenger} ${points(100 * w.challenger_excess)}`
-      + ` (${points(100 * w.challenger_without_best)} without its best stock): ${w.challenger_wins ? "challenger wins" : "rule holds"}`;
-  }
-
-  function batchCell(row, horizon, due, names) {
-    const td = el("td", "st-result");
-    const lines = [["rule", names.rule], ["challenger", names.challenger]]
-      .map(([side, name]) => [name, row[side] ? resultText(row[side][horizon]) : null])
-      .filter(([, text]) => text !== null);
-    if (!lines.length) td.appendChild(el("span", "st-due", `Due ${dayYear(due)}`));
-    lines.forEach(([name, text]) => td.appendChild(el("span", "st-result-line", `${name}: ${text}`)));
-    return td;
-  }
-
-  function renderBatches(list, names) {
-    if (!list.batches.length) {
-      $("st-batches").replaceChildren(el("p", "st-small", "No weekly batches yet."));
-      $("st-batches-more").hidden = true;
-      return;
-    }
-    const shown = state.allBatches ? list.batches : list.batches.slice(0, BATCHES_SHOWN);
-    const body = shown.map((row) => {
-      const first = el("td");
-      first.appendChild(document.createTextNode(dayYear(row.as_of)));
-      if (row.month_end) first.appendChild(el("span", "st-tag", "month-end"));
-      return [first, cell(dayYear(row.entry)), batchCell(row, "6m", row.exit_6m, names), batchCell(row, "12m", row.exit_12m, names)];
-    });
-    const t = table(["List of", "Bought (paper)", "After 6 months", "After 12 months"], body);
-    t.className = "st-batches";
-    $("st-batches").replaceChildren(t);
-    const more = $("st-batches-more");
-    more.hidden = list.batches.length <= BATCHES_SHOWN;
-    more.textContent = state.allBatches ? "Show fewer" : `Show all ${list.batches.length} batches`;
-  }
-
-  function pickCard(title, kind, symbols, shared, asOf) {
-    const card = el("div", "st-pick");
-    const h = el("h4");
-    h.append(dot(kind), document.createTextNode(title));
-    card.append(h, el("p", "st-small", `Month-end list of ${dayYear(asOf)}, in rank order`));
-    if (!symbols) {
-      card.appendChild(el("p", "st-small", "Not published: a paper challenger’s names stay off the site."));
-      return card;
-    }
-    const ol = el("ol");
-    symbols.forEach((symbol) => ol.appendChild(el("li", shared.has(symbol) ? "both" : "", symbol)));
-    card.appendChild(ol);
-    return card;
-  }
-
-  function renderPicks(list, names) {
-    const picks = list.picks;
-    if (!picks) {
-      $("st-picks").replaceChildren(el("p", "st-small", "No month-end batch yet."));
-      $("st-shared").textContent = "";
-      return;
-    }
-    const shared = new Set(picks.challenger ? picks.rule.filter((s) => picks.challenger.includes(s)) : []);
-    const primaryKind = state.list === "growth" ? "gr" : "sl";
-    $("st-picks").replaceChildren(
-      pickCard(`${names.rule} (rule)`, primaryKind, picks.rule, shared, picks.as_of),
-      pickCard(`${names.challenger} (challenger)`, "ch", picks.challenger, shared, picks.as_of));
-    $("st-shared").textContent = picks.shared === null ? ""
-      : `${picks.shared} of 10 picks are the same, so the two can only differ through the other ${10 - picks.shared} stocks each.`
-        + (picks.challenger ? " Names in both are outlined." : "");
-  }
-
-  // ---- Backtest (Shortlist + Growth) ------------------------------------------------------------
-  function activePairKeys(backtest) {
-    const hasGrowth = Boolean(backtest.growth_available);
-    if (state.list === "growth" && hasGrowth) return ["growth", "shortlist"];
-    if (state.pair === "growth" && hasGrowth) return ["shortlist", "growth"];
-    return ["shortlist", "challenger"];
+  // ---- Section 1: Unified Backtest --------------------------------------------------------------
+  function periodSeriesKeys(backtest) {
+    return backtest.growth_available ? ["shortlist", "growth", "challenger"] : ["shortlist", "challenger"];
   }
 
   function renderVerdict(backtest) {
     const st = backtest.stats;
     const hasGrowth = Boolean(backtest.growth_available && st.growth_return && st.growth_excess);
+    const periods = periodsOf(backtest);
     const items = [];
     const pushCard = (key, retStat, exStat, sub) => {
       const meta = SERIES_META[key];
-      const active = key === state.list;
-      const card = el("div", `st-verdict-card${active ? " active" : ""}`);
+      const card = el("div", "st-verdict-card");
       const head = el("div", "st-verdict-head");
       const title = el("span");
       title.append(dot(meta.kind), document.createTextNode(meta.label));
@@ -312,44 +186,35 @@
       card.append(head, main, risk);
       items.push(card);
     };
-    const periods = periodsOf(backtest);
-    if (state.list === "growth" && hasGrowth) {
+    const slBeat = periods.filter((p) => p.shortlist_excess > 0).length;
+    const chWins = periods.filter((p) => p.challenger_excess > p.shortlist_excess).length;
+    pushCard("shortlist", st.shortlist_return, st.shortlist_excess, `${slBeat}/${periods.length} > QQQ`);
+    if (hasGrowth) {
       const grBeat = periods.filter((p) => p.growth_excess > 0).length;
-      const slBeat = periods.filter((p) => p.shortlist_excess > 0).length;
-      pushCard("growth", st.growth_return, st.growth_excess, `${grBeat}/${periods.length} periods > QQQ`);
-      pushCard("shortlist", st.shortlist_return, st.shortlist_excess, `${slBeat}/${periods.length} periods > QQQ`);
-      pushCard("qqq", st.qqq_return, null, `${backtest.starts.length} Fridays`);
-    } else {
-      const slWins = periods.filter((p) => p.shortlist_excess >= p.challenger_excess).length;
-      const chWins = periods.length - slWins;
-      pushCard("shortlist", st.shortlist_return, st.shortlist_excess, `${slWins}/${periods.length} vs 60/40`);
-      if (hasGrowth) {
-        const grBeat = periods.filter((p) => p.growth_excess > 0).length;
-        pushCard("growth", st.growth_return, st.growth_excess, `${grBeat}/${periods.length} > QQQ`);
-      }
-      pushCard("challenger", st.challenger_return, st.challenger_excess, `${chWins}/${periods.length} vs Shortlist`);
-      pushCard("qqq", st.qqq_return, null, `${backtest.starts.length} Fridays`);
+      pushCard("growth", st.growth_return, st.growth_excess, `${grBeat}/${periods.length} > QQQ`);
     }
+    pushCard("challenger", st.challenger_return, st.challenger_excess, `${chWins}/${periods.length} vs Shortlist`);
+    pushCard("qqq", st.qqq_return, null, `${backtest.starts.length} Fridays`);
     $("st-verdict").replaceChildren(...items);
   }
 
   function renderBacktest() {
     const backtest = state.data.backtest;
     const empty = $("st-backtest-empty");
-    const hasGrowth = Boolean(backtest.available && backtest.growth_available);
-    if (!backtest.available || (state.list === "growth" && !hasGrowth)) {
-      const title = !backtest.available ? "Backtest withheld" : "No backtest report for Growth yet";
-      const note = !backtest.available ? backtest.reason : "This space stays empty rather than borrowing the Shortlist’s numbers.";
-      empty.replaceChildren(el("strong", "", title), document.createTextNode(note));
+    if (!backtest.available) {
+      $("st-clock-before").textContent = `Backtest withheld: ${backtest.reason}`;
+      empty.replaceChildren(el("strong", "", "Backtest withheld"), document.createTextNode(backtest.reason));
       empty.hidden = false;
       $("st-backtest").hidden = true;
       return;
     }
+    const n = backtest.starts.length;
+    const periods = periodsOf(backtest);
+    const hasGrowth = Boolean(backtest.growth_available);
+    $("st-clock-before").textContent = `${n} Friday starts (${periods.length} independent 6-month holds), ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[n - 1])}. Shown once — never repeated.`;
     empty.hidden = true;
     $("st-backtest").hidden = false;
 
-    const n = backtest.starts.length;
-    const periods = periodsOf(backtest);
     if (state.index === null || state.index >= n) state.index = n - 1;
     if (state.periodIndex === null || state.periodIndex >= periods.length) state.periodIndex = periods.length - 1;
 
@@ -357,11 +222,6 @@
     $("st-view-weekly").textContent = `All ${n} weeks`;
     [["st-view-periods", "periods"], ["st-view-range", "range"], ["st-view-weekly", "weekly"]].forEach(([id, v]) =>
       $(id).setAttribute("aria-pressed", String(state.view === v)));
-
-    const showPairSwitch = state.view === "periods" && state.list === "shortlist" && hasGrowth;
-    $("st-pair-wrap").hidden = !showPairSwitch;
-    $("st-pair-challenger").setAttribute("aria-pressed", String(state.pair === "challenger"));
-    $("st-pair-growth").setAttribute("aria-pressed", String(state.pair === "growth"));
 
     const isWeekly = state.view === "weekly";
     $("st-weekly-controls").hidden = !isWeekly;
@@ -382,10 +242,11 @@
     const chartBox = $("st-chart");
     chartBox.className = `st-chart ${state.view}`;
     if (state.view === "periods") {
-      const [keyA, keyB] = activePairKeys(backtest);
-      $("st-chart-legend").textContent = `${periods.length} non-overlapping 6-month holds: bars show points ahead of (+) or behind (−) QQQ (${SERIES_META[keyA].label} vs ${SERIES_META[keyB].label}). Hover or click any period.`;
-      drawPeriodsChart(backtest, periods, keyA, keyB);
-      renderPeriodReadout(periods, keyA, keyB);
+      const keys = periodSeriesKeys(backtest);
+      const names = keys.map((k) => SERIES_META[k].label).join(", ");
+      $("st-chart-legend").textContent = `${periods.length} non-overlapping 6-month holds: bars show points ahead of (+) or behind (−) QQQ (${names}). Hover or click any period.`;
+      drawPeriodsChart(periods, keys);
+      renderPeriodReadout(periods, keys);
     } else if (state.view === "range") {
       $("st-chart-legend").textContent = `Full 6-month return spread across all ${n} Friday starts: Worst (red) ← [10th pct … Median] → Best. Shows crash risk beside typical upside.`;
       drawRangeChart(backtest);
@@ -394,7 +255,7 @@
       const legend = [];
       if (state.measure === "excess") legend.push("Each point is one Friday start: points ahead of (+) or behind (−) QQQ over the next 6 months; the dark line is level with QQQ.");
       else legend.push("Each point is one Friday start: the 6-month return; QQQ is the dashed line.");
-      if (state.show.monthend) legend.push("Blue dots: month-end starts on the active list, the dates a monthly decision would use.");
+      if (state.show.monthend) legend.push("Blue dots: month-end starts on the Shortlist line, the dates a monthly decision would use.");
       $("st-chart-legend").textContent = legend.join(" ");
       drawWeeklyChart(backtest);
       renderWeeklyReadout(backtest);
@@ -406,43 +267,51 @@
       + `each window is held ${backtest.horizon_sessions} trading days; ${backtest.basis}.`;
   }
 
-  function drawPeriodsChart(backtest, periods, keyA, keyB) {
+  function drawPeriodsChart(periods, keys) {
     cursor = null;
-    const vals = periods.flatMap((p) => [p[`${keyA}_excess`], p[`${keyB}_excess`]]);
-    const [low, high] = niceRange(vals);
-    const L = 54, R = 986, T = 24, B = 256;
+    const vals = periods.flatMap((p) => keys.map((k) => p[`${k}_excess`]));
+    const [rawLow, rawHigh] = niceRange(vals);
+    // Add vertical headroom/footroom so labels above tall bars and below negative bars never clip
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    const low = minVal < 0 ? Math.min(rawLow, Math.floor((minVal - 10) / 10) * 10) : rawLow;
+    const high = Math.max(rawHigh, Math.ceil((maxVal + 8) / 10) * 10);
+    const L = 54, R = 986, T = 24, B = 252;
     const y = (v) => T + ((high - v) * (B - T)) / Math.max(1, high - low);
     const y0 = y(0);
     const svg = svgEl("svg", {
       viewBox: `0 0 ${BOX.width} ${BOX.height}`, role: "img",
-      "aria-label": `${periods.length} independent 6-month periods comparing ${SERIES_META[keyA].label} and ${SERIES_META[keyB].label} versus QQQ.`,
+      "aria-label": `${periods.length} independent 6-month periods comparing ${keys.map((k) => SERIES_META[k].label).join(", ")} versus QQQ.`,
     });
-    for (let v = low; v <= high; v += TICK) {
+    for (let v = rawLow; v <= rawHigh; v += TICK) {
       svg.appendChild(svgEl("line", { x1: L, x2: R, y1: y(v), y2: y(v), class: v === 0 ? "zero" : "grid" }));
       svg.appendChild(svgEl("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, v === 0 ? "QQQ 0" : signed(v, 0)));
     }
     const slot = (R - L) / Math.max(1, periods.length);
-    const bw = Math.min(34, Math.max(16, Math.floor(slot * 0.28)));
-    const gap = 6;
+    const kCount = keys.length;
+    const gap = kCount >= 3 ? 5 : 6;
+    const bw = Math.min(kCount >= 3 ? 25 : 32, Math.max(14, Math.floor((slot - 24 - gap * (kCount - 1)) / kCount)));
+    const totalW = kCount * bw + (kCount - 1) * gap;
     const groups = [];
     periods.forEach((p, i) => {
       const cx = L + slot * (i + 0.5);
+      const startX = cx - totalW / 2;
       const g = svgEl("g", { class: `bar-group${i === state.periodIndex ? " selected" : ""}` });
       g.appendChild(svgEl("rect", { x: L + slot * i + 4, y: T - 6, width: slot - 8, height: B - T + 36, rx: 8, class: "bar-hit" }));
-      const addBar = (val, xPos, fill) => {
+      keys.forEach((key, idx) => {
+        const val = p[`${key}_excess`];
+        const xPos = startX + idx * (bw + gap);
         const top = val >= 0 ? y(val) : y0;
         const h = Math.max(2.5, Math.abs(y(val) - y0));
-        g.appendChild(svgEl("rect", { x: xPos, y: top, width: bw, height: h, rx: 3, fill }));
-        const ty = val >= 0 ? top - 6 : top + h + 13;
+        g.appendChild(svgEl("rect", { x: xPos, y: top, width: bw, height: h, rx: 3, fill: SERIES_META[key].color }));
+        const ty = val >= 0 ? top - 5 : top + h + 12;
         g.appendChild(svgEl("text", { x: xPos + bw / 2, y: ty, "text-anchor": "middle", class: "bar-val" }, signed(val, 1)));
-      };
-      addBar(p[`${keyA}_excess`], cx - bw - gap / 2, SERIES_META[keyA].color);
-      addBar(p[`${keyB}_excess`], cx + gap / 2, SERIES_META[keyB].color);
-      g.appendChild(svgEl("text", { x: cx, y: B + 20, "text-anchor": "middle" }, monthYr(p.start)));
+      });
+      g.appendChild(svgEl("text", { x: cx, y: 292, "text-anchor": "middle" }, monthYr(p.start)));
       const choose = () => {
         state.periodIndex = i;
         groups.forEach((node, idx) => node.setAttribute("class", `bar-group${idx === i ? " selected" : ""}`));
-        renderPeriodReadout(periods, keyA, keyB);
+        renderPeriodReadout(periods, keys);
       };
       g.addEventListener("pointerenter", choose);
       g.addEventListener("click", choose);
@@ -452,18 +321,16 @@
     $("st-chart").replaceChildren(svg);
   }
 
-  function renderPeriodReadout(periods, keyA, keyB) {
+  function renderPeriodReadout(periods, keys) {
     const p = periods[state.periodIndex];
     if (!p) return;
     const lines = [el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)} (QQQ ${percent(p.qqq_return)})`)];
-    const add = (key) => {
+    keys.forEach((key) => {
       const m = SERIES_META[key];
       const line = el("span");
       line.append(dot(m.kind), document.createTextNode(`${m.label}: ${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])} vs QQQ)`));
       lines.push(line);
-    };
-    add(keyA);
-    add(keyB);
+    });
     $("st-readout").replaceChildren(...lines);
   }
 
@@ -554,8 +421,7 @@
     if (state.show.shortlist) svg.appendChild(svgEl("path", { d: path(series.shortlist), class: "line sl" }));
     if (state.show.growth && series.growth) svg.appendChild(svgEl("path", { d: path(series.growth), class: "line gr" }));
     if (state.show.challenger) svg.appendChild(svgEl("path", { d: path(series.challenger), class: "line ch" }));
-    const dotSeries = state.list === "growth" && series.growth ? series.growth : series.shortlist;
-    if (state.show.monthend) backtest.month_end.forEach((i) => svg.appendChild(svgEl("circle", { cx: x(i), cy: y(dotSeries[i]), r: 3.6, class: "me" })));
+    if (state.show.monthend) backtest.month_end.forEach((i) => svg.appendChild(svgEl("circle", { cx: x(i), cy: y(series.shortlist[i]), r: 3.6, class: "me" })));
     const line = svgEl("line", { y1: BOX.top, y2: BOX.bottom, class: "cursor" });
     const marks = {
       shortlist: svgEl("circle", { r: 4.5, fill: SERIES_META.shortlist.color, stroke: "#fff" }),
@@ -635,7 +501,122 @@
     $("st-stats").replaceChildren(...cards);
   }
 
-  // ---- Register -------------------------------------------------------------------------------
+  // ---- Section 2: Live Forward Tests (only per-list section) ------------------------------------
+  function renderList() {
+    const data = state.data, key = state.list, list = data.lists[key], names = LISTS[key];
+    ["shortlist", "growth"].forEach((k) => {
+      const tab = $(`st-tab-${k}`);
+      tab.setAttribute("aria-selected", String(k === key));
+    });
+    $("st-list-title").textContent = `Live forward test: ${names.rule}`;
+    $("st-list-what").textContent = list.what;
+    const oldest = list.batches[list.batches.length - 1];
+    $("st-clock-written").textContent = dayYear(list.registered_at);
+    $("st-clock-after").textContent = oldest
+      ? `${plural(list.batches.length, "weekly batch", "weekly batches")} since the list of ${dayYear(oldest.as_of)} · First 6-month result due ${dayYear(oldest.exit_6m)}.`
+      : "No weekly batches yet; the first batch is recorded at the next weekly run.";
+
+    const sw = list.switch;
+    const board = [["Rule on the site", names.rule], ["Challenger, on paper", names.challenger]];
+    if (sw) {
+      board.push(["Switch rule written down", dayYear(sw.rule_written_at)], ["Windows counted", `${sw.counted} of ${NEEDED}`]);
+      if (sw.counted) board.push(["Challenger wins", `${sw.challenger_wins} of ${sw.counted}`]);
+      board.push(sw.decision ? ["Decision", sw.decision === "switch" ? `Switch to ${names.challenger}` : `Keep ${names.rule}`]
+        : ["Earliest decision", dayYear(sw.earliest_decision)]);
+    } else board.push(["Windows", "No paired batches yet"]);
+    rows($("st-board"), board);
+    $("st-windows").replaceChildren(...(sw ? sw.windows : []).map((w, i) => el("li", "", windowText(w, i, names))));
+    const unit = sw && sw.month_end ? "month-end" : "week";
+    $("st-switch").textContent = sw ? `Written rule: switch to ${names.challenger} only if it wins at least 2 of the first 3 `
+      + `${sw.month_end ? "month-end " : ""}windows, each a pair of batches from the same ${unit}: ahead of ${names.rule} versus QQQ, `
+      + `and still ahead after dropping its single best stock. No other reason to switch.` : "";
+
+    $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
+    const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
+    $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
+    $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
+      ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
+      : finished
+        ? "The first batch has finished; a bar written now could be fitted to its result."
+        : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
+
+    renderBatches(list, names);
+    renderPicks(list, names);
+  }
+
+  function windowText(w, i, names) {
+    const head = `Window ${i + 1} · list of ${dayYear(w.freeze)} · ends ${dayYear(w.exit)}: `;
+    if (w.status === "open") return `${head}open`;
+    if (w.status === "awaiting_observation") return `${head}ended; waiting for the Saturday observation`;
+    if (w.status === "skipped") return `${head}skipped, a price is missing on one side (not counted)`;
+    return `${head}${names.rule} ${points(100 * w.default_excess)} vs QQQ; ${names.challenger} ${points(100 * w.challenger_excess)}`
+      + ` (${points(100 * w.challenger_without_best)} without its best stock): ${w.challenger_wins ? "challenger wins" : "rule holds"}`;
+  }
+
+  function batchCell(row, horizon, due, names) {
+    const td = el("td", "st-result");
+    const lines = [["rule", names.rule], ["challenger", names.challenger]]
+      .map(([side, name]) => [name, row[side] ? resultText(row[side][horizon]) : null])
+      .filter(([, text]) => text !== null);
+    if (!lines.length) td.appendChild(el("span", "st-due", `Due ${dayYear(due)}`));
+    lines.forEach(([name, text]) => td.appendChild(el("span", "st-result-line", `${name}: ${text}`)));
+    return td;
+  }
+
+  function renderBatches(list, names) {
+    if (!list.batches.length) {
+      $("st-batches").replaceChildren(el("p", "st-small", "No weekly batches yet."));
+      $("st-batches-more").hidden = true;
+      return;
+    }
+    const shown = state.allBatches ? list.batches : list.batches.slice(0, BATCHES_SHOWN);
+    const body = shown.map((row) => {
+      const first = el("td");
+      first.appendChild(document.createTextNode(dayYear(row.as_of)));
+      if (row.month_end) first.appendChild(el("span", "st-tag", "month-end"));
+      return [first, cell(dayYear(row.entry)), batchCell(row, "6m", row.exit_6m, names), batchCell(row, "12m", row.exit_12m, names)];
+    });
+    const t = table(["List of", "Bought (paper)", "After 6 months", "After 12 months"], body);
+    t.className = "st-batches";
+    $("st-batches").replaceChildren(t);
+    const more = $("st-batches-more");
+    more.hidden = list.batches.length <= BATCHES_SHOWN;
+    more.textContent = state.allBatches ? "Show fewer" : `Show all ${list.batches.length} batches`;
+  }
+
+  function pickCard(title, kind, symbols, shared, asOf) {
+    const card = el("div", "st-pick");
+    const h = el("h4");
+    h.append(dot(kind), document.createTextNode(title));
+    card.append(h, el("p", "st-small", `Month-end list of ${dayYear(asOf)}, in rank order`));
+    if (!symbols) {
+      card.appendChild(el("p", "st-small", "Not published: a paper challenger’s names stay off the site."));
+      return card;
+    }
+    const ol = el("ol");
+    symbols.forEach((symbol) => ol.appendChild(el("li", shared.has(symbol) ? "both" : "", symbol)));
+    card.appendChild(ol);
+    return card;
+  }
+
+  function renderPicks(list, names) {
+    const picks = list.picks;
+    if (!picks) {
+      $("st-picks").replaceChildren(el("p", "st-small", "No month-end batch yet."));
+      $("st-shared").textContent = "";
+      return;
+    }
+    const shared = new Set(picks.challenger ? picks.rule.filter((s) => picks.challenger.includes(s)) : []);
+    const primaryKind = state.list === "growth" ? "gr" : "sl";
+    $("st-picks").replaceChildren(
+      pickCard(`${names.rule} (rule)`, primaryKind, picks.rule, shared, picks.as_of),
+      pickCard(`${names.challenger} (challenger)`, "ch", picks.challenger, shared, picks.as_of));
+    $("st-shared").textContent = picks.shared === null ? ""
+      : `${picks.shared} of 10 picks are the same, so the two can only differ through the other ${10 - picks.shared} stocks each.`
+        + (picks.challenger ? " Names in both are outlined." : "");
+  }
+
+  // ---- Section 3: Test Register -----------------------------------------------------------------
   function renderRegister() {
     const register = state.data.register;
     const activeCount = registerRows(register, "active").length;
@@ -675,6 +656,7 @@
     $("aside-week").textContent = dayYear(data.as_of);
     $("st-status").hidden = true;
     $("st-content").hidden = false;
+    renderBacktest();
     renderList();
     renderRegister();
   }
@@ -692,8 +674,6 @@
     }));
     [["st-view-periods", "periods"], ["st-view-range", "range"], ["st-view-weekly", "weekly"]].forEach(([id, v]) =>
       $(id).addEventListener("click", () => setView(v)));
-    [["st-pair-challenger", "challenger"], ["st-pair-growth", "growth"]].forEach(([id, p]) =>
-      $(id).addEventListener("click", () => { state.pair = p; renderBacktest(); }));
     [["st-show-shortlist", "shortlist"], ["st-show-growth", "growth"], ["st-show-challenger", "challenger"], ["st-show-monthend", "monthend"]].forEach(([id, key]) =>
       $(id).addEventListener("click", () => { state.show[key] = !state.show[key]; renderBacktest(); }));
     [["st-measure-excess", "excess"], ["st-measure-return", "return"]].forEach(([id, key]) =>

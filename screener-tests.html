@@ -7,7 +7,7 @@
     <title>Temper Lab — Screener tests</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=cd03e91f8f29" />
-    <link rel="stylesheet" href="./screener-tests.css?v=112656c05429" />
+    <link rel="stylesheet" href="./screener-tests.css?v=8994ccec7667" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
   <body>
@@ -34,7 +34,7 @@
           <div>
             <div class="eyebrow">TEST THE LOGIC</div>
             <h1>Screener tests</h1>
-            <p>Do the screeners’ picks beat QQQ? Each rule is written down first, then checked on new data. Everything on this page is hypothetical: no real money is invested.</p>
+            <p>Do the screeners’ picks beat QQQ? Compare past backtests in one place, then track live paper batches separately below. Everything here is hypothetical: no real money is invested.</p>
           </div>
           <div class="snapshot-status"><span class="week" id="st-week">Loading…</span><small>Weekly refresh: Sat 06:00 · Copenhagen<br />Published after the weekly checks pass.</small></div>
         </section>
@@ -49,22 +49,17 @@
             </section>
           </details>
 
-          <div class="page-switch st-lists" role="tablist" aria-label="Screener">
-            <button id="st-tab-shortlist" type="button" role="tab" aria-selected="true" aria-controls="st-list">Shortlist</button>
-            <button id="st-tab-growth" type="button" role="tab" aria-selected="false" aria-controls="st-list">Growth</button>
-          </div>
-
-          <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
-            <h2 id="st-list-title">—</h2>
-            <p id="st-list-what" class="st-lead"></p>
-            <div class="st-clock">
-              <div class="st-before"><span>BEFORE IT WAS WRITTEN DOWN</span><p id="st-clock-before"></p></div>
-              <div class="st-written"><span>WRITTEN DOWN</span><strong id="st-clock-written">—</strong></div>
-              <div class="st-after"><span>AFTER: THE ACTUAL TEST</span><p id="st-clock-after"></p></div>
+          <!-- 1. ONE UNIFIED BACKTEST (NEVER REPEATED) -->
+          <section class="surface st-section" aria-labelledby="st-backtest-title">
+            <div class="st-sec-head">
+              <div>
+                <div class="st-kicker">1 · BEFORE WRITTEN DOWN</div>
+                <h2 id="st-backtest-title">Backtest: all screeners side by side</h2>
+                <p id="st-clock-before" class="st-lead"></p>
+              </div>
+              <span class="st-pill-note">Hindsight · not the live test</span>
             </div>
 
-            <h3 class="st-h3">Before it was written down: backtest</h3>
-            <p class="st-small">Where the idea came from. Useful for knowing what to expect; not the live test.</p>
             <div id="st-backtest-empty" class="st-empty" hidden></div>
             <div id="st-backtest" hidden>
               <div id="st-verdict" class="st-verdict" aria-label="Backtest summary"></div>
@@ -74,10 +69,6 @@
                   <button id="st-view-periods" type="button" aria-pressed="true">8 independent periods</button>
                   <button id="st-view-range" type="button" aria-pressed="false">Crash &amp; range</button>
                   <button id="st-view-weekly" type="button" aria-pressed="false">All 193 weeks</button>
-                </div>
-                <div id="st-pair-wrap" class="st-measure" role="group" aria-label="Compare">
-                  <button id="st-pair-challenger" type="button" aria-pressed="true">vs 60/40 order</button>
-                  <button id="st-pair-growth" type="button" aria-pressed="false">vs Growth</button>
                 </div>
               </div>
 
@@ -119,9 +110,30 @@
                 <p id="st-backtest-source" class="st-small"></p>
               </details>
             </div>
+          </section>
 
-            <h3 class="st-h3">After it was written down: live forward test</h3>
-            <p class="st-small">No returns are shown until a batch is sold: interim marks invite judging early.</p>
+          <!-- 2. LIVE FORWARD TESTS (ONLY PLACE WITH SHORTLIST / GROWTH SWITCH) -->
+          <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
+            <div class="st-sec-head">
+              <div>
+                <div class="st-kicker st-kicker-live">2 · AFTER WRITTEN DOWN — THE ACTUAL TEST</div>
+                <h2 id="st-list-title">Live forward tests</h2>
+                <p class="st-lead">Each Friday’s top 10 is sealed before Monday’s open. No returns are shown until a batch is sold.</p>
+              </div>
+              <div class="st-measure st-live-tabs" role="tablist" aria-label="Live screener">
+                <button id="st-tab-shortlist" type="button" role="tab" aria-selected="true" aria-controls="st-list">Shortlist</button>
+                <button id="st-tab-growth" type="button" role="tab" aria-selected="false" aria-controls="st-list">Growth</button>
+              </div>
+            </div>
+
+            <div class="st-clock">
+              <div class="st-written"><span>WRITTEN DOWN</span><strong id="st-clock-written">—</strong></div>
+              <div class="st-after">
+                <p id="st-list-what" class="st-rule-line"></p>
+                <p id="st-clock-after" class="st-small"></p>
+              </div>
+            </div>
+
             <div class="st-cards">
               <div class="st-card"><h3>Rule vs challenger</h3><dl id="st-board" class="st-rows"></dl><ol id="st-windows" class="st-windows"></ol><p id="st-switch" class="st-small"></p></div>
               <div class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small"></p></div>
@@ -132,7 +144,9 @@
             <p id="st-shared" class="st-small"></p>
           </section>
 
+          <!-- 3. PERMANENT AUDIT LOG -->
           <section class="surface st-register" aria-labelledby="st-register-title">
+            <div class="st-kicker">3 · AUDIT LOG</div>
             <h2 id="st-register-title">Test register: every rule written down so far</h2>
             <p id="st-register-intro" class="st-lead"></p>
             <div id="st-filters" class="st-filters" role="group" aria-label="Filter tests"></div>
@@ -146,7 +160,7 @@
       </main>
     </div>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
-    <script src="./screener-tests.js?v=c37ec17e7c05"></script>
+    <script src="./screener-tests.js?v=0f1472f185c4"></script>
     <script src="./navigation.js?v=693cdf80c629"></script>
   </body>
 </html>
