@@ -191,12 +191,17 @@ date slider and pointer inspection show saved index observations. Stock returns
 come from frozen company factors; index paths come from the saved benchmark
 prices. Sector medians use individual stock returns and the same `sectors.js`
 industry map as Research and Analyst ratings. Missing daily prices remain gaps;
-missing observations are never filled. Cboe VIX and the Shortlist line (its size,
+missing observations are never filled. Cboe VIX and VXN and the Shortlist line (its size,
 names on all three lists, and how many were kept since the last month-end freeze)
 sit in a compact summary below the page heading, above the return-window controls.
-VIX is non-directional and does not rank individual stocks. On the Overview it is a
-small chart of its daily closes for the selected window, with two dashed reference
-lines: the median and 90th percentile of its previous 756 closes (about three years).
+VIX and VXN are non-directional and do not rank individual stocks. On the Overview they
+are two small charts side by side on one scale (VIX with SPY's colour, VXN with QQQ's), each
+with two dashed reference lines: the median and 90th percentile of that index's previous
+756 closes (about three years). Under each chart, one line gives the index ÷ √12 as its
+fund's one-standard-deviation range for the next month, shown only while that pair's
+written-down check passes (`range_check`, re-run by every export; protocols in
+`output/vxn-range-v1/` and `output/vix-range-v1/`). The check needs the fund's closes back to
+2014: the lake from 2020-09-01 plus `pipeline/data/raw/benchmark_warmup/<FUND>_yfinance.csv`.
 The index chart adds each fund's 200-day simple average as a dashed line, the same
 average as trend rule A. No states, colours or thresholds are drawn.
 
@@ -234,8 +239,8 @@ Insights is a separate `com.temperlab.ownership` job, Tuesday and Friday at
 Saturday release rebuilds it from saved SEC files on the new freeze. SMTP for
 that mail lives in the product file `config/digest.local.env`, not in `.zshrc`.
 After a current screener passes, the release writes `market-mood.json` for the
-same run. Cboe VIX history is fetched at export time; if it is unavailable, the
-page leaves the VIX reading blank. If the mood export itself fails, the page
+same run. Cboe VIX and VXN history is fetched at export time; if one is unavailable,
+the page leaves that reading blank. If the mood export itself fails, the page
 detects a stale run ID and waits for a matching refresh.
 It stages and publishes the current screener only after its own checks pass.
 Here, release promotion means writing the validated files to the product's

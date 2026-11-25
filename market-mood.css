@@ -238,18 +238,27 @@
 .desk-figure span, .desk-figure small { color: var(--muted); font-size: 11.5px; }
 .desk-figure strong { color: #1f3a2c; font-size: 26px; font-weight: 550; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .desk-figure.stock { border-color: #c9dccf; background: #f8fbf8; }
-.vix-panel { margin: 0 28px 16px; padding: 16px 20px 10px; }
-.vix-panel .desk-panel-heading { margin-bottom: 4px; align-items: baseline; }
-.vix-now { margin: 0; color: #64766b; font-size: 12px; }
-.vix-now strong { color: var(--ink); font-size: 20px; font-weight: 550; font-variant-numeric: tabular-nums; margin-right: 6px; }
-.index-chart.vix-chart svg { height: 150px; }
-.vix-path { fill: none; stroke: #33473c; stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; }
-.vix-end { fill: #33473c; }
-.index-chart svg text.vix-end-label { fill: var(--ink); font-weight: 600; }
+.vol-panel { margin: 0 28px 16px; padding: 16px 20px 10px; }
+.vol-panel .desk-panel-heading { margin-bottom: 6px; }
+.vol-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; }
+.vol-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; }
+.vol-head h3 { margin: 0; color: #244734; font-size: 13px; font-weight: 600; }
+.vol-now { margin: 0; color: #64766b; font-size: 12px; }
+.vol-now strong { color: var(--ink); font-size: 20px; font-weight: 550; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.vol-range { margin: 2px 0 0; font-size: 13px; color: var(--ink); }
+.vol-range:empty { display: none; }
+.index-chart.vol-chart svg { height: 150px; }
+.vol-path { fill: none; stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; }
+.vol-path.series-spy, .vol-end.series-spy { stroke: #236949; }
+.vol-path.series-qqq, .vol-end.series-qqq { stroke: #a26925; }
+.vol-end.series-spy { fill: #236949; }
+.vol-end.series-qqq { fill: #a26925; }
+.index-chart svg text.vol-end-label { fill: var(--ink); font-weight: 600; }
+.vol-panel .chart-readout { margin: 2px 0 0; }
+.vol-panel .chart-readout:empty { display: none; }
+@media (max-width: 900px) { .vol-grid { grid-template-columns: minmax(0, 1fr); } }
 .chart-reference { stroke: #93a39a; stroke-width: 1px; stroke-dasharray: 4 4; }
 .index-chart svg text.ref-label { font-size: 11px; }
-.vix-panel .chart-readout { margin: 2px 0 0; }
-.vix-panel .chart-readout:empty { display: none; }
 .index-avg { stroke-width: 1.5px; stroke-dasharray: 6 4; opacity: .8; }
 .index-avg.series-spy { stroke: #236949; }
 .index-avg.series-qqq { stroke: #a26925; }
@@ -269,4 +278,4 @@
 .lc-forward-box summary .lc-q { font-weight: 400; }
 .lc-forward-box[open] summary { margin-bottom: 8px; }
 @media (max-width: 1000px) { .desk-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lc-compare-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 620px) { .mood-clocks, .mood-controls, .desk-figures, .vix-panel, .desk-sectors, .desk-to-lists { margin-left: 14px; margin-right: 14px; } .desk-figure strong { font-size: 22px; } }
+@media (max-width: 620px) { .mood-clocks, .mood-controls, .desk-figures, .vol-panel, .desk-sectors, .desk-to-lists { margin-left: 14px; margin-right: 14px; } .desk-figure strong { font-size: 22px; } }

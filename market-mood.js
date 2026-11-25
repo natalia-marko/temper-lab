@@ -25,7 +25,12 @@ function levelPercent(value) {
   return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "—";
 }
 
-function vixPoints(value) {
+// VIX and VXN are annualised; one standard deviation over about a month is the index / sqrt(12).
+function monthRange(close) {
+  return Number.isFinite(close) && close > 0 ? Math.round(close / Math.sqrt(12)) : null;
+}
+
+function volPoints(value) {
   if (!Number.isFinite(value)) return "—";
   return `${value > 0 ? "+" : ""}${value.toFixed(2)} pts`;
 }
@@ -229,9 +234,15 @@ function indexAverages(details, period, series) {
   }).filter(Boolean);
 }
 
-function vixWindow(vix, period) {
-  // The last `period` sessions of saved VIX closes, or null when the snapshot has no usable history.
-  const history = vix?.series;
+// Each Cboe volatility index with the fund it is read against, as on the Index direction chart.
+const VOL_INDICES = [
+  { key: 'vix', name: 'VIX', fund: 'SPY', series: 'spy' },
+  { key: 'vxn', name: 'VXN', fund: 'QQQ', series: 'qqq' },
+];
+
+function volWindow(block, period) {
+  // The last `period` sessions of saved closes, or null when the snapshot has no usable history.
+  const history = block?.series;
   if (!history || !Array.isArray(history.closes) || !Array.isArray(history.dates)) return null;
   if (history.closes.length !== history.dates.length || history.closes.length < period + 1) return null;
   const start = history.closes.length - period - 1;
@@ -239,30 +250,59 @@ function vixWindow(vix, period) {
   return closes.some(Number.isFinite) ? { dates: history.dates.slice(start), closes } : null;
 }
 
-function renderVixChart() {
-  const target = $('vix-chart');
+function volScale(values) {
+  // One scale for both charts, so the gap between the indices reads at a glance.
+  if (!values.length) return null;
+  const step = Math.max(...values) - Math.min(...values) > 25 ? 10 : 5;
+  return { step, lo: Math.floor(Math.min(...values) / step) * step, hi: Math.ceil(Math.max(...values) / step) * step };
+}
+
+function rangeLine(block, fund) {
+  // Shown only while the written-down check passes (re-run every week by the export).
+  const range = monthRange(block?.close);
+  return block?.range_check?.passed === true && range !== null
+    ? `Option prices imply about ±${range}% for ${fund} over the next month (one standard deviation).` : '';
+}
+
+function rangeMethod(mood) {
+  return VOL_INDICES.map(({ key, name, fund }) => {
+    const check = mood?.[key]?.range_check;
+    if (!mood?.[key]) return '';
+    if (!check) return `${fund} with ${name}: not checked yet (its fund history before 2020 is not loaded), so no line.`;
+    const share = value => `${Math.round(value * 100)}%`;
+    return `${fund} with ${name}: inside ${share(check.share_inside)} of ${check.months} month-ends`
+      + ` (${check.first.slice(0, 7)} to ${check.last.slice(0, 7)}; fell further ${share(check.fell_beyond)}, rose further ${share(check.rose_beyond)})`
+      + (check.passed ? '.' : ', below the rule, so no line.');
+  }).filter(Boolean).join(' ');
+}
+
+function renderVolCharts() {
+  const mood = moodState.mood, period = moodState.period;
+  const items = VOL_INDICES.map(spec => ({ spec, block: mood?.[spec.key], view: volWindow(mood?.[spec.key], period) }));
+  const scale = volScale(items.flatMap(({ block, view }) => view
+    ? view.closes.filter(Number.isFinite).concat(block.reference ? [block.reference.median, block.reference.p90] : []) : []));
+  for (const item of items) renderVolChart(item, scale, period);
+}
+
+function renderVolChart({ spec, block, view }, scale, period) {
+  const target = $(`${spec.key}-chart`), readout = $(`${spec.key}-readout`);
   if (!target) return;
   target.replaceChildren();
-  $('vix-readout').textContent = '';
-  const mood = moodState.mood, period = moodState.period;
-  const view = vixWindow(mood?.vix, period), reference = mood?.vix?.reference;
-  if (!view) {
-    appendText(target, 'p', 'VIX history is unavailable in this snapshot.', 'chart-empty');
+  readout.textContent = '';
+  if (!view || !scale) {
+    appendText(target, 'p', `${spec.name} history is unavailable in this snapshot.`, 'chart-empty');
     return;
   }
-  const { dates, closes } = view;
+  const { dates, closes } = view, reference = block.reference, { lo, hi, step } = scale;
   const width = Math.max(190, target.getBoundingClientRect().width || 600), height = 150;
   const narrow = width < 520;
   const left = 34, right = width - (narrow ? 66 : 150), top = 10, bottom = height - 26;
-  const values = closes.filter(Number.isFinite).concat(reference ? [reference.median, reference.p90] : []);
-  const step = Math.max(...values) - Math.min(...values) > 25 ? 10 : 5;
-  const lo = Math.floor(Math.min(...values) / step) * step, hi = Math.ceil(Math.max(...values) / step) * step;
   const last = closes.length - 1;
   const x = index => left + (right - left) * index / last;
   const y = value => bottom - (value - lo) / (hi - lo) * (bottom - top);
   const end = closes.findLastIndex(Number.isFinite);
   const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
-    'aria-label': `Cboe VIX closes over ${period} sessions, ending at ${closes[end].toFixed(2)}`
+    'aria-label': `Cboe ${spec.name} closes over ${period} sessions, ending at ${closes[end].toFixed(2)}`
       + (reference ? `; its 3-year median is ${reference.median.toFixed(1)} and its top 10% begins at ${reference.p90.toFixed(1)}.` : '.') });
   for (let tick = lo; tick <= hi; tick += step) {
     svgElement(svg, 'line', { x1: left, x2: right, y1: y(tick), y2: y(tick), class: 'chart-grid' });
@@ -281,9 +321,9 @@ function renderVixChart() {
     const command = penDown ? 'L' : 'M'; penDown = true;
     return `${command}${x(index).toFixed(2)},${y(close).toFixed(2)}`;
   }).join(' ');
-  svgElement(svg, 'path', { d, class: 'vix-path' });
-  svgElement(svg, 'circle', { cx: x(end), cy: y(closes[end]), r: 3.5, class: 'vix-end' });
-  svgElement(svg, 'text', { x: x(end) + 7, y: y(closes[end]) + 4, class: 'vix-end-label' }, closes[end].toFixed(2));
+  svgElement(svg, 'path', { d, class: `vol-path series-${spec.series}` });
+  svgElement(svg, 'circle', { cx: x(end), cy: y(closes[end]), r: 3.5, class: `vol-end series-${spec.series}` });
+  svgElement(svg, 'text', { x: x(end) + 7, y: y(closes[end]) + 4, class: 'vol-end-label' }, closes[end].toFixed(2));
   const ticks = width < 400 ? [0, last] : [0, Math.floor(closes.length / 2), last];   // same middle date as the index chart
   for (const index of ticks) {
     const label = new Date(`${dates[index]}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -296,9 +336,9 @@ function renderVixChart() {
     const bounds = svg.getBoundingClientRect();
     const index = Math.max(0, Math.min(last, Math.round(((event.clientX - bounds.left) / bounds.width * width - left) / (right - left) * last)));
     guide.style.display = ''; guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index));
-    $('vix-readout').textContent = `${day(dates[index])} · VIX ${Number.isFinite(closes[index]) ? closes[index].toFixed(2) : '—'}`;
+    readout.textContent = `${day(dates[index])} · ${spec.name} ${Number.isFinite(closes[index]) ? closes[index].toFixed(2) : '—'}`;
   });
-  hit.addEventListener('pointerleave', () => { guide.style.display = 'none'; $('vix-readout').textContent = ''; });
+  hit.addEventListener('pointerleave', () => { guide.style.display = 'none'; readout.textContent = ''; });
 }
 
 function renderIndexChart() {
@@ -555,7 +595,7 @@ function renderMarketDesk() {
     ? `At the Friday close, QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
   const breakdown = marketBreakdown(mood.market_details, period);
   const listBreakdown = marketBreakdown(mood.market_details, period, true);
-  renderSectors(breakdown); renderIndexChart(); renderVixChart();
+  renderSectors(breakdown); renderIndexChart(); renderVolCharts();
   renderDistribution(breakdown, listBreakdown); renderComparison(mood, period); renderSectorRank();
   document.querySelectorAll('[data-period]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.period) === period)));
 }
@@ -572,7 +612,7 @@ function bindMarketDesk() {
     lists.dataset.bound = 'true';
   }
   if (!moodState.observer && typeof ResizeObserver !== 'undefined') {
-    moodState.observer = new ResizeObserver(() => { if (moodState.mood && !$('tape-panel').hidden) { renderIndexChart(); renderVixChart(); } });
+    moodState.observer = new ResizeObserver(() => { if (moodState.mood && !$('tape-panel').hidden) { renderIndexChart(); renderVolCharts(); } });
     moodState.observer.observe($('index-chart'));
   }
 }
@@ -609,10 +649,15 @@ function render(mood) {
     ? `Returns cover ${mood.price_history_count.toLocaleString()} of ${mood.universe_count.toLocaleString()} eligible stocks: those with both return windows.`
     : "";
   $("aside-week").textContent = day(mood.as_of);
-  $("vix-close").textContent = Number.isFinite(mood.vix?.close) ? mood.vix.close.toFixed(2) : "—";
-  $("vix-week").textContent = mood.vix
-    ? `${vixPoints(mood.vix.change_points_week)} in 5 sessions · ${day(mood.vix.as_of)}`
-    : "the matching Cboe close is unavailable in this snapshot.";
+  for (const { key, fund } of VOL_INDICES) {
+    const block = mood[key];
+    $(`${key}-close`).textContent = Number.isFinite(block?.close) ? block.close.toFixed(2) : "—";
+    $(`${key}-week`).textContent = block
+      ? `${volPoints(block.change_points_week)} in 5 sessions · ${day(block.as_of)}`
+      : "the matching Cboe close is unavailable in this snapshot.";
+    $(`${key}-range`).textContent = rangeLine(block, fund);
+  }
+  $("range-method").textContent = rangeMethod(mood);
   bindMoodPanels();
   $("mood-status").hidden = true;
   $("mood-content").hidden = false;
