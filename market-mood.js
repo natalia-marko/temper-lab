@@ -69,6 +69,11 @@ function renderIndices(indices, period = 63, details = null) {
     if (path) appendText(metrics, "span", `${dollars(path.base)} → ${dollars(path.points.at(-1).close)}`, "index-closes");
     appendText(metrics, "strong", percent(snapshot?.[`return_${period}`]));
   }
+  if (details?.index_sma_200) {
+    const key = appendText(target, "div", "", "path-legend-item avg-key");
+    appendText(key, "span", "", "avg-swatch");
+    appendText(key, "span", "200-day average");
+  }
 }
 
 const moodState = { mood: null, period: 63, observer: null };
@@ -209,6 +214,93 @@ function axisDollars(value, digits) {
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
+function indexAverages(details, period, series) {
+  // 200-day simple averages on the chart's own scale: each relative to its index's start close.
+  const dates = details?.dates || [], averages = details?.index_sma_200 || {};
+  const start = dates.length - period - 1;
+  if (start < 0) return [];
+  return series.map(row => {
+    const values = averages[row.symbol];
+    if (!Array.isArray(values) || values.length !== dates.length) return null;
+    return { symbol: `${row.symbol}-avg`, points: dates.slice(start).map((date, index) => {
+      const value = values[start + index];
+      return { date, value: Number.isFinite(value) ? value / row.base - 1 : null };
+    }) };
+  }).filter(Boolean);
+}
+
+function vixWindow(vix, period) {
+  // The last `period` sessions of saved VIX closes, or null when the snapshot has no usable history.
+  const history = vix?.series;
+  if (!history || !Array.isArray(history.closes) || !Array.isArray(history.dates)) return null;
+  if (history.closes.length !== history.dates.length || history.closes.length < period + 1) return null;
+  const start = history.closes.length - period - 1;
+  const closes = history.closes.slice(start);
+  return closes.some(Number.isFinite) ? { dates: history.dates.slice(start), closes } : null;
+}
+
+function renderVixChart() {
+  const target = $('vix-chart');
+  if (!target) return;
+  target.replaceChildren();
+  $('vix-readout').textContent = '';
+  const mood = moodState.mood, period = moodState.period;
+  const view = vixWindow(mood?.vix, period), reference = mood?.vix?.reference;
+  if (!view) {
+    appendText(target, 'p', 'VIX history is unavailable in this snapshot.', 'chart-empty');
+    return;
+  }
+  const { dates, closes } = view;
+  const width = Math.max(190, target.getBoundingClientRect().width || 600), height = 150;
+  const narrow = width < 520;
+  const left = 34, right = width - (narrow ? 66 : 150), top = 10, bottom = height - 26;
+  const values = closes.filter(Number.isFinite).concat(reference ? [reference.median, reference.p90] : []);
+  const step = Math.max(...values) - Math.min(...values) > 25 ? 10 : 5;
+  const lo = Math.floor(Math.min(...values) / step) * step, hi = Math.ceil(Math.max(...values) / step) * step;
+  const last = closes.length - 1;
+  const x = index => left + (right - left) * index / last;
+  const y = value => bottom - (value - lo) / (hi - lo) * (bottom - top);
+  const end = closes.findLastIndex(Number.isFinite);
+  const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
+    'aria-label': `Cboe VIX closes over ${period} sessions, ending at ${closes[end].toFixed(2)}`
+      + (reference ? `; its 3-year median is ${reference.median.toFixed(1)} and its top 10% begins at ${reference.p90.toFixed(1)}.` : '.') });
+  for (let tick = lo; tick <= hi; tick += step) {
+    svgElement(svg, 'line', { x1: left, x2: right, y1: y(tick), y2: y(tick), class: 'chart-grid' });
+    svgElement(svg, 'text', { x: left - 8, y: y(tick) + 4, 'text-anchor': 'end' }, String(tick));
+  }
+  if (reference) {
+    for (const [value, label, short] of [[reference.median, `3-yr median ${reference.median.toFixed(1)}`, 'median'],
+                                         [reference.p90, `3-yr top 10% from ${reference.p90.toFixed(1)}`, 'top 10%']]) {
+      svgElement(svg, 'line', { x1: left, x2: right, y1: y(value), y2: y(value), class: 'chart-reference' });
+      svgElement(svg, 'text', { x: right + 8, y: y(value) + 4, class: 'ref-label' }, narrow ? short : label);
+    }
+  }
+  let penDown = false;
+  const d = closes.map((close, index) => {
+    if (!Number.isFinite(close)) { penDown = false; return ''; }
+    const command = penDown ? 'L' : 'M'; penDown = true;
+    return `${command}${x(index).toFixed(2)},${y(close).toFixed(2)}`;
+  }).join(' ');
+  svgElement(svg, 'path', { d, class: 'vix-path' });
+  svgElement(svg, 'circle', { cx: x(end), cy: y(closes[end]), r: 3.5, class: 'vix-end' });
+  svgElement(svg, 'text', { x: x(end) + 7, y: y(closes[end]) + 4, class: 'vix-end-label' }, closes[end].toFixed(2));
+  const ticks = width < 400 ? [0, last] : [0, Math.floor(closes.length / 2), last];   // same middle date as the index chart
+  for (const index of ticks) {
+    const label = new Date(`${dates[index]}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    svgElement(svg, 'text', { x: x(index), y: height - 8, 'text-anchor': index === 0 ? 'start' : index === last ? 'end' : 'middle' }, label);
+  }
+  const guide = svgElement(svg, 'line', { y1: top, y2: bottom, class: 'chart-guide' });
+  guide.style.display = 'none';
+  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, fill: 'transparent' });
+  hit.addEventListener('pointermove', event => {
+    const bounds = svg.getBoundingClientRect();
+    const index = Math.max(0, Math.min(last, Math.round(((event.clientX - bounds.left) / bounds.width * width - left) / (right - left) * last)));
+    guide.style.display = ''; guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index));
+    $('vix-readout').textContent = `${day(dates[index])} · VIX ${Number.isFinite(closes[index]) ? closes[index].toFixed(2) : '—'}`;
+  });
+  hit.addEventListener('pointerleave', () => { guide.style.display = 'none'; $('vix-readout').textContent = ''; });
+}
+
 function renderIndexChart() {
   const target = $('index-chart');
   target.replaceChildren();
@@ -220,7 +312,8 @@ function renderIndexChart() {
     return;
   }
   const width = Math.max(190, target.getBoundingClientRect().width || 600), height = 230;
-  const geometry = pathCoordinates(series, width, height);
+  const averages = indexAverages(mood?.market_details, period, series);
+  const geometry = pathCoordinates([...series, ...averages], width, height);
   const { left, right, top, bottom, minimum, maximum, x, y } = geometry;
   const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
     'aria-label': `SPY and QQQ adjusted closes over ${period} trading sessions, in dollars on one scale of change. Use the date slider for values.` });
@@ -244,7 +337,10 @@ function renderIndexChart() {
   }
   // The start level, where both lines begin.
   svgElement(svg, 'line', { x1: left, x2: right, y1: y(0), y2: y(0), class: 'chart-zero' });
-  for (const row of geometry.paths) svgElement(svg, 'path', { d: row.d, class: `index-path series-${row.symbol.toLowerCase()}`, fill: 'none' });
+  for (const row of geometry.paths.filter(row => row.symbol.endsWith('-avg'))) {
+    svgElement(svg, 'path', { d: row.d, class: `index-avg series-${row.symbol.replace('-avg', '').toLowerCase()}`, fill: 'none' });
+  }
+  for (const row of geometry.paths.filter(row => !row.symbol.endsWith('-avg'))) svgElement(svg, 'path', { d: row.d, class: `index-path series-${row.symbol.toLowerCase()}`, fill: 'none' });
   const points = series[0].points;
   const ticks = width < 400 ? [0, points.length - 1] : [0, Math.floor(points.length / 2), points.length - 1];
   for (const index of ticks) {
@@ -459,7 +555,7 @@ function renderMarketDesk() {
     ? `At the Friday close, QQQ minus SPY: ${((qqq - spy) * 100) > 0 ? '+' : ''}${((qqq - spy) * 100).toFixed(1)} percentage points.` : '';
   const breakdown = marketBreakdown(mood.market_details, period);
   const listBreakdown = marketBreakdown(mood.market_details, period, true);
-  renderSectors(breakdown); renderIndexChart();
+  renderSectors(breakdown); renderIndexChart(); renderVixChart();
   renderDistribution(breakdown, listBreakdown); renderComparison(mood, period); renderSectorRank();
   document.querySelectorAll('[data-period]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.period) === period)));
 }
@@ -476,7 +572,7 @@ function bindMarketDesk() {
     lists.dataset.bound = 'true';
   }
   if (!moodState.observer && typeof ResizeObserver !== 'undefined') {
-    moodState.observer = new ResizeObserver(() => { if (moodState.mood && !$('tape-panel').hidden) renderIndexChart(); });
+    moodState.observer = new ResizeObserver(() => { if (moodState.mood && !$('tape-panel').hidden) { renderIndexChart(); renderVixChart(); } });
     moodState.observer.observe($('index-chart'));
   }
 }
@@ -515,7 +611,7 @@ function render(mood) {
   $("aside-week").textContent = day(mood.as_of);
   $("vix-close").textContent = Number.isFinite(mood.vix?.close) ? mood.vix.close.toFixed(2) : "—";
   $("vix-week").textContent = mood.vix
-    ? `${vixPoints(mood.vix.change_points_week)} over the last 5 trading sessions.`
+    ? `${vixPoints(mood.vix.change_points_week)} in 5 sessions · ${day(mood.vix.as_of)}`
     : "the matching Cboe close is unavailable in this snapshot.";
   bindMoodPanels();
   $("mood-status").hidden = true;

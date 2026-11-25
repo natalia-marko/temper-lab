@@ -194,7 +194,11 @@ industry map as Research and Analyst ratings. Missing daily prices remain gaps;
 missing observations are never filled. Cboe VIX and the Shortlist line (its size,
 names on all three lists, and how many were kept since the last month-end freeze)
 sit in a compact summary below the page heading, above the return-window controls.
-VIX is non-directional and does not rank individual stocks.
+VIX is non-directional and does not rank individual stocks. On the Overview it is a
+small chart of its daily closes for the selected window, with two dashed reference
+lines: the median and 90th percentile of its previous 756 closes (about three years).
+The index chart adds each fund's 200-day simple average as a dashed line, the same
+average as trend rule A. No states, colours or thresholds are drawn.
 
 **List check** (the second tab, `list-check.js`) describes this week's Hot tape,
 Growth, Cheap and Shortlist before the month-end decision, from `list-check.json`
