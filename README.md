@@ -198,7 +198,9 @@ VIX and VXN are non-directional and do not rank individual stocks. On the Overvi
 are two small charts side by side on one scale (VIX with SPY's colour, VXN with QQQ's), each
 with two dashed reference lines: the median and 90th percentile of that index's previous
 756 closes (about three years). Under each chart, one line gives the index ÷ √12 as its
-fund's one-standard-deviation range for the next month, shown only while that pair's
+fund's one-standard-deviation range for the next month, and a small chart of the fund's
+closes carries a shaded cone from Friday's close to the 21st NYSE session ahead
+(`sessions_ahead`), widening with √time; only its 21-session end is checked. Both are shown only while that pair's
 written-down check passes (`range_check`, re-run by every export; protocols in
 `output/vxn-range-v1/` and `output/vix-range-v1/`). The check needs the fund's closes back to
 2014: the lake from 2020-09-01 plus `pipeline/data/raw/benchmark_warmup/<FUND>_yfinance.csv`.

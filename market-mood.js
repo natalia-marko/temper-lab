@@ -257,11 +257,97 @@ function volScale(values) {
   return { step, lo: Math.floor(Math.min(...values) / step) * step, hi: Math.ceil(Math.max(...values) / step) * step };
 }
 
-function rangeLine(block, fund) {
+function fanBand(last, close, steps = 21) {
+  // One standard deviation from option prices: close / 100 × √(t / 252). At 21 sessions
+  // that is close / √12, the range the written-down check tests; the shape before it is assumed.
+  if (!(last > 0) || !(close > 0)) return null;
+  const s = close / 100;
+  return Array.from({ length: steps + 1 }, (_, t) => ({
+    t, lo: last * (1 - s * Math.sqrt(t / 252)), hi: last * (1 + s * Math.sqrt(t / 252)),
+  }));
+}
+
+function fanView(mood, spec, period) {
+  // The fund's closes for the window plus the cone, only while the pair's check passes.
+  const block = mood?.[spec.key], details = mood?.market_details;
+  if (block?.range_check?.passed !== true) return null;
+  const closes = details?.index_closes?.[spec.fund], dates = details?.dates;
+  if (!Array.isArray(closes) || !Array.isArray(dates) || closes.length !== dates.length || closes.length < period + 1) return null;
+  const start = closes.length - period - 1, past = closes.slice(start), last = past.at(-1);
+  const band = Number.isFinite(last) ? fanBand(last, block.close) : null;
+  if (!band) return null;
+  const ahead = Array.isArray(mood.sessions_ahead) && mood.sessions_ahead.length === band.length - 1 ? mood.sessions_ahead : null;
+  return { dates: dates.slice(start), closes: past, last, band, ahead };
+}
+
+function rangeLine(mood, spec) {
   // Shown only while the written-down check passes (re-run every week by the export).
-  const range = monthRange(block?.close);
-  return block?.range_check?.passed === true && range !== null
-    ? `Option prices imply about ±${range}% for ${fund} over the next month (one standard deviation).` : '';
+  const view = fanView(mood, spec, 1), block = mood?.[spec.key];
+  if (!view) return '';
+  const end = view.band.at(-1), when = view.ahead ? `by ${day(view.ahead.at(-1))}` : 'over about a month';
+  return `${spec.fund} next month, from ${spec.name}: about ±${monthRange(block.close)}%,`
+    + ` $${Math.round(end.lo).toLocaleString('en-US')}–$${Math.round(end.hi).toLocaleString('en-US')} ${when} (one standard deviation).`;
+}
+
+function renderFanChart(spec, view) {
+  const target = $(`${spec.key}-fan`), readout = $(`${spec.key}-readout`);
+  if (!target) return;
+  target.replaceChildren();
+  target.hidden = !view;
+  if (!view) return;
+  const { dates, closes, last, band, ahead } = view;
+  const width = Math.max(190, target.getBoundingClientRect().width || 600), height = 150;
+  const narrow = width < 520;
+  const left = 48, right = width - (narrow ? 52 : 70), top = 10, bottom = height - 26;
+  const past = closes.length - 1, total = past + band.length - 1;
+  const values = closes.filter(Number.isFinite).concat(band.map(point => point.lo), band.map(point => point.hi));
+  const { ticks, digits } = priceTicks(Math.min(...values), Math.max(...values), 4);
+  const lo = Math.min(ticks[0], ...values), hi = Math.max(ticks.at(-1), ...values);
+  const x = index => left + (right - left) * index / total;
+  const y = value => bottom - (value - lo) / (hi - lo) * (bottom - top);
+  const end = band.at(-1);
+  const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
+    'aria-label': `${spec.fund} closes ending at ${dollars(last)}, with the one-standard-deviation range implied by ${spec.name}`
+      + ` widening to $${Math.round(end.lo)}–$${Math.round(end.hi)} after ${band.length - 1} sessions.` });
+  for (const tick of ticks) {
+    svgElement(svg, 'line', { x1: left, x2: right, y1: y(tick), y2: y(tick), class: 'chart-grid' });
+    svgElement(svg, 'text', { x: left - 8, y: y(tick) + 4, 'text-anchor': 'end' }, axisDollars(tick, digits));
+  }
+  const upper = band.map(point => `${x(past + point.t).toFixed(2)},${y(point.hi).toFixed(2)}`);
+  const lower = band.map(point => `${x(past + point.t).toFixed(2)},${y(point.lo).toFixed(2)}`).reverse();
+  svgElement(svg, 'path', { d: `M${upper.join(' L')} L${lower.join(' L')} Z`, class: `fan-band series-${spec.series}` });
+  svgElement(svg, 'line', { x1: x(past), x2: x(past), y1: top, y2: bottom, class: 'chart-today' });
+  svgElement(svg, 'line', { x1: x(past), x2: x(total), y1: y(last), y2: y(last), class: `fan-mid series-${spec.series}` });
+  let penDown = false;
+  const d = closes.map((close, index) => {
+    if (!Number.isFinite(close)) { penDown = false; return ''; }
+    const command = penDown ? 'L' : 'M'; penDown = true;
+    return `${command}${x(index).toFixed(2)},${y(close).toFixed(2)}`;
+  }).join(' ');
+  svgElement(svg, 'path', { d, class: `vol-path series-${spec.series}` });
+  svgElement(svg, 'circle', { cx: x(past), cy: y(last), r: 3.5, class: `vol-end series-${spec.series}` });
+  for (const value of [end.hi, end.lo]) {
+    svgElement(svg, 'text', { x: x(total) + 6, y: y(value) + 4, class: 'fan-label' }, `$${Math.round(value).toLocaleString('en-US')}`);
+  }
+  const label = iso => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const marks = [[0, label(dates[0]), 'start'], [past, label(dates[past]), 'middle']];
+  if (ahead && !narrow) marks.push([total, label(ahead.at(-1)), 'end']);
+  for (const [index, text, anchor] of marks) svgElement(svg, 'text', { x: x(index), y: height - 8, 'text-anchor': anchor }, text);
+  const guide = svgElement(svg, 'line', { y1: top, y2: bottom, class: 'chart-guide' });
+  guide.style.display = 'none';
+  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, fill: 'transparent' });
+  hit.addEventListener('pointermove', event => {
+    const bounds = svg.getBoundingClientRect();
+    const index = Math.max(0, Math.min(total, Math.round(((event.clientX - bounds.left) / bounds.width * width - left) / (right - left) * total)));
+    guide.style.display = ''; guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index));
+    if (index <= past) {
+      readout.textContent = `${day(dates[index])} · ${spec.fund} ${dollars(closes[index])}`;
+    } else {
+      const point = band[index - past], when = ahead ? day(ahead[index - past - 1]) : `${index - past} sessions ahead`;
+      readout.textContent = `${when} · ${spec.fund} one-standard-deviation range $${Math.round(point.lo)}–$${Math.round(point.hi)}`;
+    }
+  });
+  hit.addEventListener('pointerleave', () => { guide.style.display = 'none'; readout.textContent = ''; });
 }
 
 function rangeMethod(mood) {
@@ -281,7 +367,10 @@ function renderVolCharts() {
   const items = VOL_INDICES.map(spec => ({ spec, block: mood?.[spec.key], view: volWindow(mood?.[spec.key], period) }));
   const scale = volScale(items.flatMap(({ block, view }) => view
     ? view.closes.filter(Number.isFinite).concat(block.reference ? [block.reference.median, block.reference.p90] : []) : []));
-  for (const item of items) renderVolChart(item, scale, period);
+  for (const item of items) {
+    renderVolChart(item, scale, period);
+    renderFanChart(item.spec, fanView(mood, item.spec, period));
+  }
 }
 
 function renderVolChart({ spec, block, view }, scale, period) {
@@ -649,13 +738,13 @@ function render(mood) {
     ? `Returns cover ${mood.price_history_count.toLocaleString()} of ${mood.universe_count.toLocaleString()} eligible stocks: those with both return windows.`
     : "";
   $("aside-week").textContent = day(mood.as_of);
-  for (const { key, fund } of VOL_INDICES) {
-    const block = mood[key];
+  for (const spec of VOL_INDICES) {
+    const { key } = spec, block = mood[key];
     $(`${key}-close`).textContent = Number.isFinite(block?.close) ? block.close.toFixed(2) : "—";
     $(`${key}-week`).textContent = block
       ? `${volPoints(block.change_points_week)} in 5 sessions · ${day(block.as_of)}`
       : "the matching Cboe close is unavailable in this snapshot.";
-    $(`${key}-range`).textContent = rangeLine(block, fund);
+    $(`${key}-range`).textContent = rangeLine(mood, spec);
   }
   $("range-method").textContent = rangeMethod(mood);
   bindMoodPanels();

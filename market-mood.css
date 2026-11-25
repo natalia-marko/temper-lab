@@ -256,6 +256,16 @@
 .index-chart svg text.vol-end-label { fill: var(--ink); font-weight: 600; }
 .vol-panel .chart-readout { margin: 2px 0 0; }
 .vol-panel .chart-readout:empty { display: none; }
+.index-chart.fan-chart { margin-top: 2px; }
+.index-chart.fan-chart[hidden] { display: none; }
+.index-chart.fan-chart svg { height: 150px; }
+.fan-band.series-spy { fill: rgba(35, 105, 73, .14); }
+.fan-band.series-qqq { fill: rgba(162, 105, 37, .14); }
+.fan-mid { stroke-width: 1px; stroke-dasharray: 4 4; }
+.fan-mid.series-spy { stroke: #236949; }
+.fan-mid.series-qqq { stroke: #a26925; }
+.chart-today { stroke: #93a39a; stroke-width: 1px; stroke-dasharray: 2 3; }
+.index-chart svg text.fan-label { fill: var(--ink); font-weight: 600; }
 @media (max-width: 900px) { .vol-grid { grid-template-columns: minmax(0, 1fr); } }
 .chart-reference { stroke: #93a39a; stroke-width: 1px; stroke-dasharray: 4 4; }
 .index-chart svg text.ref-label { font-size: 11px; }
