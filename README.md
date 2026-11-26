@@ -199,13 +199,15 @@ are two small charts side by side on one scale (VIX with SPY's colour, VXN with 
 with two dashed reference lines: the median and 90th percentile of that index's previous
 756 closes (about three years). Under each chart, one line gives the index ÷ √12 as its
 fund's one-standard-deviation range for the next month, and a small chart of the fund's
-closes carries a shaded cone from Friday's close to the 21st NYSE session ahead
-(`sessions_ahead`), widening with √time; only its 21-session end is checked. Both are shown only while that pair's
+last 63 closes carries a shaded cone from Friday's close to the 21st NYSE session ahead
+(`sessions_ahead`), widening with √time (always 63 sessions of lead-in regardless of the
+return-window toggle; only its 21-session end is checked). Both are shown only while that pair's
 written-down check passes (`range_check`, re-run by every export; protocols in
 `output/vxn-range-v1/` and `output/vix-range-v1/`). The check needs the fund's closes back to
 2014: the lake from 2020-09-01 plus `pipeline/data/raw/benchmark_warmup/<FUND>_yfinance.csv`.
 The index chart adds each fund's 200-day simple average as a dashed line, the same
-average as trend rule A. No states, colours or thresholds are drawn.
+average as trend rule A, with each fund's latest `%` gap and cross date in the legend and
+date readout. No states, colours or thresholds are drawn.
 
 **List check** (the second tab, `list-check.js`) describes this week's Hot tape,
 Growth, Cheap and Shortlist before the month-end decision, from `list-check.json`

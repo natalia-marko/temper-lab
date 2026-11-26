@@ -59,6 +59,53 @@ function indexSpread(indices) {
   return `${behind} by ${Math.abs(gap).toFixed(1)} pp over 63 sessions.`;
 }
 
+function indexAverageStatus(details, symbol) {
+  const dates = details?.dates || [];
+  const closes = details?.index_closes?.[symbol];
+  const averages = details?.index_sma_200?.[symbol];
+  if (!Array.isArray(closes) || !Array.isArray(averages) || closes.length !== dates.length || averages.length !== dates.length || !dates.length) {
+    return null;
+  }
+  const last = dates.length - 1;
+  const close = closes[last], average = averages[last];
+  if (!Number.isFinite(close) || !Number.isFinite(average) || close <= 0 || average <= 0) return null;
+  const gap = close / average - 1;
+  if (close === average) {
+    return { close, average, gap: 0, side: "at", since: null, crossed: false, complete: false, sessions: 1 };
+  }
+  const above = close > average;
+  const side = above ? "above" : "below";
+  let streakStart = last, crossed = false, complete = true;
+  for (let i = last - 1; i >= 0; i -= 1) {
+    const c = closes[i], a = averages[i];
+    if (!Number.isFinite(c) || !Number.isFinite(a) || c <= 0 || a <= 0) {
+      complete = false;
+      break;
+    }
+    if ((c > a) === above && c !== a) {
+      streakStart = i;
+    } else {
+      crossed = true;
+      break;
+    }
+  }
+  return {
+    close, average, gap, side,
+    since: crossed ? dates[streakStart] : null,
+    crossed, complete: !crossed && complete,
+    sessions: last - streakStart + 1,
+  };
+}
+
+function formatIndexAverage(status) {
+  if (!status) return "";
+  if (status.side === "at") return "at its 200-day avg";
+  const base = `${(Math.abs(status.gap) * 100).toFixed(1)}% ${status.side} 200-day avg`;
+  if (status.crossed && status.since) return `${base} · ${status.side} since ${day(status.since)}`;
+  if (status.complete) return `${base} · ${status.side} all ${status.sessions} sessions`;
+  return base;
+}
+
 function renderIndices(indices, period = 63, details = null) {
   const target = $("index-rows");
   target.replaceChildren();
@@ -66,13 +113,17 @@ function renderIndices(indices, period = 63, details = null) {
   for (const [symbol, label] of [["SPY", "S&P 500"], ["QQQ", "Nasdaq-100"]]) {
     const snapshot = indices?.[symbol];
     const path = paths.find((row) => row.symbol === symbol);
+    const status = indexAverageStatus(details, symbol);
     const row = appendText(target, "div", "", `path-legend-item series-${symbol.toLowerCase()}`);
-    const name = appendText(row, "div", "", "index-name");
+    const head = appendText(row, "div", "", "path-legend-head");
+    const name = appendText(head, "div", "", "index-name");
     appendText(name, "strong", symbol);
     appendText(name, "span", label);
-    const metrics = appendText(row, "div", "", "index-metrics");
+    const metrics = appendText(head, "div", "", "index-metrics");
     if (path) appendText(metrics, "span", `${dollars(path.base)} → ${dollars(path.points.at(-1).close)}`, "index-closes");
     appendText(metrics, "strong", percent(snapshot?.[`return_${period}`]));
+    const smaText = formatIndexAverage(status);
+    if (smaText) appendText(row, "span", smaText, "index-sma");
   }
   if (details?.index_sma_200) {
     const key = appendText(target, "div", "", "path-legend-item avg-key");
@@ -239,6 +290,8 @@ const VOL_INDICES = [
   { key: 'vix', name: 'VIX', fund: 'SPY', series: 'spy' },
   { key: 'vxn', name: 'VXN', fund: 'QQQ', series: 'qqq' },
 ];
+// Fixed lead-in beside the 21-session forward cone so the cone always holds 25% of chart width.
+const FAN_LOOKBACK = 63;
 
 function volWindow(block, period) {
   // The last `period` sessions of saved closes, or null when the snapshot has no usable history.
@@ -267,8 +320,8 @@ function fanBand(last, close, steps = 21) {
   }));
 }
 
-function fanView(mood, spec, period) {
-  // The fund's closes for the window plus the cone, only while the pair's check passes.
+function fanView(mood, spec, period = FAN_LOOKBACK) {
+  // The fund's closes for the lead-in window plus the cone, only while the pair's check passes.
   const block = mood?.[spec.key], details = mood?.market_details;
   if (block?.range_check?.passed !== true) return null;
   const closes = details?.index_closes?.[spec.fund], dates = details?.dates;
@@ -307,7 +360,7 @@ function renderFanChart(spec, view) {
   const y = value => bottom - (value - lo) / (hi - lo) * (bottom - top);
   const end = band.at(-1);
   const svg = svgElement(target, 'svg', { viewBox: `0 0 ${width} ${height}`, role: 'img',
-    'aria-label': `${spec.fund} closes ending at ${dollars(last)}, with the one-standard-deviation range implied by ${spec.name}`
+    'aria-label': `${spec.fund} closes over the last ${past} sessions ending at ${dollars(last)}, with the one-standard-deviation range implied by ${spec.name}`
       + ` widening to $${Math.round(end.lo)}–$${Math.round(end.hi)} after ${band.length - 1} sessions.` });
   for (const tick of ticks) {
     svgElement(svg, 'line', { x1: left, x2: right, y1: y(tick), y2: y(tick), class: 'chart-grid' });
@@ -335,7 +388,7 @@ function renderFanChart(spec, view) {
   for (const [index, text, anchor] of marks) svgElement(svg, 'text', { x: x(index), y: height - 8, 'text-anchor': anchor }, text);
   const guide = svgElement(svg, 'line', { y1: top, y2: bottom, class: 'chart-guide' });
   guide.style.display = 'none';
-  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, fill: 'transparent' });
+  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, class: 'chart-hit', fill: 'transparent' });
   hit.addEventListener('pointermove', event => {
     const bounds = svg.getBoundingClientRect();
     const index = Math.max(0, Math.min(total, Math.round(((event.clientX - bounds.left) / bounds.width * width - left) / (right - left) * total)));
@@ -362,6 +415,25 @@ function rangeMethod(mood) {
   }).filter(Boolean).join(' ');
 }
 
+function placeVolReferenceLabels(reference, y, top, bottom, minGap = 13) {
+  // Keep dashed median and top-10% labels vertically separated on compressed shared scales.
+  if (!reference) return [];
+  const items = [
+    { key: 'p90', value: reference.p90, label: `3-yr top 10% from ${reference.p90.toFixed(1)}`, short: 'top 10%', y: y(reference.p90) + 4 },
+    { key: 'median', value: reference.median, label: `3-yr median ${reference.median.toFixed(1)}`, short: 'median', y: y(reference.median) + 4 },
+  ].sort((a, b) => a.y - b.y);
+  const gap = items[1].y - items[0].y;
+  if (gap < minGap) {
+    const shift = (minGap - gap) / 2;
+    items[0].y -= shift;
+    items[1].y += shift;
+  }
+  const hi = top + 9, lo = bottom - 2;
+  if (items[0].y < hi) { items[1].y += hi - items[0].y; items[0].y = hi; }
+  if (items[1].y > lo) { items[0].y = Math.max(hi, items[0].y - (items[1].y - lo)); items[1].y = lo; }
+  return items;
+}
+
 function renderVolCharts() {
   const mood = moodState.mood, period = moodState.period;
   const items = VOL_INDICES.map(spec => ({ spec, block: mood?.[spec.key], view: volWindow(mood?.[spec.key], period) }));
@@ -369,7 +441,7 @@ function renderVolCharts() {
     ? view.closes.filter(Number.isFinite).concat(block.reference ? [block.reference.median, block.reference.p90] : []) : []));
   for (const item of items) {
     renderVolChart(item, scale, period);
-    renderFanChart(item.spec, fanView(mood, item.spec, period));
+    renderFanChart(item.spec, fanView(mood, item.spec, FAN_LOOKBACK));
   }
 }
 
@@ -398,10 +470,9 @@ function renderVolChart({ spec, block, view }, scale, period) {
     svgElement(svg, 'text', { x: left - 8, y: y(tick) + 4, 'text-anchor': 'end' }, String(tick));
   }
   if (reference) {
-    for (const [value, label, short] of [[reference.median, `3-yr median ${reference.median.toFixed(1)}`, 'median'],
-                                         [reference.p90, `3-yr top 10% from ${reference.p90.toFixed(1)}`, 'top 10%']]) {
-      svgElement(svg, 'line', { x1: left, x2: right, y1: y(value), y2: y(value), class: 'chart-reference' });
-      svgElement(svg, 'text', { x: right + 8, y: y(value) + 4, class: 'ref-label' }, narrow ? short : label);
+    for (const item of placeVolReferenceLabels(reference, y, top, bottom)) {
+      svgElement(svg, 'line', { x1: left, x2: right, y1: y(item.value), y2: y(item.value), class: 'chart-reference' });
+      svgElement(svg, 'text', { x: right + 8, y: item.y.toFixed(1), class: 'ref-label' }, narrow ? item.short : item.label);
     }
   }
   let penDown = false;
@@ -411,8 +482,12 @@ function renderVolChart({ spec, block, view }, scale, period) {
     return `${command}${x(index).toFixed(2)},${y(close).toFixed(2)}`;
   }).join(' ');
   svgElement(svg, 'path', { d, class: `vol-path series-${spec.series}` });
-  svgElement(svg, 'circle', { cx: x(end), cy: y(closes[end]), r: 3.5, class: `vol-end series-${spec.series}` });
-  svgElement(svg, 'text', { x: x(end) + 7, y: y(closes[end]) + 4, class: 'vol-end-label' }, closes[end].toFixed(2));
+  const endX = x(end), endY = y(closes[end]);
+  svgElement(svg, 'circle', { cx: endX, cy: endY, r: 3.5, class: `vol-end series-${spec.series}` });
+  // Place the current-close label inside the plot to the left of the endpoint dot so it never
+  // collides with the right-margin 3-year median / top-10% labels.
+  const endLabelY = endY < top + 16 ? endY + 15 : endY - 8;
+  svgElement(svg, 'text', { x: (endX - 7).toFixed(2), y: endLabelY.toFixed(1), 'text-anchor': 'end', class: 'vol-end-label' }, closes[end].toFixed(2));
   const ticks = width < 400 ? [0, last] : [0, Math.floor(closes.length / 2), last];   // same middle date as the index chart
   for (const index of ticks) {
     const label = new Date(`${dates[index]}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -420,7 +495,7 @@ function renderVolChart({ spec, block, view }, scale, period) {
   }
   const guide = svgElement(svg, 'line', { y1: top, y2: bottom, class: 'chart-guide' });
   guide.style.display = 'none';
-  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, fill: 'transparent' });
+  const hit = svgElement(svg, 'rect', { x: left, y: top, width: right - left, height: bottom - top, class: 'chart-hit', fill: 'transparent' });
   hit.addEventListener('pointermove', event => {
     const bounds = svg.getBoundingClientRect();
     const index = Math.max(0, Math.min(last, Math.round(((event.clientX - bounds.left) / bounds.width * width - left) / (right - left) * last)));
@@ -484,6 +559,8 @@ function renderIndexChart() {
   slider.type = 'range'; slider.min = '0'; slider.max = String(points.length - 1); slider.step = '1';
   slider.value = slider.max; slider.setAttribute('aria-label', 'Inspect index closes by trading date');
   label.appendChild(slider);
+  const avgStart = (mood?.market_details?.dates?.length || 0) - period - 1;
+  const smaSeries = mood?.market_details?.index_sma_200 || {};
   const inspect = index => {
     guide.setAttribute('x1', x(index)); guide.setAttribute('x2', x(index));
     series.forEach((row, number) => {
@@ -492,7 +569,13 @@ function renderIndexChart() {
       if (Number.isFinite(value)) { markers[number].setAttribute('cx', x(index)); markers[number].setAttribute('cy', y(value)); }
     });
     slider.value = String(index);
-    const read = row => `${row.symbol} ${dollars(row.points[index].close)} (${percent(row.points[index].value)})`;
+    const read = row => {
+      const close = row.points[index].close;
+      const sma = avgStart >= 0 ? smaSeries[row.symbol]?.[avgStart + index] : null;
+      const vs = Number.isFinite(close) && Number.isFinite(sma) && sma > 0
+        ? ` · ${percent(close / sma - 1)} vs 200d` : '';
+      return `${row.symbol} ${dollars(close)} (${percent(row.points[index].value)}${vs})`;
+    };
     slider.setAttribute('aria-valuetext', `${day(points[index].date)}: ${series.map(read).join(', ')}`);
     $('path-readout').textContent = `Selected date ${day(points[index].date)} · ${series.map(read).join(' · ')}`;
   };
@@ -670,8 +753,6 @@ function renderMarketDesk() {
   $('fig-qqq').textContent = percent(qqq);
   $('fig-spy-window').textContent = `${period}-session return`;
   $('fig-qqq-window').textContent = `${period}-session return`;
-  $('fig-up').textContent = levelPercent(share);
-  $('fig-median').textContent = percent(middle);
   fillParticipation(
     { up: 'breadth-up', fill: 'breadth-fill', track: 'breadth-track', down: 'breadth-down', copy: 'breadth-copy' },
     share, middle, count, 'eligible stocks');
