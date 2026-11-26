@@ -859,7 +859,7 @@ function checkFirst(symbol) {
   }
   if (!items.length) return "";
   return `<h3>Check first</h3><ul class="qv-checks">${items.join("")}</ul>${notes.length
-    ? "<p class=\"qv-note\">The steers are prompts to look further, not conclusions; they change nothing about the rank or score.</p>" : ""}`;
+    ? "<p class=\"qv-note\" data-note>The steers are prompts to look further, not conclusions; they change nothing about the rank or score.</p>" : ""}`;
 }
 
 function metricsTable(symbol) {
@@ -873,7 +873,7 @@ function metricsTable(symbol) {
     return `<tr><th scope="row">${label}</th><td>${cell}</td>${medians ? `<td class="qv-median">${Number.isFinite(median) ? oneDecimal(median, kind) : "—"}</td>` : ""}</tr>`;
   }).join("");
   const note = medians
-    ? `<p class="qv-note">The same six numbers on every list. Medians are of this week's companies in the same sector; accounting ratios leave out statements that do not add up.${sector === "unclassified" ? " This industry has no sector, so no median." : ""}</p>`
+    ? `<p class="qv-note" data-note>The same six numbers on every list. Medians are of this week's companies in the same sector; accounting ratios leave out statements that do not add up.${sector === "unclassified" ? " This industry has no sector, so no median." : ""}</p>`
     : "";
   return `<h3>The business vs its sector</h3>
     <table class="qv-metrics"><thead><tr><td></td><th scope="col">${escapeHtml(symbol)}</th>${head}</tr></thead><tbody>${body}</tbody></table>${note}`;
@@ -1051,7 +1051,7 @@ function yearPlotHtml(symbol) {
   if (!line) return `<section class="qv-plot-box"><h3>One year vs QQQ</h3><p class="qv-note">No one-year price line for ${escapeHtml(symbol)} in this week's snapshot. The ticker page says why.</p></section>`;
   return `<section class="qv-plot-box">
     <h3>One year vs QQQ</h3>
-    <p class="qv-note">${escapeHtml(day(line.firstDay))} – ${escapeHtml(day(line.lastDay))}, adjusted closes, each line from its own first close. The plot is the shape; both returns, in dollars and percent, are on the full ticker page.</p>
+    <p class="qv-note" data-note>${escapeHtml(day(line.firstDay))} – ${escapeHtml(day(line.lastDay))}, adjusted closes, each line from its own first close. The plot is the shape; both returns, in dollars and percent, are on the full ticker page.</p>
     ${yearPlotSvg(line, symbol)}
     <p class="qv-legend"><span><i class="qv-sw stock"></i>${escapeHtml(symbol)}</span><span><i class="qv-sw qqq"></i>QQQ</span></p>
   </section>`;

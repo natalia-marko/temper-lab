@@ -649,6 +649,7 @@ function facts(rows) {
   return dl;
 }
 const note = (text) => el("p", "tk-note", text);
+const commentary = (text) => { const p = note(text); if (p.setAttribute) p.setAttribute("data-note", ""); return p; };
 function link(text, href, external) {
   const a = el("a", "tk-link", text);
   a.href = href;
@@ -1592,7 +1593,7 @@ function quietFactsBox(c) {
   const title = "What changed vs the same quarter last year";
   if (!q) return section(title, "", note("No verified comparison for this weekly snapshot."));
   const box = section(title, q.period_end ? `${longDay(q.previous_end) || "n/a"} → ${longDay(q.period_end)}` : "",
-    note("Reported facts, no directional judgement. Cash vs profit uses the labelled year-to-date or full-year period."));
+    commentary("Reported facts, no directional judgement. Cash vs profit uses the labelled year-to-date or full-year period."));
   const inputLabels = {
     AccountsReceivableNetCurrent: "Net receivables (current)", AccountsReceivableNet: "Net receivables",
     InventoryNet: "Inventory", GrossProfit: "Gross profit", CostOfRevenue: "Cost of revenue",
@@ -1644,7 +1645,7 @@ function quietFactsBox(c) {
     detail.append(summary, ...missing.map((r) => note(`${r.label}: ${r.reason}`)));
     box.append(detail);
   }
-  box.append(note("Comparatives may include revisions. Missing is not zero. Splits, acquisitions and accounting changes can affect comparisons; check the filings."));
+  box.append(commentary("Comparatives may include revisions. Missing is not zero. Splits, acquisitions and accounting changes can affect comparisons; check the filings."));
   return box;
 }
 // Revenue as reported (solid) and the path the price needs (dashed), on one date axis.
@@ -1749,7 +1750,7 @@ function impliesBoxes(c) {
   const chartSlot = el("div", "");
   const rows = el("div", "tk-implies-rows");
   left.append(head, sub, cycle, chartSlot, rows,
-    note("Arithmetic on dated filings and your assumptions: not a fair value, a forecast or advice. History covers today's listed companies only."));
+    commentary("Arithmetic on dated filings and your assumptions: not a fair value, a forecast or advice. History covers today's listed companies only."));
   const right = section("Your assumptions", "Move any of them");
   const controls = el("div", "tk-implies-controls");
   const math = el("div", "tk-implies-math");
@@ -2195,7 +2196,7 @@ function draw(shard) {
     ...band("tk-owners", "Who owns and trades it", "SEC Form 4, 13D/13G and 13F filings", "own",
       stack(insidersBox(c), stakesBox(c)), fundsBox(c)),
     ...(c.potential ? band("tk-early", "Early-stage research file", `Week of ${longDay(c.potential.as_of || c.research?.as_of)}`, "early", earlyStageBox(c)) : []),
-    aboutBox(c), note("Facts with their dates, not a buy or sell call."));
+    aboutBox(c), commentary("Facts with their dates, not a buy or sell call."));
 }
 function starters() {
   const box = el("div", "tk-start");

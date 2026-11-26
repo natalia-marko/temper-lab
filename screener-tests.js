@@ -1,8 +1,7 @@
-// Screener tests page: 1. Unified backtest comparison (8 independent periods, crash & range,
-// all 193 weeks), 2. Live forward tests (Shortlist / Growth batches & challengers), and
-// 3. Test register — from share/screener-tests.json (tools/build_screener_tests.py, Saturday).
-// Numbers come from the builder; this file only formats them and draws the charts.
-// Values are written as text, never as HTML.
+// Screener tests page: top live countdown ribbon, split-screen 8-period heatmap matrix +
+// 193-week range/spread + 10-stock batch X-ray, and expandable live forward tests & audit register.
+// Numbers come from share/screener-tests.json (tools/build_screener_tests.py).
+// Values are written as text/DOM nodes only, never as HTML.
 (function () {
   "use strict";
   const SCHEMA = "screener-tests-1";
@@ -16,34 +15,24 @@
   const LISTS = { shortlist: { rule: "Shortlist", challenger: "60/40 order" }, growth: { rule: "Growth", challenger: "Growth v3" } };
   const SERIES_META = {
     shortlist: { label: "Shortlist", kind: "sl", color: "#1e6547" },
-    growth: { label: "Growth", kind: "gr", color: "#2663a8" },
-    challenger: { label: "60/40 order", kind: "ch", color: "#c05a12" },
-    qqq: { label: "QQQ", kind: "qqq", color: "#6b7280" },
+    growth: { label: "Growth", kind: "gr", color: "#2d5f8b" },
+    challenger: { label: "60/40 order", kind: "ch", color: "#a86c28" },
+    qqq: { label: "QQQ", kind: "qqq", color: "#6b7b72" },
   };
   const BATCHES_SHOWN = 6;
   const NEEDED = 3;
-  const BOX = { width: 1000, height: 310, left: 54, right: 988, top: 22, bottom: 268 };
   const TICK = 20;
 
   const state = {
-    data: null, list: "shortlist", view: "periods", measure: "excess",
-    index: null, periodIndex: null, holdingsSort: "return", filter: "active", allBatches: false,
-    show: { shortlist: true, growth: true, challenger: true, monthend: false },
+    data: null, list: "shortlist", hmMode: "excess", subView: "range",
+    periodIndex: null, xrayKey: "shortlist", holdingsSort: "return",
+    drawerOpen: false, filter: "active", allBatches: false,
   };
-  let cursor = null;
 
   const $ = (id) => document.getElementById(id);
   const utc = (iso) => { const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
   const dayYear = (iso) => { if (!iso) return "—"; const d = utc(iso); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-  const spanLabel = (start, exit) => {
-    if (!start) return "—";
-    const s = utc(start);
-    const sm = MONTHS[s.getUTCMonth()], sy = String(s.getUTCFullYear()).slice(2);
-    if (!exit) return `${sm} '${sy}`;
-    const e = utc(exit);
-    const em = MONTHS[e.getUTCMonth()], ey = String(e.getUTCFullYear()).slice(2);
-    return sy === ey ? `${sm}–${em} '${ey}` : `${sm} '${sy}–${em} '${ey}`;
-  };
+  const monYr = (iso) => { if (!iso) return "—"; const d = utc(iso); return `${MONTHS[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`; };
   const signed = (value, digits = 1) => {
     if (value === null || value === undefined || !Number.isFinite(value)) return "—";
     const text = Math.abs(value).toFixed(digits);
@@ -57,7 +46,7 @@
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined && text !== null) node.textContent = text;
+    if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
   }
   function svgEl(tag, attributes, text) {
@@ -68,7 +57,6 @@
   }
   function dot(kind) { return el("span", `st-dot ${kind}`); }
 
-  // The file must be this release's: the same run and Friday as share/release.json.
   function checkFile(data, release) {
     if (!data || data.schema !== SCHEMA || !Array.isArray(data.register) || !data.lists || !data.backtest) {
       return "The screener tests snapshot is in an unknown format.";
@@ -79,26 +67,16 @@
     return "";
   }
 
-  // A finished horizon: excess return over QQQ and SPY in points; null while the batch is held.
   function resultText(result) {
     if (!result) return null;
     if (!result.complete) return `not counted: ${result.reason || "incomplete"}`;
     return `${points(100 * result.excess_qqq)} vs QQQ, ${points(100 * result.excess_spy)} vs SPY`;
   }
 
-  // Chart scale: the measure's full range, rounded out to the tick step, the same whichever lines are shown.
   function niceRange(values) {
     const finite = values.filter(Number.isFinite);
     const low = Math.min(0, ...finite), high = Math.max(0, ...finite);
     return [Math.floor(low / TICK) * TICK, Math.ceil(high / TICK) * TICK];
-  }
-
-  function seriesFor(backtest, measure) {
-    const s = backtest.series;
-    const hasGrowth = Boolean(backtest.growth_available && s.growth_excess && s.growth_return);
-    return measure === "excess"
-      ? { shortlist: s.shortlist_excess, growth: hasGrowth ? s.growth_excess : null, challenger: s.challenger_excess, qqq: null }
-      : { shortlist: s.shortlist_return, growth: hasGrowth ? s.growth_return : null, challenger: s.challenger_return, qqq: s.qqq_return };
   }
 
   function statRows(stats, measure) {
@@ -134,7 +112,7 @@
     const tbody = el("tbody");
     body.forEach((cells) => {
       const tr = el("tr");
-      cells.forEach((cell) => tr.appendChild(cell));
+      cells.forEach((c) => tr.appendChild(c));
       tbody.appendChild(tr);
     });
     t.append(head, tbody);
@@ -166,44 +144,313 @@
     return picked;
   }
 
-  // ---- Section 1: Unified Backtest --------------------------------------------------------------
-  function periodSeriesKeys(backtest) {
+  function strategyKeys(backtest) {
     return backtest.growth_available ? ["shortlist", "growth", "challenger"] : ["shortlist", "challenger"];
   }
 
-  function renderVerdict(backtest) {
-    const st = backtest.stats;
-    const hasGrowth = Boolean(backtest.growth_available && st.growth_return && st.growth_excess);
-    const periods = periodsOf(backtest);
-    const items = [];
-    const pushCard = (key, retStat, exStat, sub) => {
-      const meta = SERIES_META[key];
-      const card = el("div", "st-verdict-card");
-      const head = el("div", "st-verdict-head");
-      const title = el("span");
-      title.append(dot(meta.kind), document.createTextNode(meta.label));
-      head.append(title, el("span", "st-verdict-sub", sub));
-      const main = el("div", "st-verdict-main");
-      main.append(
-        el("span", "st-verdict-val", percent(retStat.median)),
-        el("span", "st-verdict-beat", exStat ? `beat QQQ ${Math.round((100 * exStat.above_zero) / exStat.n)}%` : "typical 6M"),
+  function exBestStats(holdings, qqqRet) {
+    const valid = (holdings || []).filter((h) => Number.isFinite(h.r));
+    if (!valid.length) return null;
+    const sorted = [...valid].sort((a, b) => b.r - a.r);
+    const avg = valid.reduce((sum, x) => sum + x.r, 0) / valid.length;
+    const rest = sorted.slice(1);
+    const exBest = rest.length ? rest.reduce((sum, x) => sum + x.r, 0) / rest.length : avg;
+    const beatQ = Number.isFinite(qqqRet) ? valid.filter((x) => x.r > qqqRet).length : 0;
+    return { avg, exBest, top: sorted[0], beatQ, count: valid.length, sorted };
+  }
+
+  function heatClass(value, isQqq) {
+    if (!Number.isFinite(value)) return "st-hm-c-flat";
+    if (isQqq) return value >= 15 ? "st-hm-c-qhi" : (value >= 0 ? "st-hm-c-qmid" : "st-hm-c-qneg");
+    if (value >= 25) return "st-hm-c-hi";
+    if (value >= 10) return "st-hm-c-pos";
+    if (value >= 2) return "st-hm-c-mild";
+    if (value >= -2) return "st-hm-c-flat";
+    if (value >= -10) return "st-hm-c-soft";
+    return "st-hm-c-neg";
+  }
+
+  function daysBetween(a, b) {
+    if (!a || !b) return 0;
+    return Math.max(0, Math.round((utc(b).getTime() - utc(a).getTime()) / 864e5));
+  }
+
+  // ---- Top Live Countdown Ribbon ----------------------------------------------------------------
+  function renderRibbon() {
+    const data = state.data;
+    const sl = data.lists.shortlist || { batches: [] };
+    const gr = data.lists.growth || { batches: [] };
+    const oldest = sl.batches[sl.batches.length - 1] || gr.batches[gr.batches.length - 1] || null;
+    const activeCount = registerRows(data.register, "active").length;
+    const archivedCount = data.register.length - activeCount;
+
+    $("st-rib-summary").textContent = oldest
+      ? `${plural(sl.batches.length || gr.batches.length, "weekly batch", "weekly batches")} · Shortlist & Growth`
+      : "No weekly batches sealed yet · awaiting next Friday run";
+
+    const fill = $("st-tl-fill");
+    const dates = $("st-tl-dates");
+    if (oldest) {
+      const elapsed = daysBetween(oldest.as_of, data.as_of);
+      const total = Math.max(1, daysBetween(oldest.as_of, oldest.exit_6m));
+      const pctDone = Math.max(4, Math.min(100, Math.round((elapsed / total) * 100)));
+      if (fill.style) fill.style.width = `${pctDone}%`;
+      const mkSpan = (prefix, bold) => {
+        const s = el("span", "");
+        s.append(document.createTextNode(`${prefix} `), el("strong", "", bold));
+        return s;
+      };
+      dates.replaceChildren(
+        mkSpan("Sealed", dayYear(oldest.as_of)),
+        mkSpan("First 6M verdict", dayYear(oldest.exit_6m)),
+        mkSpan("12M", dayYear(oldest.exit_12m)),
       );
-      const risk = el("div", "st-verdict-risk");
-      risk.append(document.createTextNode("Worst 6M: "));
-      risk.append(el("strong", retStat.worst <= -25 ? "st-crash" : "", percent(retStat.worst)));
-      card.append(head, main, risk);
-      items.push(card);
-    };
-    const slBeat = periods.filter((p) => p.shortlist_excess > 0).length;
-    const chWins = periods.filter((p) => p.challenger_excess > p.shortlist_excess).length;
-    pushCard("shortlist", st.shortlist_return, st.shortlist_excess, `${slBeat}/${periods.length} > QQQ`);
-    if (hasGrowth) {
-      const grBeat = periods.filter((p) => p.growth_excess > 0).length;
-      pushCard("growth", st.growth_return, st.growth_excess, `${grBeat}/${periods.length} > QQQ`);
+    } else {
+      if (fill.style) fill.style.width = "0%";
+      dates.replaceChildren(el("span", "", "First batch recorded at the next weekly run."));
     }
-    pushCard("challenger", st.challenger_return, st.challenger_excess, `${chWins}/${periods.length} vs Shortlist`);
-    pushCard("qqq", st.qqq_return, null, `${backtest.starts.length} Fridays`);
-    $("st-verdict").replaceChildren(...items);
+
+    const btn = $("st-drawer-toggle");
+    btn.setAttribute("aria-expanded", String(state.drawerOpen));
+    btn.textContent = state.drawerOpen
+      ? "Hide live batches & audit ↑"
+      : `Live batches & audit (${activeCount} active / ${archivedCount} archived) ▾`;
+    $("st-live-drawer").hidden = !state.drawerOpen;
+  }
+
+  // ---- Split-Screen Backtest: Heatmap Matrix + 193-Week Visual + Batch X-Ray --------------------
+  function renderMatrix(backtest, periods, keys) {
+    const st = backtest.stats;
+    const t = el("table", "st-hm");
+    const thead = el("thead"), htr = el("tr");
+    const addTh = (text, cls) => { const th = el("th", cls || "", text); th.setAttribute("scope", "col"); htr.appendChild(th); };
+    addTh("Strategy");
+    periods.forEach((p, i) => addTh(monYr(p.start), i === state.periodIndex ? "col-active" : ""));
+    addTh("Med");
+    addTh("Worst");
+    thead.appendChild(htr);
+
+    const tbody = el("tbody");
+    const rowSpecs = [...keys, "qqq"];
+    rowSpecs.forEach((key) => {
+      const isQ = key === "qqq";
+      const rStat = st[`${key}_return`];
+      const tr = el("tr");
+      const nameTd = el("td");
+      nameTd.append(dot(SERIES_META[key].kind), document.createTextNode(SERIES_META[key].label));
+      tr.appendChild(nameTd);
+
+      periods.forEach((p, idx) => {
+        const raw = isQ || state.hmMode === "return";
+        const val = raw ? p[`${key}_return`] : p[`${key}_excess`];
+        const td = el("td");
+        const isSel = idx === state.periodIndex && !isQ && key === state.xrayKey;
+        const colHi = idx === state.periodIndex && !isSel;
+        const btn = el("button", `st-hm-btn ${heatClass(val, isQ)}${isSel ? " cell-sel" : ""}${colHi ? " col-hi" : ""}`,
+          raw ? percent(val) : signed(val));
+        btn.setAttribute("type", "button");
+        btn.setAttribute("aria-pressed", String(isSel));
+        btn.setAttribute("title", `${SERIES_META[key].label} · ${dayYear(p.start)} to ${dayYear(p.exit)}: ${percent(p[`${key}_return`])}${isQ ? "" : ` (${points(p[`${key}_excess`])} vs QQQ)`}`);
+        btn.addEventListener("click", () => {
+          state.periodIndex = idx;
+          if (!isQ) state.xrayKey = key;
+          renderBacktest();
+        });
+        td.appendChild(btn);
+        tr.appendChild(td);
+      });
+
+      tr.appendChild(cell(percent(rStat ? rStat.median : null), "st-hm-sum"));
+      const worstCls = `st-hm-sum${rStat && rStat.worst <= -25 ? " st-crash" : ""}`;
+      tr.appendChild(cell(percent(rStat ? rStat.worst : null), worstCls));
+      tbody.appendChild(tr);
+    });
+
+    t.append(thead, tbody);
+    $("st-matrix").replaceChildren(t);
+  }
+
+  function renderDumbbell(backtest, keys) {
+    const st = backtest.stats;
+    const rowSpecs = [...keys, "qqq"].map((k) => [k, st[`${k}_return`]]).filter(([, s]) => s);
+    const W = 620, H = 195, L = 98, R = 26, T = 18, B = 166;
+    const allV = rowSpecs.flatMap(([, s]) => [s.worst, s.best]).filter(Number.isFinite);
+    const lo = Math.min(-45, Math.floor((Math.min(...allV) - 5) / 20) * 20);
+    const hi = Math.max(105, Math.ceil((Math.max(...allV) + 5) / 20) * 20);
+    const x = (v) => L + ((v - lo) / Math.max(hi - lo, 1)) * (W - L - R);
+    const rh = (B - T) / Math.max(1, rowSpecs.length);
+
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": "Worst, 10th percentile, median and best 6-month returns across all Friday starts." });
+    for (let t = Math.ceil(lo / 20) * 20; t <= hi; t += 20) {
+      const tx = x(t).toFixed(1);
+      svg.appendChild(svgEl("line", { x1: tx, x2: tx, y1: T, y2: B, stroke: t === 0 ? "#5d7263" : "#edf1ed", "stroke-width": t === 0 ? 1.3 : 1 }));
+      svg.appendChild(svgEl("text", { x: tx, y: H - 6, "text-anchor": "middle" }, `${t > 0 ? "+" : ""}${t}%`));
+    }
+    rowSpecs.forEach(([key, r], idx) => {
+      const m = SERIES_META[key], cy = T + (idx + 0.5) * rh;
+      svg.appendChild(svgEl("text", { x: L - 8, y: (cy + 4).toFixed(1), "text-anchor": "end", class: "st-svg-lbl" }, m.label));
+      svg.appendChild(svgEl("line", { x1: x(r.worst).toFixed(1), x2: x(r.best).toFixed(1), y1: cy, y2: cy, stroke: "#d4ddd7", "stroke-width": 5, "stroke-linecap": "round" }));
+      svg.appendChild(svgEl("line", { x1: x(r.p10).toFixed(1), x2: x(r.median).toFixed(1), y1: cy, y2: cy, stroke: m.color, "stroke-width": 8, "stroke-linecap": "round", opacity: 0.35 }));
+      svg.appendChild(svgEl("circle", { cx: x(r.worst).toFixed(1), cy, r: 4.5, fill: "#ad4c3f" }));
+      svg.appendChild(svgEl("circle", { cx: x(r.median).toFixed(1), cy, r: 5.5, fill: m.color }));
+      svg.appendChild(svgEl("circle", { cx: x(r.best).toFixed(1), cy, r: 4, fill: "#4f8f69" }));
+      svg.appendChild(svgEl("text", { x: x(r.worst).toFixed(1), y: (cy - 8).toFixed(1), "text-anchor": "middle", class: "st-svg-neg" }, percent(r.worst)));
+      svg.appendChild(svgEl("text", { x: x(r.median).toFixed(1), y: (cy + 16).toFixed(1), "text-anchor": "middle", class: "st-svg-lbl" }, percent(r.median)));
+      svg.appendChild(svgEl("text", { x: x(r.best).toFixed(1), y: (cy - 8).toFixed(1), "text-anchor": "middle", class: "st-svg-pos" }, percent(r.best)));
+    });
+    $("st-chart").replaceChildren(svg);
+    $("st-chart-legend").textContent = "Red dot = worst 6M crash · thick band = 10th pct to median · green dot = best 6M.";
+  }
+
+  function renderSpreadHistogram(backtest) {
+    const key = state.xrayKey;
+    const vals = (backtest.series[`${key}_excess`] || []).filter(Number.isFinite);
+    const exS = backtest.stats[`${key}_excess`];
+    const m = SERIES_META[key];
+    const minB = -45, maxB = 65, step = 5;
+    const bins = [];
+    for (let v = minB; v < maxB; v += step) bins.push({ lo: v, hi: v + step, count: 0 });
+    vals.forEach((v) => {
+      const idx = Math.max(0, Math.min(bins.length - 1, Math.floor((v - minB) / step)));
+      bins[idx].count += 1;
+    });
+    const maxC = Math.max(...bins.map((b) => b.count), 1);
+    const W = 620, H = 195, L = 12, R = 12, T = 26, B = 166, pw = W - L - R, bw = pw / bins.length;
+    const xOf = (v) => L + Math.max(0, Math.min(1, (v - minB) / (maxB - minB))) * pw;
+
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `${m.label} 6-month excess returns versus QQQ across ${vals.length} Friday starts.` });
+    bins.forEach((b, i) => {
+      const bh = (b.count / maxC) * (B - T), bx = L + i * bw + 1;
+      svg.appendChild(svgEl("rect", {
+        x: bx.toFixed(1), y: (B - bh).toFixed(1),
+        width: Math.max(2, bw - 2).toFixed(1), height: bh.toFixed(1), rx: 2,
+        fill: b.lo >= 0 ? "#5c9372" : "#cf968b",
+      }));
+    });
+    svg.appendChild(svgEl("line", { x1: xOf(0).toFixed(1), x2: xOf(0).toFixed(1), y1: T - 6, y2: B + 4, stroke: "#3d5346", "stroke-width": 1.3 }));
+    if (exS) {
+      const mx = xOf(exS.median).toFixed(1);
+      svg.appendChild(svgEl("line", { x1: mx, x2: mx, y1: T - 6, y2: B, stroke: m.color, "stroke-width": 1.8, "stroke-dasharray": "3 2" }));
+      svg.appendChild(svgEl("circle", { cx: mx, cy: T - 6, r: 3.5, fill: m.color }));
+      svg.appendChild(svgEl("text", { x: mx, y: T - 12, "text-anchor": "middle", class: "st-svg-lbl" },
+        `${m.label} med ${points(exS.median)} (${Math.round((100 * exS.above_zero) / exS.n)}% > QQQ)`));
+    }
+    [-40, -20, 0, 20, 40, 60].forEach((t) => {
+      svg.appendChild(svgEl("text", { x: xOf(t).toFixed(1), y: H - 6, "text-anchor": "middle" }, t === 0 ? "QQQ" : `${t > 0 ? "+" : ""}${t}`));
+    });
+    $("st-chart").replaceChildren(svg);
+    $("st-chart-legend").textContent = `${m.label} across all ${vals.length} Friday starts: green = ahead of QQQ, terracotta = behind QQQ (pp).`;
+  }
+
+  function renderXray(periods, keys) {
+    const card = $("st-xray-card");
+    const p = periods[state.periodIndex];
+    if (!p) { card.hidden = true; return; }
+    card.hidden = false;
+    if (!keys.includes(state.xrayKey)) state.xrayKey = keys[0];
+
+    $("st-xray-title").textContent = `Period ${state.periodIndex + 1} · ${monYr(p.start)} → ${monYr(p.exit)}`;
+    const qWrap = $("st-xray-qqq");
+    qWrap.replaceChildren(document.createTextNode("QQQ "), el("strong", "", percent(p.qqq_return)));
+
+    $("st-xray-tabs").replaceChildren(...keys.map((key) => {
+      const btn = el("button", "", SERIES_META[key].label);
+      btn.setAttribute("type", "button");
+      btn.setAttribute("aria-pressed", String(key === state.xrayKey));
+      btn.addEventListener("click", () => { state.xrayKey = key; renderBacktest(); });
+      return btn;
+    }));
+    $("st-xray-sort").replaceChildren(...[["return", "Best → Worst"], ["rank", "Rank #1–10"]].map(([mode, label]) => {
+      const btn = el("button", "", label);
+      btn.setAttribute("type", "button");
+      btn.setAttribute("aria-pressed", String(state.holdingsSort === mode));
+      btn.addEventListener("click", () => { state.holdingsSort = mode; renderXray(periods, keys); });
+      return btn;
+    }));
+
+    const key = state.xrayKey;
+    const rawHoldings = p.holdings && p.holdings[key] ? p.holdings[key] : null;
+    const stx = exBestStats(rawHoldings, p.qqq_return);
+    const kpiBox = $("st-xray-kpis"), barsBox = $("st-xray-bars"), foot = $("st-xray-foot");
+
+    const mkKpi = (label, value, sub, tone) => {
+      const box = el("div", "st-mk");
+      box.append(el("span", "", label), el("strong", tone || "", value), el("small", "", sub));
+      return box;
+    };
+
+    if (!stx) {
+      kpiBox.replaceChildren(
+        mkKpi("Batch 6M", percent(p[`${key}_return`]), points(p[`${key}_excess`]), p[`${key}_return`] < 0 ? "st-neg" : "st-pos"),
+        mkKpi("QQQ 6M", percent(p.qqq_return), "same window"),
+      );
+      barsBox.replaceChildren(el("p", "st-small", "Individual period holdings are not included in this snapshot."));
+      foot.textContent = "";
+      return;
+    }
+
+    kpiBox.replaceChildren(
+      mkKpi("Batch 6M", percent(p[`${key}_return`]), points(p[`${key}_excess`]), p[`${key}_return`] < 0 ? "st-neg" : "st-pos"),
+      mkKpi(`Ex-#1 (${stx.top.s})`, percent(stx.exBest), "without top stock", stx.exBest < 0 ? "st-neg" : "st-pos"),
+      mkKpi("Beat QQQ", `${stx.beatQ} / ${stx.count}`, "stocks above QQQ"),
+    );
+
+    const ordered = state.holdingsSort === "rank"
+      ? rawHoldings.map((item, idx) => ({ ...item, rank: idx + 1 }))
+      : stx.sorted;
+    const vals = ordered.map((x) => x.r).filter(Number.isFinite);
+    const lo = Math.min(0, Number.isFinite(p.qqq_return) ? p.qqq_return : 0, ...vals);
+    const hi = Math.max(0, Number.isFinite(p.qqq_return) ? p.qqq_return : 0, ...vals);
+    const span = Math.max(hi - lo, 1);
+    const pos = (v) => ((v - lo) / span) * 100;
+    const z = pos(0), qx = Number.isFinite(p.qqq_return) ? pos(p.qqq_return) : null;
+
+    barsBox.replaceChildren(...ordered.map((item) => {
+      const row = el("div", "st-stk-row");
+      const link = el("a", "st-stk-sym", item.s);
+      link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(item.s)}`);
+      const track = el("div", "st-stk-tr");
+      const zero = el("span", "st-stk-z");
+      if (zero.style) zero.style.left = `${z}%`;
+      track.appendChild(zero);
+      if (qx !== null) {
+        const qMark = el("span", "st-stk-q");
+        if (qMark.style) qMark.style.left = `${qx}%`;
+        qMark.setAttribute("title", `QQQ ${percent(p.qqq_return)}`);
+        track.appendChild(qMark);
+      }
+      if (Number.isFinite(item.r)) {
+        const end = pos(item.r);
+        const bar = el("span", `st-stk-b${item.r < 0 ? " neg" : ""}`);
+        if (bar.style) { bar.style.left = `${Math.min(end, z)}%`; bar.style.width = `${Math.abs(end - z)}%`; }
+        track.appendChild(bar);
+      }
+      const val = el("span", `st-stk-v${Number.isFinite(item.r) && item.r < 0 ? " st-neg" : " st-pos"}`, percent(item.r));
+      row.append(link, track, val);
+      return row;
+    }));
+    foot.textContent = `Dark vertical tick marks QQQ (${percent(p.qqq_return)}). Click any ticker for its full page.`;
+  }
+
+  function renderStats(backtest, keys) {
+    const st = backtest.stats;
+    const cards = [];
+    const push = (title, kind, data, measure) => {
+      if (!data) return;
+      const card = el("div", "st-stat-card");
+      const h = el("h4");
+      h.append(dot(kind), document.createTextNode(title));
+      const dl = el("dl", "st-rows");
+      rows(dl, statRows(data, measure));
+      card.append(h, dl);
+      cards.push(card);
+    };
+    const m = state.hmMode === "return" ? "return" : "excess";
+    keys.forEach((k) => push(SERIES_META[k].label, SERIES_META[k].kind, st[`${k}_${m}`], m));
+    if (m === "return" && st.qqq_return) push("QQQ", "qqq", st.qqq_return, "return");
+    $("st-stats").replaceChildren(...cards);
   }
 
   function renderBacktest() {
@@ -214,394 +461,37 @@
       empty.replaceChildren(el("strong", "", "Backtest withheld"), document.createTextNode(backtest.reason));
       empty.hidden = false;
       $("st-backtest").hidden = true;
+      $("st-xray-card").hidden = true;
       return;
     }
     const n = backtest.starts.length;
     const periods = periodsOf(backtest);
-    const hasGrowth = Boolean(backtest.growth_available);
-    $("st-clock-before").textContent = `${n} Friday starts (${periods.length} independent 6-month holds), ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[n - 1])}. Shown once — never repeated.`;
+    const keys = strategyKeys(backtest);
+    if (state.periodIndex === null || state.periodIndex >= periods.length) state.periodIndex = periods.length - 1;
+    if (!keys.includes(state.xrayKey)) state.xrayKey = keys[0];
+
+    $("st-clock-before").textContent = `${n} Friday starts (${periods.length} independent 6-month holds), ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[n - 1])}. Click any cell to inspect its 10 stocks.`;
     empty.hidden = true;
     $("st-backtest").hidden = false;
 
-    if (state.index === null || state.index >= n) state.index = n - 1;
-    if (state.periodIndex === null || state.periodIndex >= periods.length) state.periodIndex = periods.length - 1;
+    $("st-hm-excess").setAttribute("aria-pressed", String(state.hmMode === "excess"));
+    $("st-hm-return").setAttribute("aria-pressed", String(state.hmMode === "return"));
+    $("st-sub-range").setAttribute("aria-pressed", String(state.subView === "range"));
+    $("st-sub-hist").setAttribute("aria-pressed", String(state.subView === "hist"));
+    $("st-sub-title").textContent = `All ${n} Friday starts (${dayYear(backtest.starts[0])} → ${dayYear(backtest.starts[n - 1])})`;
 
-    $("st-view-periods").textContent = `${periods.length} independent periods`;
-    $("st-view-weekly").textContent = `All ${n} weeks`;
-    [["st-view-periods", "periods"], ["st-view-range", "range"], ["st-view-weekly", "weekly"]].forEach(([id, v]) =>
-      $(id).setAttribute("aria-pressed", String(state.view === v)));
+    renderMatrix(backtest, periods, keys);
+    if (state.subView === "range") renderDumbbell(backtest, keys);
+    else renderSpreadHistogram(backtest);
+    renderXray(periods, keys);
+    renderStats(backtest, keys);
 
-    const isWeekly = state.view === "weekly";
-    $("st-weekly-controls").hidden = !isWeekly;
-    $("st-slider-wrap").hidden = !isWeekly;
-    $("st-show-growth").hidden = !hasGrowth;
-    const slider = $("st-start");
-    slider.setAttribute("max", String(n - 1));
-    slider.value = String(state.index);
-    $("st-show-shortlist").setAttribute("aria-pressed", String(state.show.shortlist));
-    $("st-show-growth").setAttribute("aria-pressed", String(state.show.growth && hasGrowth));
-    $("st-show-challenger").setAttribute("aria-pressed", String(state.show.challenger));
-    $("st-show-monthend").setAttribute("aria-pressed", String(state.show.monthend));
-    $("st-measure-excess").setAttribute("aria-pressed", String(state.measure === "excess"));
-    $("st-measure-return").setAttribute("aria-pressed", String(state.measure === "return"));
-
-    renderVerdict(backtest);
-
-    const chartBox = $("st-chart");
-    chartBox.className = `st-chart ${state.view}`;
-    if (state.view === "periods") {
-      const keys = periodSeriesKeys(backtest);
-      const names = keys.map((k) => SERIES_META[k].label).join(", ");
-      $("st-chart-legend").textContent = `${periods.length} non-overlapping 6-month holds: bars show points ahead of (+) or behind (−) QQQ (${names}). Hover or click any period.`;
-      drawPeriodsChart(periods, keys);
-      renderPeriodReadout(periods, keys);
-    } else if (state.view === "range") {
-      $("st-chart-legend").textContent = `Full 6-month return spread across all ${n} Friday starts: Worst (red) ← [10th pct … Median] → Best. Shows crash risk beside typical upside.`;
-      drawRangeChart(backtest);
-      renderRangeReadout(backtest);
-    } else {
-      const legend = [];
-      if (state.measure === "excess") legend.push("Each point is one Friday start: points ahead of (+) or behind (−) QQQ over the next 6 months; the dark line is level with QQQ.");
-      else legend.push("Each point is one Friday start: the 6-month return; QQQ is the dashed line.");
-      if (state.show.monthend) legend.push("Blue dots: month-end starts on the Shortlist line, the dates a monthly decision would use.");
-      $("st-chart-legend").textContent = legend.join(" ");
-      drawWeeklyChart(backtest);
-      renderWeeklyReadout(backtest);
-    }
-
-    renderStats(backtest);
     $("st-overlap").textContent = `The ${n} windows overlap, so they are not ${n} separate tests: only ${backtest.independent_windows} do not overlap.`;
     $("st-backtest-source").textContent = `Source: comparison report built ${dayYear(backtest.report_built_at)} on data to ${dayYear(backtest.data_as_of)}; `
       + `each window is held ${backtest.horizon_sessions} trading days; ${backtest.basis}.`;
   }
 
-  function drawPeriodsChart(periods, keys) {
-    cursor = null;
-    const vals = periods.flatMap((p) => keys.map((k) => p[`${k}_excess`]));
-    const [rawLow, rawHigh] = niceRange(vals);
-    // Add vertical headroom/footroom so labels above tall bars and below negative bars never clip
-    const minVal = Math.min(...vals);
-    const maxVal = Math.max(...vals);
-    const low = minVal < 0 ? Math.min(rawLow, Math.floor((minVal - 10) / 10) * 10) : rawLow;
-    const high = Math.max(rawHigh, Math.ceil((maxVal + 8) / 10) * 10);
-    const L = 54, R = 986, T = 24, B = 252;
-    const y = (v) => T + ((high - v) * (B - T)) / Math.max(1, high - low);
-    const y0 = y(0);
-    const svg = svgEl("svg", {
-      viewBox: `0 0 ${BOX.width} ${BOX.height}`, role: "img",
-      "aria-label": `${periods.length} independent 6-month periods comparing ${keys.map((k) => SERIES_META[k].label).join(", ")} versus QQQ.`,
-    });
-    for (let v = rawLow; v <= rawHigh; v += TICK) {
-      svg.appendChild(svgEl("line", { x1: L, x2: R, y1: y(v), y2: y(v), class: v === 0 ? "zero" : "grid" }));
-      svg.appendChild(svgEl("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, v === 0 ? "QQQ 0" : signed(v, 0)));
-    }
-    const slot = (R - L) / Math.max(1, periods.length);
-    const kCount = keys.length;
-    const gap = kCount >= 3 ? 5 : 6;
-    const bw = Math.min(kCount >= 3 ? 25 : 32, Math.max(14, Math.floor((slot - 24 - gap * (kCount - 1)) / kCount)));
-    const totalW = kCount * bw + (kCount - 1) * gap;
-    const groups = [];
-    periods.forEach((p, i) => {
-      const cx = L + slot * (i + 0.5);
-      const startX = cx - totalW / 2;
-      const g = svgEl("g", { class: `bar-group${i === state.periodIndex ? " selected" : ""}` });
-      g.appendChild(svgEl("rect", { x: L + slot * i + 4, y: T - 6, width: slot - 8, height: B - T + 36, rx: 8, class: "bar-hit" }));
-      keys.forEach((key, idx) => {
-        const val = p[`${key}_excess`];
-        const xPos = startX + idx * (bw + gap);
-        const top = val >= 0 ? y(val) : y0;
-        const h = Math.max(2.5, Math.abs(y(val) - y0));
-        g.appendChild(svgEl("rect", { x: xPos, y: top, width: bw, height: h, rx: 3, fill: SERIES_META[key].color }));
-        const ty = val >= 0 ? top - 5 : top + h + 12;
-        g.appendChild(svgEl("text", { x: xPos + bw / 2, y: ty, "text-anchor": "middle", class: "bar-val" }, signed(val, 1)));
-      });
-      g.appendChild(svgEl("text", { x: cx, y: 292, "text-anchor": "middle", class: "axis-span" }, spanLabel(p.start, p.exit)));
-      const choose = () => {
-        state.periodIndex = i;
-        groups.forEach((node, idx) => node.setAttribute("class", `bar-group${idx === i ? " selected" : ""}`));
-        renderPeriodReadout(periods, keys);
-      };
-      g.addEventListener("pointerenter", choose);
-      g.addEventListener("click", choose);
-      groups.push(g);
-      svg.appendChild(g);
-    });
-    $("st-chart").replaceChildren(svg);
-  }
-
-  function renderPeriodReadout(periods, keys) {
-    const p = periods[state.periodIndex];
-    if (!p) return;
-    const holdings = p.holdings;
-    if (!holdings) {
-      const lines = [el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)} (QQQ ${percent(p.qqq_return)})`)];
-      keys.forEach((key) => {
-        const m = SERIES_META[key];
-        const line = el("span");
-        line.append(dot(m.kind), document.createTextNode(`${m.label}: ${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])} vs QQQ)`));
-        lines.push(line);
-      });
-      $("st-readout").replaceChildren(...lines);
-      return;
-    }
-
-    const head = el("div", "st-readout-head");
-    const titleWrap = el("div", "st-readout-title");
-    titleWrap.append(
-      el("strong", "", `Period ${state.periodIndex + 1} of ${periods.length} · Bought ${dayYear(p.start)} → sold ${dayYear(p.exit)}`),
-      el("span", "st-readout-meta", ` · 10 equal-weight stocks each · QQQ ${percent(p.qqq_return)}`),
-    );
-    const sortWrap = el("div", "st-sort");
-    [["return", "Best → Worst"], ["rank", "Rank #1–10"]].forEach(([mode, label]) => {
-      const btn = el("button", "", label);
-      btn.setAttribute("type", "button");
-      btn.setAttribute("aria-pressed", String(state.holdingsSort === mode));
-      btn.addEventListener("click", () => { state.holdingsSort = mode; renderPeriodReadout(periods, keys); });
-      sortWrap.appendChild(btn);
-    });
-    head.append(titleWrap, sortWrap);
-
-    const grid = el("div", "st-holdings-grid");
-    keys.forEach((key) => {
-      const m = SERIES_META[key];
-      const raw = (holdings[key] || []).map((item, idx) => ({ ...item, rank: idx + 1 }));
-      const items = state.holdingsSort === "return"
-        ? [...raw].sort((a, b) => (b.r ?? -999) - (a.r ?? -999))
-        : raw;
-      const upCount = raw.filter((x) => x.r !== null && x.r > 0).length;
-
-      const card = el("div", "st-holding-card");
-      const chead = el("div", "st-holding-head");
-      const left = el("span", "st-holding-name");
-      left.append(dot(m.kind), document.createTextNode(m.label));
-      const right = el("span", "st-holding-sum", `${percent(p[`${key}_return`])} (${points(p[`${key}_excess`])}) · ${upCount}/${raw.length} up`);
-      chead.append(left, right);
-
-      const pills = el("div", "st-pill-grid");
-      items.forEach((item) => {
-        const up = item.r !== null && item.r >= 0;
-        const a = el("a", `st-stock-pill ${item.r === null ? "flat" : up ? "up" : "down"}`);
-        a.setAttribute("href", `./ticker.html?t=${encodeURIComponent(item.s)}`);
-        a.setAttribute("title", `#${item.rank} ${item.s}: ${percent(item.r)} over 6 months`);
-        a.append(el("strong", "", item.s), el("span", "", item.r === null ? "—" : `${signed(item.r, 0)}%`));
-        pills.appendChild(a);
-      });
-      card.append(chead, pills);
-      grid.appendChild(card);
-    });
-    $("st-readout").replaceChildren(head, grid);
-  }
-
-  function drawRangeChart(backtest) {
-    cursor = null;
-    const st = backtest.stats;
-    const entries = [
-      { key: "shortlist", stat: st.shortlist_return },
-      ...(backtest.growth_available && st.growth_return ? [{ key: "growth", stat: st.growth_return }] : []),
-      { key: "challenger", stat: st.challenger_return },
-      { key: "qqq", stat: st.qqq_return },
-    ];
-    const [low, high] = niceRange(entries.flatMap((e) => [e.stat.worst, e.stat.best]));
-    const L = 128, R = 972, T = 20, B = 248;
-    const x = (v) => L + ((v - low) * (R - L)) / Math.max(1, high - low);
-    const svg = svgEl("svg", {
-      viewBox: `0 0 ${BOX.width} 280`, role: "img",
-      "aria-label": "6-month return range from worst to best across Shortlist, Growth, 60/40 order, and QQQ.",
-    });
-    for (let v = low; v <= high; v += TICK) {
-      svg.appendChild(svgEl("line", { x1: x(v), x2: x(v), y1: T, y2: B, class: v === 0 ? "zero" : "grid" }));
-      svg.appendChild(svgEl("text", { x: x(v), y: B + 20, "text-anchor": "middle" }, v === 0 ? "0%" : `${signed(v, 0)}%`));
-    }
-    const step = (B - T) / entries.length;
-    entries.forEach((entry, i) => {
-      const cy = T + step * (i + 0.5);
-      const m = SERIES_META[entry.key];
-      const s = entry.stat;
-      svg.appendChild(svgEl("text", { x: L - 14, y: cy + 4, "text-anchor": "end", class: "range-label" }, m.label));
-      svg.appendChild(svgEl("line", { x1: x(s.worst), x2: x(s.best), y1: cy, y2: cy, stroke: m.color, "stroke-width": 2.5, "stroke-opacity": 0.4 }));
-      if (s.worst < 0) {
-        svg.appendChild(svgEl("line", { x1: x(s.worst), x2: x(Math.min(0, s.p10)), y1: cy, y2: cy, stroke: "#b42318", "stroke-width": 4.5, "stroke-linecap": "round" }));
-      }
-      const bandL = x(Math.min(s.p10, s.median));
-      const bandW = Math.max(5, Math.abs(x(s.median) - x(s.p10)));
-      svg.appendChild(svgEl("rect", { x: bandL, y: cy - 7, width: bandW, height: 14, rx: 4, fill: m.color, "fill-opacity": 0.85 }));
-      svg.appendChild(svgEl("circle", { cx: x(s.worst), cy, r: 5, fill: "#b42318" }));
-      svg.appendChild(svgEl("circle", { cx: x(s.median), cy, r: 6, fill: m.color, stroke: "#fff", "stroke-width": 1.8 }));
-      svg.appendChild(svgEl("circle", { cx: x(s.best), cy, r: 4, fill: m.color }));
-      svg.appendChild(svgEl("text", { x: x(s.worst), y: cy - 12, "text-anchor": "middle", class: "range-crash" }, percent(s.worst)));
-      svg.appendChild(svgEl("text", { x: x(s.median), y: cy - 12, "text-anchor": "middle", class: "range-med" }, `med ${percent(s.median)}`));
-      svg.appendChild(svgEl("text", { x: x(s.best), y: cy - 12, "text-anchor": "middle", class: "range-best" }, percent(s.best)));
-    });
-    $("st-chart").replaceChildren(svg);
-  }
-
-  function renderRangeReadout(backtest) {
-    const st = backtest.stats;
-    const lines = [el("strong", "", `Downside check across all ${backtest.starts.length} Friday starts`)];
-    const add = (key, s) => {
-      const m = SERIES_META[key];
-      const line = el("span");
-      line.append(dot(m.kind), document.createTextNode(`${m.label}: median ${percent(s.median)}, 1-in-10 worse than ${percent(s.p10)}, worst ${percent(s.worst)} (from ${dayYear(s.worst_start)})`));
-      lines.push(line);
-    };
-    add("shortlist", st.shortlist_return);
-    if (backtest.growth_available && st.growth_return) add("growth", st.growth_return);
-    add("challenger", st.challenger_return);
-    add("qqq", st.qqq_return);
-    $("st-readout").replaceChildren(...lines);
-  }
-
-  function drawWeeklyChart(backtest) {
-    const series = seriesFor(backtest, state.measure);
-    const allVals = [...series.shortlist, ...series.challenger, ...(series.growth || []), ...(series.qqq || [])];
-    const [low, high] = niceRange(allVals);
-    const n = backtest.starts.length;
-    const x = (i) => BOX.left + (i * (BOX.right - BOX.left)) / Math.max(1, n - 1);
-    const y = (v) => BOX.top + ((high - v) * (BOX.bottom - BOX.top)) / Math.max(1, high - low);
-    const label = state.measure === "excess" ? "lead over QQQ in points" : "6-month return in percent";
-    const svg = svgEl("svg", { viewBox: `0 0 ${BOX.width} ${BOX.height}`, role: "img",
-      "aria-label": `Chart of the ${label} for each Friday start from ${dayYear(backtest.starts[0])} to ${dayYear(backtest.starts[n - 1])}.` });
-    for (let v = low; v <= high; v += TICK) {
-      svg.appendChild(svgEl("line", { x1: BOX.left, x2: BOX.right, y1: y(v), y2: y(v), class: v === 0 ? "zero" : "grid" }));
-      svg.appendChild(svgEl("text", { x: BOX.left - 8, y: y(v) + 4, "text-anchor": "end" }, v === 0 ? "0" : signed(v, 0)));
-    }
-    let year = null;
-    backtest.starts.forEach((start, i) => {
-      const y4 = start.slice(0, 4);
-      if (year !== null && y4 !== year) {
-        svg.appendChild(svgEl("line", { x1: x(i), x2: x(i), y1: BOX.top, y2: BOX.bottom, class: "year" }));
-        svg.appendChild(svgEl("text", { x: x(i), y: BOX.bottom + 20, "text-anchor": "middle" }, y4));
-      }
-      year = y4;
-    });
-    const path = (values) => values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-    if (series.qqq) svg.appendChild(svgEl("path", { d: path(series.qqq), class: "line qqq" }));
-    if (state.show.shortlist) svg.appendChild(svgEl("path", { d: path(series.shortlist), class: "line sl" }));
-    if (state.show.growth && series.growth) svg.appendChild(svgEl("path", { d: path(series.growth), class: "line gr" }));
-    if (state.show.challenger) svg.appendChild(svgEl("path", { d: path(series.challenger), class: "line ch" }));
-    if (state.show.monthend) backtest.month_end.forEach((i) => svg.appendChild(svgEl("circle", { cx: x(i), cy: y(series.shortlist[i]), r: 3.6, class: "me" })));
-    const line = svgEl("line", { y1: BOX.top, y2: BOX.bottom, class: "cursor" });
-    const marks = {
-      shortlist: svgEl("circle", { r: 4.5, fill: SERIES_META.shortlist.color, stroke: "#fff" }),
-      growth: svgEl("circle", { r: 4.5, fill: SERIES_META.growth.color, stroke: "#fff" }),
-      challenger: svgEl("circle", { r: 4.5, fill: SERIES_META.challenger.color, stroke: "#fff" }),
-      qqq: svgEl("circle", { r: 4, fill: SERIES_META.qqq.color, stroke: "#fff" }),
-    };
-    svg.appendChild(line);
-    if (state.show.shortlist) svg.appendChild(marks.shortlist);
-    if (state.show.growth && series.growth) svg.appendChild(marks.growth);
-    if (state.show.challenger) svg.appendChild(marks.challenger);
-    if (series.qqq) svg.appendChild(marks.qqq);
-    const pick = (event) => {
-      const rect = svg.getBoundingClientRect();
-      if (!rect.width) return;
-      const vx = ((event.clientX - rect.left) / rect.width) * BOX.width;
-      const i = Math.max(0, Math.min(n - 1, Math.round(((vx - BOX.left) / (BOX.right - BOX.left)) * (n - 1))));
-      if (i !== state.index) setIndex(i);
-    };
-    svg.addEventListener("pointermove", pick);
-    svg.addEventListener("pointerdown", pick);
-    cursor = { line, marks, series, x, y };
-    $("st-chart").replaceChildren(svg);
-    placeCursor();
-  }
-
-  function placeCursor() {
-    if (!cursor) return;
-    const i = state.index;
-    cursor.line.setAttribute("x1", String(cursor.x(i)));
-    cursor.line.setAttribute("x2", String(cursor.x(i)));
-    ["shortlist", "growth", "challenger", "qqq"].forEach((key) => {
-      if (!cursor.series[key]) return;
-      cursor.marks[key].setAttribute("cx", String(cursor.x(i)));
-      cursor.marks[key].setAttribute("cy", String(cursor.y(cursor.series[key][i])));
-    });
-  }
-
-  function setIndex(i) {
-    state.index = i;
-    $("st-start").value = String(i);
-    placeCursor();
-    renderWeeklyReadout(state.data.backtest);
-  }
-
-  function renderWeeklyReadout(backtest) {
-    const i = state.index, s = backtest.series;
-    const hasGrowth = Boolean(backtest.growth_available && s.growth_return && s.growth_excess);
-    const lines = [el("strong", "", `Bought ${dayYear(backtest.starts[i])} · sold ${dayYear(backtest.exits[i])}`)];
-    const add = (kind, text) => { const line = el("span"); line.append(dot(kind), document.createTextNode(text)); lines.push(line); };
-    if (state.show.shortlist) add("sl", `Shortlist: ${percent(s.shortlist_return[i])}, QQQ ${percent(s.qqq_return[i])}, lead ${points(s.shortlist_excess[i])}`);
-    if (state.show.growth && hasGrowth) add("gr", `Growth: ${percent(s.growth_return[i])}, QQQ ${percent(s.qqq_return[i])}, lead ${points(s.growth_excess[i])}`);
-    if (state.show.challenger) add("ch", `60/40 order: ${percent(s.challenger_return[i])}, QQQ ${percent(s.qqq_return[i])}, lead ${points(s.challenger_excess[i])}`);
-    if (!state.show.shortlist && !(state.show.growth && hasGrowth) && !state.show.challenger) {
-      lines.push(el("span", "", `QQQ: ${percent(s.qqq_return[i])}. Show a screener above to compare.`));
-    }
-    if (state.show.monthend && backtest.month_end.includes(i)) lines.push(el("span", "", "Month-end start: a monthly decision would have bought this batch."));
-    $("st-readout").replaceChildren(...lines);
-  }
-
-  function renderStats(backtest) {
-    const stats = backtest.stats, m = state.measure, cards = [];
-    const hasGrowth = Boolean(backtest.growth_available && stats.growth_excess && stats.growth_return);
-    const card = (title, kind, data) => {
-      if (!data) return;
-      const box = el("div", "st-stat"), h = el("h4"), dl = el("dl", "st-rows");
-      h.append(dot(kind), document.createTextNode(title));
-      rows(dl, statRows(data, m));
-      box.append(h, dl);
-      cards.push(box);
-    };
-    if (state.show.shortlist || state.view !== "weekly") card("Shortlist", "sl", stats[m === "excess" ? "shortlist_excess" : "shortlist_return"]);
-    if (hasGrowth && (state.show.growth || state.view !== "weekly")) card("Growth", "gr", stats[m === "excess" ? "growth_excess" : "growth_return"]);
-    if (state.show.challenger || state.view !== "weekly") card("60/40 order", "ch", stats[m === "excess" ? "challenger_excess" : "challenger_return"]);
-    if (state.show.monthend && state.view === "weekly") card("Shortlist, month-end starts", "me", stats[m === "excess" ? "month_end_excess" : "month_end_return"]);
-    if (m === "return" || state.view === "range") card("QQQ", "qqq", stats.qqq_return);
-    $("st-stats").replaceChildren(...cards);
-  }
-
-  // ---- Section 2: Live Forward Tests (only per-list section) ------------------------------------
-  function renderList() {
-    const data = state.data, key = state.list, list = data.lists[key], names = LISTS[key];
-    ["shortlist", "growth"].forEach((k) => {
-      const tab = $(`st-tab-${k}`);
-      tab.setAttribute("aria-selected", String(k === key));
-    });
-    $("st-list-title").textContent = `Live forward test: ${names.rule}`;
-    $("st-list-what").textContent = list.what;
-    const oldest = list.batches[list.batches.length - 1];
-    $("st-clock-written").textContent = dayYear(list.registered_at);
-    $("st-clock-after").textContent = oldest
-      ? `${plural(list.batches.length, "weekly batch", "weekly batches")} since the list of ${dayYear(oldest.as_of)} · First 6-month result due ${dayYear(oldest.exit_6m)}.`
-      : "No weekly batches yet; the first batch is recorded at the next weekly run.";
-
-    const sw = list.switch;
-    const board = [["Rule on the site", names.rule], ["Challenger, on paper", names.challenger]];
-    if (sw) {
-      board.push(["Switch rule written down", dayYear(sw.rule_written_at)], ["Windows counted", `${sw.counted} of ${NEEDED}`]);
-      if (sw.counted) board.push(["Challenger wins", `${sw.challenger_wins} of ${sw.counted}`]);
-      board.push(sw.decision ? ["Decision", sw.decision === "switch" ? `Switch to ${names.challenger}` : `Keep ${names.rule}`]
-        : ["Earliest decision", dayYear(sw.earliest_decision)]);
-    } else board.push(["Windows", "No paired batches yet"]);
-    rows($("st-board"), board);
-    $("st-windows").replaceChildren(...(sw ? sw.windows : []).map((w, i) => el("li", "", windowText(w, i, names))));
-    const unit = sw && sw.month_end ? "month-end" : "week";
-    $("st-switch").textContent = sw ? `Written rule: switch to ${names.challenger} only if it wins at least 2 of the first 3 `
-      + `${sw.month_end ? "month-end " : ""}windows, each a pair of batches from the same ${unit}: ahead of ${names.rule} versus QQQ, `
-      + `and still ahead after dropping its single best stock. No other reason to switch.` : "";
-
-    $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
-    const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
-    $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
-    $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
-      ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
-      : finished
-        ? "The first batch has finished; a bar written now could be fitted to its result."
-        : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
-
-    renderBatches(list, names);
-    renderPicks(list, names);
-  }
-
+  // ---- Live Forward Tests (Inside Expandable Drawer) --------------------------------------------
   function windowText(w, i, names) {
     const head = `Window ${i + 1} · list of ${dayYear(w.freeze)} · ends ${dayYear(w.exit)}: `;
     if (w.status === "open") return `${head}open`;
@@ -613,11 +503,10 @@
 
   function batchCell(row, horizon, due, names) {
     const td = el("td", "st-result");
-    const lines = [["rule", names.rule], ["challenger", names.challenger]]
-      .map(([side, name]) => [name, row[side] ? resultText(row[side][horizon]) : null])
-      .filter(([, text]) => text !== null);
-    if (!lines.length) td.appendChild(el("span", "st-due", `Due ${dayYear(due)}`));
-    lines.forEach(([name, text]) => td.appendChild(el("span", "st-result-line", `${name}: ${text}`)));
+    const a = resultText(row.rule[horizon]), b = resultText(row.challenger && row.challenger[horizon]);
+    if (!a && !b) { td.appendChild(el("span", "st-due", `Due ${dayYear(due)}`)); return td; }
+    if (a) td.appendChild(el("span", "st-result-line", `${names.rule}: ${a}`));
+    if (b) td.appendChild(el("span", "st-result-line", `${names.challenger}: ${b}`));
     return td;
   }
 
@@ -628,15 +517,13 @@
       return;
     }
     const shown = state.allBatches ? list.batches : list.batches.slice(0, BATCHES_SHOWN);
-    const body = shown.map((row) => {
-      const first = el("td");
-      first.appendChild(document.createTextNode(dayYear(row.as_of)));
-      if (row.month_end) first.appendChild(el("span", "st-tag", "month-end"));
-      return [first, cell(dayYear(row.entry)), batchCell(row, "6m", row.exit_6m, names), batchCell(row, "12m", row.exit_12m, names)];
-    });
-    const t = table(["List of", "Bought (paper)", "After 6 months", "After 12 months"], body);
-    t.className = "st-batches";
-    $("st-batches").replaceChildren(t);
+    const body = shown.map((row) => [
+      cell(dayYear(row.as_of) + (row.month_end ? " · month-end" : "")),
+      cell(dayYear(row.entry)),
+      batchCell(row, "6m", row.exit_6m, names),
+      batchCell(row, "12m", row.exit_12m, names),
+    ]);
+    $("st-batches").replaceChildren(table(["List of", "Paper buy", "6-month result", "12-month result"], body));
     const more = $("st-batches-more");
     more.hidden = list.batches.length <= BATCHES_SHOWN;
     more.textContent = state.allBatches ? "Show fewer" : `Show all ${list.batches.length} batches`;
@@ -674,7 +561,48 @@
         + (picks.challenger ? " Names in both are outlined." : "");
   }
 
-  // ---- Section 3: Test Register -----------------------------------------------------------------
+  function renderList() {
+    const data = state.data, key = state.list, list = data.lists[key], names = LISTS[key];
+    ["shortlist", "growth"].forEach((k) => {
+      $(`st-tab-${k}`).setAttribute("aria-selected", String(k === key));
+    });
+    $("st-list-title").textContent = `Live forward test: ${names.rule}`;
+    $("st-list-what").textContent = list.what;
+    const oldest = list.batches[list.batches.length - 1];
+    $("st-clock-written").textContent = dayYear(list.registered_at);
+    $("st-clock-after").textContent = oldest
+      ? `${plural(list.batches.length, "weekly batch", "weekly batches")} since the list of ${dayYear(oldest.as_of)} · First 6-month result due ${dayYear(oldest.exit_6m)}.`
+      : "No weekly batches yet; the first batch is recorded at the next weekly run.";
+
+    const sw = list.switch;
+    const board = [["Rule on the site", names.rule], ["Challenger, on paper", names.challenger]];
+    if (sw) {
+      board.push(["Switch rule written down", dayYear(sw.rule_written_at)], ["Windows counted", `${sw.counted} of ${NEEDED}`]);
+      if (sw.counted) board.push(["Challenger wins", `${sw.challenger_wins} of ${sw.counted}`]);
+      board.push(sw.decision ? ["Decision", sw.decision === "switch" ? `Switch to ${names.challenger}` : `Keep ${names.rule}`]
+        : ["Earliest decision", dayYear(sw.earliest_decision)]);
+    } else board.push(["Windows", "No paired batches yet"]);
+    rows($("st-board"), board);
+    $("st-windows").replaceChildren(...(sw ? sw.windows : []).map((w, i) => el("li", "", windowText(w, i, names))));
+    const unit = sw && sw.month_end ? "month-end" : "week";
+    $("st-switch").textContent = sw ? `Written rule: switch to ${names.challenger} only if it wins at least 2 of the first 3 `
+      + `${sw.month_end ? "month-end " : ""}windows, each a pair of batches from the same ${unit}: ahead of ${names.rule} versus QQQ, `
+      + `and still ahead after dropping its single best stock. No other reason to switch.` : "";
+
+    $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
+    const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
+    $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
+    $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
+      ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
+      : finished
+        ? "The first batch has finished; a bar written now could be fitted to its result."
+        : `Write it before ${dayYear(oldest.exit_6m)}, when the first batch finishes, so it cannot be fitted to the first results.`;
+
+    renderBatches(list, names);
+    renderPicks(list, names);
+  }
+
+  // ---- Permanent Audit Register -----------------------------------------------------------------
   function renderRegister() {
     const register = state.data.register;
     const activeCount = registerRows(register, "active").length;
@@ -703,17 +631,13 @@
     $("st-register").replaceChildren(table(["Test", "What it tests", "Written down", "Batches so far", "First result", "Decision"], body));
   }
 
-  function setView(view) {
-    state.view = view;
-    if (state.data) renderBacktest();
-  }
-
   function render(data) {
     state.data = data;
     $("st-week").textContent = `Data as of ${dayYear(data.as_of)}`;
     $("aside-week").textContent = dayYear(data.as_of);
     $("st-status").hidden = true;
     $("st-content").hidden = false;
+    renderRibbon();
     renderBacktest();
     renderList();
     renderRegister();
@@ -730,13 +654,11 @@
     ["shortlist", "growth"].forEach((key) => $(`st-tab-${key}`).addEventListener("click", () => {
       state.list = key; state.allBatches = false; renderList();
     }));
-    [["st-view-periods", "periods"], ["st-view-range", "range"], ["st-view-weekly", "weekly"]].forEach(([id, v]) =>
-      $(id).addEventListener("click", () => setView(v)));
-    [["st-show-shortlist", "shortlist"], ["st-show-growth", "growth"], ["st-show-challenger", "challenger"], ["st-show-monthend", "monthend"]].forEach(([id, key]) =>
-      $(id).addEventListener("click", () => { state.show[key] = !state.show[key]; renderBacktest(); }));
-    [["st-measure-excess", "excess"], ["st-measure-return", "return"]].forEach(([id, key]) =>
-      $(id).addEventListener("click", () => { state.measure = key; renderBacktest(); }));
-    $("st-start").addEventListener("input", (event) => setIndex(Number(event.target.value)));
+    $("st-hm-excess").addEventListener("click", () => { state.hmMode = "excess"; if (state.data) renderBacktest(); });
+    $("st-hm-return").addEventListener("click", () => { state.hmMode = "return"; if (state.data) renderBacktest(); });
+    $("st-sub-range").addEventListener("click", () => { state.subView = "range"; if (state.data) renderBacktest(); });
+    $("st-sub-hist").addEventListener("click", () => { state.subView = "hist"; if (state.data) renderBacktest(); });
+    $("st-drawer-toggle").addEventListener("click", () => { state.drawerOpen = !state.drawerOpen; if (state.data) renderRibbon(); });
     $("st-batches-more").addEventListener("click", () => { state.allBatches = !state.allBatches; renderList(); });
   }
 
@@ -755,7 +677,7 @@
     }
   }
 
-  const api = { state, render, fail, checkFile, dayYear, signed, resultText, windowText, niceRange, statRows, registerRows, setIndex, setView };
+  const api = { state, render, fail, checkFile, dayYear, signed, resultText, windowText, niceRange, statRows, registerRows, exBestStats };
   globalThis.TLScreenerTests = api;
   wire();
   void start();

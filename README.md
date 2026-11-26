@@ -37,6 +37,12 @@ Research and Ticker keep their search controls; duplicate top navigation is
 removed. The footer credits Natalia Marko with author-supplied Email and
 LinkedIn links.
 
+Site mode separates the clean public view (`1`, default on `temper-lab.com`)
+from the full researcher-notes view (`0`, default on `127.0.0.1`/`localhost`).
+Visit `?mode=0` on `temper-lab.com` once to remember full notes in that browser,
+`?mode=1` to preview the public view, or `?mode=reset` to clear the saved choice.
+`how-it-works.html` stays fully readable in both modes.
+
 Read-only weekly lists: Strength, Growth, Cheap on operating profit, and Conviction.
 
 **Conviction** ranks the shared eligible universe with at least five analyst

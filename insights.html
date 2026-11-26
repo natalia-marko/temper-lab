@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=cd03e91f8f29" />
+    <link rel="stylesheet" href="./desk.css?v=8379df8e5b4e" />
     <link rel="stylesheet" href="./ownership.css?v=368ea3326eac" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
@@ -38,7 +38,7 @@
           </div>
           <div class="snapshot-status">
             <span id="os-data" class="week" role="status">Loading…</span>
-            <small><a href="#how">How it works →</a></small>
+            <small data-note><a href="#how">How it works →</a></small>
           </div>
         </section>
         <p id="os-status" class="os-status" role="status">Loading insights…</p>
@@ -55,7 +55,7 @@
             <label class="os-toggle"><input id="os-watch" type="checkbox" /><span>On my watchlist (<span id="os-watch-count"></span>)</span></label>
             <span id="os-count" class="os-count" role="status"></span>
           </div>
-          <p id="os-tab-note" class="os-tab-note" hidden></p>
+          <p id="os-tab-note" class="os-tab-note" data-note hidden></p>
           <p id="os-match-note" class="os-tab-note os-match-note" role="status" hidden></p>
           <p id="os-other-banner" class="os-banner" hidden>Showing what is not counted as buying or selling: transfers between related holders, private trades, and awards, exercises, gifts or tax withholding. <button type="button" id="os-back" class="os-link">Back to All</button></p>
           <div class="os-head" role="group" aria-label="Sort by column"><span>Ticker</span><button type="button" class="os-sorter" data-sort="signal" title="Sort by signal type, then newest">Signal</button><button type="button" class="os-sorter" data-sort="evidence" title="Buys: sort by checks met, 3 to 0">Why it matters</button><button type="button" id="os-amount-head" class="os-sorter num" data-sort="amount" title="Sort by amount, largest first">Amount</button><button type="button" class="os-sorter" data-sort="newest" title="Sort by newest filing">Filed</button></div>
@@ -94,6 +94,6 @@
     </dialog>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
     <script src="./ownership.js?v=b32e79db0aea"></script>
-    <script src="./navigation.js?v=693cdf80c629"></script>
+    <script src="./navigation.js?v=e34b9867f2ab"></script>
   </body>
 </html>

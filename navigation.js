@@ -1,4 +1,34 @@
 (() => {
+  // Site mode: 1 = clean public view (default on temper-lab.com), 0 = full researcher notes
+  // (default on 127.0.0.1/localhost, or unlocked on temper-lab.com via ?mode=0 and remembered).
+  const modeKey = 'temper-site-mode';
+  const loc = typeof location !== 'undefined' && location ? location : null;
+  const host = (loc && loc.hostname) || '';
+  const defaultMode = (host === '127.0.0.1' || host === 'localhost' || host === '') ? '0' : '1';
+  let queryMode = null;
+  try {
+    const param = new URLSearchParams((loc && loc.search) || '').get('mode');
+    if (param === '0' || param === '1') queryMode = param;
+    else if (param === 'reset') {
+      try { localStorage.removeItem(modeKey); } catch (_) {}
+    }
+  } catch (_) {}
+  let savedMode = null;
+  try {
+    const value = localStorage.getItem(modeKey);
+    if (value === '0' || value === '1') savedMode = value;
+  } catch (_) {}
+  const siteMode = queryMode || savedMode || defaultMode;
+  if (queryMode) {
+    try { localStorage.setItem(modeKey, queryMode); } catch (_) {}
+  }
+  if (document.documentElement && document.documentElement.dataset) {
+    document.documentElement.dataset.siteMode = siteMode;
+  }
+  if (document.body && document.body.dataset) {
+    document.body.dataset.siteMode = siteMode;
+  }
+
   const sidebar = document.getElementById('site-sidebar');
   const main = document.getElementById('main-content');
   const openButton = document.getElementById('nav-open');

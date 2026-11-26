@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — Screener tests</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=cd03e91f8f29" />
-    <link rel="stylesheet" href="./screener-tests.css?v=03f643d8320a" />
+    <link rel="stylesheet" href="./desk.css?v=8379df8e5b4e" />
+    <link rel="stylesheet" href="./screener-tests.css?v=29a9f2d9d3ed" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
   <body>
@@ -30,17 +30,17 @@
       <button id="nav-open" class="nav-open" type="button" aria-label="Open menu" aria-controls="site-sidebar" aria-expanded="false" hidden><span aria-hidden="true">☰</span> Menu</button>
       <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close menu" tabindex="-1" hidden></button>
       <main id="main-content">
-        <section class="heading">
+        <section class="heading st-heading">
           <div>
-            <div class="eyebrow">TEST THE LOGIC</div>
+            <div class="eyebrow" data-note>TEST THE LOGIC</div>
             <h1>Screener tests</h1>
             <p>Do the screeners’ picks beat QQQ? Compare past backtests in one place, then track live paper batches separately below. Everything here is hypothetical: no real money is invested.</p>
           </div>
-          <div class="snapshot-status"><span class="week" id="st-week">Loading…</span><small>Weekly refresh: Sat 06:00 · Copenhagen<br />Published after the weekly checks pass.</small></div>
+          <div class="snapshot-status"><span class="week" id="st-week">Loading…</span><small data-note>Weekly refresh: Sat 06:00 · Copenhagen<br />Published after the weekly checks pass.</small></div>
         </section>
         <p id="st-status" class="st-status" role="status">Loading the screener tests…</p>
         <div id="st-content" hidden>
-          <details class="st-disclosure st-steps-wrap">
+          <details class="st-disclosure st-steps-wrap" data-note>
             <summary>How a test works: <strong>1. Written down</strong> → <strong>2. Recorded</strong> → <strong>3. Judged</strong></summary>
             <section class="st-steps" aria-label="How a test works">
               <div class="st-step"><h2><span aria-hidden="true">1</span>Written down</h2><p>The rule, what it is compared with and what would count as a win are saved with a date and a fingerprint, before any new data arrives.</p></div>
@@ -49,118 +49,134 @@
             </section>
           </details>
 
-          <!-- 1. ONE UNIFIED BACKTEST (NEVER REPEATED) -->
-          <section class="surface st-section" aria-labelledby="st-backtest-title">
-            <div class="st-sec-head">
-              <div>
-                <div class="st-kicker">1 · BEFORE WRITTEN DOWN</div>
-                <h2 id="st-backtest-title">Backtest: all screeners side by side</h2>
-                <p id="st-clock-before" class="st-lead"></p>
-              </div>
-              <span class="st-pill-note">Hindsight · not the live test</span>
+          <!-- LIVE FORWARD TEST COUNTDOWN RIBBON -->
+          <section id="st-live-ribbon" class="st-live-ribbon" aria-label="Live forward test status">
+            <div class="st-rib-left">
+              <span class="st-pill-live">Live test · sealed before open</span>
+              <strong id="st-rib-summary" class="st-rib-summary"></strong>
             </div>
-
-            <div id="st-backtest-empty" class="st-empty" hidden></div>
-            <div id="st-backtest" hidden>
-              <div id="st-verdict" class="st-verdict" aria-label="Backtest summary"></div>
-
-              <div class="st-bar-head">
-                <div id="st-views" class="st-measure" role="group" aria-label="Chart view">
-                  <button id="st-view-periods" type="button" aria-pressed="true">8 independent periods</button>
-                  <button id="st-view-range" type="button" aria-pressed="false">Crash &amp; range</button>
-                  <button id="st-view-weekly" type="button" aria-pressed="false">All 193 weeks</button>
-                </div>
-              </div>
-
-              <div id="st-weekly-controls" class="st-controls" hidden>
-                <div class="st-toggles" role="group" aria-label="Show">
-                  <button id="st-show-shortlist" type="button" aria-pressed="true"><span class="st-swatch sl"></span>Shortlist</button>
-                  <button id="st-show-growth" type="button" aria-pressed="true"><span class="st-swatch gr"></span>Growth</button>
-                  <button id="st-show-challenger" type="button" aria-pressed="true"><span class="st-swatch ch"></span>60/40 order</button>
-                  <button id="st-show-monthend" type="button" aria-pressed="false"><span class="st-swatch me"></span>Month-end starts</button>
-                </div>
-                <div class="st-measure" role="group" aria-label="Measure">
-                  <button id="st-measure-excess" type="button" aria-pressed="true">Lead over QQQ</button>
-                  <button id="st-measure-return" type="button" aria-pressed="false">6-month return</button>
-                </div>
-              </div>
-
-              <p id="st-chart-legend" class="st-legend"></p>
-              <div id="st-chart" class="st-chart"></div>
-
-              <div id="st-slider-wrap" hidden>
-                <label class="st-slider-label" for="st-start">Start date: drag, use the arrow keys, or hover the chart</label>
-                <input id="st-start" class="st-slider" type="range" min="0" max="0" step="1" value="0" />
-              </div>
-
-              <div id="st-readout" class="st-readout" aria-live="polite"></div>
-
-              <details class="st-disclosure st-stats-wrap">
-                <summary>Detailed backtest table &amp; caveats (overlaps, costs, survivors, hindsight)</summary>
-                <div id="st-stats" class="st-stats"></div>
-                <div class="st-read">
-                  <h4>Read this before comparing</h4>
-                  <ul>
-                    <li><strong>Overlapping windows.</strong> <span id="st-overlap"></span></li>
-                    <li><strong>Before costs.</strong> Returns are gross; trading costs and tax would lower them.</li>
-                    <li><strong>Survivors only.</strong> Companies delisted since are missing from the data, which likely flatters every line.</li>
-                    <li><strong>Hindsight.</strong> Both rules were written down in October 2026, after this history existed, so it cannot confirm them.</li>
-                  </ul>
-                </div>
-                <p id="st-backtest-source" class="st-small"></p>
-              </details>
+            <div class="st-rib-mid">
+              <div class="st-tl-track" aria-hidden="true"><div id="st-tl-fill" class="st-tl-fill"></div></div>
+              <div id="st-tl-dates" class="st-tl-dates"></div>
             </div>
+            <button id="st-drawer-toggle" class="st-rib-btn" type="button" aria-expanded="false" aria-controls="st-live-drawer">Live batches &amp; audit ▾</button>
           </section>
 
-          <!-- 2. LIVE FORWARD TESTS (ONLY PLACE WITH SHORTLIST / GROWTH SWITCH) -->
-          <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
-            <div class="st-sec-head">
-              <div>
-                <div class="st-kicker st-kicker-live">2 · AFTER WRITTEN DOWN — THE ACTUAL TEST</div>
-                <h2 id="st-list-title">Live forward tests</h2>
-                <p class="st-lead">Each Friday’s top 10 is sealed before Monday’s open. No returns are shown until a batch is sold.</p>
+          <!-- MAIN STAGE: SPLIT-SCREEN MATRIX + X-RAY LAB -->
+          <div class="st-lab">
+            <section class="surface st-card-panel st-left" aria-labelledby="st-backtest-title">
+              <div class="st-panel-head">
+                <div>
+                  <div class="st-title-row">
+                    <h2 id="st-backtest-title">8 independent 6-month holds</h2>
+                    <span class="st-pill-note">Hindsight · survivors only</span>
+                  </div>
+                  <p id="st-clock-before" class="st-lead"></p>
+                </div>
+                <div class="st-seg" role="group" aria-label="Matrix measure">
+                  <button id="st-hm-excess" type="button" aria-pressed="true">vs QQQ (pp)</button>
+                  <button id="st-hm-return" type="button" aria-pressed="false">Raw 6M %</button>
+                </div>
               </div>
-              <div class="st-measure st-live-tabs" role="tablist" aria-label="Live screener">
-                <button id="st-tab-shortlist" type="button" role="tab" aria-selected="true" aria-controls="st-list">Shortlist</button>
-                <button id="st-tab-growth" type="button" role="tab" aria-selected="false" aria-controls="st-list">Growth</button>
+
+              <div id="st-backtest-empty" class="st-empty" hidden></div>
+              <div id="st-backtest" hidden>
+                <div id="st-matrix" class="st-hm-wrap"></div>
+
+                <div class="st-sub-panel">
+                  <div class="st-sub-head">
+                    <strong id="st-sub-title" class="st-sub-title">All Friday starts</strong>
+                    <div class="st-seg" role="group" aria-label="193-week chart">
+                      <button id="st-sub-range" type="button" aria-pressed="true">Upside vs Crash</button>
+                      <button id="st-sub-hist" type="button" aria-pressed="false">193-Week Spread</button>
+                    </div>
+                  </div>
+                  <div id="st-chart" class="st-chart"></div>
+                  <p id="st-chart-legend" class="st-legend"></p>
+                </div>
+
+                <details class="st-disclosure st-stats-wrap" data-note>
+                  <summary>Detailed backtest table &amp; caveats (overlaps, costs, survivors, hindsight)</summary>
+                  <div id="st-stats" class="st-stats"></div>
+                  <div class="st-read">
+                    <h4>Read this before comparing</h4>
+                    <ul>
+                      <li><strong>Overlapping windows.</strong> <span id="st-overlap"></span></li>
+                      <li><strong>Before costs.</strong> Returns are gross; trading costs and tax would lower them.</li>
+                      <li><strong>Survivors only.</strong> Companies delisted since are missing from the data, which likely flatters every line.</li>
+                      <li><strong>Hindsight.</strong> Both rules were written down in October 2026, after this history existed, so it cannot confirm them.</li>
+                    </ul>
+                  </div>
+                  <p id="st-backtest-source" class="st-small" data-note></p>
+                </details>
               </div>
-            </div>
+            </section>
 
-            <div class="st-clock">
-              <div class="st-written"><span>WRITTEN DOWN</span><strong id="st-clock-written">—</strong></div>
-              <div class="st-after">
-                <p id="st-list-what" class="st-rule-line"></p>
-                <p id="st-clock-after" class="st-small"></p>
+            <section id="st-xray-card" class="surface st-card-panel st-right" aria-labelledby="st-xray-title" hidden>
+              <div class="st-xray-head">
+                <h2 id="st-xray-title">Period holdings</h2>
+                <span id="st-xray-qqq" class="st-xray-qqq"></span>
               </div>
-            </div>
+              <div class="st-xray-controls">
+                <div id="st-xray-tabs" class="st-seg" role="group" aria-label="Strategy"></div>
+                <div id="st-xray-sort" class="st-seg" role="group" aria-label="Sort holdings"></div>
+              </div>
+              <div id="st-xray-kpis" class="st-mk-row"></div>
+              <div id="st-xray-bars" class="st-stk-list"></div>
+              <p id="st-xray-foot" class="st-small"></p>
+            </section>
+          </div>
 
-            <div class="st-cards">
-              <div class="st-card"><h3>Rule vs challenger</h3><dl id="st-board" class="st-rows"></dl><ol id="st-windows" class="st-windows"></ol><p id="st-switch" class="st-small"></p></div>
-              <div class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small"></p></div>
-            </div>
-            <div id="st-batches" class="st-table-wrap"></div>
-            <button id="st-batches-more" class="st-more" type="button" hidden></button>
-            <div id="st-picks" class="st-picks"></div>
-            <p id="st-shared" class="st-small"></p>
-          </section>
+          <!-- EXPANDABLE LIVE FORWARD TESTS & PERMANENT AUDIT REGISTER -->
+          <div id="st-live-drawer" class="st-live-drawer" hidden>
+            <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
+              <div class="st-sec-head">
+                <div>
+                  <div class="st-kicker st-kicker-live">AFTER WRITTEN DOWN — THE LIVE TEST</div>
+                  <h2 id="st-list-title">Live forward tests</h2>
+                  <p class="st-lead" data-note>Each Friday’s top 10 is sealed before Monday’s open. No returns are shown until a batch is sold.</p>
+                </div>
+                <div class="st-seg st-live-tabs" role="tablist" aria-label="Live screener">
+                  <button id="st-tab-shortlist" type="button" role="tab" aria-selected="true" aria-controls="st-list">Shortlist</button>
+                  <button id="st-tab-growth" type="button" role="tab" aria-selected="false" aria-controls="st-list">Growth</button>
+                </div>
+              </div>
 
-          <!-- 3. PERMANENT AUDIT LOG -->
-          <section class="surface st-register" aria-labelledby="st-register-title">
-            <div class="st-kicker">3 · AUDIT LOG</div>
-            <h2 id="st-register-title">Test register: every rule written down so far</h2>
-            <p id="st-register-intro" class="st-lead"></p>
-            <div id="st-filters" class="st-filters" role="group" aria-label="Filter tests"></div>
-            <div id="st-register" class="st-table-wrap"></div>
-            <p class="st-small">An earliest decision assumes no batch is missed or excluded; the rules themselves are fixed.</p>
-          </section>
+              <div class="st-clock">
+                <div class="st-written"><span>WRITTEN DOWN</span><strong id="st-clock-written">—</strong></div>
+                <div class="st-after">
+                  <p id="st-list-what" class="st-rule-line"></p>
+                  <p id="st-clock-after" class="st-small"></p>
+                </div>
+              </div>
+
+              <div class="st-cards">
+                <div class="st-card"><h3>Rule vs challenger</h3><dl id="st-board" class="st-rows"></dl><ol id="st-windows" class="st-windows"></ol><p id="st-switch" class="st-small" data-note></p></div>
+                <div class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small" data-note></p></div>
+              </div>
+              <div id="st-batches" class="st-table-wrap"></div>
+              <button id="st-batches-more" class="st-more" type="button" hidden></button>
+              <div id="st-picks" class="st-picks"></div>
+              <p id="st-shared" class="st-small" data-note></p>
+            </section>
+
+            <section class="surface st-register" aria-labelledby="st-register-title">
+              <div class="st-kicker">PERMANENT AUDIT LOG</div>
+              <h2 id="st-register-title">Test register: every rule written down so far</h2>
+              <p id="st-register-intro" class="st-lead" data-note></p>
+              <div id="st-filters" class="st-filters" role="group" aria-label="Filter tests"></div>
+              <div id="st-register" class="st-table-wrap"></div>
+              <p class="st-small" data-note>An earliest decision assumes no batch is missed or excluded; the rules themselves are fixed.</p>
+            </section>
+          </div>
 
           <p class="st-fine">Everything on this page is hypothetical: no real money is invested. Backtests use today’s survivors, so companies delisted since are missing. Forward batches are saved before the paper purchase and never changed. Simulated past results are not a reliable guide to future results. Research, not advice.</p>
         </div>
-<footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
+        <footer id="site-author" class="site-credit"><span>Created by <strong>Natalia Marko</strong></span><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
-    <script src="./screener-tests.js?v=4bec81fbfa86"></script>
-    <script src="./navigation.js?v=693cdf80c629"></script>
+    <script src="./screener-tests.js?v=ec21f9f74f67"></script>
+    <script src="./navigation.js?v=e34b9867f2ab"></script>
   </body>
 </html>
