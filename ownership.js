@@ -461,9 +461,13 @@ function keyMetric(company, sig) {
   if (people.length) lines.push(plural(people.length, sig.insiders === false ? "holder" : "insider"));
   return lines;
 }
+function companySymbols(company) {
+  const list = Array.isArray(company.symbols) && company.symbols.length ? company.symbols : [company.symbol];
+  return list.map((s) => String(s || "").toUpperCase()).filter(Boolean);
+}
 function matches(company, query) {
   if (!query) return true;
-  return [company.symbol, company.name, ...(company.people || []).flatMap((p) => p.names),
+  return [...companySymbols(company), company.name, ...(company.people || []).flatMap((p) => p.names),
     ...(company.stakes || []).flatMap((s) => (s.holders || []).map((h) => h.name))]
     .some((text) => String(text || "").toLowerCase().includes(query));
 }
@@ -471,7 +475,7 @@ function matches(company, query) {
 // "On my watchlist" would hide it; the row then carries an "outside eligible set" badge. The boxes stay as set.
 function exactTicker(company, query) {
   const q = String(query || "").trim().toUpperCase();
-  return Boolean(q) && String(company.symbol || "").toUpperCase() === q;
+  return Boolean(q) && companySymbols(company).includes(q);
 }
 function base(companies, filters) {
   return companies.filter((c) => exactTicker(c, filters.query)
@@ -492,20 +496,23 @@ function checkedRow(data, ticker) {
 function matchNote(data, filters, list) {
   const q = String(filters.query || "").trim().toUpperCase();
   if (!q || !/^[A-Z0-9][A-Z0-9.-]{0,9}$/.test(q)) return null;
-  const company = data.companies.find((c) => String(c.symbol).toUpperCase() === q);
+  const row = checkedRow(data, q);
+  const company = data.companies.find((c) => companySymbols(c).includes(q))
+    || (row ? data.companies.find((c) => String(c.symbol || "").toUpperCase() === String(row.symbol || "").toUpperCase()) : null);
   if (company) {
+    const alias = q !== String(company.symbol || "").toUpperCase() ? `${q} shares SEC filings with ${company.symbol}. ` : "";
     if (list.includes(company)) {
-      return !company.eligible && filters.eligible
-        ? { text: `${company.symbol} is outside the eligible set (not among this week's ${Number(data.universe?.eligible || 0).toLocaleString("en-US")} Research stocks), shown because you searched its ticker.` }
-        : null;
+      if (!company.eligible && filters.eligible) {
+        return { text: `${alias}${company.symbol} is outside the eligible set (not among this week's ${Number(data.universe?.eligible || 0).toLocaleString("en-US")} Research stocks), shown because you searched its ticker.` };
+      }
+      return alias ? { text: alias.trim() } : null;
     }
     const why = [];
     if (!inView(company, filters.view)) why.push(`it has nothing under ${(VIEWS.find((v) => v.key === filters.view) || OTHER).label}`);
     if (filters.fresh && !isNew(company, data.window.until, filters.view)) why.push("\"New this week\" is ticked");
-    return { text: `${company.symbol} has filings in this window but is hidden here: ${why.join("; ") || "a filter excludes it"}.`, company };
+    return { text: `${alias}${company.symbol} has filings in this window but is hidden here: ${why.join("; ") || "a filter excludes it"}.`, company };
   }
   if (!data.checked) return null; // an older snapshot without the checked list: say nothing rather than guess
-  const row = checkedRow(data, q);
   if (row) {
     // A date found under a predecessor SEC number (company reorganised) says so.
     const via = (name) => (name ? `, under the predecessor ${name}` : "");
@@ -527,7 +534,11 @@ function visible(companies, filters) {
   const value = (c) => amount(c, signal(c, view));
   const group = (c) => (view === "sell" && signal(c, view).kind === "planned" ? 1 : 0);
   const rank = (c) => signalRank(signal(c, view));
-  const hit = (c) => (!query ? 0 : String(c.symbol).toLowerCase() === query ? 0 : String(c.symbol).toLowerCase().startsWith(query) ? 1 : 2);
+  const hit = (c) => {
+    if (!query) return 0;
+    const syms = companySymbols(c).map((s) => s.toLowerCase());
+    return syms.includes(query) ? 0 : syms.some((s) => s.startsWith(query)) ? 1 : 2;
+  };
   return rows.sort((a, b) => hit(a) - hit(b) || group(a) - group(b)
     || (sort === "signal" ? rank(a) - rank(b) : 0)
     || (sort === "evidence" ? evidence(b) - evidence(a) : 0)
@@ -844,7 +855,7 @@ function checks(company, sig) {
   const people = peopleWith(company, sig.keys, sig.insiders);
   if (sig.kind !== "buy") return [];
   const ceo = people.find((p) => (p.role === "CEO" || p.role === "CFO") && buyEvidence(p));
-  const stake = people.find((p) => p.holding && (p.holding.status === "new_position" || (p.holding.side === "purchase" && p.holding.change_pct >= 5)));
+  const stake = people.find((p) => p.holding && buyEvidence(p) >= 50000 && (p.holding.status === "new_position" || (p.holding.side === "purchase" && p.holding.change_pct >= 5)));
   return [
     [f.buyers_within_10_sessions >= 2, f.buyers_within_10_sessions >= 2 ? `Several insiders: ${f.buyers_within_10_sessions} bought within 10 sessions.` : "Several insiders within 10 sessions: no."],
     [Boolean(f.ceo_or_cfo_bought), ceo ? `CEO or CFO: ${ceo.role} ${ceo.names[0]} bought ${money(buyEvidence(ceo))} excluding automatic reinvestment.` : "CEO or CFO bought (excluding automatic reinvestment): no."],

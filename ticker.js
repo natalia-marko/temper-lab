@@ -2175,7 +2175,9 @@ function draw(shard) {
   const query = $("tk-query").value;
   const out = $("tk-out");
   const c = card({ ...state.data, ...withShard(state.data.shared, shard) }, query);
+  if (document.body) document.body.className = c ? "ticker-page" : "ticker-page tk-empty";
   if (!c) {
+    document.title = "Temper Lab — Ticker";
     out.replaceChildren(starters());
     return;
   }
@@ -2198,20 +2200,126 @@ function draw(shard) {
     ...(c.potential ? band("tk-early", "Early-stage research file", `Week of ${longDay(c.potential.as_of || c.research?.as_of)}`, "early", earlyStageBox(c)) : []),
     aboutBox(c), commentary("Facts with their dates, not a buy or sell call."));
 }
+function launchRow(symbol, nameText, metaText, metaCls, rank) {
+  const li = el("li");
+  const a = el("a", "tk-lp-row");
+  a.href = `./ticker.html?t=${encodeURIComponent(symbol)}`;
+  a.addEventListener("click", (e) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      go(symbol);
+    }
+  });
+  const sym = el("span", "tk-lp-sym");
+  if (rank !== undefined && rank !== null) sym.append(el("span", "tk-lp-rank", `#${rank}`), el("span", "", symbol));
+  else sym.textContent = symbol;
+  a.append(sym, el("span", "tk-lp-name", nameText || ""), el("span", `tk-lp-meta ${metaCls}`, metaText || ""));
+  li.append(a);
+  return li;
+}
+function launchCard(title, sub, rows, footText, footHref) {
+  const sec = el("section", "tk-lp-card");
+  const head = el("div", "tk-lp-head");
+  head.append(el("h2", "", title), sub ? el("small", "", sub) : null);
+  const ul = el("ul", "tk-lp-list");
+  ul.append(...rows);
+  const foot = el("a", "tk-lp-foot", footText);
+  foot.href = footHref;
+  sec.append(head, ul, foot);
+  return sec;
+}
 function starters() {
   const box = el("div", "tk-start");
+  const desk = state.data.desk || {};
+  const own = state.data.own || {};
+  const earn = state.data.earnings || {};
   const chip = (symbol) => {
     const b = el("button", "tk-chip-btn", symbol);
     b.type = "button";
     b.addEventListener("click", () => go(symbol));
     return b;
   };
+
+  // Prominent search hero
+  const hero = el("section", "tk-hero");
+  const hHead = el("div", "tk-hero-head");
+  const checkedN = (own.checked && Array.isArray(own.checked.rows)) ? own.checked.rows.length : Object.keys(desk.companies || {}).length;
+  const subParts = [checkedN ? `${checkedN.toLocaleString("en-US")} US filers` : "", desk.as_of ? `snapshot ${longDay(desk.as_of)}` : ""].filter(Boolean);
+  hHead.append(el("h1", "", "Ticker lookup"), subParts.length ? el("span", "tk-hero-sub", subParts.join(" · ")) : null);
+
+  const form = el("form", "tk-hero-form");
+  form.setAttribute("role", "search");
+  const inp = el("input");
+  inp.setAttribute("list", "tk-symbols");
+  inp.setAttribute("autocomplete", "off");
+  inp.setAttribute("spellcheck", "false");
+  inp.setAttribute("aria-label", "Ticker");
+  inp.setAttribute("placeholder", "Ticker, e.g. ANF, MU, NVDA");
+  const btn = el("button", "", "Open dossier");
+  btn.type = "submit";
+  form.append(inp, btn);
+  form.addEventListener("submit", (e) => { e.preventDefault(); go(inp.value); });
+
   const names = globalThis.TLWatch ? globalThis.TLWatch.list().map((i) => i.symbol).sort() : [];
-  box.append(note(names.length ? "Type a ticker, or pick one from your watchlist:" : "Type a ticker, e.g. UBER."));
-  box.append(...names.map(chip));
+  hero.append(hHead, el("p", "tk-hero-hint", names.length ? "Type a ticker, or pick one from your watchlist:" : "Type a ticker, e.g. UBER."), form);
+  box.append(hero);
+
+  // Watchlist quick bar (when user has saved names)
+  if (names.length) {
+    const wbar = el("section", "tk-watch-bar");
+    wbar.append(el("strong", "", `Watchlist (${names.length})`), ...names.map(chip));
+    box.append(wbar);
+  }
+
+  // 3-column live launchpad cards from already-loaded data
+  const cards = [];
+  const shortlistAll = ((desk.setups || {}).composite || {}).results || [];
+  if (shortlistAll.length) {
+    const rows = shortlistAll.slice(0, 8).map((r) => {
+      const co = (desk.companies || {})[r.symbol] || {};
+      const px = num(co.price) ? dollars(co.price) : "";
+      return launchRow(r.symbol, r.name || co.name || "", px, "price", r.rank);
+    });
+    cards.push(launchCard("Top Shortlist", desk.as_of ? `Week of ${day(desk.as_of)}` : "", rows, `All ${shortlistAll.length} Shortlist names →`, "./"));
+  }
+
+  const buys = (own.companies || [])
+    .map((co) => {
+      const insM = (co.money_by && co.money_by.insider) || sumPeopleMoney(co, true);
+      const buyAmt = Number((insM && insM.buy) || 0);
+      return { symbol: co.symbol, name: co.name, buyAmt, filed: co.latest_filing_day || "", eligible: co.eligible };
+    })
+    .filter((x) => x.eligible !== false && x.buyAmt >= 100000)
+    .sort((a, b) => String(b.filed).localeCompare(String(a.filed)) || b.buyAmt - a.buyAmt)
+    .slice(0, 8);
+  if (buys.length) {
+    const rows = buys.map((b) => launchRow(b.symbol, b.name, [money(b.buyAmt), day(b.filed)].filter(Boolean).join(" · "), "buy"));
+    cards.push(launchCard("Fresh insider buys", own.window && own.window.until ? `To ${day(own.window.until)}` : "", rows, "All SEC Insights →", "./insights.html"));
+  }
+
+  const upcoming = Object.entries(earn.companies || {})
+    .map(([sym, info]) => ({ symbol: sym, name: info.name || ((desk.companies || {})[sym] || {}).name || "", date: info.date, timing: info.timing, cap: Number(info.market_cap || 0) }))
+    .filter((x) => x.date)
+    .sort((a, b) => a.date.localeCompare(b.date) || b.cap - a.cap)
+    .slice(0, 8);
+  if (upcoming.length) {
+    const rows = upcoming.map((e) => {
+      const t = e.timing === "before open" ? "BMO" : e.timing === "after close" ? "AMC" : "";
+      return launchRow(e.symbol, e.name, [day(e.date), t].filter(Boolean).join(" · "), "earn");
+    });
+    const wSub = earn.window && earn.window.from && earn.window.to ? `${day(earn.window.from)}–${day(earn.window.to)}` : "";
+    cards.push(launchCard("Reporting next", wSub, rows, "Full earnings calendar →", "./market-mood.html"));
+  }
+
+  if (cards.length) {
+    const grid = el("div", "tk-lp-grid");
+    grid.append(...cards);
+    box.append(grid);
+  }
+
   // Early-stage research files moved here from Research (Oct 2026): unranked,
-  // so they are listed by status and ticker, not in an order.
-  const tracked = trackedEarlyStage(state.data.desk);
+  // kept in researcher mode (?mode=0) via data-note.
+  const tracked = trackedEarlyStage(desk);
   if (tracked.length) {
     const byStatus = new Map();
     for (const row of tracked) byStatus.set(row.status, [...(byStatus.get(row.status) || []), row.symbol]);
@@ -2220,7 +2328,10 @@ function starters() {
     for (const [status, symbols] of byStatus) {
       list.append(el("h3", "", `${status[0].toUpperCase()}${status.slice(1)} (${symbols.length})`), ...symbols.map(chip));
     }
-    box.append(more(`Early-stage names with a research file: ${counts}. No rank, no score.`, list));
+    const early = more(`Early-stage names with a research file: ${counts}. No rank, no score.`, list);
+    early.className = "tk-early-box";
+    if (early.setAttribute) early.setAttribute("data-note", "");
+    box.append(early);
   }
   return box;
 }
