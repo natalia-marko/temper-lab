@@ -385,9 +385,29 @@ details.dropped[open] { display: block; margin-top: 4px; }
 .how-list { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
 .how-list li + li { margin-top: 6px; }
 .how-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+.how-table th a { color: var(--green); text-underline-offset: 2px; }
+.how-live-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.how-live-head h2 { margin: 0; }
+.how-live-status { margin: 4px 0 0; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.how-live-btn { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--green); font-size: 12px; font-weight: 600; cursor: pointer; }
+.how-live-btn:hover, .how-live-btn:focus-visible { background: var(--chip); }
+.how-live-btn:disabled { opacity: 0.55; cursor: default; }
+.how-live-warn { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: #f8e8c6; color: #6b4100; font-size: 12.5px; }
+.how-live-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.how-live-card { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fcfcfa; }
+.how-live-card.warn { border-color: #d9b878; background: #fdf8ec; }
+.how-live-label { font-size: 11px; color: var(--muted); }
+.how-live-value { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.how-live-detail { font-size: 11.5px; color: #4c5d53; line-height: 1.35; }
+.how-live-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.how-live-row-warn th, .how-live-row-warn td { background: #fdf8ec; }
+@media (max-width: 960px) { .how-live-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .how-section { margin: 0 14px 14px; padding: 14px; } .how-table tbody th { width: auto; } }
+@media (max-width: 520px) { .how-live-cards { grid-template-columns: 1fr; } }
 
 /* Site mode: 1 (public, default before JS) hides researcher commentary; 0 (?mode=0 or localhost) shows all notes. */
+html:not([data-site-mode="0"]) [data-researcher-only],
+html[data-site-mode="0"] [data-public-only],
 html:not([data-site-mode="0"]) [data-note],
 html:not([data-site-mode="0"]) body:not(.how-page) .aside-note,
 html:not([data-site-mode="0"]) body:not(.how-page) .heading > div > p,

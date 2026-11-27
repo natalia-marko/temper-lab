@@ -202,6 +202,7 @@
   let desk = {};
   let deskLoaded = false;
   let deskRunId = null;
+  let deskAsOf = null;
   let members = {}; // symbol -> { shortlist: rank, lists: ["Hot tape", ...] } from desk.json setups
   let sparks = null; // share/ticker-sparks.json: every 5th close of the year, for the Saved tab's lines
   let earnings = {};
@@ -215,7 +216,83 @@
   let displayed = [];
   let activeTab = "saved";
   let activeSymbol = "";
+  let selectedSaved = "";
   const computed = new Map();
+  const noteSubs = new Map();
+
+  // Personal 1-line thesis notes (kept in this browser only, never sent anywhere).
+  const NOTES_KEY = "temperlab.watchlist.notes.v1";
+  let notesCache = null;
+  function loadNotes() {
+    if (notesCache) return notesCache;
+    notesCache = {};
+    try {
+      const raw = globalThis.localStorage && globalThis.localStorage.getItem(NOTES_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === "string" && v.trim()) notesCache[k.toUpperCase()] = v.slice(0, 180);
+        }
+      }
+    } catch {}
+    return notesCache;
+  }
+  function saveNote(symbol, text) {
+    const map = loadNotes();
+    const clean = String(text || "").trim().slice(0, 180);
+    if (clean) map[symbol] = clean;
+    else delete map[symbol];
+    try {
+      if (globalThis.localStorage) globalThis.localStorage.setItem(NOTES_KEY, JSON.stringify(map));
+    } catch {}
+  }
+
+  const SECTOR_LABELS = {
+    technology: "Technology", healthcare: "Healthcare", health_care: "Healthcare", financials: "Financials",
+    consumer_cyclical: "Consumer cyclical", consumer_defensive: "Consumer staples",
+    industrials: "Industrials", energy: "Energy", basic_materials: "Basic materials", materials: "Basic materials",
+    utilities: "Utilities", real_estate: "Real estate", communication: "Communication",
+    unclassified: "Other",
+  };
+  const SECTOR_COLORS = {
+    energy: "#b55d47", consumer_cyclical: "#c58b32", technology: "#3d6385",
+    industrials: "#5b7d69", healthcare: "#2e7a57", health_care: "#2e7a57", financials: "#7b6c94",
+    basic_materials: "#8f6f4c", materials: "#8f6f4c", consumer_defensive: "#6f8f7b", utilities: "#768995",
+    real_estate: "#a37b63", communication: "#597594", unclassified: "#9aa89f",
+  };
+  const sectorLabel = (k) => SECTOR_LABELS[k] || (k ? String(k).replace(/_/g, " ") : "Other");
+  const sectorColor = (k) => SECTOR_COLORS[k] || "#8a9990";
+
+  // Accessible copy confirmation bubble outside button (opacity-only, repeated VoiceOver announcement).
+  const copyTimers = new WeakMap();
+  let lastCopyMsg = "";
+  function reportCopy(button, ok, okText = "Copied") {
+    if (!button) return;
+    const tip = button.nextElementSibling;
+    clearTimeout(copyTimers.get(button));
+    if (button.removeAttribute) {
+      button.removeAttribute("data-copied");
+      button.removeAttribute("data-failed");
+    }
+    let msg = ok ? okText : "Copy failed";
+    if (msg === lastCopyMsg) msg += "\u00A0";
+    lastCopyMsg = msg;
+    if (tip) tip.textContent = "";
+    if (typeof button.offsetWidth === "number") void button.offsetWidth;
+    if (button.setAttribute) button.setAttribute(ok ? "data-copied" : "data-failed", "");
+    const write = () => { if (tip) tip.textContent = msg; };
+    if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(write);
+    else write();
+    if (typeof setTimeout === "function") {
+      copyTimers.set(button, setTimeout(() => {
+        if (button.removeAttribute) {
+          button.removeAttribute("data-copied");
+          button.removeAttribute("data-failed");
+        }
+        if (tip) tip.textContent = "";
+      }, 2200));
+    }
+  }
 
   function seriesFor(symbol) {
     if (!timing || !timing.closes || !Array.isArray(timing.closes[symbol])) return null;
@@ -272,7 +349,17 @@
   function row(item, today) {
     const c = desk[item.symbol] || {};
     const inDesk = Boolean(desk[item.symbol]);
-    const tr = el("tr");
+    const r = resultsFor(item.symbol, today);
+    const T = savedRules(item.symbol);
+    const m = members[item.symbol];
+    const attn = Boolean((r && r.days >= 0 && r.days <= 14) || (T && T.ruleTone === "down") || (deskLoaded && inDesk && !m));
+    const tr = el("tr", `${item.symbol === selectedSaved ? "on" : ""}${attn ? " wl-attn" : ""}`.trim());
+    tr.addEventListener("click", (event) => {
+      const target = event && event.target;
+      if (target && typeof target.closest === "function" && target.closest("button, a")) return;
+      selectedSaved = item.symbol;
+      render(W.list());
+    });
     const star = el("td", "wl-star");
     star.append(W.button(item.symbol, item.name || c.name || ""));
     const co = el("td");
@@ -282,12 +369,14 @@
     name.append(link);
     const from = W.PAGES[item.page];
     const cap = money(c.market_cap);
-    co.append(name, el("small", "", `${c.name || item.name || item.symbol}${cap !== "—" ? ` · ${cap}` : ""}`),
-      el("small", "wl-quiet", `Added ${longDay(item.added)}${from ? ` · ${from}` : ""}`));
+    const fallbackSub = `Added ${longDay(item.added)}${from ? ` · ${from}` : ""}`;
+    const savedNote = loadNotes()[item.symbol];
+    const subEl = el("small", savedNote ? "wl-note-line" : "wl-meta-line", savedNote ? `“${savedNote}”` : fallbackSub);
+    noteSubs.set(item.symbol, { node: subEl, fallback: fallbackSub });
+    co.append(name, el("small", "", `${c.name || item.name || item.symbol}${cap !== "—" ? ` · ${cap}` : ""}`), subEl);
 
     // Where it stands in Temper Lab this week.
     const listCell = el("td", "wl-lists");
-    const m = members[item.symbol];
     if (deskLoaded && !inDesk) listCell.append(el("span", "wl-flag", "Not in the universe"));
     else if (m && (m.shortlist || m.lists.length)) {
       if (m.shortlist) listCell.append(el("span", "wl-chip sl", `Shortlist #${m.shortlist}`));
@@ -296,7 +385,6 @@
     else listCell.append(el("span", "wl-quiet", "—"));
 
     // The tested signal, the same file and words as the Timing tab.
-    const T = savedRules(item.symbol);
     const ruleCell = el("td", "wl-rules");
     ruleCell.title = ruleList(T);
     const dots = el("span", "wl-dots");
@@ -314,7 +402,6 @@
     if (Number(c.price) > 0) yearCell.title = `${price(c.price)} at the ${longDay(c.price_date)} close`;
 
     // When the next results are: the sort key.
-    const r = resultsFor(item.symbol, today);
     const resCell = el("td", "wl-results");
     if (r) {
       resCell.append(el("span", r.days >= 0 && r.days <= SOON ? "wl-soon" : "", `${shortDay(r.date)}${r.timing ? `, ${r.timing}` : ""}`));
@@ -347,12 +434,15 @@
     });
   }
 
-  // Overview first, then the exceptions (Few): four counts over the starred names.
+  // Overview first, then the exceptions (Few): four counts + sector concentration over the starred names.
   function renderSummary(items, today) {
     const box = $("wl-summary");
+    const pulse = $("wl-pulse");
+    const hidden = !deskLoaded || items.length === 0;
+    if (pulse) pulse.hidden = hidden;
     if (!box) return;
-    box.hidden = !deskLoaded || items.length === 0;
-    if (box.hidden) { box.replaceChildren(); return; }
+    box.hidden = hidden;
+    if (hidden) { box.replaceChildren(); return; }
     const soon = items.filter((i) => { const r = resultsFor(i.symbol, today); return r && r.days >= 0 && r.days <= SOON; }).length;
     const ruled = items.map((i) => savedRules(i.symbol)).filter((T) => T && T.ruleTone !== "none");
     const allUp = ruled.filter((T) => T.ruleTone === "up").length;
@@ -360,7 +450,8 @@
     const noList = inDesk.filter((i) => !members[i.symbol]).length;
     const outside = items.length - inDesk.length;
     const tile = (label, value, flag) => {
-      const t = el("div", `wl-sum${flag ? " wl-sum-flag" : ""}`);
+      const zero = value === "0";
+      const t = el("div", `wl-sum${flag ? " wl-sum-flag" : ""}${zero ? " wl-sum-zero" : ""}`);
       t.append(el("span", "", label), el("strong", "", value));
       return t;
     };
@@ -369,6 +460,427 @@
       tile("Up on all 3 trend rules", ruled.length ? `${allUp} of ${ruled.length}` : "—", false),
       tile("On no list this week", String(noList), noList > 0),
       tile("Not in the universe", String(outside), outside > 0));
+
+    // Sector concentration bar
+    const secBar = $("wl-sector-bar");
+    const secLeg = $("wl-sector-leg");
+    const secWarn = $("wl-sector-warn");
+    if (secBar && secLeg) {
+      const counts = new Map();
+      for (const it of items) {
+        const key = (desk[it.symbol] && desk[it.symbol].sector) || "unclassified";
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      const list = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+      secBar.replaceChildren(...list.map(([key, n]) => {
+        const seg = el("i");
+        if (seg.style) { seg.style.flex = String(n); seg.style.background = sectorColor(key); }
+        seg.title = `${sectorLabel(key)}: ${n} of ${items.length}`;
+        return seg;
+      }));
+      secLeg.replaceChildren(...list.slice(0, 4).map(([key, n]) => {
+        const sp = el("span");
+        const dot = el("i", "wl-sec-dot");
+        if (dot.style) dot.style.background = sectorColor(key);
+        sp.append(dot, el("span", "", `${sectorLabel(key)} ${n}/${items.length}`));
+        return sp;
+      }));
+      if (secWarn) {
+        const top = list[0];
+        const share = top ? Math.round((top[1] / items.length) * 100) : 0;
+        secWarn.textContent = top && items.length >= 3 && share >= 40 ? `${share}% in ${sectorLabel(top[0])}` : "";
+      }
+    }
+  }
+
+  // Right-hand Live Decision Inspector (Draft 3 cockpit + Draft 2 3-rule checklist; zero Timing fetch on Saved!)
+  function renderInspector(sorted, today) {
+    const aside = $("wl-inspector");
+    const split = $("wl-split");
+    if (!aside) return;
+    const has = sorted.length > 0;
+    aside.hidden = !has;
+    if (split) split.className = has ? "wl-split" : "wl-split wl-split-empty";
+    if (!has) { aside.replaceChildren(); return; }
+    if (!selectedSaved || !sorted.some((it) => it.symbol === selectedSaved)) selectedSaved = sorted[0].symbol;
+    const sym = selectedSaved;
+    const c = desk[sym] || {};
+    const f = c.factors || {};
+    const T = savedRules(sym);
+    const r = resultsFor(sym, today);
+
+    const head = el("div", "wl-ins-head");
+    const hTop = el("div", "wl-ins-top");
+    const symA = el("a", "wl-ins-sym", sym);
+    symA.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
+    hTop.append(symA, el("div", "wl-ins-px", price(c.price)));
+    const hSub = el("div", "wl-ins-sub");
+    hSub.append(el("span", "wl-ins-name", `${c.name || sym}${c.sector ? ` · ${sectorLabel(c.sector)}` : ""}`));
+    const hTags = el("div", "wl-ins-tags");
+    hTags.append(el("span", `wl-badge ${T ? T.ruleTone : "none"}`, ruleBadge(T)));
+    const m = members[sym];
+    if (m && (m.shortlist || m.lists.length)) {
+      if (m.shortlist) hTags.append(el("span", "wl-chip sl", `Shortlist #${m.shortlist}`));
+      for (const label of m.lists.slice(0, 2)) hTags.append(el("span", "wl-chip", label));
+    } else if (deskLoaded && desk[sym]) {
+      hTags.append(el("span", "wl-flag", "On no list"));
+    }
+    head.append(hTop, hSub, hTags);
+
+    const partsList = [head];
+    const inDesk = Boolean(desk[sym]);
+
+    if (deskLoaded && !inDesk) {
+      partsList.push(el("p", "wl-ins-out", "Not in this week’s Temper Lab universe — tracked by symbol and personal note only."));
+    }
+
+    // Visual pair: 1-year path sparkline + Street target gauge (side-by-side on wide Inspector via container query)
+    const vizCards = [];
+    if (sparks && deskRunId && sparks.desk_run_id === deskRunId && Array.isArray(sparks.closes && sparks.closes[sym])) {
+      const series = sparks.closes[sym];
+      const pts = series.map((v, i) => [i, Number(v)]).filter(([, v]) => Number.isFinite(v) && v > 0);
+      if (pts.length >= 2) {
+        const sbox = el("div", "wl-ins-spark-box");
+        const sh = el("div", "wl-ins-spark-head");
+        const riskBits = [];
+        if (Number.isFinite(f.below_high_252)) riskBits.push(`${signedPct(f.below_high_252, 0)} vs high`);
+        if (Number.isFinite(f.max_drawdown_252)) riskBits.push(`Max DD ${signedPct(f.max_drawdown_252, 0)}`);
+        sh.append(el("span", "wl-ins-spark-title", `1Y path ${signedPct(f.momentum_252, 0)}`),
+          el("span", "", riskBits.join(" · ")));
+        const w = 320, h = 54, pad = 4;
+        const lo = Math.min(...pts.map(([, v]) => v)), hi = Math.max(...pts.map(([, v]) => v));
+        const x = (i) => pad + (i / (series.length - 1)) * (w - 2 * pad);
+        const y = (v) => (hi > lo ? h - pad - ((v - lo) / (hi - lo)) * (h - 2 * pad) : h / 2);
+        const s = svg("svg", { class: "wl-ins-spark-svg", viewBox: `0 0 ${w} ${h}`, "aria-hidden": "true" });
+        const [fi, fv] = pts[0];
+        const yStart = y(fv);
+        svg("line", { x1: pad, x2: w - pad, y1: yStart.toFixed(1), y2: yStart.toFixed(1), stroke: "#d9e2dc", "stroke-width": "1", "stroke-dasharray": "3,3" }, s);
+        const dPts = pts.map(([i, v]) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+        const [li, lv] = pts[pts.length - 1];
+        const areaPts = `${x(fi).toFixed(1)},${(h - pad).toFixed(1)} ${dPts} ${x(li).toFixed(1)},${(h - pad).toFixed(1)}`;
+        svg("polygon", { points: areaPts, fill: "#24342d", "fill-opacity": "0.05" }, s);
+        svg("polyline", { points: dPts, fill: "none", stroke: "#24342d", "stroke-width": "1.75", "stroke-linejoin": "round" }, s);
+        svg("circle", { cx: x(li).toFixed(1), cy: y(lv).toFixed(1), r: "3", fill: "#1e6547", stroke: "#fff", "stroke-width": "1.2" }, s);
+        sbox.append(sh, s);
+        vizCards.push(sbox);
+      }
+    }
+
+    // Street target gauge directly from desk.json factors (3+ analysts floor, labeled as opinion)
+    const tLow = Number(f.target_low), tMed = Number(f.target_median), tHigh = Number(f.target_high), pxVal = Number(c.price);
+    const nAnalysts = Number(f.analyst_total);
+    const coverageOk = !Number.isFinite(nAnalysts) || nAnalysts === 0 || nAnalysts >= 3;
+    if (coverageOk && Number.isFinite(tLow) && Number.isFinite(tMed) && Number.isFinite(tHigh) && tLow > 0 && tHigh > tLow && pxVal > 0) {
+      const lo = Math.min(tLow, pxVal), hi = Math.max(tHigh, pxVal), span = hi - lo || 1;
+      const pos = (v) => `${Math.max(2, Math.min(98, ((v - lo) / span) * 100)).toFixed(1)}%`;
+      const upside = tMed / pxVal - 1;
+      const tbar = el("div", "wl-tbar");
+      const tHead = el("div", "wl-tbar-head");
+      const tLeg = el("span", "wl-tbar-leg");
+      tLeg.append(el("i", "wl-tleg-dot close"), el("span", "", "Close"), el("i", "wl-tleg-dot med"), el("span", "", "Median"));
+      tHead.append(
+        el("span", "", `Street targets${Number.isFinite(nAnalysts) && nAnalysts >= 3 ? ` (${Math.round(nAnalysts)} analysts, opinion)` : " (opinion)"}`),
+        tLeg,
+      );
+      tbar.append(tHead, el("div", "wl-tbar-nums", `Low ${price(tLow)} · Med ${price(tMed)} (${signedPct(upside, 0)}) · High ${price(tHigh)}`));
+      const trk = el("div", "wl-ttrack");
+      const medMark = el("i", "wl-tmark med");
+      if (medMark.style) medMark.style.left = pos(tMed);
+      const clMark = el("i", "wl-tmark close");
+      if (clMark.style) clMark.style.left = pos(pxVal);
+      trk.append(medMark, clMark);
+      tbar.append(trk);
+      vizCards.push(tbar);
+    }
+
+    if (vizCards.length) {
+      const vizWrap = el("div", `wl-ins-viz${vizCards.length === 1 ? " single" : ""}`);
+      vizWrap.append(...vizCards);
+      partsList.push(vizWrap);
+    }
+
+    // Unified 3-rule tested checklist card (dated to the month-end close) + earnings window check
+    if (T || r) {
+      const card = el("div", "wl-chk-card");
+      if (T && trend && trend.signal_date) {
+        card.append(el("div", "wl-chk-head", `Tested trend rules · ${shortDay(trend.signal_date)} month-end close`));
+      }
+      const ul = el("ul", "wl-checklist");
+      const addChk = (label, stateCls, val) => {
+        const li = el("li");
+        li.append(el("span", "", label), el("span", stateCls, val));
+        ul.append(li);
+      };
+      if (T) {
+        addChk("Price above 200-day SMA", T.rules.A === true ? "wl-chk-ok" : T.rules.A === false ? "wl-chk-no" : "", T.rules.A === true ? "✓ Yes" : T.rules.A === false ? "✗ Below" : "—");
+        addChk("12–1 month return > 0", T.rules.B === true ? "wl-chk-ok" : T.rules.B === false ? "wl-chk-no" : "", T.rules.B === true ? `✓ ${T.mom121 !== null ? signedPct(T.mom121, 0) : "Yes"}` : T.rules.B === false ? `✗ ${T.mom121 !== null ? signedPct(T.mom121, 0) : "Below"}` : "—");
+        addChk("50-day above 200-day SMA", T.rules.C === true ? "wl-chk-ok" : T.rules.C === false ? "wl-chk-no" : "", T.rules.C === true ? "✓ Yes" : T.rules.C === false ? "✗ Below" : "—");
+      }
+      const earnNear = r && r.days >= 0 && r.days <= 14;
+      addChk("Earnings within 14 days", earnNear ? "wl-chk-warn" : "wl-chk-muted", r ? `${shortDay(r.date)}${earnNear ? ` (in ${r.days}d)` : ""}` : "None in calendar");
+      card.append(ul);
+      partsList.push(card);
+    }
+
+    // Inline editable 1-line thesis note
+    const noteWrap = el("div", "wl-thesis-box");
+    const noteId = `wl-note-${sym.replace(/[^A-Z0-9]/g, "")}`;
+    const lbl = el("label", "", "Personal thesis note (saved in browser)");
+    lbl.setAttribute("for", noteId);
+    const inp = el("input");
+    inp.id = noteId;
+    inp.type = "text";
+    inp.value = loadNotes()[sym] || "";
+    inp.setAttribute("placeholder", "Write 1 line on why you’re watching this stock…");
+    inp.addEventListener("input", () => {
+      saveNote(sym, inp.value);
+      const ref = noteSubs.get(sym);
+      if (ref && ref.node) {
+        const clean = String(inp.value || "").trim().slice(0, 180);
+        ref.node.textContent = clean ? `“${clean}”` : ref.fallback;
+        ref.node.className = clean ? "wl-note-line" : "wl-meta-line";
+      }
+    });
+    noteWrap.append(lbl, inp);
+    partsList.push(noteWrap);
+
+    // Jump to full Timing chart or full Ticker dossier
+    const actions = el("div", "wl-ins-actions");
+    const timingBtn = el("button", "wl-btn-primary", "Full Timing chart →");
+    timingBtn.type = "button";
+    timingBtn.addEventListener("click", () => {
+      activeSymbol = sym;
+      setTab("timing");
+    });
+    const dossierLink = el("a", "wl-btn-ghost", "Ticker dossier");
+    dossierLink.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
+    actions.append(timingBtn, dossierLink);
+    partsList.push(actions);
+
+    const inner = el("div", "wl-ins-inner");
+    inner.append(...partsList);
+    aside.replaceChildren(inner);
+  }
+
+  // Empty-state Shortlist Top 10 starter grid
+  function renderStarterGrid() {
+    const grid = $("wl-starter-grid");
+    if (!grid) return;
+    if (!shortlistPicks.length) { grid.replaceChildren(); return; }
+    grid.replaceChildren(...shortlistPicks.map((sym) => {
+      const c = desk[sym] || {};
+      const b = el("button", "wl-starter-chip");
+      b.type = "button";
+      b.append(el("span", "star", "☆"), el("span", "rk", `#${shortlistRanks[sym] || ""}`),
+        el("span", "", sym), el("span", "nm", c.name || ""));
+      b.addEventListener("click", () => {
+        W.toggle(sym, c.name || "");
+        selectedSaved = sym;
+      });
+      return b;
+    }));
+  }
+
+  // Shareable PNG Scorecard + Pasteable Text List + Card/PDF Dialog + Copy Link
+  function formatShareText(items) {
+    const notes = loadNotes();
+    const lines = [`Temper Lab Watchlist${deskAsOf ? ` · ${longDay(deskAsOf)}` : ""} (${items.length} stocks)`];
+    for (const it of items) {
+      const c = desk[it.symbol] || {};
+      const T = savedRules(it.symbol);
+      const m = members[it.symbol];
+      const lists = m ? [m.shortlist ? `Shortlist #${m.shortlist}` : "", ...m.lists].filter(Boolean).join(", ") : "Off list";
+      const er = earnings[it.symbol];
+      const noteText = notes[it.symbol] ? ` — "${notes[it.symbol]}"` : "";
+      lines.push(`• ${it.symbol} (${price(c.price)}) · ${ruleBadge(T)} · ${lists}${er && er.date ? ` · Results ${shortDay(er.date)}` : ""}${noteText}`);
+    }
+    const syms = items.map((i) => i.symbol).join(",");
+    lines.push(`Open live: https://temper-lab.com/watchlist.html?w=${encodeURIComponent(syms)}`);
+    return lines.join("\n");
+  }
+
+  function drawShareCard(canvas, items) {
+    if (!canvas || typeof canvas.getContext !== "function") return false;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+    const notes = loadNotes();
+    const rows = items.slice(0, 14);
+    const W = 880, rowH = 44, headH = 98, footH = 44;
+    const H = headH + Math.max(1, rows.length) * rowH + footH;
+    const S = 2;
+    canvas.width = W * S; canvas.height = H * S;
+    ctx.scale(S, S);
+    const font = (w, sz) => `${w} ${sz}px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    const rrect = (x, y, w, h, r, fill, stroke) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+    };
+    ctx.fillStyle = "#f6f7f4"; ctx.fillRect(0, 0, W, H);
+    rrect(20, 16, W - 40, H - 32, 12, "#ffffff", "#dbe3de");
+    rrect(36, 30, 22, 22, 5, "#1e4d36");
+    ctx.fillStyle = "#f0e6bf"; ctx.font = font(700, 14); ctx.textAlign = "center"; ctx.fillText("t", 47, 46);
+    ctx.fillStyle = "#1f3328"; ctx.font = font(700, 17); ctx.textAlign = "left";
+    ctx.fillText(`Temper Lab · Watchlist (${items.length})`, 68, 47);
+    ctx.fillStyle = "#5d7263"; ctx.font = font(500, 12); ctx.textAlign = "right";
+    if (deskAsOf) ctx.fillText(`Snapshot ${longDay(deskAsOf)}`, W - 36, 46);
+
+    const cy = 78;
+    ctx.fillStyle = "#6c7f72"; ctx.font = font(600, 10.5); ctx.textAlign = "left";
+    ctx.fillText("TICKER & NOTE", 36, cy);
+    ctx.fillText("CLOSE", 310, cy);
+    ctx.fillText("TREND (TESTED)", 395, cy);
+    ctx.fillText("LISTS", 540, cy);
+    ctx.fillText("NEXT RESULTS", 700, cy);
+    ctx.strokeStyle = "#e6ece7"; ctx.beginPath(); ctx.moveTo(36, cy + 8); ctx.lineTo(W - 36, cy + 8); ctx.stroke();
+
+    rows.forEach((it, idx) => {
+      const y = headH + idx * rowH;
+      if (idx > 0) { ctx.strokeStyle = "#f0f3f0"; ctx.beginPath(); ctx.moveTo(36, y - 6); ctx.lineTo(W - 36, y - 6); ctx.stroke(); }
+      const c = desk[it.symbol] || {};
+      const T = savedRules(it.symbol);
+      const m = members[it.symbol];
+      const er = earnings[it.symbol];
+      ctx.fillStyle = "#1e4d36"; ctx.font = font(700, 13.5); ctx.textAlign = "left";
+      ctx.fillText(it.symbol, 36, y + 12);
+      ctx.fillStyle = "#5d7263"; ctx.font = font(400, 11);
+      const sub = notes[it.symbol] ? `“${notes[it.symbol].slice(0, 38)}”` : (c.name || it.name || "").slice(0, 34);
+      ctx.fillText(sub, 36, y + 27);
+      ctx.fillStyle = "#1f3328"; ctx.font = font(600, 13);
+      ctx.fillText(price(c.price), 310, y + 16);
+      const tTone = T ? T.ruleTone : "none";
+      const cols = { up: ["#e3f2e8", "#165c37"], down: ["#fae8e6", "#992b22"], mixed: ["#fef3da", "#8a5a0a"], none: ["#f1f3f1", "#3d4f43"] }[tTone];
+      rrect(395, y + 1, 122, 22, 11, cols[0]);
+      ctx.fillStyle = cols[1]; ctx.font = font(600, 11); ctx.textAlign = "center";
+      ctx.fillText(ruleBadge(T), 456, y + 16);
+      ctx.textAlign = "left"; ctx.fillStyle = "#3c5446"; ctx.font = font(500, 11.5);
+      const listStr = m ? [m.shortlist ? `SL #${m.shortlist}` : "", ...m.lists].filter(Boolean).slice(0, 2).join(" · ") : "Off list";
+      ctx.fillText(listStr, 540, y + 16);
+      ctx.fillStyle = "#5d7263"; ctx.font = font(400, 11.5);
+      ctx.fillText(er && er.date ? shortDay(er.date) : "—", 700, y + 16);
+    });
+    ctx.fillStyle = "#7b8c81"; ctx.font = font(400, 10.5); ctx.textAlign = "left";
+    const more = items.length > rows.length ? `Showing first ${rows.length} of ${items.length} · ` : "";
+    ctx.fillText(`${more}temper-lab.com · Research facts with dates, not a buy or sell call.`, 36, H - 24);
+    return true;
+  }
+
+  async function copyWatchlist(button) {
+    const items = W.list();
+    if (!items.length) return;
+    const text = formatShareText(items);
+    const navClip = globalThis.navigator && globalThis.navigator.clipboard;
+    try {
+      if (navClip && typeof globalThis.ClipboardItem === "function" && typeof document.createElement === "function") {
+        const canvas = document.createElement("canvas");
+        if (drawShareCard(canvas, items) && typeof canvas.toBlob === "function") {
+          const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+          if (blob) {
+            await navClip.write([new globalThis.ClipboardItem({
+              "image/png": blob,
+              "text/plain": new Blob([text], { type: "text/plain" }),
+            })]);
+            reportCopy(button, true, "Copied PNG + list");
+            return;
+          }
+        }
+      }
+      if (navClip && typeof navClip.writeText === "function") {
+        await navClip.writeText(text);
+        reportCopy(button, true, "Copied list");
+        return;
+      }
+      reportCopy(button, false);
+    } catch {
+      try {
+        if (navClip && typeof navClip.writeText === "function") {
+          await navClip.writeText(text);
+          reportCopy(button, true, "Copied list");
+          return;
+        }
+      } catch {}
+      reportCopy(button, false);
+    }
+  }
+
+  async function copyShareLink(button) {
+    const items = W.list();
+    if (!items.length) return;
+    const url = `https://temper-lab.com/watchlist.html?w=${encodeURIComponent(items.map((i) => i.symbol).join(","))}`;
+    const navClip = globalThis.navigator && globalThis.navigator.clipboard;
+    try {
+      if (navClip && typeof navClip.writeText === "function") {
+        await navClip.writeText(url);
+        reportCopy(button, true, "Link copied");
+        return;
+      }
+      reportCopy(button, false);
+    } catch {
+      reportCopy(button, false);
+    }
+  }
+
+  function openCardDialog() {
+    const items = W.list();
+    if (!items.length || !document.body) return;
+    let dlg = $("wl-copy-dlg");
+    if (!dlg) {
+      dlg = el("dialog", "wl-copy-dlg");
+      dlg.id = "wl-copy-dlg";
+      dlg.addEventListener("click", (e) => {
+        if (e.target === dlg && typeof dlg.close === "function") dlg.close();
+      });
+      document.body.append(dlg);
+    }
+    const head = el("div", "wl-dlg-head");
+    head.append(el("strong", "", "Shareable Watchlist Card (PNG / PDF / Text)"));
+    const closeBtn = el("button", "wl-dlg-close", "×");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "Close preview");
+    closeBtn.addEventListener("click", () => { if (typeof dlg.close === "function") dlg.close(); });
+    head.append(closeBtn);
+
+    const canvas = el("canvas", "wl-dlg-canvas");
+    drawShareCard(canvas, items);
+
+    const actions = el("div", "wl-dlg-actions");
+    const copyWrap = el("span", "wl-copy-wrap");
+    const bCopy = el("button", "wl-btn-primary", "Copy PNG + list");
+    bCopy.type = "button";
+    bCopy.addEventListener("click", () => { void copyWatchlist(bCopy); });
+    const tip1 = el("span", "wl-copy-tip", "");
+    tip1.setAttribute("role", "status");
+    copyWrap.append(bCopy, tip1);
+
+    const bPng = el("button", "wl-btn-ghost", "Download PNG");
+    bPng.type = "button";
+    bPng.addEventListener("click", () => {
+      const a = el("a");
+      a.download = `temper-lab-watchlist-${deskAsOf || "snapshot"}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    });
+
+    const bPdf = el("button", "wl-btn-ghost", "Print / Save PDF");
+    bPdf.type = "button";
+    bPdf.addEventListener("click", () => {
+      if (typeof dlg.close === "function") dlg.close();
+      if (typeof globalThis.print === "function") globalThis.print();
+    });
+
+    const linkWrap = el("span", "wl-copy-wrap");
+    const bLink = el("button", "wl-btn-ghost", "Copy link");
+    bLink.type = "button";
+    bLink.addEventListener("click", () => { void copyShareLink(bLink); });
+    const tip2 = el("span", "wl-copy-tip", "");
+    tip2.setAttribute("role", "status");
+    linkWrap.append(bLink, tip2);
+
+    actions.append(copyWrap, bPng, bPdf, linkWrap);
+    dlg.replaceChildren(head, canvas, actions);
+    if (typeof dlg.showModal === "function") dlg.showModal();
   }
 
   // Prices in ticker-timing.json carry four significant digits; show them that way, not as cents.
@@ -464,10 +976,10 @@
       } else {
         svg("line", { x1: lx, x2: lx + 20, y1: ly - 1, y2: ly - 1, stroke: item.color, "stroke-width": "1.8", "stroke-dasharray": item.dash || undefined }, chart);
       }
-      svg("text", { x: lx + 25, y: ly + 3, fill: "#1f2937", "font-size": "10.5" }, chart, item.label);
+      svg("text", { x: lx + 25, y: ly + 3, fill: "#4a5d51", "font-size": "10.5" }, chart, item.label);
     };
     const panel = (title, items, height, yLabel) => {
-      svg("text", { x: L, y: cursor + 13, fill: "#111827", "font-size": "13", "font-weight": "600" }, chart, title);
+      svg("text", { x: L, y: cursor + 13, fill: "#1f3328", "font-size": "13", "font-weight": "600" }, chart, title);
       let lx = L;
       let ly = cursor + 31;
       for (const item of items) {
@@ -481,9 +993,9 @@
       }
       const top = ly + 10;
       const bottom = top + height;
-      svg("rect", { x: L, y: top, width: PW, height, fill: "#ffffff", stroke: "#374151", "stroke-width": "1" }, chart);
+      svg("rect", { x: L, y: top, width: PW, height, fill: "#ffffff", stroke: "#dce3de", "stroke-width": "1" }, chart);
       const cy = (top + bottom) / 2;
-      svg("text", { x: 12, y: cy, "text-anchor": "middle", fill: "#111827", "font-size": "11", transform: `rotate(-90 12 ${cy})` }, chart, yLabel);
+      svg("text", { x: 12, y: cy, "text-anchor": "middle", fill: "#4a5d51", "font-size": "11", transform: `rotate(-90 12 ${cy})` }, chart, yLabel);
       cursor = bottom + 22;
       return { top, bottom };
     };
@@ -504,11 +1016,11 @@
       ? ` · 50-day crossed ${ta.last.lastMa.kind === "up" ? "above" : "below"} ${slowP}-day ${eventDay(ta.last.lastMa.date)}`
       : ta.last.trend ? ` · ${noCross(ta, slowP).replace(/^None/, `no 50/${slowP} cross`)}` : "";
     const priceItems = [
-      { color: "#1d4ed8", label: `${symbol} close` },
-      { color: "#15803d", label: "50-day average" },
-      { color: "#dc2626", label: `${slowP}-day average` },
-      ...(upMa.length ? [{ shape: "up", color: "#15803d", label: `50-day crossed above ${slowP}-day (${upMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
-      ...(downMa.length ? [{ shape: "down", color: "#dc2626", label: `50-day crossed below ${slowP}-day (${downMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
+      { color: "#24342d", label: `${symbol} close` },
+      { color: "#1e6547", label: "50-day average" },
+      { color: "#b55d47", label: `${slowP}-day average` },
+      ...(upMa.length ? [{ shape: "up", color: "#1e6547", label: `50-day crossed above ${slowP}-day (${upMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
+      ...(downMa.length ? [{ shape: "down", color: "#b55d47", label: `50-day crossed below ${slowP}-day (${downMa.map((e) => eventDay(e.date)).join(", ")})` }] : []),
     ];
     const p1 = panel(narrow ? `${symbol} · adjusted close${maCrossNote}` : `${symbol} · daily close, adjusted for splits and dividends${maCrossNote}`, priceItems, narrow ? 190 : 225, "Price (USD)");
     const priceVals = [...ta.close, ...ta.sma50, ...ta.slow].filter((v) => v !== null && Number.isFinite(v));
@@ -523,47 +1035,48 @@
     const pStep = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => pRange / s <= 6) || pRange / 5;
     for (let tick = Math.ceil(pLo / pStep) * pStep; tick <= pHi - pStep * 0.1; tick += pStep) {
       const yy = yPrice(tick);
-      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#e5e7eb", "stroke-width": "0.8" }, chart);
-      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, pStep < 1 ? tick.toFixed(2) : Math.round(tick).toString());
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: "#eef2ef", "stroke-width": "0.8" }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#4a5d51", "font-size": "10.5" }, chart, pStep < 1 ? tick.toFixed(2) : Math.round(tick).toString());
     }
-    svg("path", { d: buildPath(ta.close, yPrice), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
-    svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#15803d", "stroke-width": "1.6" }, chart);
-    svg("path", { d: buildPath(ta.slow, yPrice), fill: "none", stroke: "#dc2626", "stroke-width": "1.7" }, chart);
+    svg("path", { d: buildPath(ta.close, yPrice), fill: "none", stroke: "#24342d", "stroke-width": "1.7" }, chart);
+    svg("path", { d: buildPath(ta.sma50, yPrice), fill: "none", stroke: "#1e6547", "stroke-width": "1.6" }, chart);
+    svg("path", { d: buildPath(ta.slow, yPrice), fill: "none", stroke: "#b55d47", "stroke-width": "1.7" }, chart);
     for (const e of ta.events.ma) {
-      vLine(p1.top, p1.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
+      vLine(p1.top, p1.bottom, e.index, e.kind === "up" ? "#1e6547" : "#b55d47");
       const cx = x(e.index);
       const maLevel = ta.sma50[e.index] !== null && ta.slow[e.index] !== null ? (ta.sma50[e.index] + ta.slow[e.index]) / 2 : e.price;
       const cy = yPrice(maLevel);
       const pts = e.kind === "up"
         ? `${cx.toFixed(1)},${(cy - 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy + 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy + 5).toFixed(1)}`
         : `${cx.toFixed(1)},${(cy + 8).toFixed(1)} ${(cx - 6.5).toFixed(1)},${(cy - 5).toFixed(1)} ${(cx + 6.5).toFixed(1)},${(cy - 5).toFixed(1)}`;
-      svg("polygon", { points: pts, fill: e.kind === "up" ? "#15803d" : "#dc2626", stroke: "#ffffff", "stroke-width": "1.2" }, chart);
+      svg("polygon", { points: pts, fill: e.kind === "up" ? "#1e6547" : "#b55d47", stroke: "#ffffff", "stroke-width": "1.2" }, chart);
     }
 
-    // --- RSI panel ---
+    // --- RSI panel (calm slate, never green/red) ---
     const p2 = panel(`${symbol} · RSI (14, Wilder)`, [
-      { color: "#7e22ce", label: "RSI (14)" },
-      { color: "#6b7280", dash: "5,4", label: `${RSI_HIGH} and ${RSI_LOW} lines` },
-      { shape: "dot", color: "#7e22ce", label: `first day at ${RSI_HIGH}+ or at ${RSI_LOW} or below` },
+      { color: "#3d6385", label: "RSI (14)" },
+      { color: "#8a9990", dash: "5,4", label: `${RSI_HIGH} and ${RSI_LOW} lines` },
+      { shape: "dot", color: "#3d6385", label: `first day at ${RSI_HIGH}+ or at ${RSI_LOW} or below` },
     ], narrow ? 120 : 135, "RSI");
     const yRsi = (v) => p2.top + (1 - v / 100) * (p2.bottom - p2.top);
+    svg("rect", { x: L + 0.5, y: yRsi(RSI_HIGH), width: PW - 1, height: yRsi(RSI_LOW) - yRsi(RSI_HIGH), fill: "#f2f6f4" }, chart);
     for (const tick of [0, 30, 50, 70, 100]) {
       const yy = yRsi(tick);
-      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 30 || tick === 70 ? "#6b7280" : "#f3f4f6", "stroke-width": tick === 30 || tick === 70 ? "1.2" : "0.8", "stroke-dasharray": tick === 30 || tick === 70 ? "5,4" : undefined }, chart);
-      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, String(tick));
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 30 || tick === 70 ? "#8a9990" : "#eef2ef", "stroke-width": tick === 30 || tick === 70 ? "1.1" : "0.8", "stroke-dasharray": tick === 30 || tick === 70 ? "5,4" : undefined }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#4a5d51", "font-size": "10.5" }, chart, String(tick));
     }
-    svg("path", { d: buildPath(ta.rsi14, yRsi), fill: "none", stroke: "#7e22ce", "stroke-width": "1.6" }, chart);
-    for (const e of ta.events.rsi) svg("circle", { cx: x(e.index).toFixed(1), cy: yRsi(e.value).toFixed(1), r: "3.6", fill: "#7e22ce", stroke: "#ffffff", "stroke-width": "1" }, chart);
+    svg("path", { d: buildPath(ta.rsi14, yRsi), fill: "none", stroke: "#3d6385", "stroke-width": "1.6" }, chart);
+    for (const e of ta.events.rsi) svg("circle", { cx: x(e.index).toFixed(1), cy: yRsi(e.value).toFixed(1), r: "3.6", fill: "#3d6385", stroke: "#ffffff", "stroke-width": "1" }, chart);
 
-    // --- MACD panel ---
+    // --- MACD panel (calm slate / warm ochre / mist, never green/red) ---
     const latest = ta.last.lastMacd;
     const crossNote = latest ? ` · crossed ${latest.kind === "up" ? "above" : "below"} signal ${eventDay(latest.date)}` : "";
     const p3 = panel(narrow ? `MACD (12, 26, 9)${crossNote.replace(" signal", "")}` : `${symbol} · MACD (12, 26, 9)${crossNote}`, [
-      { color: "#1d4ed8", label: "MACD" },
-      { color: "#d97706", label: "Signal" },
-      { shape: "bar", color: "#9ca3af", label: "Histogram" },
-      { shape: "dot", color: "#4b5563", label: "crossed above signal" },
-      { shape: "ring", color: "#4b5563", label: "crossed below signal" },
+      { color: "#3d6385", label: "MACD" },
+      { color: "#b8843b", label: "Signal" },
+      { shape: "bar", color: "#aebcb3", label: "Histogram" },
+      { shape: "dot", color: "#4a5d51", label: "crossed above signal" },
+      { shape: "ring", color: "#4a5d51", label: "crossed below signal" },
     ], narrow ? 140 : 158, "MACD ($)");
     const mVals = [...ta.macd, ...ta.signal, ...ta.hist].filter((v) => v !== null && Number.isFinite(v)).map(Math.abs);
     const mMax = (Math.max(0, ...mVals) || 1) * 1.15;
@@ -571,20 +1084,20 @@
     const yZero = yMacd(0);
     for (const tick of [-mMax * 0.75, 0, mMax * 0.75]) {
       const yy = yMacd(tick);
-      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#9ca3af" : "#f3f4f6", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
-      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#1f2937", "font-size": "10.5" }, chart, tick === 0 ? "0" : axisNumber(tick));
+      svg("line", { x1: L, x2: L + PW, y1: yy, y2: yy, stroke: tick === 0 ? "#b8c4bc" : "#eef2ef", "stroke-width": tick === 0 ? "1" : "0.8" }, chart);
+      svg("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", fill: "#4a5d51", "font-size": "10.5" }, chart, tick === 0 ? "0" : axisNumber(tick));
     }
     const barW = Math.max(1, (PW / n) * 0.65);
     for (let i = 0; i < n; i++) {
       const h = ta.hist[i];
       if (h === null || !Number.isFinite(h)) continue;
       const yy = yMacd(h);
-      svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#9ca3af" : "#d1d5db" }, chart);
+      svg("rect", { x: (x(i) - barW / 2).toFixed(1), y: Math.min(yZero, yy).toFixed(1), width: barW.toFixed(1), height: Math.max(0.6, Math.abs(yy - yZero)).toFixed(1), fill: h >= 0 ? "#aebcb3" : "#d5ddd8" }, chart);
     }
-    svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#1d4ed8", "stroke-width": "1.6" }, chart);
-    svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#d97706", "stroke-width": "1.6" }, chart);
+    svg("path", { d: buildPath(ta.macd, yMacd), fill: "none", stroke: "#3d6385", "stroke-width": "1.6" }, chart);
+    svg("path", { d: buildPath(ta.signal, yMacd), fill: "none", stroke: "#b8843b", "stroke-width": "1.6" }, chart);
     for (const e of ta.events.macd) {
-      svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#4b5563" : "#ffffff", stroke: e.kind === "up" ? "#ffffff" : "#4b5563", "stroke-width": e.kind === "up" ? "1" : "1.5" }, chart);
+      svg("circle", { cx: x(e.index).toFixed(1), cy: yMacd(e.value).toFixed(1), r: "3.4", fill: e.kind === "up" ? "#4a5d51" : "#ffffff", stroke: e.kind === "up" ? "#ffffff" : "#4a5d51", "stroke-width": e.kind === "up" ? "1" : "1.5" }, chart);
     }
 
     // --- Shared month axis along the bottom panel ---
@@ -595,17 +1108,17 @@
       if (ym === ta.days[i - 1].slice(0, 7)) continue;
       const xx = x(i);
       if (xx - lastLabelX < (narrow ? 58 : 70) || xx > L + PW - 22) continue;
-      for (const p of [p1, p2, p3]) svg("line", { x1: xx, x2: xx, y1: p.top, y2: p.bottom, stroke: "#f3f4f6", "stroke-width": "0.8" }, chart);
-      svg("text", { x: xx, y: bottomY + 15, "text-anchor": "middle", fill: "#1f2937", "font-size": "10.5" }, chart, `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(2, 4)}`);
+      for (const p of [p1, p2, p3]) svg("line", { x1: xx, x2: xx, y1: p.top, y2: p.bottom, stroke: "#eef2ef", "stroke-width": "0.8" }, chart);
+      svg("text", { x: xx, y: bottomY + 15, "text-anchor": "middle", fill: "#4a5d51", "font-size": "10.5" }, chart, `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(2, 4)}`);
       lastLabelX = xx;
     }
-    for (const e of ta.events.ma) for (const p of [p2, p3]) vLine(p.top, p.bottom, e.index, e.kind === "up" ? "#15803d" : "#dc2626");
+    for (const e of ta.events.ma) for (const p of [p2, p3]) vLine(p.top, p.bottom, e.index, e.kind === "up" ? "#1e6547" : "#b55d47");
     const H_SVG = bottomY + 24;
     chart.setAttribute("viewBox", `0 0 ${W_SVG} ${H_SVG}`);
 
     // Hover / keyboard readout: that day's numbers and events.
-    const cross = svg("line", { y1: p1.top, y2: bottomY, stroke: "#6b7280", "stroke-width": "1", "stroke-dasharray": "3,3", visibility: "hidden" }, chart);
-    const dot = svg("circle", { r: "4", fill: "#1d4ed8", stroke: "#fff", "stroke-width": "1.2", visibility: "hidden" }, chart);
+    const cross = svg("line", { y1: p1.top, y2: bottomY, stroke: "#5d7263", "stroke-width": "1", "stroke-dasharray": "3,3", visibility: "hidden" }, chart);
+    const dot = svg("circle", { r: "4", fill: "#24342d", stroke: "#fff", "stroke-width": "1.2", visibility: "hidden" }, chart);
     const tip = el("p", "wl-ta-tip");
     const readout = (idx) => {
       const i = Math.max(0, Math.min(n - 1, idx));
@@ -653,6 +1166,107 @@
     host.replaceChildren(chart, tip);
   }
 
+  // Multi-stock 1-year normalized % overlay on Timing tab (click any line or label to focus below).
+  function drawRelativeOverlay(symbols) {
+    const box = $("wl-timing-overlay-box");
+    const host = $("wl-timing-overlay");
+    if (!box || !host) return;
+    if (!timing || !Array.isArray(timing.days) || !timing.closes) {
+      box.hidden = true;
+      host.replaceChildren();
+      return;
+    }
+    const warmup = timing.warmup || 200;
+    const days = timing.days.slice(warmup);
+    const n = days.length;
+    const pickList = activeSymbol && !symbols.slice(0, 6).includes(activeSymbol)
+      ? [activeSymbol, ...symbols.filter((s) => s !== activeSymbol).slice(0, 5)]
+      : symbols.slice(0, 6);
+    const palette = ["#1e6547", "#3d6385", "#b55d47", "#b8843b", "#6f5b8f", "#2f7d78"];
+    const series = pickList.map((sym, idx) => {
+      const raw = Array.isArray(timing.closes[sym]) ? timing.closes[sym].slice(warmup) : [];
+      const base = raw.find((v) => Number.isFinite(v) && v > 0);
+      if (!base) return null;
+      const rel = raw.map((v) => (Number.isFinite(v) && v > 0 ? (v / base - 1) * 100 : null));
+      let last = null;
+      for (let i = rel.length - 1; i >= 0; i--) {
+        if (rel[i] !== null) { last = rel[i]; break; }
+      }
+      if (last === null) return null;
+      return { sym, rel, last, color: palette[idx % palette.length] };
+    }).filter(Boolean);
+    if (series.length < 2 || n < 2) {
+      box.hidden = true;
+      host.replaceChildren();
+      return;
+    }
+    box.hidden = false;
+    const W_OV = host.clientWidth ? Math.max(350, Math.min(920, host.clientWidth - 16)) : 920;
+    const H_OV = W_OV < 560 ? 170 : 186;
+    const L = W_OV < 560 ? 44 : 52, R = W_OV < 560 ? 84 : 96, T = 14, B = 26;
+    const PW = W_OV - L - R, PH = H_OV - T - B;
+    const allV = series.flatMap((s) => s.rel.filter((v) => v !== null));
+    const lo = Math.min(-10, ...allV) * 1.08;
+    const hi = Math.max(10, ...allV) * 1.08;
+    const x = (i) => L + (n > 1 ? (i / (n - 1)) * PW : PW / 2);
+    const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * PH;
+    const s = svg("svg", {
+      class: "wl-ta-svg",
+      viewBox: `0 0 ${W_OV} ${H_OV}`,
+      role: "img",
+      "aria-label": `1-year relative comparison for ${series.map((it) => it.sym).join(", ")}`,
+    });
+    svg("rect", { x: L, y: T, width: PW, height: PH, rx: "4", fill: "#ffffff", stroke: "#dce3de" }, s);
+    const y0 = y(0);
+    svg("line", { x1: L, x2: L + PW, y1: y0.toFixed(1), y2: y0.toFixed(1), stroke: "#9eb0a4", "stroke-dasharray": "4,3" }, s);
+    for (const tv of [Math.round(lo), 0, Math.round(hi)]) {
+      const yy = y(tv);
+      svg("text", { x: L - 6, y: (yy + 3.5).toFixed(1), "text-anchor": "end", fill: "#5d7263", "font-size": "10" }, s, `${tv > 0 ? "+" : ""}${tv}%`);
+    }
+    // Draw inactive lines first, active stock on top
+    const ordered = [...series.filter((it) => it.sym !== activeSymbol), ...series.filter((it) => it.sym === activeSymbol)];
+    for (const item of ordered) {
+      let d = "";
+      for (let i = 0; i < item.rel.length; i++) {
+        if (item.rel[i] !== null) d += `${d && item.rel[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${y(item.rel[i]).toFixed(1)}`;
+      }
+      const isAct = item.sym === activeSymbol;
+      const p = svg("path", {
+        d, fill: "none", stroke: item.color,
+        "stroke-width": isAct ? "2.6" : "1.35",
+        opacity: isAct ? "1" : "0.52",
+        style: "cursor:pointer",
+      }, s);
+      p.addEventListener("click", () => { activeSymbol = item.sym; renderTiming(W.list()); });
+    }
+    // Anti-overlap right-hand end labels
+    const placed = series.map((item) => ({ item, y: y(item.last) })).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < placed.length; i++) {
+      if (placed[i].y - placed[i - 1].y < 13) placed[i].y = placed[i - 1].y + 13;
+    }
+    const maxY = T + PH - 3;
+    if (placed.length && placed[placed.length - 1].y > maxY) {
+      let shift = placed[placed.length - 1].y - maxY;
+      for (let i = placed.length - 1; i >= 0; i--) {
+        placed[i].y = Math.max(T + 9, placed[i].y - shift);
+        if (i > 0 && placed[i].y - placed[i - 1].y < 13) shift = 13 - (placed[i].y - placed[i - 1].y);
+        else shift = 0;
+      }
+    }
+    for (const { item, y: ly } of placed) {
+      const isAct = item.sym === activeSymbol;
+      const lbl = svg("text", {
+        x: L + PW + 6, y: (ly + 3.5).toFixed(1),
+        fill: item.color, "font-size": "10.5", "font-weight": isAct ? "700" : "600",
+        style: "cursor:pointer",
+      }, s, `${item.sym} ${item.last >= 0 ? "+" : ""}${Math.round(item.last)}%`);
+      lbl.addEventListener("click", () => { activeSymbol = item.sym; renderTiming(W.list()); });
+    }
+    svg("text", { x: L, y: H_OV - 6, fill: "#5d7263", "font-size": "10" }, s, longDay(days[0]));
+    svg("text", { x: L + PW, y: H_OV - 6, "text-anchor": "end", fill: "#5d7263", "font-size": "10" }, s, longDay(days[n - 1]));
+    host.replaceChildren(s);
+  }
+
   function renderTiming(items) {
     const panelEl = $("wl-timing-panel");
     if (!panelEl) return;
@@ -683,6 +1297,7 @@
     const symbols = starredSyms.length ? starredSyms : shortlistPicks.slice();
     if (!activeSymbol || (!symbols.includes(activeSymbol) && !shortlistPicks.includes(activeSymbol))) activeSymbol = symbols[0] || "";
     const tone = (sym) => (trendFor(sym) || {}).ruleTone || "";
+    drawRelativeOverlay(symbols);
 
     const picksBar = $("wl-timing-picks");
     if (picksBar) {
@@ -796,6 +1411,11 @@
     displayed = W.clean([...items, ...bulkRows]);
     const today = marketToday();
     const sorted = sortRows(displayed, today);
+    if (sorted.length && (!selectedSaved || !sorted.some((it) => it.symbol === selectedSaved))) {
+      selectedSaved = sorted[0].symbol;
+    } else if (!sorted.length) {
+      selectedSaved = "";
+    }
     const allSelected = displayed.length > 0 && displayed.every((item) => W.has(item.symbol));
     $("wl-select-all").setAttribute("aria-pressed", allSelected ? "true" : "false");
     $("wl-select-all").setAttribute("aria-label", allSelected ? "Unselect all" : "Select all");
@@ -804,9 +1424,14 @@
     $("wl-empty").hidden = displayed.length > 0;
     $("wl-table").hidden = displayed.length === 0;
     $("wl-export").disabled = items.length === 0;
+    if ($("wl-card-btn")) $("wl-card-btn").disabled = items.length === 0;
+    if ($("wl-link-btn")) $("wl-link-btn").disabled = items.length === 0;
     $("wl-storage").hidden = W.stored();
+    noteSubs.clear();
     $("wl-rows").replaceChildren(...sorted.map((item) => row(item, today)));
     renderSummary(items, today);
+    renderInspector(sorted, today);
+    if (displayed.length === 0) renderStarterGrid();
     if (activeTab === "timing") renderTiming(items);
   }
   const say = (text) => { $("wl-status").textContent = text; };
@@ -832,6 +1457,72 @@
     }
   }
 
+  function parseSharedQuery() {
+    const raw = (globalThis.location && globalThis.location.search) || "";
+    if (!raw) return [];
+    let param = "";
+    try {
+      if (typeof URLSearchParams === "function") param = new URLSearchParams(raw).get("w") || "";
+      else {
+        const m = raw.match(/[?&]w=([^&]+)/);
+        param = m ? decodeURIComponent(m[1]) : "";
+      }
+    } catch { return []; }
+    const seen = new Set();
+    const out = [];
+    for (const part of param.split(",")) {
+      const sym = part.trim().toUpperCase();
+      if (/^[A-Z0-9][A-Z0-9.-]{0,9}$/.test(sym) && !seen.has(sym)) {
+        seen.add(sym);
+        out.push(sym);
+        if (out.length >= 50) break;
+      }
+    }
+    return out;
+  }
+
+  let sharedSymbols = [];
+  function renderSharedBanner() {
+    const banner = $("wl-shared-banner");
+    if (!banner) return;
+    const missing = sharedSymbols.filter((s) => !W.has(s));
+    if (!sharedSymbols.length || !missing.length) {
+      banner.hidden = true;
+      banner.replaceChildren();
+      return;
+    }
+    banner.hidden = false;
+    const preview = missing.slice(0, 8).join(", ") + (missing.length > 8 ? ` +${missing.length - 8} more` : "");
+    const copy = el("span", "", `Shared watchlist link: ${missing.length} new ${missing.length === 1 ? "ticker" : "tickers"} (${preview}).`);
+    const actions = el("div", "wl-shared-actions");
+    const addBtn = el("button", "wl-btn-primary", `Add ${missing.length} to my watchlist`);
+    addBtn.type = "button";
+    addBtn.addEventListener("click", () => {
+      const rows = missing.map((s) => ({ symbol: s, name: (desk[s] && desk[s].name) || "", page: "watchlist" }));
+      if (W.setSelected) W.setSelected(rows, true);
+      else for (const r of rows) W.toggle(r.symbol, r.name);
+      selectedSaved = missing[0];
+      sharedSymbols = [];
+      banner.hidden = true;
+      banner.replaceChildren();
+      say(`Added ${rows.length} ${rows.length === 1 ? "company" : "companies"} from the shared link.`);
+      try {
+        if (globalThis.history && typeof globalThis.history.replaceState === "function" && globalThis.location) {
+          globalThis.history.replaceState(null, "", globalThis.location.pathname + (globalThis.location.hash || ""));
+        }
+      } catch {}
+    });
+    const dismissBtn = el("button", "wl-btn-ghost", "Dismiss");
+    dismissBtn.type = "button";
+    dismissBtn.addEventListener("click", () => {
+      sharedSymbols = [];
+      banner.hidden = true;
+      banner.replaceChildren();
+    });
+    actions.append(addBtn, dismissBtn);
+    banner.replaceChildren(copy, actions);
+  }
+
   function setup() {
     $("wl-select-all").addEventListener("click", () => {
       const selected = !displayed.every((item) => W.has(item.symbol));
@@ -841,24 +1532,65 @@
       say(selected ? "All shown companies are starred." : "All shown companies are unstarred. Press the box beside Company to restore them before leaving this page.");
     });
     $("wl-export").addEventListener("click", () => {
-      W.exportFile();
-      say("Saved a copy to your downloads.");
+      void copyWatchlist($("wl-export"));
     });
-    $("wl-import").addEventListener("change", async (event) => {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      try {
-        const added = W.importText(await file.text());
-        say(added ? `Added ${added} ${added === 1 ? "company" : "companies"} from the file.` : "Every company in the file was already on your watchlist.");
-      } catch (error) {
-        say(`Could not read this file: ${error.message}.`);
-      }
-      event.target.value = "";
-    });
+    if ($("wl-card-btn")) {
+      $("wl-card-btn").addEventListener("click", () => openCardDialog());
+    }
+    if ($("wl-link-btn")) {
+      $("wl-link-btn").addEventListener("click", () => {
+        void copyShareLink($("wl-link-btn"));
+      });
+    }
+    if ($("wl-add-form")) {
+      $("wl-add-form").addEventListener("submit", (event) => {
+        if (event && typeof event.preventDefault === "function") event.preventDefault();
+        const input = $("wl-add-input");
+        const raw = String((input && input.value) || "").trim();
+        if (!raw) return;
+        const tokens = raw.split(/[\s,;]+/).map((s) => s.trim().toUpperCase()).filter(Boolean);
+        const valid = [...new Set(tokens.filter((s) => /^[A-Z0-9][A-Z0-9.-]{0,9}$/.test(s)))];
+        if (!valid.length) {
+          say("Enter a valid ticker symbol, e.g. MU or NVDA.");
+          return;
+        }
+        const toAdd = valid.filter((s) => !W.has(s));
+        if (!toAdd.length) {
+          selectedSaved = valid[0];
+          if (input) input.value = "";
+          render(W.list());
+          say(`${valid[0]} is already on your watchlist.`);
+          return;
+        }
+        const rows = toAdd.map((s) => ({ symbol: s, name: (desk[s] && desk[s].name) || "", page: "watchlist" }));
+        selectedSaved = toAdd[0];
+        if (W.setSelected) W.setSelected(rows, true);
+        else for (const r of rows) W.toggle(r.symbol, r.name);
+        if (input) input.value = "";
+        const outside = deskLoaded ? toAdd.filter((s) => !desk[s]) : [];
+        const noteOut = outside.length ? ` (${outside.join(", ")} not in this week's universe)` : "";
+        say(toAdd.length === 1 ? `Added ${toAdd[0]} to your watchlist.${noteOut}` : `Added ${toAdd.join(", ")} to your watchlist.${noteOut}`);
+      });
+    }
+    if ($("wl-add-top5")) {
+      $("wl-add-top5").addEventListener("click", () => {
+        const top5 = shortlistPicks.slice(0, 5).map((s) => ({ symbol: s, name: (desk[s] && desk[s].name) || "", page: "watchlist" }));
+        if (!top5.length) return;
+        selectedSaved = top5[0].symbol;
+        if (W.setSelected) W.setSelected(top5, true);
+        else for (const r of top5) if (!W.has(r.symbol)) W.toggle(r.symbol, r.name);
+        say(`Added Top ${top5.length} Shortlist companies to your watchlist.`);
+      });
+    }
+    if ($("wl-go-timing")) {
+      $("wl-go-timing").addEventListener("click", () => setTab("timing"));
+    }
     if ($("wl-tab-saved") && $("wl-tab-timing")) {
       $("wl-tab-saved").addEventListener("click", () => setTab("saved"));
       $("wl-tab-timing").addEventListener("click", () => setTab("timing"));
     }
+    sharedSymbols = parseSharedQuery();
+    renderSharedBanner();
     if (globalThis.location && globalThis.location.hash === "#timing") {
       setTab("timing");
     }
@@ -892,6 +1624,17 @@
         if (row && row.symbol) shortlistRanks[row.symbol] = row.rank || idx + 1;
       });
       const asOf = Object.values(desk).find((c) => c && c.price_date);
+      deskAsOf = (deskData && deskData.as_of) || (asOf && asOf.price_date) || null;
+      if ($("wl-asof")) $("wl-asof").textContent = deskAsOf ? `Data as of ${longDay(deskAsOf)}` : "";
+      const dl = $("wl-symbols");
+      if (dl && typeof dl.replaceChildren === "function") {
+        dl.replaceChildren(...Object.keys(desk).sort().map((sym) => {
+          const opt = el("option");
+          opt.value = sym;
+          if (desk[sym] && desk[sym].name) opt.textContent = `${sym} — ${desk[sym].name}`;
+          return opt;
+        }));
+      }
       const rulesOk = trend && deskRunId && trend.desk_run_id === deskRunId;
       if ($("wl-th-rules")) $("wl-th-rules").textContent = rulesOk ? `Trend · tested, ${shortDay(trend.signal_date)}` : "Trend · tested";
       $("wl-source").textContent = asOf
@@ -899,6 +1642,7 @@
           + `Trend: the three tested rules${rulesOk ? ` at the ${longDay(trend.signal_date)} month-end close` : ""} (price above 200-day, 12–1 month return above zero, 50-day above 200-day); the only per-stock signal that passed our test. `
           + "Revisions: 30-day EPS estimate changes, context only, not tested on our data."
         : "";
+      renderSharedBanner();
       render(W.list());
     });
   }

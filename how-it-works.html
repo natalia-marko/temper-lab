@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Temper Lab — How it works</title>
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./desk.css?v=4159a92db2bc" />
-    <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
+    <link rel="stylesheet" href="./desk.css?v=096e376fe179" />
+    <link rel="stylesheet" href="./watchlist.css?v=eed00c3fd21a" />
   </head>
   <body class="how-page">
     <div class="desk">
@@ -30,83 +30,158 @@
       <main id="main-content">
         <section class="heading">
           <div>
-            <div class="eyebrow">ABOUT THE DATA</div>
+            <div class="eyebrow">ABOUT TEMPER LAB</div>
             <h1>How Temper Lab works</h1>
-            <p>One snapshot a week, every number with its date, and lists built for a monthly decision. Research, not advice.</p>
+            <p data-public-only>A weekly US stock research desk built for calm monthly decisions, not daily trading. Research only, not investment advice.</p>
+            <p data-researcher-only>One snapshot a week, every number with its date, and lists built for a monthly decision. Live snapshot status below.</p>
           </div>
         </section>
 
-        <section class="surface how-section" aria-labelledby="how-rhythm">
-          <h2 id="how-rhythm">The rhythm</h2>
-          <div class="how-table-wrap"><table class="how-table">
-            <thead><tr><th scope="col">Layer</th><th scope="col">When</th><th scope="col">What it means for you</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">Data</th><td>As each source publishes</td><td>Prices and SEC filings every Saturday. Insider and 5%+ holder filings, results dates and short interest every Tuesday and Friday. Fund holdings (13F) once a quarter.</td></tr>
-              <tr><th scope="row">Snapshot</th><td>Every Saturday, from Friday's close</td><td>One data date for the whole site, shown at the top of each page. Nothing is computed while you browse.</td></tr>
-              <tr class="how-key"><th scope="row">Decide</th><td>Once a month</td><td>Review Research and the trend colour after each month's last close, then plan to hold 6–12 months — the horizon every test used.</td></tr>
-              <tr><th scope="row">Watch</th><td>Weekly, or twice a week</td><td>Market mood, Insights, Ticker facts, next results and short interest: news that can change a view between reviews.</td></tr>
-              <tr><th scope="row">Validate</th><td>When a question comes up</td><td>A rule reaches the site only after a test written down before it was run. Untested numbers are labelled as context.</td></tr>
-            </tbody>
-          </table></div>
-        </section>
+        <!-- Public view (mode=1): general plain-language overview, zero network fetches -->
+        <div data-public-only>
+          <section class="surface how-section" aria-labelledby="how-pub-idea">
+            <h2 id="how-pub-idea">The idea</h2>
+            <ul class="how-list">
+              <li><strong>One consistent weekly snapshot:</strong> Every weekend, Temper Lab refreshes US stock prices and public company filings into a single dated snapshot. Every number shows when it was recorded.</li>
+              <li><strong>Built for monthly decisions, not daily noise:</strong> The screening lists are designed to be reviewed once a month with a 6–12 month holding horizon, rather than reacting to weekly reshuffles.</li>
+              <li><strong>Evidence over hype:</strong> Figures come from public market and regulatory filings. Only rules that passed written historical checks shape the lists; everything else is shown strictly as context.</li>
+            </ul>
+          </section>
 
-        <section class="surface how-section" aria-labelledby="how-pages">
-          <h2 id="how-pages">What updates when</h2>
-          <div class="how-table-wrap"><table class="how-table">
-            <thead><tr><th scope="col">Page or column</th><th scope="col">Updated</th><th scope="col">From</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">Research — Shortlist, Growth, Cheap</th><td>Saturday</td><td>Friday's closes and the SEC filings public by then.</td></tr>
-              <tr><th scope="row">Trend (Research, Watchlist)</th><td>After each month's last close</td><td>The same closes, at the month-end. The date is in the column.</td></tr>
-              <tr><th scope="row">Shorted</th><td>Twice a month</td><td>FINRA counts short positions mid-month and at month-end and publishes about 7 business days later, so the figure is 1½–3½ weeks older than the prices. The date is in the column.</td></tr>
-              <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead; the column heading gives the last date covered. A later date is not shown yet.</td></tr>
-              <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings (with 12-month and 3-month chart markers and 21-day Insights activity), SEC 13F data sets, and a one-page PNG/text report card.</td></tr>
-              <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries and price targets, dated when they were collected, for every company on the Hot tape, Growth and Cheap lists.</td></tr>
-              <tr><th scope="row">Screener tests</th><td>Saturday</td><td>The forward tests recorded in the weekly job (every rule written down, with its batches and dates) and the Shortlist backtest windows from the weekly comparison report. Results appear only when a batch is sold, 6 and 12 months after purchase.</td></tr>
-              <tr><th scope="row">Market mood</th><td>Saturday</td><td>Market desk: Friday's closes and the Cboe VIX and VXN. List check: the same lists' sectors, month-end trend, changes since the last month-end freeze, results dates from Yahoo's calendar, and the forward tests' status.</td></tr>
-              <tr><th scope="row">Insights</th><td>Tuesday and Friday</td><td>SEC Forms 3, 4 and 5 (insiders) and Schedules 13D and 13G (5%+ holders).</td></tr>
-              <tr><th scope="row">Watchlist</th><td>Your stars: at once, in this browser only. Prices and Timing chart (50/200-day averages, RSI, MACD): Saturday. Trend colour: monthly.</td><td>The same snapshot as Research.</td></tr>
-            </tbody>
-          </table></div>
-          <p class="how-note">The jobs run on a Mac in Copenhagen: Saturday at 06:00 and Tuesday and Friday at 08:00. The site is published after the weekly checks pass.</p>
-        </section>
+          <section class="surface how-section" aria-labelledby="how-pub-pages">
+            <h2 id="how-pub-pages">What each page shows</h2>
+            <div class="how-table-wrap"><table class="how-table">
+              <thead><tr><th scope="col">Page</th><th scope="col">What it helps you check</th></tr></thead>
+              <tbody>
+                <tr><th scope="row"><a href="./market-mood.html">Market mood</a></th><td>Overall market direction, volatility context, and how the current lists line up across sectors and trends.</td></tr>
+                <tr class="how-key"><th scope="row"><a href="./">Research</a></th><td>The main screening lists for large, liquid US stocks: <strong>Shortlist</strong> (combining momentum, profitability, and valuation), <strong>Growth</strong> (profitable fast-growing companies), and <strong>Cheap</strong> (operating earnings relative to enterprise value).</td></tr>
+                <tr><th scope="row"><a href="./screener-tests.html">Screener tests</a></th><td>Public forward tracking of the screener rules over 6- and 12-month windows alongside benchmark comparisons.</td></tr>
+                <tr><th scope="row"><a href="./ticker.html">Ticker</a></th><td>A single-company research sheet combining price history, financial quality checks, institutional fund holdings, and recent filings.</td></tr>
+                <tr><th scope="row"><a href="./analyst-ratings.html">Analyst ratings</a></th><td>Consensus analyst ratings and price targets for companies on the current screening lists.</td></tr>
+                <tr><th scope="row"><a href="./insights.html">Insights</a></th><td>Recent company insider purchases and sales, 5%+ shareholder filings, and short-interest context from public regulatory filings.</td></tr>
+                <tr><th scope="row"><a href="./watchlist.html">Watchlist</a></th><td>Your personal starred stocks—stored privately in your browser only—with price trend and timing context.</td></tr>
+              </tbody>
+            </table></div>
+          </section>
 
-        <section class="surface how-section" aria-labelledby="how-use">
-          <h2 id="how-use">How to use it</h2>
-          <ul class="how-list">
-            <li><strong>Once a month</strong>, after the month's last close, start with Market mood's List check: what the lists are made of by sector, how many still trend, what changed since the last month-end, and who reports in the two weeks after. Then open Research. The Shortlist is the review queue: non-financial companies on two or more of Growth, Cheap and Hot tape, with positive shareholders' equity and all three pillars measured, ordered by the average of three market-wide percentiles (price strength, five-measure profitability, and operating income / EV; at most three per sector in the first ten). A click shows the one-year price shape against QQQ; the Ticker page states both returns in dollars and percent, adds a 12-month / 3-month chart with SEC filing markers and a 21-day Insights box, and copies a one-page report. Read that page, decide, and plan to hold 6–12 months.</li>
-            <li><strong>Between reviews</strong>, do not act on weekly reshuffles. A name entering or leaving the Shortlist's first ten for a week or two is usually noise: in a 2022–26 replay, half of all stays lasted two weeks or less.</li>
-            <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), next results dates, Market mood, and the Watchlist Timing tab (50/200-day averages and cross dates, with RSI and MACD as context).</li>
-            <li><strong>The trend colour</strong> changes once a month. In our test a change between month-ends did not predict returns; the month-end state did.</li>
-          </ul>
-        </section>
+          <section class="surface how-section" aria-labelledby="how-pub-cadence">
+            <h2 id="how-pub-cadence">Update rhythm</h2>
+            <div class="how-table-wrap"><table class="how-table">
+              <thead><tr><th scope="col">Cadence</th><th scope="col">What refreshes</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Weekly (weekends)</th><td>Stock prices, company financials, Research lists, Market mood, Analyst ratings, and Screener tests.</td></tr>
+                <tr><th scope="row">Twice a week</th><td>Insider and 5%+ ownership filings (Insights), upcoming earnings dates, and FINRA short interest as new reports publish.</td></tr>
+                <tr><th scope="row">Monthly</th><td>Month-end trend status and monthly forward-test cohorts.</td></tr>
+                <tr><th scope="row">Quarterly</th><td>Institutional fund holdings (13F filings).</td></tr>
+              </tbody>
+            </table></div>
+          </section>
 
-        <section class="surface how-section" aria-labelledby="how-built">
-          <h2 id="how-built">How the data is built</h2>
-          <ul class="how-list">
-            <li><strong>Universe:</strong> US-listed common stocks. A company counts as liquid with a market value of at least $1B, average daily trading of at least $10M over 63 sessions, a price of at least $5, a fresh SEC filing within 180 days (period within 300 days), and an SEC share count no more than 400 days old.</li>
-            <li><strong>Lists:</strong> <strong>Growth</strong> ranks profitable non-financial companies whose quarterly revenue is up at least 20% on a year earlier, from at least $50M, on five profitability measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets). <strong>Cheap</strong> ranks non-financial companies with positive operating income on operating income to enterprise value (including verified debt-free sheets whose noncurrent liabilities reconcile to explicit non-debt items). <strong>Hot tape</strong> ranks liquid stocks with a full year of prices on their 3-month return (60%) and 12-month return (40%), the latest month included; the list is the top 10%, at most 150 names. It is an ingredient of the Shortlist and has no tab of its own on Research. On the <strong>Shortlist</strong>, financials, insurers, consumer lenders, and REITs are excluded, and all three pillars must be measured (missing pillars are excluded rather than imputed at 50), while a non-financial operating loss scores 0 on operating income / EV.</li>
-            <li><strong>Prices:</strong> Yahoo daily closes, adjusted for splits and dividends.</li>
-            <li><strong>Company numbers:</strong> SEC filings (XBRL company facts), each used only from the day it was filed — point in time, never back-dated. Twelve-month figures add up four quarters.</li>
-            <li><strong>If a week's SEC download is incomplete,</strong> the companies it missed keep the filings saved earlier, and the Research page says so.</li>
-            <li><strong>Limits:</strong> the price history holds companies that are listed today, so past tests miss companies that disappeared. Results are before costs.</li>
-          </ul>
-        </section>
+          <section class="surface how-section" aria-labelledby="how-pub-limits">
+            <h2 id="how-pub-limits">Limits &amp; disclaimer</h2>
+            <ul class="how-list">
+              <li><strong>Research only, not investment advice:</strong> Nothing on Temper Lab is a buy or sell recommendation or a forecast.</li>
+              <li><strong>Public data, before costs:</strong> Numbers come from public market and regulatory sources and exclude taxes, commissions, and slippage.</li>
+              <li><strong>Historical limits:</strong> Past tests cover currently listed companies and cannot guarantee future performance.</li>
+            </ul>
+          </section>
+        </div>
 
-        <section class="surface how-section" aria-labelledby="how-tests">
-          <h2 id="how-tests">What the tests found</h2>
-          <ul class="how-list">
-            <li><strong>Trend rules</strong> (price above its 200-day average; 12-month return, skipping the last month, above zero; 50-day above 200-day): stocks with each rule up beat those with it down by 3.0–3.6% over six months (entries 2021–26, stocks of similar size compared, before costs).</li>
-            <li><strong>Short interest:</strong> lightly shorted stocks (days to cover) led, and heavily shorted ones trailed, stocks of similar size over six months (2023–26).</li>
-            <li><strong>Profitability and negative equity:</strong> Growth ranks on five measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets), not on return on equity alone, which rewards thin equity; on 2021–26 data it ranked as well, with less leverage. Excluding negative-equity companies from the Shortlist cost no return across 216 weekly cohorts (2022–26).</li>
-            <li><strong>What did not pass:</strong> <strong>F-Score</strong>, 13F fund holder counts, insider buys (officers and directors, 2023–26: no edge over other eligible stocks after 6 months) and post-earnings drift did not pass their tests, so they are shown as checklists or facts only. Learned-pattern and tabular rankers (chart/temporal CNNs, Kronos-small, TabPFN-v2, LightGBM) neither beat simple 12–1 momentum nor improved ordering inside momentum's top fifth, so no AI ranker is on the site. Jev, an AI read of each Shortlist company's latest earnings release, matched the market's 3-day reaction but showed no edge after it (440 releases, 2023–25), so its page and weekly reads were removed on 13 Nov 2026.</li>
-            <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist are recorded, beside two challengers that replace them only by a rule written down in advance: a 60/40 strength–ROE order of the same Shortlist members, and Growth v3 (return on assets and cash flow to assets). Each month-end also records the top ten and top twenty by 12–1 momentum and two side tests: Beneish M-score and net operating assets (a third, Jev's reading of the financial statements, was stopped on 13 Nov 2026). Of these, only Growth and the Shortlist are on the site as lists. All are checked against QQQ after 6 and 12 months, all but the side tests against SPY too. <a href="./screener-tests.html">Screener tests</a> lists every one, stopped and replaced versions included, with its written rule and dates.</li>
-          </ul>
-          <p class="how-note">Past results, not a forecast, and not a buy or sell call.</p>
-        </section>
+        <!-- Researcher view (mode=0): live JSON status panel + complete technical methodology -->
+        <div data-researcher-only>
+          <section class="surface how-section" aria-labelledby="how-live-heading">
+            <div class="how-live-head">
+              <div>
+                <h2 id="how-live-heading">Live snapshot status</h2>
+                <p id="how-live-status" class="how-live-status" role="status">Reading current snapshot files…</p>
+              </div>
+              <button id="how-live-refresh" class="how-live-btn" type="button">Refresh data</button>
+            </div>
+            <p id="how-live-warn" class="how-live-warn" role="alert" hidden></p>
+            <div id="how-live-cards" class="how-live-cards"></div>
+            <div class="how-table-wrap"><table class="how-table how-live-table">
+              <thead><tr><th scope="col">Dataset</th><th scope="col">Data date / window</th><th scope="col">Built (local)</th><th scope="col">Coverage &amp; version</th></tr></thead>
+              <tbody id="how-live-rows">
+                <tr><td colspan="4">Loading live snapshot metadata…</td></tr>
+              </tbody>
+            </table></div>
+            <p class="how-note">Reads the live JSON snapshots directly with no browser cache, and refreshes automatically when you return to this tab.</p>
+          </section>
+
+          <section class="surface how-section" aria-labelledby="how-rhythm">
+            <h2 id="how-rhythm">The rhythm</h2>
+            <div class="how-table-wrap"><table class="how-table">
+              <thead><tr><th scope="col">Layer</th><th scope="col">When</th><th scope="col">What it means for you</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Data</th><td>As each source publishes</td><td>Prices and SEC filings every Saturday. Insider and 5%+ holder filings, results dates and short interest every Tuesday and Friday. Fund holdings (13F) once a quarter.</td></tr>
+                <tr><th scope="row">Snapshot</th><td>Every Saturday, from Friday's close</td><td>One data date for the whole site, shown at the top of each page. Nothing is computed while you browse.</td></tr>
+                <tr class="how-key"><th scope="row">Decide</th><td>Once a month</td><td>Review Research and the trend colour after each month's last close, then plan to hold 6–12 months — the horizon every test used.</td></tr>
+                <tr><th scope="row">Watch</th><td>Weekly, or twice a week</td><td>Market mood, Insights, Ticker facts, next results and short interest: news that can change a view between reviews.</td></tr>
+                <tr><th scope="row">Validate</th><td>When a question comes up</td><td>A rule reaches the site only after a test written down before it was run. Untested numbers are labelled as context.</td></tr>
+              </tbody>
+            </table></div>
+          </section>
+
+          <section class="surface how-section" aria-labelledby="how-pages">
+            <h2 id="how-pages">What updates when</h2>
+            <div class="how-table-wrap"><table class="how-table">
+              <thead><tr><th scope="col">Page or column</th><th scope="col">Updated</th><th scope="col">From</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Research — Shortlist, Growth, Cheap</th><td>Saturday</td><td>Friday's closes and the SEC filings public by then.</td></tr>
+                <tr><th scope="row">Trend (Research, Watchlist)</th><td>After each month's last close</td><td>The same closes, at the month-end. The date is in the column.</td></tr>
+                <tr><th scope="row">Shorted</th><td>Twice a month</td><td>FINRA counts short positions mid-month and at month-end and publishes about 7 business days later, so the figure is 1½–3½ weeks older than the prices. The date is in the column.</td></tr>
+                <tr><th scope="row">Next results</th><td>Tuesday and Friday</td><td>Yahoo's earnings calendar, four weeks ahead; the column heading gives the last date covered. A later date is not shown yet.</td></tr>
+                <tr><th scope="row">Ticker</th><td>Saturday; insiders and 5%+ holders Tuesday and Friday; funds quarterly</td><td>Yahoo prices, SEC filings (with 12-month and 3-month chart markers and 21-day Insights activity), SEC 13F data sets, and a one-page PNG/text report card.</td></tr>
+                <tr><th scope="row">Analyst ratings</th><td>Saturday</td><td>Yahoo analyst summaries and price targets, dated when they were collected, for every company on the Hot tape, Growth and Cheap lists.</td></tr>
+                <tr><th scope="row">Screener tests</th><td>Saturday</td><td>The forward tests recorded in the weekly job (every rule written down, with its batches and dates) and the Shortlist backtest windows from the weekly comparison report. Results appear only when a batch is sold, 6 and 12 months after purchase.</td></tr>
+                <tr><th scope="row">Market mood</th><td>Saturday</td><td>Market desk: Friday's closes and the Cboe VIX and VXN. List check: the same lists' sectors, month-end trend, changes since the last month-end freeze, results dates from Yahoo's calendar, and the forward tests' status.</td></tr>
+                <tr><th scope="row">Insights</th><td>Tuesday and Friday</td><td>SEC Forms 3, 4 and 5 (insiders) and Schedules 13D and 13G (5%+ holders).</td></tr>
+                <tr><th scope="row">Watchlist</th><td>Your stars: at once, in this browser only. Prices and Timing chart (50/200-day averages, RSI, MACD): Saturday. Trend colour: monthly.</td><td>The same snapshot as Research.</td></tr>
+              </tbody>
+            </table></div>
+            <p class="how-note">The jobs run on a Mac in Copenhagen: Saturday at 06:00 and Tuesday and Friday at 08:00. The site is published after the weekly checks pass.</p>
+          </section>
+
+          <section class="surface how-section" aria-labelledby="how-use">
+            <h2 id="how-use">How to use it</h2>
+            <ul class="how-list">
+              <li><strong>Once a month</strong>, after the month's last close, start with Market mood's List check: what the lists are made of by sector, how many still trend, what changed since the last month-end, and who reports in the two weeks after. Then open Research. The Shortlist is the review queue: non-financial companies on two or more of Growth, Cheap and Hot tape, with positive shareholders' equity and all three pillars measured, ordered by the average of three market-wide percentiles (price strength, five-measure profitability, and operating income / EV; at most three per sector in the first ten). A click shows the one-year price shape against QQQ; the Ticker page states both returns in dollars and percent, adds a 12-month / 3-month chart with SEC filing markers and a 21-day Insights box, and copies a one-page report. Read that page, decide, and plan to hold 6–12 months.</li>
+              <li><strong>Between reviews</strong>, do not act on weekly reshuffles. A name entering or leaving the Shortlist's first ten for a week or two is usually noise: in a 2022–26 replay, half of all stays lasted two weeks or less.</li>
+              <li><strong>Every week</strong>, scan for news that changes a view: Insights (insider and 5%+ holder filings), next results dates, Market mood, and the Watchlist Timing tab (50/200-day averages and cross dates, with RSI and MACD as context).</li>
+              <li><strong>The trend colour</strong> changes once a month. In our test a change between month-ends did not predict returns; the month-end state did.</li>
+            </ul>
+          </section>
+
+          <section class="surface how-section" aria-labelledby="how-built">
+            <h2 id="how-built">How the data is built</h2>
+            <ul class="how-list">
+              <li><strong>Universe:</strong> US-listed common stocks. A company counts as liquid with a market value of at least $1B, average daily trading of at least $10M over 63 sessions, a price of at least $5, a fresh SEC filing within 180 days (period within 300 days), and an SEC share count no more than 400 days old.</li>
+              <li><strong>Lists:</strong> <strong>Growth</strong> ranks profitable non-financial companies whose quarterly revenue is up at least 20% on a year earlier, from at least $50M, on five profitability measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets). <strong>Cheap</strong> ranks non-financial companies with positive operating income on operating income to enterprise value (including verified debt-free sheets whose noncurrent liabilities reconcile to explicit non-debt items). <strong>Hot tape</strong> ranks liquid stocks with a full year of prices on their 3-month return (60%) and 12-month return (40%), the latest month included; the list is the top 10%, at most 150 names. It is an ingredient of the Shortlist and has no tab of its own on Research. On the <strong>Shortlist</strong>, financials, insurers, consumer lenders, and REITs are excluded, and all three pillars must be measured (missing pillars are excluded rather than imputed at 50), while a non-financial operating loss scores 0 on operating income / EV.</li>
+              <li><strong>Prices:</strong> Yahoo daily closes, adjusted for splits and dividends.</li>
+              <li><strong>Company numbers:</strong> SEC filings (XBRL company facts), each used only from the day it was filed — point in time, never back-dated. Twelve-month figures add up four quarters.</li>
+              <li><strong>If a week's SEC download is incomplete,</strong> the companies it missed keep the filings saved earlier, and the Research page says so.</li>
+              <li><strong>Limits:</strong> the price history holds companies that are listed today, so past tests miss companies that disappeared. Results are before costs.</li>
+            </ul>
+          </section>
+
+          <section class="surface how-section" aria-labelledby="how-tests">
+            <h2 id="how-tests">What the tests found</h2>
+            <ul class="how-list">
+              <li><strong>Trend rules</strong> (price above its 200-day average; 12-month return, skipping the last month, above zero; 50-day above 200-day): stocks with each rule up beat those with it down by 3.0–3.6% over six months (entries 2021–26, stocks of similar size compared, before costs).</li>
+              <li><strong>Short interest:</strong> lightly shorted stocks (days to cover) led, and heavily shorted ones trailed, stocks of similar size over six months (2023–26).</li>
+              <li><strong>Profitability and negative equity:</strong> Growth ranks on five measures (return on equity, return on assets, and operating income, cash flow and gross profit to assets), not on return on equity alone, which rewards thin equity; on 2021–26 data it ranked as well, with less leverage. Excluding negative-equity companies from the Shortlist cost no return across 216 weekly cohorts (2022–26).</li>
+              <li><strong>What did not pass:</strong> <strong>F-Score</strong>, 13F fund holder counts, insider buys (officers and directors, 2023–26: no edge over other eligible stocks after 6 months) and post-earnings drift did not pass their tests, so they are shown as checklists or facts only. Learned-pattern and tabular rankers (chart/temporal CNNs, Kronos-small, TabPFN-v2, LightGBM) neither beat simple 12–1 momentum nor improved ordering inside momentum's top fifth, so no AI ranker is on the site. Jev, an AI read of each Shortlist company's latest earnings release, matched the market's 3-day reaction but showed no edge after it (440 releases, 2023–25), so its page and weekly reads were removed on 13 Nov 2026.</li>
+              <li><strong>Forward tests:</strong> each Saturday's first ten on Growth and the Shortlist are recorded, beside two challengers that replace them only by a rule written down in advance: a 60/40 strength–ROE order of the same Shortlist members, and Growth v3 (return on assets and cash flow to assets). Each month-end also records the top ten and top twenty by 12–1 momentum and two side tests: Beneish M-score and net operating assets (a third, Jev's reading of the financial statements, was stopped on 13 Nov 2026). Of these, only Growth and the Shortlist are on the site as lists. All are checked against QQQ after 6 and 12 months, all but the side tests against SPY too. <a href="./screener-tests.html">Screener tests</a> lists every one, stopped and replaced versions included, with its written rule and dates.</li>
+            </ul>
+            <p class="how-note">Past results, not a forecast, and not a buy or sell call.</p>
+          </section>
+        </div>
+
         <footer id="site-author" class="site-credit"><div class="site-credit-copy"><span>© 2026 <strong>Natalia Marko</strong> · Temper Lab</span><span class="site-credit-note">Research only, not investment advice.</span></div><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
     <script src="./navigation.js?v=e34b9867f2ab"></script>
+    <script src="./how-it-works.js?v=49c701baefd7"></script>
   </body>
 </html>
