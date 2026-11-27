@@ -9,7 +9,9 @@ const ANALYST_RANK_HINTS = { all: "Shortlist first, by its rank", shortlist: "Sh
 const ANALYST_SORT_KEYS = ["company", "rank", "total", "buy_share", "buy_share_delta", "eps_revisions", "implied_upside"];
 const ANALYST_SORT_NAMES = { company: "ticker", rank: "list rank", total: "number of ratings", buy_share: "Buy share", buy_share_delta: "mix change vs last month", eps_revisions: "net EPS revisions", implied_upside: "implied upside" };
 const ANALYST_SORT_DEFAULT_DIR = { company: "asc", rank: "asc" };
-const ANALYST_DEFAULT_FILTERS = { list: "all", query: "", sector: "", minTotal: 3, flags: [], sortKey: "rank", sortDir: "asc" };
+const ANALYST_DEFAULT_FILTERS = { list: "all", query: "", sector: "", minTotal: 3, flags: [], lens: null, pinned: null, sortKey: "rank", sortDir: "asc" };
+const ANALYST_SVG_NS = "http://www.w3.org/2000/svg";
+const ANALYST_LENS_KEYS = ["up_below", "up_in", "dn_below", "dn_in"];
 const ANALYST_SHARE_MIN = 3;   // ratings needed for Buy share in the summary and for the month-on-month change
 const ANALYST_MOVER_MIN = 5;   // ratings needed in both months to appear among the month's movers
 const ANALYST_SOON_DAYS = 30;  // results dates shown and filtered within this many days of the freeze
@@ -132,11 +134,32 @@ function baseAnalystRows(rows, filters) {
     && (!query || `${row.symbol} ${row.name}`.toLowerCase().includes(query)));
 }
 
+function analystLensMatch(row, lens) {
+  if (!lens) return true;
+  if (!row.eps || !row.targets || row.close == null) return false;
+  const up = row.eps.up > row.eps.down;
+  const dn = row.eps.down > row.eps.up;
+  if (lens === "up_below") return up && row.belowLow;
+  if (lens === "up_in") return up && !row.belowLow;
+  if (lens === "dn_below") return dn && row.belowLow;
+  if (lens === "dn_in") return dn && !row.belowLow;
+  return true;
+}
+
+function analystLensCounts(rows) {
+  const counts = { up_below: 0, up_in: 0, dn_below: 0, dn_in: 0 };
+  for (const row of rows) {
+    for (const key of ANALYST_LENS_KEYS) if (analystLensMatch(row, key)) counts[key] += 1;
+  }
+  return counts;
+}
+
 function filteredAnalysts(rows, filters) {
   const active = ANALYST_FLAGS.filter(([key]) => (filters.flags || []).includes(key));
   const sortKey = ANALYST_SORT_KEYS.includes(filters.sortKey) ? filters.sortKey : "rank";
   const sortDir = filters.sortDir === "desc" ? "desc" : "asc";
   return baseAnalystRows(rows, filters)
+    .filter((row) => analystLensMatch(row, filters.lens || null))
     .filter((row) => active.every(([, , test]) => test(row)))
     .sort((a, b) => analystRowCompare(a, b, sortKey, sortDir, filters.list || "all"));
 }
@@ -413,20 +436,180 @@ function renderByList() {
   }
 }
 
+function analystSvg(tag, attrs, text) {
+  const node = document.createElementNS(ANALYST_SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function renderScatter(baseRows) {
+  const wrap = analystEl("ar-plot");
+  const tip = analystEl("ar-tip");
+  if (!wrap || typeof document.createElementNS !== "function") return;
+  const old = typeof wrap.querySelector === "function" ? wrap.querySelector("svg") : null;
+  if (old && typeof old.remove === "function") old.remove();
+  else if (!old && Array.isArray(wrap.children)) wrap.children = wrap.children.filter((c) => c.tag !== "svg");
+
+  const W = 580, H = 264, L = 46, R = 16, T = 26, B = 40;
+  const pw = W - L - R, ph = H - T - B;
+  const XMIN = -25, XMAX = 120, YMIN = -16, YMAX = 16;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const sx = (u) => L + ((clamp(u * 100, XMIN, XMAX) - XMIN) / (XMAX - XMIN)) * pw;
+  const sy = (net) => T + ((YMAX - clamp(net, YMIN, YMAX)) / (YMAX - YMIN)) * ph;
+
+  const svg = analystSvg("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    role: "img",
+    "aria-label": "Net 30-day EPS revisions versus implied upside to median target",
+  });
+  const x0 = sx(0), y0 = sy(0);
+
+  svg.appendChild(analystSvg("text", { x: L, y: 14, fill: "#465b4e", "font-size": 10.5, "font-weight": 650 }, "Net EPS revisions (30d, raised − cut)"));
+  svg.appendChild(analystSvg("text", { x: L + pw, y: H - 4, "text-anchor": "end", fill: "#465b4e", "font-size": 10.5, "font-weight": 650 }, "Implied upside to median target"));
+
+  svg.appendChild(analystSvg("rect", { x: x0, y: T, width: L + pw - x0, height: y0 - T, fill: "#eef6f0", opacity: 0.65 }));
+  svg.appendChild(analystSvg("rect", { x: x0, y: y0, width: L + pw - x0, height: T + ph - y0, fill: "#fbf1ef", opacity: 0.65 }));
+
+  for (const xv of [-20, 0, 20, 40, 60, 80, 100, 120]) {
+    const px = sx(xv / 100);
+    svg.appendChild(analystSvg("line", {
+      x1: px, x2: px, y1: T, y2: T + ph,
+      stroke: xv === 0 ? "#8da195" : "#e6ece7",
+      "stroke-width": xv === 0 ? 1.2 : 1,
+      ...(xv === 0 ? { "stroke-dasharray": "3 3" } : {}),
+    }));
+    const label = xv === 120 ? "+120%+" : (xv > 0 ? `+${xv}%` : `${xv}%`);
+    svg.appendChild(analystSvg("text", { x: px, y: T + ph + 15, "text-anchor": "middle", fill: "#64766b", "font-size": 10 }, label));
+  }
+  for (const yv of [-15, -10, -5, 0, 5, 10, 15]) {
+    const py = sy(yv);
+    svg.appendChild(analystSvg("line", {
+      x1: L, x2: L + pw, y1: py, y2: py,
+      stroke: yv === 0 ? "#687f72" : "#e6ece7",
+      "stroke-width": yv === 0 ? 1.4 : 1,
+    }));
+    const label = yv === 15 ? "+15+" : yv === -15 ? "−15" : (yv > 0 ? `+${yv}` : yv < 0 ? `−${Math.abs(yv)}` : "0");
+    svg.appendChild(analystSvg("text", { x: L - 7, y: py + 3.5, "text-anchor": "end", fill: "#64766b", "font-size": 10 }, label));
+  }
+
+  svg.appendChild(analystSvg("text", { x: L + pw - 6, y: T + 13, "text-anchor": "end", fill: "#1e6547", "font-size": 10, "font-weight": 600 }, "EPS raised ↑ · Upside to target →"));
+  svg.appendChild(analystSvg("text", { x: L + pw - 6, y: T + ph - 6, "text-anchor": "end", fill: "#9c473b", "font-size": 10, "font-weight": 600 }, "EPS cut ↓ · Target-lag risk"));
+
+  const xh = analystSvg("line", { x1: L, x2: L + pw, y1: 0, y2: 0, stroke: "#3b5946", "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0 });
+  const xv = analystSvg("line", { x1: 0, x2: 0, y1: T, y2: T + ph, stroke: "#3b5946", "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0 });
+  const ring = analystSvg("circle", { cx: 0, cy: 0, r: 8.5, fill: "none", stroke: "#1f3d2f", "stroke-width": 1.8, opacity: 0 });
+  svg.appendChild(xh);
+  svg.appendChild(xv);
+
+  const lens = analystState.filters.lens || null;
+  const pinned = analystState.filters.pinned || null;
+  const pts = baseRows.filter((row) => row.eps && row.upside != null)
+    .sort((a, b) => Number(a.lists?.shortlist != null) - Number(b.lists?.shortlist != null)
+      || Number(a.symbol === pinned) - Number(b.symbol === pinned));
+
+  for (const row of pts) {
+    const net = row.eps.up - row.eps.down;
+    const isSl = row.lists?.shortlist != null;
+    const isPin = row.symbol === pinned;
+    const matched = analystLensMatch(row, lens) && (!pinned || isPin);
+    const cx = sx(row.upside);
+    const cy = sy(net);
+    const fill = net > 0 ? (isSl ? "#1e6547" : "#5e9977") : net < 0 ? (isSl ? "#9c473b" : "#cc7e70") : "#8a9990";
+    const dot = analystSvg("circle", {
+      cx: cx.toFixed(1), cy: cy.toFixed(1),
+      r: isPin ? 6.5 : (isSl ? 5.2 : 3.3),
+      fill,
+      stroke: isPin ? "#1f3d2f" : (isSl ? "#fff" : "none"),
+      "stroke-width": isPin ? 2 : (isSl ? 1.5 : 0),
+      opacity: matched ? (isSl || isPin ? 0.96 : 0.65) : 0.14,
+      style: "cursor:pointer",
+    });
+    dot.addEventListener("mouseenter", () => {
+      xh.setAttribute("y1", cy); xh.setAttribute("y2", cy); xh.setAttribute("opacity", "0.45");
+      xv.setAttribute("x1", cx); xv.setAttribute("x2", cx); xv.setAttribute("opacity", "0.45");
+      ring.setAttribute("cx", cx); ring.setAttribute("cy", cy); ring.setAttribute("opacity", "0.9");
+      if (!tip) return;
+      tip.hidden = false;
+      tip.replaceChildren();
+      analystText(tip, "b", `${row.symbol}${isSl ? ` · Shortlist #${row.lists.shortlist}` : ""}`);
+      analystText(tip, "div", row.name, "sub");
+      analystText(tip, "div", `Upside ${formatSignedShare(row.upside)}${row.belowLow ? " · below floor" : ""} · Buy ${formatShare(row.share)}`);
+      analystText(tip, "div", `EPS 30d: ${row.eps.up}↑ / ${row.eps.down}↓ (net ${net > 0 ? "+" : ""}${net})`);
+      if (tip.style) {
+        const leftPct = (cx / W) * 100;
+        const topPct = (cy / H) * 100;
+        tip.style.left = leftPct > 60 ? "auto" : `${Math.min(72, leftPct + 2)}%`;
+        tip.style.right = leftPct > 60 ? `${Math.max(2, 100 - leftPct + 2)}%` : "auto";
+        tip.style.top = `${Math.max(2, topPct - 20)}%`;
+      }
+    });
+    dot.addEventListener("mouseleave", () => {
+      if (tip) tip.hidden = true;
+      xh.setAttribute("opacity", "0");
+      xv.setAttribute("opacity", "0");
+      ring.setAttribute("opacity", "0");
+    });
+    dot.addEventListener("click", () => {
+      analystState.filters.pinned = analystState.filters.pinned === row.symbol ? null : row.symbol;
+      analystState.filters.query = analystState.filters.pinned || "";
+      const input = analystEl("analyst-query");
+      if (input) input.value = analystState.filters.query;
+      renderAnalystResults();
+    });
+    svg.appendChild(dot);
+  }
+  svg.appendChild(ring);
+  if (tip && typeof wrap.insertBefore === "function") wrap.insertBefore(svg, tip);
+  else wrap.appendChild(svg);
+}
+
+function renderDivergenceStage() {
+  const filters = analystState.filters;
+  const scopeRows = baseAnalystRows(analystState.rows, { ...filters, query: filters.pinned ? "" : filters.query });
+  const counts = analystLensCounts(scopeRows);
+  for (const key of ANALYST_LENS_KEYS) {
+    const el = analystEl(`lens-${key}`);
+    if (el) el.textContent = String(counts[key]);
+  }
+  if (typeof document.querySelectorAll === "function") {
+    for (const btn of document.querySelectorAll("[data-lens]")) {
+      const on = btn.dataset.lens === filters.lens;
+      btn.classList.toggle("on", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  }
+  const hint = analystEl("ar-lens-hint");
+  const clear = analystEl("ar-lens-clear");
+  if (hint) hint.hidden = Boolean(filters.lens);
+  if (clear) clear.hidden = !filters.lens;
+
+  const pinBox = analystEl("ar-pin");
+  if (pinBox) {
+    pinBox.hidden = !filters.pinned;
+    if (filters.pinned) {
+      const sym = analystEl("ar-pin-sym");
+      const link = analystEl("ar-pin-link");
+      if (sym) sym.textContent = `Pinned: ${filters.pinned}`;
+      if (link) link.setAttribute("href", `./ticker.html?t=${encodeURIComponent(filters.pinned)}`);
+    }
+  }
+  renderScatter(scopeRows);
+}
+
 function renderMovers(rows) {
-  const movers = analystMovers(rows);
-  for (const [id, list] of [["analyst-movers-up", movers.up], ["analyst-movers-down", movers.down]]) {
+  const movers = analystMovers(rows, 3);
+  for (const [id, list, cls] of [["analyst-movers-up", movers.up, "up"], ["analyst-movers-down", movers.down, "dn"]]) {
     const ul = analystEl(id);
+    if (!ul) continue;
     ul.replaceChildren();
     if (!list.length) {
       analystText(ul, "li", "None among the names shown.", "none");
       continue;
     }
     for (const row of list) {
-      const li = analystText(ul, "li", "");
-      const left = analystText(li, "span", "");
-      tickerLink(left, row.symbol);
-      analystText(left, "small", row.priorTotal === row.total ? `n ${row.total}` : `n ${row.priorTotal}→${row.total}`);
+      const li = analystText(ul, "li", "", cls);
+      tickerLink(li, row.symbol);
       analystText(li, "span", formatDelta(row.delta), tone(row.delta));
     }
   }
@@ -505,6 +688,7 @@ function renderAnalystResults() {
   const base = baseAnalystRows(analystState.rows, filters);
   const rows = filteredAnalysts(analystState.rows, filters);
   renderFlags(base);
+  renderDivergenceStage();
   renderSummary(rows);
   renderMovers(rows);
   const hidden = analystState.rows.filter((row) => onList(row, filters.list) && row.total < (filters.minTotal || 0)).length;
@@ -605,6 +789,9 @@ function startAnalystView() {
   });
   analystEl("analyst-query").addEventListener("input", (event) => {
     analystState.filters.query = event.target.value;
+    if (analystState.filters.pinned && event.target.value.trim().toUpperCase() !== analystState.filters.pinned) {
+      analystState.filters.pinned = null;
+    }
     renderAnalystResults();
   });
   analystEl("analyst-sector").addEventListener("change", (event) => {
@@ -624,6 +811,31 @@ function startAnalystView() {
     analystState.filters.flags = [...flags];
     renderAnalystResults();
   });
+  const lensesEl = analystEl("ar-lenses");
+  if (lensesEl) {
+    lensesEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-lens]");
+      if (!button) return;
+      analystState.filters.lens = analystState.filters.lens === button.dataset.lens ? null : button.dataset.lens;
+      renderAnalystResults();
+    });
+  }
+  const lensClear = analystEl("ar-lens-clear");
+  if (lensClear) {
+    lensClear.addEventListener("click", () => {
+      analystState.filters.lens = null;
+      renderAnalystResults();
+    });
+  }
+  const pinClear = analystEl("ar-pin-clear");
+  if (pinClear) {
+    pinClear.addEventListener("click", () => {
+      analystState.filters.pinned = null;
+      analystState.filters.query = "";
+      analystEl("analyst-query").value = "";
+      renderAnalystResults();
+    });
+  }
   analystEl("analyst-reset").addEventListener("click", () => {
     analystState.filters = { ...ANALYST_DEFAULT_FILTERS, flags: [] };
     analystEl("analyst-query").value = "";
