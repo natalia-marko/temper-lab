@@ -175,7 +175,12 @@
     return Math.max(0, Math.round((utc(b).getTime() - utc(a).getTime()) / 864e5));
   }
 
-  // ---- Top Live Countdown Ribbon ----------------------------------------------------------------
+  function isResearcherMode() {
+    const root = document.documentElement;
+    return Boolean(root && root.getAttribute && root.getAttribute("data-site-mode") === "0");
+  }
+
+  // ---- Live Countdown Ribbon --------------------------------------------------------------------
   function renderRibbon() {
     const data = state.data;
     const sl = data.lists.shortlist || { batches: [] };
@@ -212,9 +217,13 @@
 
     const btn = $("st-drawer-toggle");
     btn.setAttribute("aria-expanded", String(state.drawerOpen));
-    btn.textContent = state.drawerOpen
-      ? "Hide live batches & audit ↑"
-      : `Live batches & audit (${activeCount} active / ${archivedCount} archived) ▾`;
+    if (isResearcherMode()) {
+      btn.textContent = state.drawerOpen
+        ? "Hide live batches & audit ↑"
+        : `Live batches & audit (${activeCount} active / ${archivedCount} archived) ▾`;
+    } else {
+      btn.textContent = state.drawerOpen ? "Hide live batches ↑" : "Live batches ▾";
+    }
     $("st-live-drawer").hidden = !state.drawerOpen;
   }
 
@@ -592,6 +601,8 @@
     $("st-pass-title").textContent = `Does ${names.rule} itself beat QQQ?`;
     const finished = oldest ? oldest.exit_6m.slice(0, 10) <= data.as_of : false;
     $("st-pass").textContent = list.pass_rule ? list.pass_rule : "Pass/fail bar not written yet";
+    $("st-pass-card").className = list.pass_rule ? "st-card st-bar" : "st-card st-bar st-bar-unfinished";
+    $("st-cards-grid").className = list.pass_rule ? "st-cards" : "st-cards st-cards-single";
     $("st-pass-note").textContent = list.pass_rule ? "" : !oldest
       ? "Write it before the first batch finishes, so it cannot be fitted to the first results."
       : finished

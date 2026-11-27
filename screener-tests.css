@@ -23,7 +23,7 @@
 .st-seg button[aria-pressed="true"], .st-seg button[aria-selected="true"] { background: #fff; color: #1f4d36; box-shadow: 0 1px 3px #00000014; font-weight: 650; }
 
 /* Compact live countdown ribbon */
-.st-live-ribbon { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; align-items: center; gap: 10px 24px; margin: 4px 28px 14px; padding: 11px 18px; border: 1px solid #c9dcd0; border-left: 4px solid #1e6547; border-radius: 10px; background: #fff; }
+.st-live-ribbon { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; align-items: center; gap: 10px 24px; margin: 0 28px 16px; padding: 11px 18px; border: 1px solid #c9dcd0; border-left: 4px solid #1e6547; border-radius: 10px; background: #fff; }
 .st-rib-left { display: grid; gap: 3px; }
 .st-rib-summary { font-size: 13px; color: var(--ink); font-weight: 600; }
 .st-tl-track { position: relative; height: 8px; border-radius: 99px; background: #e8eee9; overflow: hidden; }
@@ -34,7 +34,7 @@
 .st-rib-btn:hover { background: #e8f0ea; }
 
 /* Main split-screen lab */
-.st-lab { display: grid; grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.85fr); gap: 16px; margin: 0 28px 18px; align-items: start; }
+.st-lab { display: grid; grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.85fr); gap: 16px; margin: 4px 28px 16px; align-items: start; }
 .st-card-panel { margin: 0; padding: 16px 18px; }
 .st-card-panel h2 { margin: 0; font-size: 16px; font-weight: 600; color: #244734; }
 .st-panel-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
@@ -130,6 +130,8 @@
 .st-after { flex: 1 1 260px; }
 .st-rule-line { margin: 0; font-size: 12.5px; color: var(--ink); line-height: 1.5; }
 .st-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+html:not([data-site-mode="0"]) .st-bar-unfinished { display: none !important; }
+html:not([data-site-mode="0"]) .st-cards.st-cards-single { grid-template-columns: minmax(0, 1fr); }
 .st-card { padding: 14px 16px; border: 1px solid #e6ece7; border-radius: 10px; background: #fbfcf9; }
 .st-card h3 { margin: 0 0 8px; font-size: 13.5px; color: #244734; }
 .st-rows { margin: 0; display: grid; gap: 5px; font-size: 12.5px; }

@@ -7,7 +7,7 @@
     <title>Temper Lab — Screener tests</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=8379df8e5b4e" />
-    <link rel="stylesheet" href="./screener-tests.css?v=29a9f2d9d3ed" />
+    <link rel="stylesheet" href="./screener-tests.css?v=cdf0b9a341e3" />
     <link rel="stylesheet" href="./watchlist.css?v=db63d7db0024" />
   </head>
   <body>
@@ -48,19 +48,6 @@
               <div class="st-step"><h2><span aria-hidden="true">3</span>Judged</h2><p>Only finished batches count, against QQQ and SPY. A challenger replaces a list only by its written rule, never by a hunch.</p></div>
             </section>
           </details>
-
-          <!-- LIVE FORWARD TEST COUNTDOWN RIBBON -->
-          <section id="st-live-ribbon" class="st-live-ribbon" aria-label="Live forward test status">
-            <div class="st-rib-left">
-              <span class="st-pill-live">Live test · sealed before open</span>
-              <strong id="st-rib-summary" class="st-rib-summary"></strong>
-            </div>
-            <div class="st-rib-mid">
-              <div class="st-tl-track" aria-hidden="true"><div id="st-tl-fill" class="st-tl-fill"></div></div>
-              <div id="st-tl-dates" class="st-tl-dates"></div>
-            </div>
-            <button id="st-drawer-toggle" class="st-rib-btn" type="button" aria-expanded="false" aria-controls="st-live-drawer">Live batches &amp; audit ▾</button>
-          </section>
 
           <!-- MAIN STAGE: SPLIT-SCREEN MATRIX + X-RAY LAB -->
           <div class="st-lab">
@@ -127,7 +114,20 @@
             </section>
           </div>
 
-          <!-- EXPANDABLE LIVE FORWARD TESTS & PERMANENT AUDIT REGISTER -->
+          <!-- LIVE FORWARD TEST COUNTDOWN RIBBON -->
+          <section id="st-live-ribbon" class="st-live-ribbon" aria-label="Live forward test status">
+            <div class="st-rib-left">
+              <span class="st-pill-live">Live test · sealed before open</span>
+              <strong id="st-rib-summary" class="st-rib-summary"></strong>
+            </div>
+            <div class="st-rib-mid">
+              <div class="st-tl-track" aria-hidden="true"><div id="st-tl-fill" class="st-tl-fill"></div></div>
+              <div id="st-tl-dates" class="st-tl-dates"></div>
+            </div>
+            <button id="st-drawer-toggle" class="st-rib-btn" type="button" aria-expanded="false" aria-controls="st-live-drawer">Live batches ▾</button>
+          </section>
+
+          <!-- EXPANDABLE LIVE FORWARD TESTS & RESEARCHER AUDIT REGISTER -->
           <div id="st-live-drawer" class="st-live-drawer" hidden>
             <section id="st-list" class="surface st-list" role="tabpanel" aria-labelledby="st-list-title">
               <div class="st-sec-head">
@@ -150,9 +150,9 @@
                 </div>
               </div>
 
-              <div class="st-cards">
+              <div id="st-cards-grid" class="st-cards">
                 <div class="st-card"><h3>Rule vs challenger</h3><dl id="st-board" class="st-rows"></dl><ol id="st-windows" class="st-windows"></ol><p id="st-switch" class="st-small" data-note></p></div>
-                <div class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small" data-note></p></div>
+                <div id="st-pass-card" class="st-card st-bar"><h3 id="st-pass-title">Does the rule itself beat QQQ?</h3><p id="st-pass" class="st-bar-value"></p><p id="st-pass-note" class="st-small" data-note></p></div>
               </div>
               <div id="st-batches" class="st-table-wrap"></div>
               <button id="st-batches-more" class="st-more" type="button" hidden></button>
@@ -160,7 +160,7 @@
               <p id="st-shared" class="st-small" data-note></p>
             </section>
 
-            <section class="surface st-register" aria-labelledby="st-register-title">
+            <section class="surface st-register" aria-labelledby="st-register-title" data-note>
               <div class="st-kicker">PERMANENT AUDIT LOG</div>
               <h2 id="st-register-title">Test register: every rule written down so far</h2>
               <p id="st-register-intro" class="st-lead" data-note></p>
@@ -176,7 +176,7 @@
       </main>
     </div>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
-    <script src="./screener-tests.js?v=ec21f9f74f67"></script>
     <script src="./navigation.js?v=e34b9867f2ab"></script>
+    <script src="./screener-tests.js?v=a962fe8ea68d"></script>
   </body>
 </html>
