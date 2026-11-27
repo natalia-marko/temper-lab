@@ -250,7 +250,9 @@ dialog dd { margin: 0; overflow-wrap: anywhere; }
 .nav-ready[data-navigation="closed"] main > .top:first-child { padding-left: 110px; }
 .nav-backdrop { position: fixed; inset: 0; z-index: 25; border: 0; background: #172d2466; cursor: default; }
 .nav-drawer-open { overflow: hidden; }
-.site-credit { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin: 30px 28px 0; padding: 18px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.site-credit { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 20px; margin: 30px 28px 0; padding: 18px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.site-credit-copy { display: flex; flex-direction: column; gap: 2px; line-height: 1.45; }
+.site-credit-note { color: var(--muted); }
 .site-credit strong { color: var(--ink); font-weight: 500; }
 .site-credit a { color: var(--green); text-underline-offset: 3px; }
 .site-credit nav { display: flex; align-items: center; gap: 18px; }
