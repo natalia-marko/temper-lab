@@ -7,7 +7,7 @@
     <title>Temper Lab — Watchlist</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=096e376fe179" />
-    <link rel="stylesheet" href="./watchlist.css?v=eed00c3fd21a" />
+    <link rel="stylesheet" href="./watchlist.css?v=ebefbbe253a8" />
   </head>
   <body class="watchlist-page">
     <div class="desk">
@@ -71,11 +71,14 @@
           <p id="wl-storage" class="wl-note warn" hidden>Watchlist changes could not be saved in this browser and may disappear on refresh. Copy a card or link to keep them.</p>
 
           <div id="wl-pulse" class="wl-pulse" hidden>
-            <div id="wl-summary" class="wl-summary" aria-label="At a glance" hidden></div>
-            <div id="wl-sector-box" class="wl-sector-box">
-              <div class="wl-sector-top"><span class="wl-sector-k">Sector mix</span><span id="wl-sector-warn" class="wl-sector-warn"></span></div>
-              <div id="wl-sector-bar" class="wl-sec-bar"></div>
-              <div id="wl-sector-leg" class="wl-sec-leg"></div>
+            <div id="wl-summary" class="wl-summary" aria-label="At a glance" data-note hidden></div>
+            <div class="wl-pulse-main">
+              <div id="wl-sector-box" class="wl-sector-box">
+                <div class="wl-sector-top"><span class="wl-sector-k">Sector mix &amp; risk</span><span id="wl-sector-warn" class="wl-sector-warn"></span></div>
+                <div id="wl-sector-bar" class="wl-sec-bar"></div>
+                <div id="wl-sector-leg" class="wl-sec-leg"></div>
+              </div>
+              <div id="wl-next-earn" class="wl-next-earn"></div>
             </div>
           </div>
 
@@ -93,17 +96,14 @@
             <div id="wl-starter-grid" class="wl-starter-grid"></div>
           </div>
 
-          <div id="wl-split" class="wl-split">
-            <div class="wl-split-left">
-              <div class="wl-table-wrap" tabindex="0" role="region" aria-label="Starred companies">
-                <table id="wl-table" class="wl-table" hidden>
-                  <thead><tr><th scope="col"><span class="visually-hidden">Star</span></th><th scope="col"><span class="wl-company"><button type="button" id="wl-select-all" class="wl-select-all" aria-controls="wl-rows" aria-pressed="false" aria-label="Unselect all" disabled></button>Company</span></th><th scope="col">Lists this week</th><th scope="col" id="wl-th-rules">Trend · tested</th><th scope="col">12 months</th><th scope="col">Next results</th><th scope="col">Revisions</th></tr></thead>
-                  <tbody id="wl-rows"></tbody>
-                </table>
-              </div>
-            </div>
-            <section id="wl-inspector" class="wl-inspector" aria-label="Selected company summary" hidden></section>
+          <div class="wl-table-wrap" tabindex="0" role="region" aria-label="Starred companies">
+            <table id="wl-table" class="wl-table" hidden>
+              <thead><tr><th scope="col"><span class="visually-hidden">Star</span></th><th scope="col"><span class="wl-company"><button type="button" id="wl-select-all" class="wl-select-all" aria-controls="wl-rows" aria-pressed="false" aria-label="Unselect all" disabled></button>Company</span></th><th scope="col">Lists this week</th><th scope="col" id="wl-th-rules">Trend · tested</th><th scope="col">12 months</th><th scope="col">Next results</th><th scope="col">Revisions</th><th scope="col">Signal / Insiders</th><th scope="col">Wait for</th></tr></thead>
+              <tbody id="wl-rows"></tbody>
+            </table>
           </div>
+          <p id="wl-drawer-hint" class="wl-drawer-hint" hidden>Click any row to open its full Ticker Card below.</p>
+          <section id="wl-inspector" class="wl-drawer" aria-label="Selected company summary" hidden></section>
           <p id="wl-source" class="wl-note" data-note></p>
           <p class="wl-note" data-note>Stars and personal notes are kept in this browser only: use Copy link to open the same list on another device.</p>
         </section>
@@ -139,7 +139,7 @@
     </div>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
     <script src="./decision-tape.js?v=2971ea59b588"></script>
-    <script src="./watchlist-page.js?v=f0dc0bc92476"></script>
+    <script src="./watchlist-page.js?v=ecb0b612b718"></script>
     <script src="./navigation.js?v=e34b9867f2ab"></script>
   </body>
 </html>

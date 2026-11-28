@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"9ea83c10afb51861","symbol":"MEDS","data":{"volume":{"rows":{"MEDS":[6592462,3.56,0.93,0.784,0.721,0.8011,-0.4174]}},"funds":{"rows":{"MEDS":[null,13,null,null,null,null,null,74197,235202,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"684110f210451ee3","symbol":"MEDS","data":{"volume":{"rows":{"MEDS":[6615941,5.76,1.64,0.904,0.769,1.1978,-0.2727]}},"funds":{"rows":{"MEDS":[null,13,null,null,null,null,null,74197,235202,false,0,[],[]]},"manager_names":{}}}}

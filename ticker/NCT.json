@@ -1,1 +1,1 @@
-{"schema":"ticker-shards-1","build_id":"9ea83c10afb51861","symbol":"NCT","data":{"volume":{"rows":{"NCT":[581184,1.13,9.6,0.099,0.95,5.5609,2.9617]}},"funds":{"rows":{"NCT":[null,4,null,null,null,null,null,29836,53109,false,0,[],[]]},"manager_names":{}}}}
+{"schema":"ticker-shards-1","build_id":"684110f210451ee3","symbol":"NCT","data":{"volume":{"rows":{"NCT":[586808,0.61,9.61,0.919,0.951,-0.021,2.6299]}},"funds":{"rows":{"NCT":[null,4,null,null,null,null,null,29836,53109,false,0,[],[]]},"manager_names":{}}}}

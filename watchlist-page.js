@@ -206,6 +206,10 @@
   let members = {}; // symbol -> { shortlist: rank, lists: ["Hot tape", ...] } from desk.json setups
   let sparks = null; // share/ticker-sparks.json: every 5th close of the year, for the Saved tab's lines
   let earnings = {};
+  let insiders = {}; // share/watchlist-insiders.json (~140 KB companion to ownership-signals.json)
+  let shortInterest = {}; // share/short-interest.json (~120 KB FINRA days to cover)
+  let shortInterestDate = "";
+  let shortlistAll = []; // full composite shortlist from desk.json for same-sector peer lookup
   let timing = null; // share/ticker-timing.json, loaded the first time the Timing tab opens
   let trend = null; // share/trend-rules.json: the tested rules at the last month-end close, same file as Research
   let timingState = "idle"; // idle → loading → ready | failed
@@ -245,6 +249,149 @@
     try {
       if (globalThis.localStorage) globalThis.localStorage.setItem(NOTES_KEY, JSON.stringify(map));
     } catch {}
+  }
+
+  // Personal auto-checked "Wait for..." triggers (kept in this browser only, never sent anywhere).
+  const TRIGGERS_KEY = "temperlab.watchlist.triggers.v1";
+  const VALID_TRIGGERS = new Set(["none", "trend3", "shortlist", "after_earn", "price"]);
+  let triggersCache = null;
+  function loadTriggers() {
+    if (triggersCache) return triggersCache;
+    triggersCache = {};
+    try {
+      const raw = globalThis.localStorage && globalThis.localStorage.getItem(TRIGGERS_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (v && typeof v === "object" && VALID_TRIGGERS.has(v.kind) && v.kind !== "none") {
+            const target = Number(v.target);
+            triggersCache[k.toUpperCase()] = v.kind === "price" && Number.isFinite(target) && target > 0
+              ? { kind: "price", target }
+              : v.kind !== "price" ? { kind: v.kind } : null;
+            if (!triggersCache[k.toUpperCase()]) delete triggersCache[k.toUpperCase()];
+          }
+        }
+      }
+    } catch {}
+    return triggersCache;
+  }
+  function saveTrigger(symbol, trig) {
+    const map = loadTriggers();
+    if (!trig || !VALID_TRIGGERS.has(trig.kind) || trig.kind === "none") {
+      delete map[symbol];
+    } else if (trig.kind === "price") {
+      const t = Number(trig.target);
+      if (Number.isFinite(t) && t > 0) map[symbol] = { kind: "price", target: t };
+      else delete map[symbol];
+    } else {
+      map[symbol] = { kind: trig.kind };
+    }
+    try {
+      if (globalThis.localStorage) globalThis.localStorage.setItem(TRIGGERS_KEY, JSON.stringify(map));
+    } catch {}
+  }
+  function usdShort(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+    if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
+    return `$${Math.round(n)}`;
+  }
+  function medianOf(values) {
+    const arr = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+    if (!arr.length) return null;
+    const mid = Math.floor(arr.length / 2);
+    return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+  }
+  function evalTrigger(symbol, today) {
+    const trig = loadTriggers()[symbol];
+    if (!trig || trig.kind === "none") return null;
+    const c = desk[symbol] || {};
+    const T = savedRules(symbol);
+    const m = members[symbol];
+    const r = resultsFor(symbol, today);
+    const px = Number(c.price);
+    if (trig.kind === "trend3") {
+      const met = Boolean(T && T.ruleTone === "up");
+      return {
+        met,
+        label: met ? "✓ Met · Trend 3/3" : `Wait · Trend ${T ? `${T.rulesUp}/3` : "—"}`,
+        detail: met ? "All 3 tested trend rules are up" : `Waiting for Trend → 3/3 (now ${T ? `${T.rulesUp} of 3` : "n/a"})`,
+      };
+    }
+    if (trig.kind === "shortlist") {
+      const met = Boolean(m && m.shortlist);
+      return {
+        met,
+        label: met ? `✓ Met · Shortlist #${m.shortlist}` : "Wait · Shortlist",
+        detail: met ? `On Research Shortlist #${m.shortlist}` : "Waiting for Research Shortlist entry",
+      };
+    }
+    if (trig.kind === "after_earn") {
+      const pending = Boolean(r && r.days >= 0);
+      const met = !pending;
+      return {
+        met,
+        label: met ? "✓ Met · Clear" : `Wait · After ${shortDay(r.date)}`,
+        detail: met ? "No upcoming results date blocking" : `Waiting past ${shortDay(r.date)} results`,
+      };
+    }
+    if (trig.kind === "price" && Number(trig.target) > 0) {
+      const t = Number(trig.target);
+      const met = px > 0 && px <= t;
+      return {
+        met,
+        label: met ? `✓ Met · ≤ $${t}` : `Wait · ≤ $${t}`,
+        detail: met ? `Closed ${price(px)} ≤ $${t}` : px > 0 ? `Closed ${price(px)} vs $${t}` : `Waiting for ≤ $${t}`,
+      };
+    }
+    return null;
+  }
+  function autoTension(symbol, today) {
+    const T = savedRules(symbol);
+    const m = members[symbol];
+    const o = insiders[symbol];
+    const r = resultsFor(symbol, today);
+    const inDesk = Boolean(desk[symbol]);
+    if (deskLoaded && !inDesk) return null;
+    const hasBuy = Boolean(o && (o.buy >= 50000 || o.ceo_buy));
+    const hasSell = Boolean(o && o.off_sell > 0 && o.sell_no_plan >= 250000);
+    if (hasBuy && (!T || T.ruleTone !== "up")) {
+      return { cls: "ten-div", text: "Insiders vs tape", sub: `Buy ${usdShort(o.buy)}`, why: `${o.headline} while trend is ${ruleBadge(T)}` };
+    }
+    if (hasBuy) {
+      return { cls: "ten-clean", text: "Insider buy · 3/3", sub: `Buy ${usdShort(o.buy)}`, why: `${o.headline} with all 3 trend rules up` };
+    }
+    if (hasSell && ((T && T.ruleTone === "up") || m)) {
+      return { cls: "ten-warn", text: "Officer sell on list", sub: `No-plan ${usdShort(o.sell_no_plan)}`, why: `Officer sold ${usdShort(o.sell_no_plan)} (no 10b5-1)` };
+    }
+    if (T && T.ruleTone === "up" && m && !hasSell) {
+      return { cls: "ten-clean", text: "All aligned", sub: r && r.days >= 0 ? `Results ${shortDay(r.date)}` : "Clean", why: "3/3 tested trend + on a Research list + no unscheduled officer sells" };
+    }
+    if (T && T.ruleTone === "down" && !m) {
+      return { cls: "ten-break", text: "Broken · off list", sub: hasSell ? `No-plan ${usdShort(o.sell_no_plan)}` : "0/3 trend", why: "0/3 tested trend and not on any Research list this week" };
+    }
+    if (T && T.ruleTone === "down") {
+      return { cls: "ten-break", text: "Trend 0/3", sub: "On list, broken trend", why: "Still on a Research list, but all 3 tested trend rules are down" };
+    }
+    if (hasSell) {
+      return { cls: "ten-warn", text: "Unscheduled sell", sub: `No-plan ${usdShort(o.sell_no_plan)}`, why: `Officer sold ${usdShort(o.sell_no_plan)} (no 10b5-1)` };
+    }
+    return null;
+  }
+  function sectorPeer(symbol) {
+    const sec = desk[symbol] && desk[symbol].sector;
+    if (!sec || !shortlistAll.length) return null;
+    for (const r of shortlistAll) {
+      if (!r || r.symbol === symbol) continue;
+      const c = desk[r.symbol];
+      const T = savedRules(r.symbol);
+      if (c && c.sector === sec && T && T.ruleTone === "up") {
+        return { symbol: r.symbol, rank: r.rank, name: c.name || r.symbol };
+      }
+    }
+    return null;
   }
 
   const SECTOR_LABELS = {
@@ -352,13 +499,19 @@
     const r = resultsFor(item.symbol, today);
     const T = savedRules(item.symbol);
     const m = members[item.symbol];
-    const attn = Boolean((r && r.days >= 0 && r.days <= 14) || (T && T.ruleTone === "down") || (deskLoaded && inDesk && !m));
-    const tr = el("tr", `${item.symbol === selectedSaved ? "on" : ""}${attn ? " wl-attn" : ""}`.trim());
+    const o = insiders[item.symbol];
+    const attn = Boolean((r && r.days >= 0 && r.days <= 14) || (T && T.ruleTone === "down") || (deskLoaded && inDesk && !m) || (o && o.off_sell > 0 && o.sell_no_plan >= 250000));
+    const isSel = item.symbol === selectedSaved;
+    const tr = el("tr", `${isSel ? "on" : ""}${attn ? " wl-attn" : ""}`.trim());
     tr.addEventListener("click", (event) => {
       const target = event && event.target;
       if (target && typeof target.closest === "function" && target.closest("button, a")) return;
-      selectedSaved = item.symbol;
+      selectedSaved = isSel ? "" : item.symbol;
       render(W.list());
+      const drawer = $("wl-inspector");
+      if (selectedSaved && drawer && typeof drawer.scrollIntoView === "function") {
+        drawer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     });
     const star = el("td", "wl-star");
     star.append(W.button(item.symbol, item.name || c.name || ""));
@@ -366,7 +519,7 @@
     const name = el("strong");
     const link = el("a", "", item.symbol);
     link.href = `./ticker.html?t=${encodeURIComponent(item.symbol)}`;
-    name.append(link);
+    name.append(link, el("span", "wl-caret", "▸"));
     const from = W.PAGES[item.page];
     const cap = money(c.market_cap);
     const fallbackSub = `Added ${longDay(item.added)}${from ? ` · ${from}` : ""}`;
@@ -415,7 +568,24 @@
     revCell.textContent = rev && rev.state !== "missing" ? `${rev.up ?? 0}↑ ${rev.down ?? 0}↓` : "—";
     if (rev && rev.state !== "missing") revCell.title = `${rev.detail}. Context: not tested on Temper Lab data.`;
 
-    tr.append(star, co, listCell, ruleCell, yearCell, resCell, revCell);
+    // Zero-upkeep auto tension & notable insider activity (context, not tested).
+    const sigCell = el("td", "wl-sig");
+    const ten = autoTension(item.symbol, today);
+    if (ten) {
+      sigCell.append(el("span", `wl-ten-pill ${ten.cls}`, ten.text), el("span", "wl-sig-sub", ten.sub));
+      sigCell.title = ten.why;
+    } else sigCell.append(el("span", "wl-quiet", "—"));
+
+    // Personal auto-checked "Wait for..." trigger.
+    const trigCell = el("td", "wl-trig");
+    const ev = evalTrigger(item.symbol, today);
+    if (ev) {
+      const p = el("span", ev.met ? "wl-zone-pill" : "wl-wait-pill", ev.label);
+      p.title = ev.detail;
+      trigCell.append(p);
+    } else trigCell.append(el("span", "wl-quiet", "Set trigger…"));
+
+    tr.append(star, co, listCell, ruleCell, yearCell, resCell, revCell, sigCell, trigCell);
     return tr;
   }
 
@@ -434,34 +604,39 @@
     });
   }
 
-  // Overview first, then the exceptions (Few): four counts + sector concentration over the starred names.
+  // Slim Pulse: Sector mix & Median 1Y max DD (left) + tiny clickable Next earnings column (right); 4 KPI tiles kept for ?mode=0.
   function renderSummary(items, today) {
     const box = $("wl-summary");
     const pulse = $("wl-pulse");
     const hidden = !deskLoaded || items.length === 0;
     if (pulse) pulse.hidden = hidden;
-    if (!box) return;
-    box.hidden = hidden;
-    if (hidden) { box.replaceChildren(); return; }
-    const soon = items.filter((i) => { const r = resultsFor(i.symbol, today); return r && r.days >= 0 && r.days <= SOON; }).length;
-    const ruled = items.map((i) => savedRules(i.symbol)).filter((T) => T && T.ruleTone !== "none");
-    const allUp = ruled.filter((T) => T.ruleTone === "up").length;
-    const inDesk = items.filter((i) => desk[i.symbol]);
-    const noList = inDesk.filter((i) => !members[i.symbol]).length;
-    const outside = items.length - inDesk.length;
-    const tile = (label, value, flag) => {
-      const zero = value === "0";
-      const t = el("div", `wl-sum${flag ? " wl-sum-flag" : ""}${zero ? " wl-sum-zero" : ""}`);
-      t.append(el("span", "", label), el("strong", "", value));
-      return t;
-    };
-    box.replaceChildren(
-      tile(`Report within ${SOON} days`, String(soon), soon > 0),
-      tile("Up on all 3 trend rules", ruled.length ? `${allUp} of ${ruled.length}` : "—", false),
-      tile("On no list this week", String(noList), noList > 0),
-      tile("Not in the universe", String(outside), outside > 0));
+    if (box) {
+      box.hidden = hidden;
+      if (hidden) {
+        box.replaceChildren();
+      } else {
+        const soon = items.filter((i) => { const r = resultsFor(i.symbol, today); return r && r.days >= 0 && r.days <= SOON; }).length;
+        const ruled = items.map((i) => savedRules(i.symbol)).filter((T) => T && T.ruleTone !== "none");
+        const allUp = ruled.filter((T) => T.ruleTone === "up").length;
+        const inDesk = items.filter((i) => desk[i.symbol]);
+        const noList = inDesk.filter((i) => !members[i.symbol]).length;
+        const outside = items.length - inDesk.length;
+        const tile = (label, value, flag) => {
+          const zero = value === "0";
+          const t = el("div", `wl-sum${flag ? " wl-sum-flag" : ""}${zero ? " wl-sum-zero" : ""}`);
+          t.append(el("span", "", label), el("strong", "", value));
+          return t;
+        };
+        box.replaceChildren(
+          tile(`Report within ${SOON} days`, String(soon), soon > 0),
+          tile("Up on all 3 trend rules", ruled.length ? `${allUp} of ${ruled.length}` : "—", false),
+          tile("On no list this week", String(noList), noList > 0),
+          tile("Not in the universe", String(outside), outside > 0));
+      }
+    }
+    if (hidden) return;
 
-    // Sector concentration bar
+    // Sector mix & risk (concentration + Median 1Y max DD)
     const secBar = $("wl-sector-bar");
     const secLeg = $("wl-sector-leg");
     const secWarn = $("wl-sector-warn");
@@ -488,54 +663,116 @@
       if (secWarn) {
         const top = list[0];
         const share = top ? Math.round((top[1] / items.length) * 100) : 0;
-        secWarn.textContent = top && items.length >= 3 && share >= 40 ? `${share}% in ${sectorLabel(top[0])}` : "";
+        const medDd = medianOf(items.map((it) => desk[it.symbol] && desk[it.symbol].factors && desk[it.symbol].factors.max_drawdown_252));
+        const bits = [];
+        if (top && items.length >= 3 && share >= 40) bits.push(`${share}% in ${sectorLabel(top[0])}`);
+        if (medDd !== null) bits.push(`Median 1Y max DD ${signedPct(medDd, 0)}`);
+        secWarn.textContent = bits.join(" · ");
+      }
+    }
+
+    // Tiny clickable Next earnings column
+    const nextBox = $("wl-next-earn");
+    if (nextBox) {
+      const upcoming = items
+        .map((it) => { const r = resultsFor(it.symbol, today); return r && r.days >= 0 ? { sym: it.symbol, ...r } : null; })
+        .filter(Boolean)
+        .sort((a, b) => a.days - b.days);
+      const head = el("div", "wl-earn-head");
+      head.append(el("span", "wl-sector-k", "Next earnings"),
+        el("span", "wl-earn-cnt", upcoming.length ? `${upcoming.length} scheduled` : ""));
+      if (!upcoming.length) {
+        nextBox.replaceChildren(head, el("div", "wl-earn-none", "None in calendar"));
+      } else {
+        const rowsEl = el("div", "wl-earn-list");
+        for (const u of upcoming.slice(0, 2)) {
+          const btn = el("button", `wl-earn-row${u.days <= SOON ? " soon" : ""}${u.sym === selectedSaved ? " on" : ""}`);
+          btn.type = "button";
+          btn.append(
+            el("strong", "", u.sym),
+            el("span", "", `${shortDay(u.date)}${u.timing ? ` · ${u.timing}` : ""}`),
+            el("small", "", u.days === 0 ? "today" : `in ${u.days}d`),
+          );
+          btn.addEventListener("click", () => {
+            selectedSaved = u.sym;
+            render(W.list());
+            const drawer = $("wl-inspector");
+            if (drawer && typeof drawer.scrollIntoView === "function") drawer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          });
+          rowsEl.append(btn);
+        }
+        nextBox.replaceChildren(head, rowsEl);
       }
     }
   }
 
-  // Right-hand Live Decision Inspector (Draft 3 cockpit + Draft 2 3-rule checklist; zero Timing fetch on Saved!)
+  // Full-Width Expandable 3-Column Ticker Card (opens under the list when a row is clicked; zero Timing fetch on Saved!)
   function renderInspector(sorted, today) {
-    const aside = $("wl-inspector");
-    const split = $("wl-split");
-    if (!aside) return;
-    const has = sorted.length > 0;
-    aside.hidden = !has;
-    if (split) split.className = has ? "wl-split" : "wl-split wl-split-empty";
-    if (!has) { aside.replaceChildren(); return; }
-    if (!selectedSaved || !sorted.some((it) => it.symbol === selectedSaved)) selectedSaved = sorted[0].symbol;
+    const drawer = $("wl-inspector");
+    const hint = $("wl-drawer-hint");
+    if (!drawer) return;
+    const hasRows = sorted.length > 0;
+    const isOpen = hasRows && Boolean(selectedSaved) && sorted.some((it) => it.symbol === selectedSaved);
+    if (hint) hint.hidden = !hasRows || isOpen;
+    drawer.hidden = !isOpen;
+    if (!isOpen) { drawer.replaceChildren(); return; }
+
     const sym = selectedSaved;
     const c = desk[sym] || {};
     const f = c.factors || {};
     const T = savedRules(sym);
     const r = resultsFor(sym, today);
-
-    const head = el("div", "wl-ins-head");
-    const hTop = el("div", "wl-ins-top");
-    const symA = el("a", "wl-ins-sym", sym);
-    symA.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
-    hTop.append(symA, el("div", "wl-ins-px", price(c.price)));
-    const hSub = el("div", "wl-ins-sub");
-    hSub.append(el("span", "wl-ins-name", `${c.name || sym}${c.sector ? ` · ${sectorLabel(c.sector)}` : ""}`));
-    const hTags = el("div", "wl-ins-tags");
-    hTags.append(el("span", `wl-badge ${T ? T.ruleTone : "none"}`, ruleBadge(T)));
     const m = members[sym];
-    if (m && (m.shortlist || m.lists.length)) {
-      if (m.shortlist) hTags.append(el("span", "wl-chip sl", `Shortlist #${m.shortlist}`));
-      for (const label of m.lists.slice(0, 2)) hTags.append(el("span", "wl-chip", label));
-    } else if (deskLoaded && desk[sym]) {
-      hTags.append(el("span", "wl-flag", "On no list"));
-    }
-    head.append(hTop, hSub, hTags);
-
-    const partsList = [head];
+    const o = insiders[sym];
+    const si = shortInterest[sym];
     const inDesk = Boolean(desk[sym]);
 
-    if (deskLoaded && !inDesk) {
-      partsList.push(el("p", "wl-ins-out", "Not in this week’s Temper Lab universe — tracked by symbol and personal note only."));
+    // Card header bar
+    const head = el("div", "wl-drawer-head");
+    const idWrap = el("div", "wl-drawer-id");
+    const symA = el("a", "wl-ins-sym", sym);
+    symA.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
+    idWrap.append(
+      symA,
+      el("span", "wl-ins-px", price(c.price)),
+      el("span", "wl-ins-sub", `${c.name || sym}${c.sector ? ` · ${sectorLabel(c.sector)}` : ""}`),
+      el("span", `wl-badge ${T ? T.ruleTone : "none"}`, ruleBadge(T)),
+    );
+    if (m && (m.shortlist || m.lists.length)) {
+      if (m.shortlist) idWrap.append(el("span", "wl-chip sl", `Shortlist #${m.shortlist}`));
+      for (const label of m.lists.slice(0, 2)) idWrap.append(el("span", "wl-chip", label));
+    } else if (deskLoaded && inDesk) {
+      idWrap.append(el("span", "wl-flag", "On no list"));
     }
 
-    // Visual pair: 1-year path sparkline + Street target gauge (side-by-side on wide Inspector via container query)
-    const vizCards = [];
+    const actions = el("div", "wl-drawer-actions");
+    const timingBtn = el("button", "wl-btn-primary", "Full Timing chart →");
+    timingBtn.type = "button";
+    timingBtn.addEventListener("click", () => {
+      activeSymbol = sym;
+      setTab("timing");
+    });
+    const dossierLink = el("a", "wl-btn-ghost", "Ticker dossier");
+    dossierLink.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
+    const closeBtn = el("button", "wl-drawer-close", "× Close");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", () => {
+      selectedSaved = "";
+      render(W.list());
+    });
+    actions.append(timingBtn, dossierLink, closeBtn);
+    head.append(idWrap, actions);
+
+    const blocks = [head];
+    if (deskLoaded && !inDesk) {
+      blocks.push(el("p", "wl-ins-out", "Not in this week’s Temper Lab universe — tracked by symbol, personal trigger, and thesis note only."));
+    }
+
+    // 3-Column Horizontal Grid
+    const grid = el("div", "wl-drawer-grid");
+
+    // Col 1: 1Y Sparkline + Street Target Gauge
+    const col1 = el("div", "wl-drawer-col");
     if (sparks && deskRunId && sparks.desk_run_id === deskRunId && Array.isArray(sparks.closes && sparks.closes[sym])) {
       const series = sparks.closes[sym];
       const pts = series.map((v, i) => [i, Number(v)]).filter(([, v]) => Number.isFinite(v) && v > 0);
@@ -547,7 +784,7 @@
         if (Number.isFinite(f.max_drawdown_252)) riskBits.push(`Max DD ${signedPct(f.max_drawdown_252, 0)}`);
         sh.append(el("span", "wl-ins-spark-title", `1Y path ${signedPct(f.momentum_252, 0)}`),
           el("span", "", riskBits.join(" · ")));
-        const w = 320, h = 54, pad = 4;
+        const w = 320, h = 52, pad = 4;
         const lo = Math.min(...pts.map(([, v]) => v)), hi = Math.max(...pts.map(([, v]) => v));
         const x = (i) => pad + (i / (series.length - 1)) * (w - 2 * pad);
         const y = (v) => (hi > lo ? h - pad - ((v - lo) / (hi - lo)) * (h - 2 * pad) : h / 2);
@@ -562,11 +799,9 @@
         svg("polyline", { points: dPts, fill: "none", stroke: "#24342d", "stroke-width": "1.75", "stroke-linejoin": "round" }, s);
         svg("circle", { cx: x(li).toFixed(1), cy: y(lv).toFixed(1), r: "3", fill: "#1e6547", stroke: "#fff", "stroke-width": "1.2" }, s);
         sbox.append(sh, s);
-        vizCards.push(sbox);
+        col1.append(sbox);
       }
     }
-
-    // Street target gauge directly from desk.json factors (3+ analysts floor, labeled as opinion)
     const tLow = Number(f.target_low), tMed = Number(f.target_median), tHigh = Number(f.target_high), pxVal = Number(c.price);
     const nAnalysts = Number(f.analyst_total);
     const coverageOk = !Number.isFinite(nAnalysts) || nAnalysts === 0 || nAnalysts >= 3;
@@ -590,16 +825,11 @@
       if (clMark.style) clMark.style.left = pos(pxVal);
       trk.append(medMark, clMark);
       tbar.append(trk);
-      vizCards.push(tbar);
+      col1.append(tbar);
     }
 
-    if (vizCards.length) {
-      const vizWrap = el("div", `wl-ins-viz${vizCards.length === 1 ? " single" : ""}`);
-      vizWrap.append(...vizCards);
-      partsList.push(vizWrap);
-    }
-
-    // Unified 3-rule tested checklist card (dated to the month-end close) + earnings window check
+    // Col 2: Dated 3-Rule Tested Checklist + Earnings Window
+    const col2 = el("div", "wl-drawer-col");
     if (T || r) {
       const card = el("div", "wl-chk-card");
       if (T && trend && trend.signal_date) {
@@ -619,10 +849,107 @@
       const earnNear = r && r.days >= 0 && r.days <= 14;
       addChk("Earnings within 14 days", earnNear ? "wl-chk-warn" : "wl-chk-muted", r ? `${shortDay(r.date)}${earnNear ? ` (in ${r.days}d)` : ""}` : "None in calendar");
       card.append(ul);
-      partsList.push(card);
+      col2.append(card);
     }
 
-    // Inline editable 1-line thesis note
+    // Col 3: Ownership & Crowding (Insiders + Short Interest) + Same-Sector Shortlist Peer Contrast
+    const col3 = el("div", "wl-drawer-col");
+    const ownLines = [];
+    if (o && (o.buy >= 50000 || o.ceo_buy)) {
+      ownLines.push({ cls: "wl-chk-ok", label: "Fresh insider buy", val: o.headline || `Bought ${usdShort(o.buy)}` });
+    }
+    if (o && o.off_sell > 0 && o.sell_no_plan >= 250000) {
+      ownLines.push({ cls: "wl-chk-warn", label: "Unscheduled officer sell", val: `Sold ${usdShort(o.sell_no_plan)} (no 10b5-1)` });
+    }
+    if (Array.isArray(si) && Number.isFinite(si[0])) {
+      const chg = Number.isFinite(si[1]) ? ` (${si[1] >= 0 ? "+" : ""}${Math.round(si[1])}%)` : "";
+      ownLines.push({ cls: "wl-chk-muted", label: `Short interest${shortInterestDate ? ` (${shortDay(shortInterestDate)})` : ""}`, val: `${si[0].toFixed(1)}d to cover${chg}` });
+    }
+    if (ownLines.length) {
+      const oc = el("div", "wl-own-card");
+      const oh = el("div", "wl-own-head");
+      const insLink = el("a", "", "Insights →");
+      insLink.href = `./insights.html?q=${encodeURIComponent(sym)}`;
+      oh.append(el("span", "", "Ownership & crowding · context"), insLink);
+      const oul = el("ul", "wl-checklist");
+      for (const ln of ownLines) {
+        const li = el("li");
+        li.append(el("span", "", ln.label), el("span", ln.cls, ln.val));
+        oul.append(li);
+      }
+      oc.append(oh, oul);
+      col3.append(oc);
+    }
+    if ((T && T.ruleTone === "down") || (deskLoaded && inDesk && !m)) {
+      const peer = sectorPeer(sym);
+      if (peer) {
+        const pc = el("div", "wl-peer-box");
+        const txt = el("div");
+        txt.append(
+          el("span", "wl-peer-k", `Same-sector Shortlist peer (${sectorLabel(c.sector)})`),
+          el("div", "wl-peer-v", `${peer.symbol} · ${peer.name} · SL #${peer.rank} · 3/3`),
+        );
+        const peerBtn = el("button", "wl-btn-ghost", W.has(peer.symbol) ? "Inspect →" : "+ Add");
+        peerBtn.type = "button";
+        peerBtn.addEventListener("click", () => {
+          if (!W.has(peer.symbol)) {
+            if (W.setSelected) W.setSelected([{ symbol: peer.symbol, name: peer.name, page: "watchlist" }], true);
+            else W.toggle(peer.symbol, peer.name);
+          }
+          selectedSaved = peer.symbol;
+          render(W.list());
+        });
+        pc.append(txt, peerBtn);
+        col3.append(pc);
+      }
+    }
+
+    if (col1.children.length || col2.children.length || col3.children.length) {
+      grid.append(col1, col2, col3);
+      blocks.push(grid);
+    }
+
+    // Bottom row: Auto-Checked "Wait for..." Trigger Editor + Personal Thesis Note
+    const bot = el("div", "wl-drawer-bottom");
+    const curTrig = loadTriggers()[sym] || { kind: "none" };
+    const ev = evalTrigger(sym, today);
+    const trigCard = el("div", "wl-trig-card");
+    const th = el("div", "wl-trig-head");
+    th.append(
+      el("span", "", "Wait for (auto-checked weekly)"),
+      ev ? el("span", ev.met ? "wl-trig-met" : "wl-trig-wait", ev.detail) : el("span", "wl-trig-wait", "No trigger"),
+    );
+    const trow = el("div", "wl-trig-row");
+    for (const [k, label] of [["none", "None"], ["trend3", "Trend → 3/3"], ["shortlist", "Shortlist"], ["after_earn", "After earnings"], ["price", "Close ≤ $"]]) {
+      const b = el("button", `wl-trig-btn${curTrig.kind === k ? " on" : ""}`, label);
+      b.type = "button";
+      b.addEventListener("click", () => {
+        if (k === "price") {
+          const fallback = Number(c.price) > 0 ? Math.max(1, Math.round(Number(c.price) * 0.95)) : 100;
+          saveTrigger(sym, { kind: "price", target: curTrig.target || fallback });
+        } else {
+          saveTrigger(sym, { kind: k });
+        }
+        render(W.list());
+      });
+      trow.append(b);
+    }
+    if (curTrig.kind === "price") {
+      const numIn = el("input", "wl-trig-price");
+      numIn.type = "number";
+      numIn.setAttribute("step", "any");
+      numIn.setAttribute("aria-label", `Watch price for ${sym}`);
+      numIn.value = curTrig.target ? String(curTrig.target) : "";
+      numIn.addEventListener("change", () => {
+        const v = Number(numIn.value);
+        if (Number.isFinite(v) && v > 0) saveTrigger(sym, { kind: "price", target: v });
+        else saveTrigger(sym, { kind: "none" });
+        render(W.list());
+      });
+      trow.append(numIn);
+    }
+    trigCard.append(th, trow);
+
     const noteWrap = el("div", "wl-thesis-box");
     const noteId = `wl-note-${sym.replace(/[^A-Z0-9]/g, "")}`;
     const lbl = el("label", "", "Personal thesis note (saved in browser)");
@@ -642,24 +969,10 @@
       }
     });
     noteWrap.append(lbl, inp);
-    partsList.push(noteWrap);
+    bot.append(trigCard, noteWrap);
+    blocks.push(bot);
 
-    // Jump to full Timing chart or full Ticker dossier
-    const actions = el("div", "wl-ins-actions");
-    const timingBtn = el("button", "wl-btn-primary", "Full Timing chart →");
-    timingBtn.type = "button";
-    timingBtn.addEventListener("click", () => {
-      activeSymbol = sym;
-      setTab("timing");
-    });
-    const dossierLink = el("a", "wl-btn-ghost", "Ticker dossier");
-    dossierLink.href = `./ticker.html?t=${encodeURIComponent(sym)}`;
-    actions.append(timingBtn, dossierLink);
-    partsList.push(actions);
-
-    const inner = el("div", "wl-ins-inner");
-    inner.append(...partsList);
-    aside.replaceChildren(inner);
+    drawer.replaceChildren(...blocks);
   }
 
   // Empty-state Shortlist Top 10 starter grid
@@ -1411,9 +1724,7 @@
     displayed = W.clean([...items, ...bulkRows]);
     const today = marketToday();
     const sorted = sortRows(displayed, today);
-    if (sorted.length && (!selectedSaved || !sorted.some((it) => it.symbol === selectedSaved))) {
-      selectedSaved = sorted[0].symbol;
-    } else if (!sorted.length) {
+    if (selectedSaved && !sorted.some((it) => it.symbol === selectedSaved)) {
       selectedSaved = "";
     }
     const allSelected = displayed.length > 0 && displayed.every((item) => W.has(item.symbol));
@@ -1597,14 +1908,24 @@
     W.onChange(render);
     render(W.list());
     const get = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([get("./desk.json"), get("./earnings-calendar.json"), get("./trend-rules.json"), get("./ticker-sparks.json")])
-      .then(([deskData, calendar, rules, lines]) => {
+    Promise.all([
+      get("./desk.json"),
+      get("./earnings-calendar.json"),
+      get("./trend-rules.json"),
+      get("./ticker-sparks.json"),
+      get("./watchlist-insiders.json"),
+      get("./short-interest.json"),
+    ]).then(([deskData, calendar, rules, lines, insData, siData]) => {
       desk = (deskData && deskData.companies) || {};
       deskLoaded = Boolean(deskData && deskData.companies);
       deskRunId = (deskData && deskData.run_id) || null;
       earnings = (calendar && calendar.companies) || {};
       if (!trend && rules && rules.schema === "trend-rules-2" && rules.signal_date && rules.rules) trend = rules;
       sparks = lines && lines.schema === "ticker-sparks-1" && lines.closes ? lines : null;
+      insiders = insData && insData.schema === "watchlist-insiders-1" && insData.companies && (!deskRunId || insData.freeze_run_id === deskRunId)
+        ? insData.companies : {};
+      shortInterest = siData && siData.schema === "short-interest-1" && siData.rows ? siData.rows : {};
+      shortInterestDate = (siData && siData.date) || "";
       members = {};
       const setups = (deskData && deskData.setups) || {};
       for (const [key, label] of [["strength", "Hot tape"], ["growth", "Growth"], ["undervalued", "Cheap"]]) {
@@ -1617,7 +1938,8 @@
         if (r && r.symbol) (members[r.symbol] = members[r.symbol] || { shortlist: null, lists: [] }).shortlist = r.rank;
       }
       const shortlist = deskData && deskData.setups && deskData.setups.composite && deskData.setups.composite.results;
-      const topTen = Array.isArray(shortlist) ? shortlist.slice(0, 10) : [];
+      shortlistAll = Array.isArray(shortlist) ? shortlist : [];
+      const topTen = shortlistAll.slice(0, 10);
       shortlistPicks = topTen.map((row) => row.symbol).filter(Boolean);
       shortlistRanks = {};
       topTen.forEach((row, idx) => {
