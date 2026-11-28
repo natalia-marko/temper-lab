@@ -7,14 +7,14 @@
     <title>Temper Lab — Insights</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./desk.css?v=096e376fe179" />
-    <link rel="stylesheet" href="./ownership.css?v=368ea3326eac" />
+    <link rel="stylesheet" href="./ownership.css?v=f34fcbcfe6a6" />
     <link rel="stylesheet" href="./watchlist.css?v=ebefbbe253a8" />
   </head>
   <body class="ownership-page">
     <div class="desk">
       <aside id="site-sidebar" aria-label="Site menu">
         <div class="sidebar-head"><a class="brand" href="./"><span>t</span>temper<span>lab</span></a><button id="nav-close" class="nav-close" type="button" aria-label="Hide menu" aria-controls="site-sidebar" aria-expanded="true" hidden>‹</button></div>
-        <p class="aside-note">Who bought and sold each company's shares, by whom, and whether under a trading plan. From SEC Form 4.</p>
+        <p class="aside-note">Who bought and sold each company's shares, by whom, and whether under a trading plan. From SEC Form 4 and 13D/13G.</p>
         <nav class="site-nav" aria-label="Temper Lab pages">
           <a href="./market-mood.html">Market mood</a>
           <a href="./">Research</a>
@@ -30,10 +30,13 @@
       <button id="nav-open" class="nav-open" type="button" aria-label="Open menu" aria-controls="site-sidebar" aria-expanded="false" hidden><span aria-hidden="true">☰</span> Menu</button>
       <button id="nav-backdrop" class="nav-backdrop" type="button" aria-label="Close menu" tabindex="-1" hidden></button>
       <main id="main-content">
-        <section class="heading">
-          <div>
-            <div class="eyebrow">OWNERSHIP INSIGHTS</div>
-            <h1>Research-worthy ownership events</h1>
+        <section class="heading os-heading">
+          <div class="os-head-main">
+            <div class="eyebrow" data-note>OWNERSHIP INSIGHTS</div>
+            <div class="os-title-row">
+              <h1>Insights</h1>
+              <div id="os-tabs" class="os-tablist" role="tablist" aria-label="What to show"></div>
+            </div>
             <p>Insider and ownership activity that may point to opportunities or risks. A starting point for research, not a forecast.</p>
           </div>
           <div class="snapshot-status">
@@ -43,34 +46,44 @@
         </section>
         <p id="os-status" class="os-status" role="status">Loading insights…</p>
         <section class="surface os-surface" aria-label="Companies with insider and ownership activity">
-          <div class="os-bar os-controls">
-            <div id="os-tabs" class="os-seg" role="group" aria-label="What to show"></div>
+          <div class="os-toolbar">
+            <label class="os-search-wrap"><input id="os-query" type="search" placeholder="Ticker, company, insider or fund" aria-label="Search ticker, company, insider or fund" autocomplete="off" /></label>
+            <div class="os-scope-group">
+              <label class="os-toggle"><input id="os-eligible" type="checkbox" checked /><span>Eligible (<span id="os-eligible-count"></span>)</span></label>
+              <label class="os-toggle"><input id="os-lists" type="checkbox" /> On my lists</label>
+              <label class="os-toggle"><input id="os-watch" type="checkbox" /><span>On my watchlist (<span id="os-watch-count"></span>)</span></label>
+              <label class="os-toggle"><input id="os-fresh" type="checkbox" /> <span id="os-fresh-label">New</span></label>
+            </div>
             <label class="os-select">Sort <select id="os-sort" aria-label="Sort"></select></label>
-            <label class="os-toggle"><input id="os-fresh" type="checkbox" /> <span id="os-fresh-label">New this week</span></label>
-            <label class="os-search"><input id="os-query" type="search" placeholder="Ticker, company or insider" aria-label="Search ticker, company or insider" autocomplete="off" /></label>
-          </div>
-          <div class="os-bar os-filters">
-            <label class="os-toggle"><input id="os-eligible" type="checkbox" checked /><span>Eligible stocks only (<span id="os-eligible-count"></span>)</span></label>
-            <label class="os-toggle"><input id="os-lists" type="checkbox" /> On my lists</label>
-            <label class="os-toggle"><input id="os-watch" type="checkbox" /><span>On my watchlist (<span id="os-watch-count"></span>)</span></label>
             <span id="os-count" class="os-count" role="status"></span>
           </div>
+          <div id="os-lenses" class="os-lenses" role="group" aria-label="Focus filters"></div>
           <p id="os-tab-note" class="os-tab-note" data-note hidden></p>
           <p id="os-match-note" class="os-tab-note os-match-note" role="status" hidden></p>
           <p id="os-other-banner" class="os-banner" hidden>Showing what is not counted as buying or selling: transfers between related holders, private trades, and awards, exercises, gifts or tax withholding. <button type="button" id="os-back" class="os-link">Back to All</button></p>
-          <div class="os-head" role="group" aria-label="Sort by column"><span>Ticker</span><button type="button" class="os-sorter" data-sort="signal" title="Sort by signal type, then newest">Signal</button><button type="button" class="os-sorter" data-sort="evidence" title="Buys: sort by checks met, 3 to 0">Why it matters</button><button type="button" id="os-amount-head" class="os-sorter num" data-sort="amount" title="Sort by amount, largest first">Amount</button><button type="button" class="os-sorter" data-sort="newest" title="Sort by newest filing">Filed</button></div>
+          <div class="os-head" role="group" aria-label="Sort by column">
+            <span>Company</span>
+            <button type="button" class="os-sorter" data-sort="signal" title="Sort by signal type, then newest">Signal</button>
+            <button type="button" class="os-sorter" data-sort="evidence" title="Buys: sort by checks met, 3 to 0">Who &amp; context</button>
+            <button type="button" id="os-vs-head" class="os-sorter num" data-sort="vspaid" title="Sort by latest close vs insiders' average price">vs paid</button>
+            <button type="button" id="os-amount-head" class="os-sorter num" data-sort="amount" title="Sort by amount, largest first">Amount</button>
+            <button type="button" class="os-sorter" data-sort="newest" title="Sort by newest filing">Filed</button>
+          </div>
           <div id="os-rows" class="os-rows"></div>
           <button type="button" id="os-more" class="os-more" hidden>Show more</button>
-          <div id="os-excluded" class="os-excluded" hidden>
-            <div class="os-excluded-head"><strong>Not counted above</strong> <button type="button" id="os-show-other" class="os-link">Show them</button></div>
+          <p id="os-vs-note" class="os-table-note"><strong>vs paid / vs sold:</strong> Latest close compared with insiders’ average trade price in this window (omitted if a split occurred after the trade). Context on where the stock trades now, not a buy signal.</p>
+          <details id="os-excluded" class="os-excluded-foot" hidden>
+            <summary id="os-excluded-summary">Not counted above</summary>
             <ul id="os-excluded-list"></ul>
-          </div>
+            <button type="button" id="os-show-other" class="os-link">Show them</button>
+          </details>
           <noscript><p class="empty">Enable JavaScript to load insights.</p></noscript>
           <details class="method-info" id="how">
             <summary>How it works</summary>
-            <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible stocks only" shows the frozen eligible universe; "On my lists" the Strength, Growth and Cheap lists; "On my watchlist" the stocks you starred, kept in this browser. Not a forecast and not advice.</p>
-            <p><strong>Signal.</strong> A label from the filings, not a score: Group buy, incl. officer (two or more insiders bought within 10 sessions, at least one an officer such as the CEO or CFO), Group buy, directors, Officer buy, Director buy, Sale, no plan (no 10b5-1 trading plan), Plan or tax sale (under a 10b5-1 plan or to cover tax), Fund/10% owner buy or sale. On the 5%+ ownership reports tab: New stake, active (13D), Switched to active (13D), Stake change (13D or 13G), New stake, passive (13G), Below 5%. Checks ●●○ shows the three checks below in order: several insiders within 10 sessions; the CEO or CFO bought; a holding up 5% or more (or new) on $50K or more.</p>
-            <p><strong>Ranking.</strong> Buys are sorted by checks met, then amount. Checks counts how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Fund &amp; 10% owner trades by amount, with sales without a plan first. Click a column name to sort: Signal, Amount or Filed; on Buys, Why it matters sorts by Checks. On phones, use the Sort menu. Search looks at every company: typing starts in All, each tab count shows its matches, and an exact ticker comes first. NEW marks a filing from the last 7 days of data. On screens 1,600px wide or more the company panel stays open beside the list.</p>
+            <p><strong>Source.</strong> SEC Form 4 and Form 5 (and their amendments) for every issuer in the security mapping, over the last 21 trading days by New York filing day. "Eligible" shows the frozen eligible universe; "On my lists" the Hot tape, Growth and Cheap lists; "On my watchlist" the stocks you starred, kept in this browser. Not a forecast and not advice.</p>
+            <p><strong>Signal.</strong> A label from the filings, not a score: Group buy, incl. officer (two or more insiders bought within 10 sessions, at least one an officer such as the CEO or CFO), Group buy, directors, Officer buy, Director buy, Sale, no plan (no 10b5-1 trading plan), Plan or tax sale (under a 10b5-1 plan or to cover tax), Fund/10% owner buy or sale. On the 5%+ Stakes tab: New stake, active (13D), Switched to active (13D), Stake change (13D or 13G), New stake, passive (13G), Below 5%. Checks ●●○ shows the three checks below in order: several insiders within 10 sessions; the CEO or CFO bought; a holding up 5% or more (or new) on $50K or more.</p>
+            <p><strong>vs paid / vs sold.</strong> Percentage difference between the latest close in the weekly price data and the average price reported by insiders in this window (omitted when a stock split occurred during or after the trades). "Below insider price" filters $50K+ buys trading at least 2% below insiders' average purchase price. Context on current price, not a buy signal.</p>
+            <p><strong>Ranking.</strong> Buys are sorted by checks met, then amount. Checks counts how many of three facts hold: several insiders bought within 10 sessions; the CEO or CFO bought; a holding rose 5% or more, or is new, on $50K or more. All is sorted by signal type (buy clusters, single buys, sales without a plan, big holders, then planned or routine sales), then newest filing; Sells and Funds &amp; 10% by amount, with sales without a plan first. Click a column name to sort: Signal, Who &amp; context (Checks on Buys), vs paid, Amount or Filed. On phones, use the Sort menu. Search looks at every company: typing starts in All, each tab count shows its matches, and an exact ticker comes first. NEW marks a filing from the last 7 days of data.</p>
             <p><strong>Tested (Leg D, 6 Oct 2026).</strong> In eligible stocks, 3,122 insider purchases filed Jan 2023 – Jun 2026 did not beat the average eligible stock over the next 1, 3 or 6 months; groups of insiders and CEO or CFO buys did not either. Use this page as research context — who traded, how much, and whether it is unusual — not as a buy signal. Limits: only companies listed today, one 3.5-year period.</p>
             <p><strong>Short interest.</strong> From FINRA's twice-monthly files: shares sold short and days to cover (shares short ÷ average daily volume), from the latest report public by the data date (FINRA publishes 7 business days after each settlement date). "Lightly shorted" or "heavily shorted": the bottom or top 10% of eligible stocks of similar size (market-cap thirds) by days to cover. Tested (Leg D, 6 Oct 2026, eligible stocks, reports Jan 2023 – Sep 2026): six months later the lightly shorted group was about 3.5% ahead of the average eligible stock and the heavily shorted group about 2.4% behind, each a little over two standard errors after allowing for overlapping periods; after one month the gap was small, and short interest as a share of shares outstanding showed nothing. Published studies agree in direction (Hong, Li, Ni, Scheinkman &amp; Yan; Boehmer, Huszar &amp; Jordan). One period, companies listed today only, many numbers tested: context, not a forecast.</p>
             <p><strong>Purpose and plan.</strong> From the SEC transaction code, the filing's 10b5-1 box and the footnotes attached to each trade. Codes P and S can be open-market or private; a trade is called private only when its footnote says so. The plan adoption date is shown when a footnote states it.</p>
@@ -79,8 +92,8 @@
             <p><strong>Held back to check.</strong> Amendments that change only part of a filing, identical trades by unrelated filers, other share classes, and trades whose price is far from the stock's close or larger than the company.</p>
             <p><strong>Holding change.</strong> One disclosed account within one filing, not total wealth; unknown when balances do not reconcile.</p>
             <p><strong>Prices.</strong> Close, 3-month move and chart come from the weekly price data (adjusted closes) against QQQ. "Since the first filing" counts only trading days that have passed. No chart when days are missing or the series shows a split mix-up.</p>
-            <p><strong>History.</strong> Each person's open-market buys and sales (codes P and S) in the SEC Insider Transactions Data Sets, from the filing dates shown in the History tab, before their first trade in this window; the page itself still covers one month. "No buy …" means none in those filings. Routine or opportunistic follows Cohen, Malloy &amp; Pomorski (2012): someone with a trade in each of the three previous calendar years is routine if they traded in the same calendar month in all three, otherwise opportunistic. In their study the opportunistic trades carried the information and the routine ones about none. In the row sentence: "no yearly trading pattern" (opportunistic) or "trades in the same month every year" (routine), only when the data covers those three years. "First buy since …" says when the saved filings start, and "(data to …)" when they end before the window.</p>
-            <p><strong>5%+ ownership reports.</strong> Schedule 13D and 13G filed in the window, joined by the company named inside the filing. A 13G is the short form for passive holders (Rule 13d-1(b) institutions, (c) passive investors under 20%, (d) exempt holders); a 13D is the full form for holders who do not claim to be passive, which on its own does not mean an activist campaign. The stake is the largest percent any member of the filing group reports, as of the event date. "Below 5%": the 13G box says the holder no longer owns more than 5%, or an amendment reports under 5%. The purpose text is the holder's own (13D Item 4), shortened to 2,000 characters. "Item 4 mentions" lists specific words found in it (nominating directors, board seats, strategic alternatives, a sale or take-private, an agreement with the company), not a summary; generic ones such as "merger" are left out because the standard list of possible actions names them in many filings.</p>
+            <p><strong>History.</strong> Each person's open-market buys and sales (codes P and S) in the SEC Insider Transactions Data Sets, from the filing dates shown in the 3Y History tab, before their first trade in this window; the page itself still covers one month. "No buy …" means none in those filings. Routine or opportunistic follows Cohen, Malloy &amp; Pomorski (2012): someone with a trade in each of the three previous calendar years is routine if they traded in the same calendar month in all three, otherwise opportunistic.</p>
+            <p><strong>5%+ ownership reports.</strong> Schedule 13D and 13G filed in the window, joined by the company named inside the filing. A 13G is the short form for passive holders (Rule 13d-1(b) institutions, (c) passive investors under 20%, (d) exempt holders); a 13D is the full form for holders who do not claim to be passive, which on its own does not mean an activist campaign. The stake is the largest percent any member of the filing group reports, as of the event date. "Below 5%": the 13G box says the holder no longer owns more than 5%, or an amendment reports under 5%. The purpose text is the holder's own (13D Item 4), shortened to 2,000 characters.</p>
             <p><strong>Colours.</strong> Green and red mark rising and falling percentages; on labels, green is buying and amber is selling.</p>
             <p id="os-build"></p>
           </details>
@@ -88,12 +101,19 @@
         <footer id="site-author" class="site-credit"><div class="site-credit-copy"><span>© 2026 <strong>Natalia Marko</strong> · Temper Lab</span><span class="site-credit-note">Research only, not investment advice.</span></div><nav aria-label="Author contact"><a href="mailto:natalia.marko.ds@gmail.com">Email</a><a href="https://www.linkedin.com/in/nataliamarko2025" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></nav></footer>
       </main>
     </div>
-    <dialog id="os-detail" aria-labelledby="os-detail-title">
-      <form method="dialog"><button class="os-close" aria-label="Close company details">✕</button></form>
+    <dialog id="os-detail" closedby="any" aria-labelledby="os-detail-title">
+      <div class="os-drawer-nav">
+        <div class="os-step-group">
+          <button type="button" id="os-prev" class="os-step-btn" title="Previous company (↑)">‹ Prev</button>
+          <button type="button" id="os-next" class="os-step-btn" title="Next company (↓)">Next ›</button>
+          <span id="os-step-pos" class="os-step-pos"></span>
+        </div>
+        <form method="dialog"><button class="os-close" aria-label="Close company details">✕</button></form>
+      </div>
       <div id="os-detail-body"></div>
     </dialog>
     <script src="./watchlist.js?v=b8bdfa5ad42a"></script>
-    <script src="./ownership.js?v=4722468b7461"></script>
+    <script src="./ownership.js?v=9c86a0eac782"></script>
     <script src="./navigation.js?v=e34b9867f2ab"></script>
   </body>
 </html>

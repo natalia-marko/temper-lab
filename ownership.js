@@ -1,5 +1,5 @@
 "use strict";
-// Insights: who bought and sold each company's shares, from SEC Form 4 and 5.
+// Insights: who bought and sold each company's shares, from SEC Form 4, 5, and 13D/13G.
 // Reads ownership-signals.json only. Every value from the data is set with
 // textContent; nothing is parsed as HTML. Links go to sec.gov or this site only.
 
@@ -20,20 +20,20 @@ const KEYS = {
   holder: ["buy", "buy_plan", "sell_no_plan", "sell_plan"], other: ["transfer", "buy_private", "sell_private"],
 };
 const VIEWS = [
-  { key: "all", label: "All", head: "Amount", sort: "signal",
+  { key: "all", label: "All", head: "Amount", vsHead: "vs paid", sort: "signal",
     note: "Form 4 buying and selling by insiders and big holders, most informative first." },
-  { key: "buy", label: "Buys", head: "Bought", sort: "evidence",
+  { key: "buy", label: "Buys", head: "Bought", vsHead: "vs paid", sort: "evidence",
     note: "Officers and directors buying their company's shares (Form 4), most checks met first." },
-  { key: "sell", label: "Sells", head: "Sold", sort: "amount",
+  { key: "sell", label: "Sells", head: "Sold", vsHead: "vs sold", sort: "amount",
     note: "Officers and directors selling (Form 4): sales without a 10b5-1 plan first, then plan or tax sales." },
-  { key: "holders", label: "Fund & 10% owner trades", head: "Traded", sort: "amount",
+  { key: "holders", label: "Funds & 10%", head: "Traded", vsHead: "vs trade", sort: "amount",
     note: "Shares bought or sold by funds and 10% owners (Form 4), in dollars. A different motive from executives." },
-  { key: "stakes", label: "5%+ ownership reports", head: "Stake", sort: "signal",
+  { key: "stakes", label: "5%+ Stakes", head: "Stake", vsHead: "Event", sort: "signal",
     note: "Who reports owning 5% or more (Schedule 13D/13G): new stakes, changes and exits, in percent. Reports, not trades." },
 ];
 const HISTORY_KEYS = ["buy", "buy_plan", "sell_no_plan", "sell_plan"];
-const OTHER = { key: "other", label: "Not counted", head: "Moved", sort: "amount" };
-const SORTS = { signal: "Signal type", evidence: "Checks 3 → 0", amount: "Amount", newest: "Newest filing" };
+const OTHER = { key: "other", label: "Not counted", head: "Moved", vsHead: "—", sort: "amount" };
+const SORTS = { signal: "Signal type", evidence: "Checks 3 → 0", vspaid: "Most below paid", amount: "Amount", newest: "Newest filing" };
 // "Signal type" lists the most informative kind first: insider buys (clusters, then single
 // buys), sales without a plan, big holders, then planned or routine sales. A fixed order, not a score.
 const SIGNAL_RANK = { "Group buy, incl. officer": 0, "Group buy, directors": 1, "Officer buy": 2, "Director buy": 3,
@@ -43,12 +43,11 @@ const SIGNAL_RANK = { "Group buy, incl. officer": 0, "Group buy, directors": 1, 
   "New stake, active (13D)": 0, "Switched to active (13D)": 0, "Stake change (13D)": 1,
   "New stake, passive (13G)": 2, "Stake change (13G)": 3, "Below 5%": 4 };
 const PAGE = 50;
-const state = { view: "all", sort: "signal", eligible: true, lists: false, watch: false, watched: [], fresh: false, query: "", shown: PAGE, data: null,
-  selected: null, panelView: null, panelClosed: false };
+const state = {
+  view: "all", sort: "signal", lens: null, eligible: true, lists: false, watch: false, watched: [],
+  fresh: false, query: "", shown: PAGE, data: null, selected: null, currentList: [],
+};
 const $ = (id) => document.getElementById(id);
-// Wide screens keep the company panel open beside the list; narrower ones open it over the list.
-const WIDE = typeof matchMedia === "function" ? matchMedia("(min-width: 1600px)") : null;
-const docked = () => Boolean(WIDE && WIDE.matches);
 
 // ---------- formatting ----------
 function el(tag, className, text) {
@@ -56,6 +55,12 @@ function el(tag, className, text) {
   if (className) node.className = className;
   if (text !== undefined && text !== null) node.textContent = String(text);
   return node;
+}
+function fmtList(item) {
+  return String(item || "").replace(/^Strength\b/, "Hot tape");
+}
+function fmtLists(items) {
+  return (items || []).map(fmtList);
 }
 function money(value) {
   const v = Number(value) || 0;
@@ -174,8 +179,7 @@ const RULE_WORD = { b: "institution, Rule 13d-1(b)", c: "passive investor, Rule 
 const TYPE_WORD = { BD: "broker-dealer", BK: "bank", IC: "insurance company", IV: "investment company", IA: "investment adviser",
   EP: "benefit plan or endowment", HC: "parent holding company", SA: "savings association", CP: "church plan",
   CO: "corporation", PN: "partnership", IN: "individual", FI: "non-U.S. institution", OO: "other" };
-// One chain per holder: its filings in the window, oldest first. The newest
-// gives the stake now; the first, the stake when the window began.
+// One chain per holder: its filings in the window, oldest first.
 function stakeChains(company) {
   const chains = new Map();
   for (const s of [...(company.stakes || [])].sort((a, b) => String(a.day).localeCompare(String(b.day)))) {
@@ -235,7 +239,6 @@ function inView(company, view) {
   if (view === "holders") return holder;
   if (view === "stakes") return (company.stakes || []).length > 0;
   if (view === "all") return buy || sell || holder;
-  // Not counted: Form 4 filings without buying or selling (13D/13G-only companies have none).
   return (company.filings || []).length > 0 && !(buy || sell || holder);
 }
 // Buys rank by how many of three facts hold, then by amount. No hidden score.
@@ -250,6 +253,15 @@ function rowDay(company, view) {
 function isNew(company, until, view) {
   const d = daysBetween(rowDay(company, view), until);
   return Number.isFinite(d) && d <= 6;
+}
+function vsPaid(company, sig) {
+  const ctx = company.prices || {};
+  if (ctx.split_after_trades || !ctx.close || !ctx.paid) return null;
+  const keys = (sig.keys || []).filter((k) => ctx.paid[k]);
+  if (!keys.length) return null;
+  const p = ctx.paid[keys[0]];
+  if (!p || !p.avg) return null;
+  return { diff: ctx.close.value / p.avg - 1, avg: p.avg, close: ctx.close.value, isBuy: keys[0].startsWith("buy") };
 }
 function who(people) {
   const counts = {};
@@ -272,7 +284,6 @@ function medianHolding(people) {
   const mid = Math.floor(values.length / 2);
   return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
 }
-// Trade dates behind a signal: per money key when known, else every trade of these people.
 function tradeSpan(people, keys) {
   const firsts = [], lasts = [];
   for (const p of people) {
@@ -293,7 +304,43 @@ function planText(company, sig) {
   if (sig.kind === "buy") return m.buy_plan && !m.buy ? "under a 10b5-1 plan" : m.buy_plan ? "partly under a 10b5-1 plan" : "no 10b5-1 plan";
   return "";
 }
-// One bold line: what happened, in the words of the filings.
+
+// ---------- Trimmed Focus Lenses (2–4 per tab) ----------
+const hasFirstBuy = (c) => peopleWith(c, KEYS.buy, true).some((p) => !(p.history && p.history.last_buy));
+const isBelowPaid = (c) => { const vp = vsPaid(c, { keys: KEYS.buy }); return Boolean(vp && vp.diff <= -0.02 && sum(insiderMoney(c), KEYS.buy) >= 50000); };
+const isActive13D = (c) => (c.stakes || []).some((s) => s.kind === "13D");
+const isNew13DOrMentions = (c) => (c.stakes || []).some((s) => s.kind === "13D" && (s.amendment === null || s.amendment === undefined || (s.mentions || []).length > 0));
+
+const LENSES = {
+  all: [
+    { key: "checks3", label: "3/3 buy checks", test: (c) => inView(c, "buy") && evidence(c) === 3 },
+    { key: "below_paid", label: "Below insider price", test: isBelowPaid },
+    { key: "sell_clusters", label: "Officer sell clusters", warn: true, test: (c) => ((c.flags || {}).officers_sold_without_plan || 0) >= 2 },
+    { key: "light_buys", label: "Lightly shorted buys", test: (c) => inView(c, "buy") && (c.short || {}).rank === "lightly" },
+  ],
+  buy: [
+    { key: "checks3", label: "3/3 checks", test: (c) => evidence(c) === 3 },
+    { key: "below_paid", label: "Below insider price", test: isBelowPaid },
+    { key: "first_buy", label: "First buy since 2023", test: hasFirstBuy },
+    { key: "light_short", label: "Lightly shorted", test: (c) => (c.short || {}).rank === "lightly" },
+  ],
+  sell: [
+    { key: "no_plan", label: "No-plan only", warn: true, test: (c) => sum(insiderMoney(c), KEYS.discretionary) > 0 },
+    { key: "sell_clusters", label: "Officer clusters (2+)", warn: true, test: (c) => ((c.flags || {}).officers_sold_without_plan || 0) >= 2 },
+    { key: "heavy_short", label: "Heavily shorted", warn: true, test: (c) => (c.short || {}).rank === "heavily" },
+  ],
+  holders: [
+    { key: "h_buy", label: "Buys", test: (c) => sum(holderMoney(c), KEYS.buy) >= sum(holderMoney(c), ["sell_no_plan", "sell_plan"]) },
+    { key: "h_sell", label: "Sells", warn: true, test: (c) => sum(holderMoney(c), ["sell_no_plan", "sell_plan"]) > sum(holderMoney(c), KEYS.buy) },
+  ],
+  stakes: [
+    { key: "active_13d", label: "Active 13D", test: isActive13D },
+    { key: "new_13d", label: "New 13D / Item 4", test: isNew13DOrMentions },
+    { key: "exits", label: "Exited <5%", warn: true, test: (c) => (c.stakes || []).some((s) => s.exit) },
+  ],
+};
+
+// Full filing sentence (used in the detail summary card and verified by unit tests).
 function headline(company, sig) {
   if (sig.kind === "stake") {
     const c = sig.chain;
@@ -307,7 +354,6 @@ function headline(company, sig) {
   const n = people.length;
   const lead = people[0];
   const { first, last } = tradeSpan(people, sig.keys);
-  // Dates, not "in N days": the totals cover the whole window; the dates show how close together the trades were.
   const when = first && last && first !== last ? `, ${span(first, last)}` : first ? ` on ${day(first)}` : "";
   const hold = lead ? holdingChange(lead) : null;
   if (sig.kind === "buy") {
@@ -330,7 +376,6 @@ function headline(company, sig) {
   }
   return company.headline;
 }
-// The short explanation under it: who, holding change, plan, the other side.
 function explanation(company, sig) {
   if (sig.kind === "stake") {
     const c = sig.chain;
@@ -379,12 +424,104 @@ function explanation(company, sig) {
   }
   return parts.filter(Boolean).join(" · ");
 }
-// Small labels that show why a row ranks where it does.
+
+// Concise, non-repetitive copy for table rows (avoids duplicating the Amount & Holding column).
+function rowHeadline(company, sig) {
+  if (sig.kind === "stake") {
+    const c = sig.chain;
+    if (!c) return "";
+    const others = (c.last.holders || []).length > 1 ? ` (+${c.last.holders.length - 1})` : "";
+    const from = c.filings.length > 1 && c.first.pct !== c.last.pct ? ` (from ${pctText(c.first.pct)})` : "";
+    return `${c.lead}${others}${from}`;
+  }
+  const people = peopleWith(company, sig.keys, sig.insiders);
+  const lead = people[0];
+  const { first, last } = tradeSpan(people, sig.keys);
+  const when = first && last && first !== last ? ` · ${span(first, last)}` : first ? ` · ${day(first)}` : "";
+  if (sig.kind === "buy") {
+    return people.length >= 2 ? `${who(people)}${when}` : `${lead ? `${lead.role} ${lead.names[0]}` : "Insider"}${when}`;
+  }
+  if (sig.kind === "discretionary") {
+    return people.length >= 2 ? `${who(people)} · no 10b5-1 plan${when}` : `${lead ? `${lead.role} ${lead.names[0]}` : "Insider"} · no 10b5-1 plan`;
+  }
+  if (sig.kind === "planned") {
+    const ins = insiderMoney(company);
+    const how = ins.sell_plan ? "10b5-1 plan" : "tax cover";
+    return `${people.length >= 2 ? who(people) : lead ? `${lead.role} ${lead.names[0]}` : "Insider"} · ${how}`;
+  }
+  if (sig.kind === "holder") return lead ? lead.names[0] : "10% owner";
+  return company.headline || sig.text;
+}
+function historyShort(company, sig, people) {
+  const data = state.data || {};
+  const h = data.history;
+  if (!h || !people.length || (sig.kind !== "buy" && sig.kind !== "discretionary")) return [];
+  const buy = sig.kind === "buy";
+  const since = `first ${buy ? "buy" : "sale"} since ${monthYear(h.filed_from)}`;
+  const none = people.filter((p) => !(p.history && p.history[buy ? "last_buy" : "last_sell"]));
+  const out = [];
+  if (people.length === 1) {
+    const x = people[0].history;
+    if (none.length) out.push(since);
+    else if (buy) out.push(`last bought ${monthYear(x.last_buy)}`);
+    if (x && x.label) out.push(x.label === "routine" ? "routine month" : "opportunistic");
+  } else if (none.length) out.push(`${since} (${none.length}/${people.length})`);
+  return out;
+}
+function rowDetailLine(company, sig) {
+  if (sig.kind === "stake") {
+    const c = sig.chain;
+    if (!c) return "";
+    const parts = [holderType(c.last, c.lead), stakeKindText(c.last)];
+    const said = [...c.filings].reverse().find((f) => (f.mentions || []).length);
+    if (said) parts.push(`Item 4: ${said.mentions.join(", ")}`);
+    const more = stakeChains(company).length - 1;
+    if (more > 0) parts.push(`+${plural(more, "other holder")}`);
+    return parts.filter(Boolean).join(" · ");
+  }
+  const people = peopleWith(company, sig.keys, sig.insiders);
+  const until = state.data ? state.data.window.until : "";
+  const ins = insiderMoney(company);
+  const parts = [];
+  if (sig.kind === "buy") {
+    parts.push(...historyShort(company, sig, people));
+    if (ins.buy_plan && !ins.buy) parts.push("10b5-1 plan");
+    else if (ins.buy_plan) parts.push("partly 10b5-1");
+    if (ins.sell_no_plan) parts.push(`also ${money(ins.sell_no_plan)} no-plan sell`);
+  } else if (sig.kind === "discretionary") {
+    parts.push(...historyShort(company, sig, people));
+    if (ins.sell_plan) parts.push(`+${money(ins.sell_plan)} under 10b5-1`);
+    if (sum(ins, KEYS.buy)) parts.push(`also ${money(sum(ins, KEYS.buy))} bought`);
+  } else if (sig.kind === "planned") {
+    const adopted = people.flatMap((p) => p.plan_adopted || []).sort();
+    if (adopted.length) parts.push(`adopted ${monthsAgo(adopted[0], until)} (${adopted[0]})`);
+    else if (ins.sell_plan) parts.push("adoption date not stated");
+  } else if (sig.kind === "holder") {
+    if (people.length > 1) parts.push(plural(people.length, "10% owner"));
+    if (sum(ins, KEYS.buy)) parts.push(`insiders also bought ${money(sum(ins, KEYS.buy))}`);
+  }
+  return parts.filter(Boolean).join(" · ");
+}
+function rowTags(company, sig) {
+  const f = company.flags || {};
+  const out = [];
+  const reinvested = reinvestedAmount(company, sig);
+  if (reinvested) out.push([`DRIP ${money(reinvested)}`, "muted"]);
+  if (sig.kind === "discretionary" && f.officers_sold_without_plan >= 2) out.push([`${f.officers_sold_without_plan} officers, no plan`, "warn"]);
+  if (sig.kind === "stake" && sig.chain) {
+    const said = [...sig.chain.filings].reverse().find((x) => (x.mentions || []).length);
+    if (said) out.push([`Item 4: ${said.mentions[0]}`, ""]);
+  }
+  if (company.short && company.short.rank) {
+    out.push([`${company.short.rank} shorted (${Number(company.short.days_to_cover).toFixed(1)}d)`, company.short.rank === "lightly" ? "" : "warn"]);
+  }
+  if (f.rows_to_check) out.push([`${plural(f.rows_to_check, "row")} to check`, "muted"]);
+  return out;
+}
 function reasons(company, sig) {
   const f = company.flags || {};
   const out = [];
   if (sig.kind === "buy") {
-    // The three checks behind the Buys ranking, in a fixed order; spelled out in the panel.
     const dots = [f.buyers_within_10_sessions >= 2, f.ceo_or_cfo_bought, f.holding_up_5pct_on_50k].map((on) => (on ? "●" : "○")).join("");
     out.push([`Checks ${dots}`, ""]);
   }
@@ -395,7 +532,6 @@ function reasons(company, sig) {
   if (f.rows_to_check) out.push([`${plural(f.rows_to_check, "row")} to check`, "muted"]);
   return out;
 }
-// FINRA short interest as context (Leg D, 6 Oct 2026); not coloured: a rise in shorts is not "good".
 function shortLine(company, data) {
   const s = company.short;
   const when = (data.short_interest || {}).date;
@@ -409,13 +545,11 @@ function monthYear(iso) {
   const [y, m] = String(iso || "").split("-");
   return m ? `${MONTHS[Number(m) - 1]} ${y}` : "";
 }
-// Facts from the saved history before the window, for the row sentence: no score, no guess.
 function historyFacts(company, sig, people) {
   const data = state.data || {};
   const h = data.history;
   if (!h || !people.length || (sig.kind !== "buy" && sig.kind !== "discretionary")) return [];
   const buy = sig.kind === "buy";
-  // A gap between the saved filings and the window is said, not hidden.
   const gap = data.window && daysBetween(h.filed_until, data.window.since) > 1 ? ` (data to ${monthYear(h.filed_until)})` : "";
   const since = `first ${buy ? "buy" : "sale"} since ${monthYear(h.filed_from)}`;
   const none = people.filter((p) => !(p.history && p.history[buy ? "last_buy" : "last_sell"]));
@@ -424,7 +558,6 @@ function historyFacts(company, sig, people) {
     const x = people[0].history;
     if (none.length) out.push(since + gap);
     else if (buy) out.push(`last bought ${monthYear(x.last_buy)}`);
-    // Routine / opportunistic (Cohen, Malloy & Pomorski 2012) in words; groups: see the History tab.
     if (x && x.label) out.push(x.label === "routine" ? "trades in the same month every year" : "no yearly trading pattern");
   } else if (none.length) out.push(`${since} for ${none.length} of ${people.length}${gap}`);
   return out;
@@ -433,7 +566,6 @@ function signCls(text) {
   const t = String(text || "").trim();
   return t.startsWith("+") ? "pos" : t.startsWith("−") ? "neg" : "";
 }
-// A line whose signed percentages are coloured: green up, red down.
 function withSigns(cls, text) {
   const p = el("p", cls);
   let last = 0;
@@ -471,8 +603,6 @@ function matches(company, query) {
     ...(company.stakes || []).flatMap((s) => (s.holders || []).map((h) => h.name))]
     .some((text) => String(text || "").toLowerCase().includes(query));
 }
-// An exact ticker search shows that company even when "Eligible stocks only", "On my lists" or
-// "On my watchlist" would hide it; the row then carries an "outside eligible set" badge. The boxes stay as set.
 function exactTicker(company, query) {
   const q = String(query || "").trim().toUpperCase();
   return Boolean(q) && companySymbols(company).includes(q);
@@ -482,7 +612,6 @@ function base(companies, filters) {
     || ((!filters.eligible || c.eligible) && (!filters.lists || (c.lists || []).length)
       && (!filters.watch || (filters.watched || []).includes(String(c.symbol || "").toUpperCase()))));
 }
-// Every issuer whose SEC feed was read (ownership-signals.json "checked"), by any of its tickers.
 function checkedRow(data, ticker) {
   const checked = data && data.checked;
   if (!checked || !Array.isArray(checked.rows)) return null;
@@ -491,8 +620,6 @@ function checkedRow(data, ticker) {
   return hit ? { symbol: hit[f.symbol], name: hit[f.name], eligible: hit[f.eligible], insider: hit[f.last_insider], stake: hit[f.last_stake],
     insiderVia: f.insider_via === undefined ? null : hit[f.insider_via], stakeVia: f.stake_via === undefined ? null : hit[f.stake_via] } : null;
 }
-// What to say about an exact ticker search: outside the eligible set, hidden by a filter,
-// checked with nothing filed in the window, or not in the universe at all.
 function matchNote(data, filters, list) {
   const q = String(filters.query || "").trim().toUpperCase();
   if (!q || !/^[A-Z0-9][A-Z0-9.-]{0,9}$/.test(q)) return null;
@@ -509,12 +636,12 @@ function matchNote(data, filters, list) {
     }
     const why = [];
     if (!inView(company, filters.view)) why.push(`it has nothing under ${(VIEWS.find((v) => v.key === filters.view) || OTHER).label}`);
+    if (filters.lens) why.push("an active focus filter hides it");
     if (filters.fresh && !isNew(company, data.window.until, filters.view)) why.push("\"New this week\" is ticked");
     return { text: `${alias}${company.symbol} has filings in this window but is hidden here: ${why.join("; ") || "a filter excludes it"}.`, company };
   }
-  if (!data.checked) return null; // an older snapshot without the checked list: say nothing rather than guess
+  if (!data.checked) return null;
   if (row) {
-    // A date found under a predecessor SEC number (company reorganised) says so.
     const via = (name) => (name ? `, under the predecessor ${name}` : "");
     const insider = row.insider ? `${longDay(row.insider)}${via(row.insiderVia)}` : "none in at least 12 months";
     const stake = row.stake ? `${longDay(row.stake)}${via(row.stakeVia)}` : "none in at least 12 months";
@@ -529,11 +656,14 @@ function fresh(company, view, filters) {
 function visible(companies, filters) {
   const view = filters.view;
   const query = String(filters.query || "").trim().toLowerCase();
-  const rows = base(companies, filters).filter((c) => inView(c, view) && fresh(c, view, filters) && matches(c, query));
+  const activeLens = filters.lens ? (LENSES[view] || []).find((l) => l.key === filters.lens) : null;
+  const rows = base(companies, filters).filter((c) => inView(c, view) && fresh(c, view, filters) && matches(c, query)
+    && (!activeLens || exactTicker(c, filters.query) || activeLens.test(c)));
   const sort = filters.sort || "amount";
   const value = (c) => amount(c, signal(c, view));
   const group = (c) => (view === "sell" && signal(c, view).kind === "planned" ? 1 : 0);
   const rank = (c) => signalRank(signal(c, view));
+  const paidDiff = (c) => { const vp = vsPaid(c, signal(c, view)); return vp ? vp.diff : 999; };
   const hit = (c) => {
     if (!query) return 0;
     const syms = companySymbols(c).map((s) => s.toLowerCase());
@@ -542,6 +672,7 @@ function visible(companies, filters) {
   return rows.sort((a, b) => hit(a) - hit(b) || group(a) - group(b)
     || (sort === "signal" ? rank(a) - rank(b) : 0)
     || (sort === "evidence" ? evidence(b) - evidence(a) : 0)
+    || (sort === "vspaid" ? paidDiff(a) - paidDiff(b) : 0)
     || (sort === "newest" || sort === "signal" ? rowDay(b, view).localeCompare(rowDay(a, view)) : 0)
     || value(b) - value(a)
     || rowDay(b, view).localeCompare(rowDay(a, view))
@@ -569,59 +700,137 @@ function notCounted(data, filters) {
 }
 
 // ---------- list ----------
+function renderLenses(data) {
+  const host = $("os-lenses");
+  if (!host) return;
+  const defs = LENSES[state.view] || [];
+  if (!defs.length) { host.hidden = true; return; }
+  host.hidden = false;
+  const baseForLens = base(data.companies, state).filter((c) => inView(c, state.view) && fresh(c, state.view, state) && matches(c, state.query.trim().toLowerCase()));
+  const nodes = [el("span", "os-lens-label", "Focus")];
+  for (const def of defs) {
+    const cnt = baseForLens.filter(def.test).length;
+    const btn = el("button", `os-lens${def.warn ? " warn-lens" : ""}`);
+    btn.type = "button";
+    const on = state.lens === def.key;
+    btn.setAttribute("aria-pressed", String(on));
+    btn.append(def.label, el("span", "lcnt", String(cnt)));
+    btn.addEventListener("click", () => {
+      state.lens = on ? null : def.key;
+      if (state.lens === "below_paid" && state.view === "buy") state.sort = "vspaid";
+      state.shown = PAGE;
+      render();
+    });
+    nodes.push(btn);
+  }
+  if (state.lens) {
+    const clear = el("button", "os-lens-clear", "Clear");
+    clear.type = "button";
+    clear.addEventListener("click", () => { state.lens = null; state.shown = PAGE; render(); });
+    nodes.push(clear);
+  }
+  host.replaceChildren(...nodes);
+}
+
 function row(company, view, until) {
   const sig = signal(company, view);
-  // Planned and routine rows are kept quieter: they carry the least information.
   const button = el("button", sig.side === "routine" ? "os-row quiet" : "os-row");
   button.type = "button";
   button.dataset.symbol = company.symbol;
   button.addEventListener("click", () => openDetail(company, view, button));
+
   const co = el("span", "os-co");
   const tk = el("span", "os-tk");
   tk.append(el("strong", "", company.symbol));
-  if ((company.lists || []).length) tk.append(el("span", "os-chip", company.lists.join(" · ")));
-  if (state.eligible && !company.eligible) tk.append(el("span", "os-chip muted", "outside eligible set"));
+  if ((company.lists || []).length) tk.append(el("span", "os-chip", fmtLists(company.lists).join(" · ")));
+  if (state.eligible && !company.eligible) tk.append(el("span", "os-chip muted", "outside"));
   co.append(tk, el("span", "os-name", company.name));
   const close = (company.prices || {}).close;
   const meta = [close ? price(close.value) : company.price ? price(company.price) : "", company.market_cap ? money(company.market_cap) : ""]
     .filter(Boolean).join(" · ");
   co.append(el("span", "os-meta", meta || (company.eligible ? "" : "outside eligible set")));
-  const kind = el("span", `os-signal ${sig.side}`, sig.text);
+
+  const sigCol = el("span", "os-sig-col");
+  sigCol.append(el("span", `os-signal ${sig.side}`, sig.text));
+  if (sig.kind === "buy") {
+    const f = company.flags || {};
+    const dots = [f.buyers_within_10_sessions >= 2, f.ceo_or_cfo_bought, f.holding_up_5pct_on_50k].map((on) => (on ? "●" : "○")).join("");
+    sigCol.append(el("span", `os-checks${evidence(company) === 0 ? " zero" : ""}`, `Checks ${dots}`));
+  }
+
   const why = el("span", "os-what");
-  why.append(el("span", "os-headline", headline(company, sig)));
-  const line = explanation(company, sig);
+  why.append(el("span", "os-headline", rowHeadline(company, sig)));
+  const line = rowDetailLine(company, sig);
   if (line) why.append(el("span", "os-detail-line", line));
-  const labels = reasons(company, sig);
+  const labels = rowTags(company, sig);
   if (labels.length) {
     const box = el("span", "os-tags");
     for (const [text, cls] of labels) box.append(el("span", `os-tag ${cls}`.trim(), text));
     why.append(box);
   }
+
+  const vsCol = el("span", "os-vs");
+  if (sig.kind === "stake") {
+    const ev = sig.chain && sig.chain.last.event;
+    vsCol.append(el("span", "os-vs-main", ev ? day(ev) : "—"));
+    if (sig.chain && sig.chain.last.amendment) vsCol.append(el("span", "os-vs-sub", `Amend #${sig.chain.last.amendment}`));
+  } else {
+    const vp = vsPaid(company, sig);
+    if (vp) {
+      const belowBuy = vp.isBuy && vp.diff <= -0.02;
+      vsCol.append(el("span", `os-vs-main${belowBuy ? " below" : ""}`, pct(vp.diff)));
+      vsCol.append(el("span", belowBuy ? "os-vs-pill" : "os-vs-sub", belowBuy ? `below ${price(vp.avg)}` : `avg ${price(vp.avg)}`));
+    } else {
+      vsCol.append(el("span", "os-vs-sub", "—"));
+    }
+  }
+
   const metric = el("span", "os-metric");
   const value = amount(company, sig);
   metric.append(el("span", "os-amount num", sig.kind === "stake" ? pctText(sig.chain && sig.chain.last.pct) : value ? money(value) : "—"));
   for (const text of keyMetric(company, sig)) metric.append(el("span", `os-sub num ${signCls(text)}`.trim(), text));
+
   const filed = el("span", "os-filed", day(rowDay(company, view)));
   if (isNew(company, until, view)) filed.append(el("span", "os-new", "NEW"));
-  button.append(co, kind, why, metric, filed);
+
+  button.append(co, sigCol, why, vsCol, metric, filed);
   return button;
 }
-// A watchlist star (watchlist.js) beside a row; a button cannot sit inside the row button.
 function starred(company, button) {
   if (!globalThis.TLWatch) return button;
   const wrap = el("div", "os-row-wrap");
   wrap.append(globalThis.TLWatch.button(company.symbol, company.name), button);
   return wrap;
 }
+function updateTableNote(viewKey) {
+  const note = $("os-vs-note");
+  if (!note) return;
+  if (viewKey === "other") { note.hidden = true; return; }
+  note.hidden = false;
+  if (viewKey === "stakes") {
+    note.replaceChildren(
+      el("strong", "", "Event:"),
+      " Date the 5%+ threshold or stake change occurred (SEC filings can follow up to 10 days later). A 13D means the holder does not claim to be passive, not necessarily an activist campaign."
+    );
+    return;
+  }
+  const label = viewKey === "buy" ? "vs paid:" : viewKey === "sell" ? "vs sold:" : viewKey === "holders" ? "vs trade:" : "vs paid / vs sold:";
+  note.replaceChildren(
+    el("strong", "", label),
+    " Latest close compared with insiders’ average trade price in this window (omitted if a split occurred after the trade). Context on where the stock trades now, not a buy signal."
+  );
+}
 function render() {
   const data = state.data;
-  // "On my watchlist": the stocks starred in this browser (watchlist.js).
   state.watched = globalThis.TLWatch ? globalThis.TLWatch.list().map((x) => x.symbol) : [];
   $("os-watch-count").textContent = state.watched.length.toLocaleString();
   const view = state.view === "other" ? OTHER : VIEWS.find((v) => v.key === state.view);
   const list = visible(data.companies, state);
+  state.currentList = list;
   const counts = viewCounts(data.companies, state);
   $("os-amount-head").textContent = view.head;
+  $("os-vs-head").textContent = view.vsHead;
+  renderLenses(data);
   $("os-rows").replaceChildren(...list.slice(0, state.shown).map((c) => starred(c, row(c, view.key, data.window.until))));
   const note = matchNote(data, state, list);
   $("os-match-note").hidden = !note;
@@ -637,41 +846,40 @@ function render() {
   }
   if (!list.length && !note) $("os-rows").append(el("p", "empty", state.query.trim()
     ? `No ownership filings match "${state.query.trim()}" in the last ${data.window.sessions} trading days`
-      + (state.eligible ? " among eligible stocks. Untick \"Eligible stocks only\" to search every company." : ".")
+      + (state.eligible ? " among eligible stocks. Untick \"Eligible\" to search every company." : ".")
     : "No company matches these filters."));
-  $("os-fresh-label").textContent = `New this week (${span(addDays(data.window.until, -6), data.window.until)})`;
-  $("os-count").textContent = `${list.length.toLocaleString()} companies · sorted by ${SORTS[state.sort].toLowerCase()}`
-    + (state.sort === "signal" ? ", then newest" : "") + (view.key === "sell" ? " · sales without a plan first" : "");
+  $("os-fresh-label").textContent = `New (${span(addDays(data.window.until, -6), data.window.until)})`;
+  $("os-count").textContent = `${list.length.toLocaleString()} companies · ${SORTS[state.sort].toLowerCase()}`
+    + (state.sort === "signal" ? ", then newest" : "");
   $("os-more").hidden = list.length <= state.shown;
   $("os-more").textContent = `Show ${Math.min(PAGE, list.length - state.shown)} more`;
   for (const button of $("os-tabs").querySelectorAll("button")) {
     const on = button.dataset.view === state.view;
-    button.classList.toggle("on", on);
-    button.setAttribute("aria-pressed", String(on));
+    button.setAttribute("aria-selected", String(on));
     button.querySelector(".cnt").textContent = (counts[button.dataset.view] || 0).toLocaleString();
   }
   $("os-other-banner").hidden = state.view !== "other";
   $("os-tab-note").textContent = view.note || "";
   $("os-tab-note").hidden = !view.note;
   $("os-sort").value = state.sort;
+  $("os-sort").querySelector('option[value="evidence"]').disabled = state.view !== "buy";
+  $("os-sort").querySelector('option[value="vspaid"]').disabled = state.view === "stakes" || state.view === "other";
   for (const b of document.querySelectorAll(".os-sorter")) {
     const on = b.dataset.sort === state.sort;
     b.classList.toggle("on", on);
     b.setAttribute("aria-pressed", String(on));
-    if (b.dataset.sort === "evidence") b.disabled = state.view !== "buy"; // Checks exist only for buys
+    if (b.dataset.sort === "evidence") b.disabled = state.view !== "buy";
+    if (b.dataset.sort === "vspaid") b.disabled = state.view === "stakes" || state.view === "other";
   }
-  $("os-sort").querySelector('option[value="evidence"]').disabled = state.view !== "buy";
+  updateTableNote(view.key);
   const scope = state.eligible ? data.universe.eligible : data.universe.issuers;
-  $("os-data").textContent = `Data through ${longDay(data.window.until)} (${data.window.sessions} trading days) · ${Number(scope).toLocaleString()} stocks`;
+  $("os-data").textContent = `Through ${day(data.window.until)} · ${Number(scope).toLocaleString()} stocks`;
   const parts = notCounted(data, state);
+  const otherTotal = base(data.companies, { ...state, lists: false, watch: false, fresh: false }).filter((c) => inView(c, "other")).length;
+  $("os-excluded-summary").textContent = `Not counted above: ${otherTotal.toLocaleString()} companies (transfers, private trades, grants/exercises)`;
   $("os-excluded-list").replaceChildren(...parts.map((text) => el("li", "", text)));
   $("os-excluded").hidden = !parts.length;
   markSelected();
-  // Beside the list, the panel always shows a listed company: the one picked, else the first row.
-  if (docked() && !state.panelClosed && list.length) {
-    const current = list.slice(0, state.shown).find((c) => c.symbol === state.selected);
-    if (!current || !$("os-detail").open || state.panelView !== view.key) openDetail(current || list[0], view.key);
-  }
 }
 function markSelected() {
   const open = $("os-detail").open;
@@ -683,20 +891,15 @@ function markSelected() {
 }
 function setView(key) {
   state.view = key;
+  state.lens = null;
   state.sort = (key === "other" ? OTHER : VIEWS.find((v) => v.key === key)).sort;
   state.shown = PAGE;
   render();
 }
 
-// ---------- panel ----------
-// Price vs QQQ in dollars (12 Nov 2026), as on the Ticker page: both lines start level at their close on
-// the stock's first day and share one scale of change, so the gap between them is the difference in
-// return; the stock's dollars label the left axis, QQQ's the right. The date axis runs to the end of the
-// filing window, which can pass the last close (prices stop at the weekly freeze): those days keep their
-// filing marks and have no line.
+// ---------- drawer & chart ----------
 const PRICE_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000];
 const axisPrice = (v, step) => `$${Number(v).toLocaleString("en-US", step < 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 })}`;
-// First and last day with a close, or null when there is none.
 function priced(values) {
   const ok = (v) => Number(v) > 0;
   const list = Array.isArray(values) ? values : [];
@@ -754,16 +957,13 @@ function chart(company, data, sig) {
     t.textContent = value;
     svg.append(t);
   };
-  // Left axis: the stock's dollars, at most five round steps, with a light grid.
   const sStep = PRICE_STEPS.find((st) => (s0 * (hi - lo)) / st <= 5) || 100000;
   for (let t = Math.ceil((s0 * (1 + lo)) / sStep - 1e-9) * sStep; t <= s0 * (1 + hi) + 1e-9; t += sStep) {
     if (t <= 0) continue;
     line(L, ys(t), W - R, ys(t), "os-grid");
     text(axisPrice(t, sStep), L - 4, ys(t) + 3.5, "end", "os-tick");
   }
-  // The start level, where both lines begin.
   line(L, yr(0), W - R, yr(0), "os-zero");
-  // Right axis: QQQ's dollars, only prices it traded at in the window, at least 18 units apart.
   if (Q) {
     const perDollar = (H - T - B) / (q0 * (hi - lo));
     const qStep = PRICE_STEPS.find((st) => st * perDollar >= 18) || 100000;
@@ -783,7 +983,7 @@ function chart(company, data, sig) {
   const fi = filed ? days.findIndex((d) => d >= filed) : -1;
   if (fi >= 0) {
     line(x(fi), T, x(fi), H - B, "os-filing");
-    text("Filed", x(fi) + 3, T + 9, "start", "os-tick strong");
+    text("Filed", Math.min(x(fi) + 3, W - R - 26), T + 9, "start", "os-tick strong");
   }
   const path = (values, yf, cls) => {
     let d = "";
@@ -796,7 +996,6 @@ function chart(company, data, sig) {
   if (Q) path(Q, yq, "os-line qqq");
   path(S, ys, "os-line stock");
   text(day(days[0]), x(0), H - 6, "start", "os-tick");
-  // Month starts, kept clear of the first and last date labels.
   days.forEach((d, i) => { if (i > 4 && i < days.length - 6 && d.slice(5, 7) !== days[i - 1].slice(5, 7)) text(MONTHS[Number(d.slice(5, 7)) - 1], x(i), H - 6, "middle", "os-tick"); });
   text(day(days[days.length - 1]), x(days.length - 1), H - 6, "end", "os-tick");
   box.append(svg);
@@ -810,10 +1009,8 @@ function chart(company, data, sig) {
   legend.append(item("stock", company.symbol, s0, S[last]));
   if (Q) legend.append(item("qqq", "QQQ", q0, Q[qLast]));
   box.append(legend);
-  // Adjusted closes: before an ex-dividend date the line sits below the price that traded (and that
-  // insiders report on Form 4) by the dividend. Stated on every dollar chart (timing audit, 18 Oct 2026).
   box.append(el("p", "os-detail-line", Q
-    ? `Both lines share one scale of change from ${day(days[first])}, on adjusted closes; the axes label it in dollars, ${company.symbol} left, QQQ right.`
+    ? `Both lines share one scale of change from ${day(days[first])}, on adjusted closes; ${company.symbol} left, QQQ right.`
     : `Adjusted closes in dollars from ${day(days[first])}.`));
   const since = sinceFiling(company, data, sig.keys, sig.filed);
   if (since) box.append(withSigns("os-detail-line os-tabular", since));
@@ -823,15 +1020,12 @@ function firstFiled(ctx, keys) {
   const filed = (ctx || {}).filed_days || {};
   return keys.flatMap((k) => filed[k] || []).sort()[0] || null;
 }
-// Change from the first session on or after the first filing to the last close,
-// for the stock and QQQ. Only days that have passed; nothing is projected.
 function sinceFiling(company, data, keys, filedDay) {
   const ctx = company.prices || {};
   const days = (data.chart || {}).days || [];
   const filed = filedDay || firstFiled(ctx, keys);
   if (!filed || !ctx.chart || !days.length) return "";
   const i = days.findIndex((d) => d >= filed);
-  // The last close, not the last day of the window: prices stop at the weekly freeze.
   const last = (priced(ctx.chart) || { last: -1 }).last;
   if (i < 0 || i >= last || !ctx.chart[i] || !ctx.chart[last]) return filed ? `Filed ${day(filed)}: no full trading day since the filing yet.` : "";
   const stock = ctx.chart[last] / ctx.chart[i] - 1;
@@ -888,10 +1082,10 @@ function nameCell(person) {
 function overview(company, data, sig) {
   const parts = [];
   const people = peopleWith(company, sig.keys, sig.insiders);
-  const card = el("div", "os-card");
+  const card = el("div", `os-card${sig.side === "sell" ? " sell-card" : ""}`);
   const top = el("div", "os-card-top");
   top.append(el("span", `os-signal ${sig.side}`, sig.text));
-  if (sig.kind === "buy") top.append(el("span", "os-evidence", `Checks ${evidence(company)} of 3`));
+  if (sig.kind === "buy") top.append(el("span", "os-evidence", `Checks ${evidence(company)} / 3`));
   card.append(top, el("p", "os-d-head", headline(company, sig)));
   const line = explanation(company, sig);
   if (line) card.append(el("p", "os-detail-line", line));
@@ -901,19 +1095,21 @@ function overview(company, data, sig) {
   const baseLabel = sig.kind === "buy" ? "total bought" : sig.kind === "other" ? "moved" : sig.kind === "holder" ? "traded" : "total sold";
   const shareOfCap = sig.kind !== "other" ? capPct(value, company.market_cap) : "";
   if (value) tile(money(value), shareOfCap ? `${baseLabel} · ${shareOfCap} of cap` : baseLabel);
-  if (people.length) tile(String(people.length), people.length === 1 ? (sig.insiders === false ? "holder" : "insider") : (sig.insiders === false ? "holders" : "insiders"));
-  const { first, last } = tradeSpan(people, sig.keys);
-  if (first) tile(first === last ? day(first) : plural(daysBetween(first, last) + 1, "day"), first === last ? "traded" : `traded ${span(first, last)}`);
+  const vp = vsPaid(company, sig);
+  if (vp) tile(pct(vp.diff), `vs avg ${price(vp.avg)}`);
+  else if (people.length) tile(String(people.length), people.length === 1 ? (sig.insiders === false ? "holder" : "insider") : (sig.insiders === false ? "holders" : "insiders"));
   const median = people.length > 1 ? medianHolding(people) : null;
   const lead = people.find((p) => p.holding);
   if (median !== null) tile(pct(median), "median holding change");
   else if (lead) tile(holdingChange(lead).text.replace("holding ", ""), `holding · ${lead.role} ${lead.names[0]}`);
+  const { first, last } = tradeSpan(people, sig.keys);
+  if (first) tile(first === last ? day(first) : span(first, last), "trade dates");
   if (tiles.childNodes.length) card.append(tiles);
   parts.push(card);
   const why = checks(company, sig);
   if (why.length) {
     const section = el("div", "os-section");
-    section.append(el("h3", "", "Why it's listed"));
+    section.append(el("h3", "", "Buy checks"));
     for (const [on, text] of why) {
       const item = el("div", "os-check");
       item.append(el("span", `os-pip${on ? " on" : ""}`), el("span", "", text));
@@ -940,15 +1136,15 @@ function overview(company, data, sig) {
   const lists = el("div", "os-section");
   lists.append(el("h3", "", "Screener membership"));
   const chips = el("div", "os-d-chips");
-  if ((company.lists || []).length) for (const item of company.lists) chips.append(el("span", "os-chip", item));
-  else chips.append(el("span", "os-detail-line", company.eligible ? "Not on this week's Strength, Growth or Cheap lists." : "Outside the eligible universe."));
+  if ((company.lists || []).length) for (const item of fmtLists(company.lists)) chips.append(el("span", "os-chip", item));
+  else chips.append(el("span", "os-detail-line", company.eligible ? "Not on this week's Hot tape, Growth or Cheap lists." : "Outside the eligible universe."));
   lists.append(chips);
   parts.push(lists);
   const limits = el("div", "os-section os-limits");
   limits.append(el("h3", "", "What we can't tell yet"));
   limits.append(el("p", "", "Codes P and S do not prove an open-market trade; a trade is called private only when its footnote says so."));
   limits.append(el("p", "", data.history
-    ? `History covers buys and sales filed ${longDay(data.history.filed_from)} – ${longDay(data.history.filed_until)} (History tab); later filings are not in the SEC's quarterly data yet.`
+    ? `History covers buys and sales filed ${longDay(data.history.filed_from)} – ${longDay(data.history.filed_until)} (3Y History tab); later filings are not in the SEC's quarterly data yet.`
     : `Whether this is unusual for these people: this page holds the last ${data.window.sessions} trading days only, not their history.`));
   if ((company.flags || {}).rows_to_check) limits.append(el("p", "", `${plural(company.flags.rows_to_check, "row")} held back to check, not in the totals.`));
   parts.push(limits);
@@ -1065,40 +1261,62 @@ function insidersTab(company) {
   ]));
   return [section];
 }
-function openDetail(company, view, from) {
+function updateStepButtons() {
+  const prev = $("os-prev"), next = $("os-next"), pos = $("os-step-pos");
+  if (!prev || !next || !pos) return;
+  const idx = state.currentList.findIndex((c) => c.symbol === state.selected);
+  prev.disabled = idx <= 0;
+  next.disabled = idx < 0 || idx >= state.currentList.length - 1;
+  pos.textContent = idx >= 0 ? `${idx + 1} / ${state.currentList.length}` : "";
+}
+function stepSelection(delta) {
+  if (!state.currentList.length) return;
+  let idx = state.currentList.findIndex((c) => c.symbol === state.selected);
+  idx = idx < 0 ? 0 : Math.max(0, Math.min(state.currentList.length - 1, idx + delta));
+  const target = state.currentList[idx];
+  if (!target) return;
+  if (idx >= state.shown) { state.shown = idx + 10; render(); }
+  openDetail(target, state.view);
+  const rowEl = $("os-rows").querySelector(`.os-row[data-symbol="${CSS.escape(target.symbol)}"]`);
+  if (rowEl) rowEl.scrollIntoView({ block: "nearest" });
+}
+function openDetail(company, view) {
   const data = state.data;
   state.selected = company.symbol;
-  state.panelView = view;
-  state.panelClosed = false;
   const sig = signal(company, view);
   const body = $("os-detail-body");
   const top = el("div", "os-d-top");
+  const titleLine = el("div", "os-d-title-line");
+  if (globalThis.TLWatch) titleLine.append(globalThis.TLWatch.button(company.symbol, company.name));
   const title = el("h2", "", company.symbol);
   title.id = "os-detail-title";
+  titleLine.append(title, el("span", "os-d-name", company.name));
   const ctx = company.prices || {};
   const m1 = move1m(ctx);
   const facts = withSigns("os-d-facts", [ctx.close ? `${price(ctx.close.value)} close ${day(ctx.close.day)}` : "",
-    m1 !== null ? `1-mo ${pct(m1)}` : "",
-    ctx.move_3m !== null && ctx.move_3m !== undefined ? `3-mo ${pct(ctx.move_3m)}` : "",
-    company.market_cap ? `${money(company.market_cap)} market cap` : ""].filter(Boolean).join(" · "));
+    m1 !== null ? `1M ${pct(m1)}` : "",
+    ctx.move_3m !== null && ctx.move_3m !== undefined ? `3M ${pct(ctx.move_3m)}` : "",
+    company.market_cap ? money(company.market_cap) : "",
+    company.industry || ""].filter(Boolean).join(" · "));
   const chips = el("div", "os-d-chips");
-  if ((company.lists || []).length) chips.append(el("span", "os-chip", company.lists.join(" · ")));
+  for (const item of fmtLists(company.lists)) chips.append(el("span", "os-chip", item));
   if (!company.eligible) chips.append(el("span", "os-chip muted", "outside eligible set"));
-  if (isNew(company, data.window.until)) chips.append(el("span", "os-new", "NEW THIS WEEK"));
-  top.append(title, el("div", "os-d-name", company.name), facts, chips);
+  if (isNew(company, data.window.until, view)) chips.append(el("span", "os-new", "NEW THIS WEEK"));
+  top.append(titleLine, facts, chips);
   const tabs = el("div", "os-d-tabs");
   tabs.setAttribute("role", "tablist");
   const pane = el("div", "os-d-pane");
-  const panes = { overview: () => (sig.kind === "stake" ? stakeOverview(company, data, sig) : overview(company, data, sig)),
-    filings: () => filingsTab(company), insiders: () => insidersTab(company) };
-  const labels = { overview: "Overview", filings: `Filings (${(company.filings || []).length})`, insiders: `Insiders (${(company.people || []).length})` };
-  if (data.history) { panes.history = () => historyTab(company, data); labels.history = "History"; }
+  const panes = { overview: () => (sig.kind === "stake" ? stakeOverview(company, data, sig) : overview(company, data, sig)) };
+  const labels = { overview: "Overview" };
+  if (data.history) { panes.history = () => historyTab(company, data); labels.history = "3Y History"; }
+  panes.insiders = () => insidersTab(company);
+  labels.insiders = `People (${(company.people || []).length})`;
+  panes.filings = () => filingsTab(company);
+  labels.filings = `SEC (${(company.filings || []).length})`;
   const show = (key) => {
     pane.replaceChildren(...panes[key]());
     for (const b of tabs.children) {
-      const on = b.dataset.key === key;
-      b.classList.toggle("on", on);
-      b.setAttribute("aria-selected", String(on));
+      b.setAttribute("aria-selected", String(b.dataset.key === key));
     }
   };
   for (const key of Object.keys(panes)) {
@@ -1115,23 +1333,16 @@ function openDetail(company, view, from) {
     r.href = `./?q=${encodeURIComponent(company.symbol)}`;
     links.append(r);
   }
-  const t = el("a", "os-button", `${company.symbol} ticker page →`);
+  const t = el("a", "os-button", `${company.symbol} ticker →`);
   t.href = `./ticker.html?t=${encodeURIComponent(company.symbol)}`;
   links.append(t);
   const all = secUrl(`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(company.cik)}&type=4&dateb=&owner=include&count=40`);
-  if (all) { const a = el("a", "os-button", "All Form 4 filings on SEC ↗"); a.href = all; a.target = "_blank"; a.rel = "noopener noreferrer"; links.append(a); }
+  if (all) { const a = el("a", "os-button", "SEC Form 4 ↗"); a.href = all; a.target = "_blank"; a.rel = "noopener noreferrer"; links.append(a); }
   body.replaceChildren(top, tabs, pane, links);
   show("overview");
   const dialog = $("os-detail");
-  const dock = docked();
-  document.body.classList.toggle("os-docked", dock);
-  dialog.classList.toggle("docked", dock);
-  if (!dialog.open) {
-    if (dock) dialog.show(); else dialog.showModal();
-    // Beside the list, focus stays in the list, so the next row is one key away.
-    if (dock && from) from.focus({ preventScroll: true });
-    else if (dock && document.activeElement) document.activeElement.blur();
-  }
+  updateStepButtons();
+  if (!dialog.open) dialog.showModal();
   dialog.scrollTop = 0;
   markSelected();
 }
@@ -1147,9 +1358,11 @@ function setup(data) {
   $("os-eligible-count").textContent = Number(universe.eligible).toLocaleString();
   const tabBox = $("os-tabs");
   for (const view of VIEWS) {
-    const button = el("button", "", view.label);
+    const button = el("button", "os-tab", view.label);
     button.type = "button";
+    button.setAttribute("role", "tab");
     button.dataset.view = view.key;
+    button.setAttribute("aria-selected", String(view.key === state.view));
     button.append(el("span", "cnt num", ""));
     button.addEventListener("click", () => setView(view.key));
     tabBox.append(button);
@@ -1167,7 +1380,6 @@ function setup(data) {
   $("os-eligible").addEventListener("change", (e) => { state.eligible = e.target.checked; state.shown = PAGE; render(); });
   $("os-lists").addEventListener("change", (e) => { state.lists = e.target.checked; state.shown = PAGE; render(); });
   $("os-watch").addEventListener("change", (e) => { state.watch = e.target.checked; state.shown = PAGE; render(); });
-  // A star added or removed (here or in another tab): the count follows, and the list when the box is ticked.
   if (globalThis.TLWatch) {
     globalThis.TLWatch.onChange((items) => {
       $("os-watch-count").textContent = items.length.toLocaleString();
@@ -1185,15 +1397,26 @@ function setup(data) {
   $("os-show-other").addEventListener("click", () => { setView("other"); $("os-tabs").scrollIntoView({ block: "start" }); });
   $("os-back").addEventListener("click", () => setView("all"));
   const dialog = $("os-detail");
-  // Closing the panel beside the list keeps it shut until a row is picked again.
-  dialog.querySelector(".os-close").addEventListener("click", () => { if (docked()) state.panelClosed = true; });
-  dialog.addEventListener("close", () => {
-    if (dialog.open) return; // reopened in the meantime (window resized)
-    document.body.classList.remove("os-docked");
-    dialog.classList.remove("docked");
-    markSelected();
+  // Light-dismiss Safari fallback for browsers without closedby="any" support.
+  if (!("closedBy" in HTMLDialogElement.prototype)) {
+    dialog.addEventListener("click", (event) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      const inside = rect.top <= event.clientY && event.clientY <= rect.top + rect.height
+        && rect.left <= event.clientX && event.clientX <= rect.left + rect.width;
+      if (!inside) dialog.close();
+    });
+  }
+  dialog.addEventListener("close", () => markSelected());
+  $("os-prev").addEventListener("click", () => stepSelection(-1));
+  $("os-next").addEventListener("click", () => stepSelection(1));
+  document.addEventListener("keydown", (e) => {
+    if (!dialog.open) return;
+    const tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); stepSelection(1); }
+    else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); stepSelection(-1); }
   });
-  if (WIDE) WIDE.addEventListener("change", () => { if (dialog.open) dialog.close(); render(); });
   $("os-status").hidden = true;
   render();
 }
